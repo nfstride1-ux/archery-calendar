@@ -344,3 +344,6 @@ a.cal-row:hover{background:#f6f3e6}
 .b.ost-flyer{border-style:solid}
 .b.ost-no_details{border-style:dotted;color:#374151}
 .b.open{border-style:solid}
+/* status/titles badges: always dark text on white, also inside the dark shoot hero */
+.b.ost,.b.open,.b.titles,.b.members,.b.series{color:var(--night);border-color:var(--night);background:#fff}
+.b.ost-no_details{color:#374151;border-color:#6b7280}
