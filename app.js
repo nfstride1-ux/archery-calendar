@@ -321,6 +321,71 @@ function vHome(){
     ${suggest.length ? `<h2 class="sec-h">Next shoots in your areas</h2><div class="list grid2">${suggest.map(evCard).join('')}</div><p class="center"><a class="btn" href="#/browse">See all shoots →</a></p>` : ''}
   </div>`;
 }
+/* ---------- smart search: every word must match (AND); synonyms, state names/capitals, months, status; light typo tolerance ---------- */
+const CAPITAL = {WA:'perth', SA:'adelaide', VIC:'melbourne', NSW:'sydney', ACT:'canberra', QLD:'brisbane', TAS:'hobart', NT:'darwin'};
+const STATE_ALIASES = {wa:'WA', 'western australia':'WA', sa:'SA', 'south australia':'SA', vic:'VIC', victoria:'VIC', nsw:'NSW', 'new south wales':'NSW', act:'ACT',
+  'australian capital territory':'ACT', qld:'QLD', queensland:'QLD', tas:'TAS', tasmania:'TAS', nt:'NT', 'northern territory':'NT',
+  perth:'WA', adelaide:'SA', melbourne:'VIC', sydney:'NSW', canberra:'ACT', brisbane:'QLD', hobart:'TAS', darwin:'NT'};
+const PHRASES = [[/\b(come (and|n|&) try|come ?n ?try|have ?a ?go|cnt|try archery|come and trial)\b/g, ' cometry '], [/\bworld record status\b/g, ' qre '],
+  [/\b3 ?- ?d\b/g, ' 3d '], [/\bnats\b/g, ' nationals '], [/\bchamps?\b/g, ' championships '], [/\btitle\b/g, ' titles '], [/\bover ?50s?\b/g, ' over50 '], [/\b(wa|fita) (1440|720|960)\b/g, ' $2 '], [/\bhunter round\b/g, ' hunter round '],
+  [/\bstate titles\b/g, ' statetitles state titles '], [/\bbranch titles\b/g, ' branchtitles branch titles ']];
+function snorm(t){
+  let s = ' ' + String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/&/g, ' and ').replace(/3-d/g, '3d').replace(/[^a-z0-9]+/g, ' ') + ' ';
+  for (const [re, r] of PHRASES) s = s.replace(re, r);
+  return s.replace(/\s+/g, ' ').trim();
+}
+function hay(x){
+  if (x._hay) return x._hay;
+  const sc = x.state_code, st = STATES.find(z => z[0] === sc), months = [];
+  if (x.start_date) for (let d = pd(x.start_date); d <= pd(x.end_date || x.start_date) && months.length < 14; d.setMonth(d.getMonth() + 1, 1)) months.push(MONL[d.getMonth()], MON[d.getMonth()], String(d.getFullYear()));
+  if (x.end_date) { const e = pd(x.end_date); months.push(MONL[e.getMonth()], MON[e.getMonth()]); }
+  const grpTxt = {aa:'aa archery australia', aba:'aba bowhunters australian bowhunters association', awa:'awa archery wa archerywa'}[x.org_group] || '';
+  const lvl = [x.level, x.rounds, x.titles === 'state' ? 'state titles' : x.titles === 'branch' ? 'branch titles' : '', /\bqre\b|world record/i.test((x.name || '') + ' ' + (x.level || '')) ? 'qre world record status' : '',
+    /national/i.test((x.level || '') + ' ' + x.name) && !/registered/i.test(x.level || '') ? 'nationals national' : '', x.members_only ? 'club championship members' : ''];
+  const cat = catOf(x), catTxt = {competition:'competition shoot tournament', coaching:'coaching course coach', youth:'youth junior kids training', come_try:'come and try beginners'}[cat] + (x.book_anytime ? ' corporate team building book anytime' : '');
+  const stat = [x.org_status === 'flyer' ? 'flyer out details' : 'no entry details yet', x.entry_close_date ? (daysTo(x.entry_close_date) < 0 ? 'entries closed' : 'entries open') : x.registration_url ? 'entries open' : ''];
+  const words = snorm([x.name, x.host, x.location, x.org, sc, st && st[1], sc && CAPITAL[sc], x.discipline, catTxt, ...lvl, grpTxt, x.branch ? 'branch ' + x.branch : '', x.branch_name, ...months, ...stat, x.series_part, x.notes, ...Object.entries(x.flyer_extract || {}).filter(([k, v]) => typeof v === 'string' && !/url|source/.test(k)).map(([, v]) => v), roundTerms(x)].filter(Boolean).join(' '));
+  return x._hay = {s: ' ' + words + ' ', w: [...new Set(words.split(' '))]};
+}
+function roundTerms(x){   // archery jargon derived from rounds/discipline text
+  const t = [x.rounds, x.discipline, x.name, x.level, x.flyer_extract && x.flyer_extract.rounds].filter(Boolean).join(' ').toLowerCase(), out = [];
+  for (const m of t.matchAll(/\b(wa|aa|fita)\s?(\d{2,3})\s?\/?\s?(1440|720|960|1080|900)?/g)) { out.push(m[2] + 'm'); if (m[3]) out.push(m[3], 'wa' + m[3]); if (m[1] !== 'aa') out.push('fita world archery'); }
+  for (const m of t.matchAll(/\b(1440|720|960|900|1080)\b/g)) out.push(m[1], 'wa' + m[1]);
+  if (/world archery|\bwa\s?(1440|720|70|60|50)|fita|qre|registered tournament/.test(t)) out.push('fita');
+  if (/indoor/.test((x.discipline || '') + ' ' + (x.name || ''))) out.push('18m 25m indoor');
+  if (/ifaa/.test(t)) out.push('ifaa');
+  if (/aus\s?960|crossbow/.test(t)) out.push('aus960 crossbow');
+  if (/clout/.test(t)) out.push('clout');
+  if (/50 ?plus|over 50|masters|veteran|old coot/.test(t)) out.push('masters veterans over50 50plus');
+  if (/junior|youth|young|kid|cub|u21|u18|tyro/.test(t + ' ' + (x.category || ''))) out.push('junior youth kids');
+  if (x.org_group === 'aba' && /\baba\b|3d|ifaa|field/.test(t)) out.push('hunter round animal round field round');
+  return out.join(' ');
+}
+const QSYN = {fita:['fita','world archery'], veterans:['masters','veterans'], vets:['masters','veterans'], masters:['masters','veterans'], over50:['over50','50plus','masters'],
+  juniors:['junior'], kids:['junior','youth','kids'], wa1440:['1440'], wa720:['720'], fita1440:['1440'], trad:['traditional','longbow','barebow'], traditional:['traditional','longbow','barebow'], longbow:['longbow','traditional'], bowhunter:['bowhunters','aba']};
+function lev1(a, b){   // edit distance <= 1 (incl. one swap of neighbours)
+  if (Math.abs(a.length - b.length) > 1) return false;
+  let i = 0; while (i < a.length && i < b.length && a[i] === b[i]) i++;
+  if (i >= a.length && i >= b.length) return true;
+  return a.slice(i + 1) === b.slice(i + 1) || a.slice(i) === b.slice(i + 1) || a.slice(i + 1) === b.slice(i) || (a[i] === b[i + 1] && a[i + 1] === b[i] && a.slice(i + 2) === b.slice(i + 2));
+}
+function parseQuery(q){
+  let s = ' ' + snorm(q) + ' ', states = [];
+  for (const [k, v] of Object.entries(STATE_ALIASES).sort((a, b) => b[0].length - a[0].length)) if (s.includes(' ' + k + ' ')) { states.push(v); s = s.replace(' ' + k + ' ', ' '); }
+  const words = s.trim().split(' ').filter(Boolean);
+  return {words, states: [...new Set(states)]};
+}
+function wordHit(w, H){
+  if (QSYN[w]) return QSYN[w].some(v => v.includes(' ') ? H.s.includes(' ' + v + ' ') : wordHit1(v, H)) || wordHit1(w, H);
+  return wordHit1(w, H);
+}
+function wordHit1(w, H){
+  if (H.s.includes(' ' + w + ' ')) return true;
+  if (w.length >= 3 && H.w.some(h => h.startsWith(w))) return true;
+  if (w.length >= 5 && H.w.some(h => h.length >= 4 && lev1(w, h.slice(0, Math.max(w.length, Math.min(h.length, w.length + 1)))))) return true;
+  return false;
+}
+const matchQ = (x, Q) => (!Q.states.length || Q.states.includes(x.state_code)) && Q.words.every(w => wordHit(w, hay(x)));
 let BF = {q:'', disc:'', cat:'', ost:'', scope:'all', state:'', past:false, limit:60};
 function vBrowse(){
   setTitle('Find shoots');
@@ -328,20 +393,24 @@ function vBrowse(){
   if (AUS() && grp && !GROUPS.some(g => g[0] === grp)) BF.scope = 'all';
   // A chip always wins over Settings: ABA chip = every ABA shoot (only the page's own state filter applies).
   // Picking a state on this page overrides 'My states' from Settings.
-  const vis = grp ? EV.filter(x => x.org_group === grp) : EV.filter(x => visible(x, !!BF.state));
+  const Q = BF.q ? parseQuery(BF.q) : null, qState = !!(Q && Q.states.length);
+  // A state named in the search (e.g. 'target sa') also overrides 'My states' from Settings.
+  const vis = grp ? EV.filter(x => x.org_group === grp) : EV.filter(x => visible(x, !!BF.state || qState));
   const scopes = AUS() ? [['all','All Australia'], ...GROUPS.map(g => ['g:' + g[0], {aa:'Archery Australia', aba:'ABA', awa:'Archery WA'}[g[0]]])] : [['all','All'], ['world','🌐 World'], ...S.countries.map(c => [c, CMAP[c] || c]), ...S.orgs.map(o => [o, (ORGS.find(x => x.id === o) || {}).name?.replace(/\s*\(.*\)/,'') || o])];
   const discs = [...new Set(vis.filter(x => BF.past || !isPast(x)).map(x => (x.discipline || '').split(/[ (/]/)[0]).filter(Boolean))].sort();   // only disciplines with shoots to show
   if (BF.disc && !discs.includes(BF.disc)) discs.push(BF.disc);   // never hide an active filter behind 'All disciplines'
-  let list = vis.filter(x => BF.past || !isPast(x));
+  let list = vis.slice();
   if (BF.scope.startsWith('g:')) list = list.filter(x => x.org_group === BF.scope.slice(2));
   else if (BF.scope === 'world') list = list.filter(x => x.world_level);
   else if (BF.scope !== 'all') list = list.filter(x => x.country_code === BF.scope && !x.world_level && !['aba','archery-wa'].includes(x.org_id) || x.org_id === BF.scope);
   if (BF.state) list = list.filter(x => x.state_code === BF.state);
-  const active = [BF.q && `search “${esc(BF.q)}”`, BF.state && (STATES.find(s => s[0] === BF.state) || [, BF.state])[1], BF.disc && `discipline ${esc(BF.disc)}`, BF.cat && CATS[BF.cat] && CATS[BF.cat][2], BF.ost && OST[BF.ost] && OST[BF.ost][2], !grp && !BF.state && S.states.length && AUS() && `your states in Settings (${S.states.join(', ')})`].filter(Boolean);
+  const active = [BF.q && `search “${esc(BF.q)}”`, BF.state && (STATES.find(s => s[0] === BF.state) || [, BF.state])[1], BF.disc && `discipline ${esc(BF.disc)}`, BF.cat && CATS[BF.cat] && CATS[BF.cat][2], BF.ost && OST[BF.ost] && OST[BF.ost][2], qState && `state from your search: ${Q.states.join(', ')}${!grp && !BF.state && S.states.length ? ' (overrides your Settings states)' : ''}`, !grp && !BF.state && !qState && S.states.length && AUS() && `your states in Settings (${S.states.join(', ')})`].filter(Boolean);
   if (BF.disc) list = list.filter(x => (x.discipline || '').startsWith(BF.disc));
   if (BF.cat) list = list.filter(x => catOf(x) === BF.cat);
   if (BF.ost) list = list.filter(x => x.org_status === BF.ost);
-  if (BF.q) { const q = BF.q.toLowerCase(); list = list.filter(x => [x.name, x.location, x.host, x.org, x.country, x.state, (STATES.find(s => s[0] === x.state_code) || [])[1], x.discipline, CATS[catOf(x)][2]].join(' ').toLowerCase().includes(q)); }
+  if (Q) list = list.filter(x => matchQ(x, Q));
+  let showPastNote = false;
+  if (!BF.past) { const up = list.filter(x => !isPast(x)); if (!up.length && Q && list.length) showPastNote = true; else list = up; }
   const sk = x => x.book_anytime ? '9999-99' : x.start_date || '9999';
   list.sort((a, b) => sk(a) < sk(b) ? -1 : 1);
   const total = list.length; list = list.slice(0, BF.limit);
@@ -352,6 +421,7 @@ function vBrowse(){
   <label for="cat" class="sr">Event type</label><select id="cat" aria-label="Event type"><option value="">All event types</option>${Object.entries(CATS).map(([k, v]) => `<option value="${k}" ${BF.cat === k ? 'selected' : ''}>${v[0]} ${v[2]}</option>`).join('')}</select>
   <div class="row"><select id="disc" aria-label="Discipline"><option value="">All disciplines</option>${discs.map(d => `<option ${BF.disc === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select>
   <label style="display:flex;align-items:center;gap:8px;margin:0;flex:0 0 auto"><input type="checkbox" id="past" ${BF.past ? 'checked' : ''} style="width:22px;min-height:22px"> Show finished</label></div>
+  ${showPastNote ? `<p class="note" id="pastNote">◷ No upcoming shoots match – showing finished shoots.</p>` : ''}
   ${active.length && total ? `<p class="note" id="activeF">Filtered by: ${active.join(' · ')} <button class="linkbtn" id="clearF2">✕ Clear</button></p>` : ''}
   <p class="note">${total} shoot${total !== 1 ? 's' : ''}. Change ${AUS() ? 'states &amp; organisations' : 'countries &amp; bodies'} in <a href="#/settings">Settings</a>.</p></div><div class="results">`;
   let m = '', n = 0;
