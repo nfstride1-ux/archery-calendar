@@ -102,13 +102,25 @@ async function boot(){
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     // A new service worker takes over at once (skipWaiting + clients.claim); reload once so this tab runs the new code too.
     const hadSW = !!navigator.serviceWorker.controller;
-    navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadSW && !sessionStorage.getItem('swReloaded')) { sessionStorage.setItem('swReloaded', '1'); location.reload(); } });
-    navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(r => r.update()).catch(() => {});
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadSW) return;
+      const busy = /^#\/(submit|fix|account|settings)/.test(location.hash) && [...document.querySelectorAll('#view input:not([type=hidden]),#view textarea')].some(i => i.type === 'checkbox' ? false : i.value && i.value !== i.defaultValue);
+      const last = +sessionStorage.getItem('swReloadedAt') || 0;
+      if (!busy && Date.now() - last > 15000) { sessionStorage.setItem('swReloadedAt', Date.now()); location.reload(); return; }
+      showUpdateBar(); });
+    navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(r => { r.update();
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') r.update().catch(() => {}); }); }).catch(() => {});
   }
   importHandoff(); clubUpdates(); route(); checkReminders(); setInterval(checkReminders, 60 * 60 * 1000);
   initAuth().catch(e => console.warn('auth', e));
 }
 
+function showUpdateBar(){
+  if ($('#updBar')) return;
+  const d = document.createElement('div'); d.id = 'updBar'; d.className = 'upd-bar'; d.setAttribute('role', 'status');
+  d.innerHTML = '<span>A new version of Archery Calendar is ready.</span><button type="button" class="btn gold" id="updGo">Refresh</button><button type="button" class="upd-x" aria-label="Later">✕</button>';
+  document.body.appendChild(d); $('#updGo').onclick = () => location.reload(); d.querySelector('.upd-x').onclick = () => d.remove();
+}
 /* ---------- settings migration: never let stale/odd saved settings hide everything ---------- */
 function migrateSettings(){
   const codes = STATES.map(s => s[0]), gk = GROUPS.map(g => g[0]);
@@ -373,7 +385,6 @@ function vHome(){
   const nEnt = up.filter(x => ST(x.id) !== 'none').length, nPay = up.filter(x => ST(x.id) === 'entered').length, nTodo = up.filter(x => ST(x.id) === 'none' && !x.info_only).length;
   const rem = reminders();
   const next = up.find(x => x.start_date);
-  const suggest = EV.filter(x => visible(x) && !isPast(x) && x.start_date && !S.saved[x.id] && !x.info_only).sort((a,b)=>a.start_date<b.start_date?-1:1).slice(0, 6);
   const h = photo('mixed');
   return `
   <section class="hero" style="--img:url('${esc(h.file)}')"><div class="wrap hero-grid">
@@ -385,12 +396,12 @@ function vHome(){
   </div>${credit('mixed')}</section>
   <div class="wrap">
     <div class="stats four"><a class="stat" href="#/calendar"><b>${up.length}</b><span>★ My shoots</span></a><a class="stat" href="#/entries"><b>${nEnt}</b><span>✓ Entered</span></a><a class="stat" href="#/entries"><b>${nTodo}</b><span>☐ To enter</span></a><a class="stat" href="#/entries"><b>${nPay}</b><span>$ To pay</span></a></div>
+    ${intlMenu()}
     ${adSlot('banner')}
     <h2 class="sec-h">Pick your discipline</h2>
     <div class="types">${['field','3d','target','indoor'].map(t => `<a class="type th-${t}" href="#/browse" data-th="${t}" style="--img:url('${esc(photo(t === 'field' ? 'aba_field' : t).sm)}');--pos:${esc(photo(t === 'field' ? 'aba_field' : t).pos || 'center')}"><span class="type-name">${THEMES[t][0]} ${THEMES[t][1]}</span><span class="type-sub">${{field:'Bush courses, marked & unmarked', '3d':'Foam animals in the bush', target:'Outdoor ranges, 18–90 m', indoor:'18 m halls, 3-spot & Vegas'}[t]}</span></a>`).join('')}</div>
     <div class="cats-row" aria-label="Club shoots, coaching, youth and come & try">${['club', 'coaching', 'youth', 'come_try'].map(c => `<a class="cat-link cat-${c}" href="#/browse" data-cat="${c}">${(c === 'youth' || c === 'come_try') && PH[c] ? `<span class="cat-img" aria-hidden="true" style="background-image:url('${esc(PH[c].sm)}');background-position:${esc(PH[c].pos || 'center')}"></span>` : ''}<span class="ci" aria-hidden="true">${CATS[c][0]}</span><b>${CATS[c][2]}</b><span>${EV.filter(x => catOf(x) === c && visible(x) && !isPast(x)).length} coming up</span></a>`).join('')}</div>
     ${homeClubs()}
-    ${intlMenu()}
     <div class="two">
       <section><h2 class="sec-h">Reminders</h2>
       ${rem.length ? rem.map(r => `<div class="panel rem" data-open="${esc(r.x.id)}" role="link" tabindex="0"><b><span aria-hidden="true">${REM_ICON[r.kind]}</span> ${esc(r.x.name)}</b><div>${esc(r.text)}</div><div class="badges">${r.kind === 'close' ? '<span class="b close">⏳ Enter now</span>' : r.kind === 'pay' ? '<span class="b ent">$ Pay now</span>' : REM_BADGE[r.st]}</div></div>`).join('')
@@ -399,7 +410,7 @@ function vHome(){
       ${up.length ? `<div class="list">${up.slice(0, 4).map(evCard).join('')}</div>` : `<div class="empty">No shoots yet. Tap ☆ on any shoot in <a href="#/browse">Find shoots</a>.</div>`}</section>
     </div>
     ${clubCta()}
-    ${suggest.length ? `<h2 class="sec-h">Next shoots in your areas</h2><div class="list grid2">${suggest.map(evCard).join('')}</div><p class="center"><a class="btn" href="#/browse">See all shoots →</a></p>` : ''}
+    <p class="center see-all"><a class="btn" href="#/browse" id="seeAll">See all shoots →</a></p>
   </div>`;
 }
 /* ---------- smart search: every word must match (AND); synonyms, state names/capitals, months, status; light typo tolerance ---------- */

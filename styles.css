@@ -541,3 +541,15 @@ details.panel summary{cursor:pointer;padding:4px 0}
 .fx-dates{align-items:end}
 .fx-dates .sub-lab{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:.95rem}
 .fx-row[data-k=status] .chk{margin-top:8px}
+/* update-ready bar (service worker) */
+.upd-bar{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:9999;display:flex;align-items:center;gap:10px;background:var(--night);color:#fff;padding:10px 12px 10px 16px;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.35);max-width:calc(100vw - 24px)}
+.upd-bar .btn{min-height:40px}
+.upd-x{background:none;border:0;color:#cbd5e1;font-size:18px;min-width:40px;min-height:40px;cursor:pointer}
+.see-all{margin:22px 0 8px}
+@media (max-width:1480px){header .today,.today{display:none}}
+/* tablets / small laptops: put the nav on its own scrollable row so nothing runs off the edge */
+@media (max-width:1240px) and (min-width:721px){
+ .head-row{flex-wrap:wrap;row-gap:0}
+ .nav{order:3;flex-basis:100%;overflow-x:auto;scrollbar-width:none;padding:2px 0 10px}
+ .nav::-webkit-scrollbar{display:none}
+}
