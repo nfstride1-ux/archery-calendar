@@ -1404,12 +1404,18 @@ const TZ_NAME = {'America/New_York': 'Eastern Time', 'America/Chicago': 'Central
   'America/Los_Angeles': 'Pacific Time', 'America/Anchorage': 'Alaska Time', 'Pacific/Honolulu': 'Hawaii Time', 'America/Puerto_Rico': 'Atlantic Time'};
 const IDISC = [['Target', /target|clout|flight|para|outdoor/i], ['Indoor', /indoor/i], ['Field', /field/i], ['3D', /3d|bowhunt|trail/i]];
 const iPast = x => (x.end_date || x.start_date) && daysTo(x.end_date || x.start_date) < 0;
-const iName = code => (ICTRY.countries.find(c => c.code === code) || {}).name || code;
+const iName = code => code === 'WORLD' ? 'World events' : (ICTRY.countries.find(c => c.code === code) || {}).name || code;
 const iIso = code => (ICTRY.countries.find(c => c.code === code) || {}).iso2;
-const SOON = [['CAN', 'Canada'], ['GBR', 'Great Britain'], ['NZL', 'New Zealand']];
+const SOON = [['CAN', 'Canada'], ['NZL', 'New Zealand']];
+/* Outside the USA we list 3D / bowhunter shoots and IFAA / continental majors only (owner, 9 Oct 2026).
+   'WORLD' = every country except the USA; single countries only appear once they have an upcoming shoot. */
+const iWorldCtrs = () => ICTRY.countries.filter(c => c.code !== 'USA' && c.upcoming > 0);
 function intlOptions(cur){
   const o = c => `<option value="${esc(c.code)}" ${cur === c.code ? 'selected' : ''}>${flag(c.iso2)} ${esc(c.name)}</option>`;
-  return ICTRY.countries.map(o).join('') + `<optgroup label="Coming soon">${SOON.map(([c, n]) => `<option value="${c}" disabled>${esc(n)} – coming soon</option>`).join('')}</optgroup>`;
+  const usa = ICTRY.countries.filter(c => c.code === 'USA'), wc = iWorldCtrs(), soon = SOON.filter(([c]) => !wc.some(x => x.code === c));
+  return usa.map(o).join('') + (ICTRY.countries.length > 1 ? `<option value="WORLD" ${cur === 'WORLD' ? 'selected' : ''}>🌐 World events (3D &amp; majors outside the USA)</option>` : '')
+    + (wc.length ? `<optgroup label="By country (3D &amp; majors)">${wc.map(o).join('')}</optgroup>` : '')
+    + (soon.length ? `<optgroup label="Coming soon">${soon.map(([c, n]) => `<option value="${c}" disabled>${esc(n)} – coming soon</option>`).join('')}</optgroup>` : '');
 }
 function intlMenu(){
   if (!ICTRY.countries.length) return '';
@@ -1424,7 +1430,9 @@ const US_LOGO = {'usa-archery': 'us-usa-archery', nfaa: 'us-nfaa', asa: 'us-asa'
 function iHost(x){
   if (/vegas shoot/i.test(x.name) && LOGO['us-vegas']) return {id: 'us-vegas', name: 'The Vegas Shoot'};
   if (x.org_id === 'world-archery') return {id: 'world-archery', name: 'World Archery'};
-  if (x.org_id === 'ifaa') return {id: 'us-ifaa', name: 'IFAA'};
+  if (x.org_id === 'ifaa') return {id: 'intl-ifaa', name: 'IFAA'};
+  if (x.org_id === 'wa-europe') return {id: 'intl-wae', name: 'World Archery Europe'};
+  if (x.org_id === 'wa-sui') return {id: 'intl-swiss-archery', name: 'Swiss Archery'};
   if (x.org_id === 'ioc-la28') return {id: 'la28', name: 'LA28'};
   if (x.us_org === 'usa-archery' && !/usa archery|\busat\b|joad|indoor nationals|target nationals|collegiate/i.test(x.name)) {
     const h = (x.location || '').split(',')[0].trim(); return {id: '', name: h && !/^\d/.test(h) ? h : x.name}; }
@@ -1474,25 +1482,30 @@ function iCard(x){
 }
 function vIntl(arg){
   let code = String(decodeURIComponent(arg || 'USA')).toUpperCase();
-  if (ICTRY.countries.length && !ICTRY.countries.some(c => c.code === code)) code = 'USA';
-  const usa = code === 'USA';
-  if (IF.code !== code) Object.assign(IF, {code, q: '', disc: '', org: '', st: '', past: false, limit: 60});
-  const nm = iName(code), head = pageHead(`${flag(iIso(code) || 'US')} ${esc(nm)}: find a shoot`, `Archery shoots in ${esc(nm)}${usa ? ' – USA Archery, NFAA, ASA, IBO, TAC, Redding, Lancaster and The Vegas Shoot' : ''}. Dates are local to each venue.`, 'us_field');
+  if (ICTRY.countries.length && code !== 'WORLD' && code !== 'USA' && !iWorldCtrs().some(c => c.code === code)) code = ICTRY.countries.some(c => c.code === code) ? 'WORLD' : 'USA';
+  const usa = code === 'USA', world = code === 'WORLD';
+  if (IF.code !== code) Object.assign(IF, {code, q: '', disc: '', org: '', st: '', ctry: '', past: false, limit: 60});
+  const nm = iName(code), head = pageHead(world ? '🌐 World events: find a shoot' : `${flag(iIso(code) || 'US')} ${esc(nm)}: find a shoot`,
+    world ? '3D and bowhunter shoots plus IFAA and continental championships outside the USA. Dates are local to each venue.'
+      : `Archery shoots in ${esc(nm)}${usa ? ' – USA Archery, NFAA, ASA, IBO, TAC, Redding, Lancaster and The Vegas Shoot' : ' – 3D shoots and majors'}. Dates are local to each venue.`, usa ? 'us_field' : '3d');
   setTitle(`Archery shoots in ${nm}`);
   if (!INTL) { loadIntl().then(() => { if ((location.hash || '').startsWith('#/intl')) { const y = scrollY; render(); scrollTo(0, y); } }).catch(() => {}); return `${head}<div class="wrap"><p class="note" id="icount">Loading shoots…</p></div>`; }
-  const all = INTL.events.filter(x => x.country_code === code);
+  const all = INTL.events.filter(x => world ? x.country_code !== 'USA' : x.country_code === code);
   let list = all.filter(x => IF.past || !iPast(x));
+  if (world && IF.ctry) list = list.filter(x => x.country_code === IF.ctry);
   if (usa && IF.org) list = list.filter(x => x.us_org === IF.org);
   if (usa && IF.st) list = list.filter(x => x.us_state === IF.st);
   if (IF.disc) { const re = IDISC.find(d => d[0] === IF.disc)[1]; list = list.filter(x => re.test((x.discipline || '') + ' ' + x.name)); }
   if (IF.q.trim()) list = list.filter(x => iMatch(x, IF.q));
   list.sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : (a.start_date || '9') > (b.start_date || '9') ? 1 : a.name < b.name ? -1 : 1);
   const sts = usa ? [...new Set(all.map(x => x.us_state).filter(Boolean))].sort((a, b) => US_ST[a] < US_ST[b] ? -1 : 1) : [];
-  const active = [IF.q && `search “${esc(IF.q)}”`, IF.org && US_ORGS.find(o => o[0] === IF.org)[1], IF.st && US_ST[IF.st], IF.disc].filter(Boolean);
+  const wctr = world ? [...new Set(all.filter(x => IF.past || !iPast(x)).map(x => x.country_code).filter(Boolean))].sort((a, b) => iName(a) < iName(b) ? -1 : 1) : [];
+  const active = [IF.q && `search “${esc(IF.q)}”`, IF.org && US_ORGS.find(o => o[0] === IF.org)[1], IF.st && US_ST[IF.st], world && IF.ctry && iName(IF.ctry), IF.disc].filter(Boolean);
   return `${head}<div class="wrap intl-page">
     <div class="intl-top"><label for="ictry">Country</label><select id="ictry">${intlOptions(code)}</select>
       <a class="note" href="#/browse">🇦🇺 Australian shoots are in Find shoots</a></div>
     <div class="browse"><div class="filters"><input type="search" id="iq" placeholder="${usa ? 'Search: vegas, nfaa, ibo, texas, CA…' : 'Search shoot, club, town…'}" value="${esc(IF.q)}" aria-label="Search shoots in ${esc(nm)}">
+      ${world ? `<label for="ictr2" class="sr">Country</label><select id="ictr2" aria-label="Country"><option value="">All countries</option>${wctr.map(c => `<option value="${c}" ${IF.ctry === c ? 'selected' : ''}>${flag(iIso(c))} ${esc(iName(c))}</option>`).join('')}</select>` : ''}
       ${usa ? `<label for="ist" class="sr">State</label><select id="ist" aria-label="US state"><option value="">All states</option>${sts.map(c => `<option value="${c}" ${IF.st === c ? 'selected' : ''}>${esc(US_ST[c])} (${c})</option>`).join('')}</select>` : ''}
       <label for="idisc" class="sr">Discipline</label><select id="idisc" aria-label="Discipline"><option value="">All disciplines</option>${IDISC.map(([d]) => `<option ${IF.disc === d ? 'selected' : ''}>${d}</option>`).join('')}</select>
       <label class="chk"><input type="checkbox" id="ipast" ${IF.past ? 'checked' : ''}> Include finished</label></div>
@@ -1500,17 +1513,18 @@ function vIntl(arg){
     <p class="note" id="icount">${list.length} shoot${list.length === 1 ? '' : 's'}${active.length ? ' · ' + active.join(' · ') + ' <button class="linkbtn" id="iclr">✕ Clear</button>' : ''}.</p></div>
     <div class="results">${list.slice(0, IF.limit).map(iCard).join('') || `<div class="empty">No shoots match${active.length ? ': ' + active.join(' · ') : ''}.</div>`}</div>
     ${list.length > IF.limit ? `<p class="center"><button class="btn alt" id="imore">Show more (${list.length - IF.limit})</button></p>` : ''}
-    <p class="note">Sources: USA Archery's 2027 calendar, the World Archery calendar, and each organiser's official site (NFAA, The Vegas Shoot, ASA, IBO, TAC, Straight Arrow Bowhunters, Lancaster Archery). Details not published yet are left blank, not guessed.</p></div>`;
+    <p class="note">${!usa ? "Sources: World Archery Europe's 2027 events, the IFAA tournament calendar and the World Archery calendar (3D events registered by each national federation). Outside the USA we list 3D shoots and championships only for now. Details not published yet are left blank, not guessed." : "Sources: USA Archery's 2027 calendar, the World Archery calendar, and each organiser's official site (NFAA, The Vegas Shoot, ASA, IBO, TAC, Straight Arrow Bowhunters, Lancaster Archery). Details not published yet are left blank, not guessed."}</p></div>`;
 }
 function bindIntl(){
   const rer = sel => { const y = scrollY; render(); scrollTo(0, y); const e = sel && $(sel); if (e) { e.focus({preventScroll: true}); if (e.type === 'search' || e.type === 'text') e.setSelectionRange(e.value.length, e.value.length); } };
   const c = $('#ictry'); if (c) c.onchange = () => { location.hash = '#/intl/' + c.value; };
   const q = $('#iq'); if (q) q.oninput = () => { IF.q = q.value; IF.limit = 60; clearTimeout(bindIntl.t); bindIntl.t = setTimeout(() => { rer('#iq'); gcSearch(IF.q); }, 250); };
   const st = $('#ist'); if (st) st.onchange = () => { IF.st = st.value; rer('#ist'); };
+  const c2 = $('#ictr2'); if (c2) c2.onchange = () => { IF.ctry = c2.value; IF.limit = 60; rer('#ictr2'); };
   const d = $('#idisc'); if (d) d.onchange = () => { IF.disc = d.value; rer('#idisc'); };
   const p = $('#ipast'); if (p) p.onchange = () => { IF.past = p.checked; rer('#ipast'); };
   document.querySelectorAll('[data-iorg]').forEach(b => b.onclick = () => { IF.org = b.dataset.iorg; IF.limit = 60; rer(); });
-  const cl = $('#iclr'); if (cl) cl.onclick = () => { Object.assign(IF, {q: '', disc: '', org: '', st: '', limit: 60}); rer('#iq'); };
+  const cl = $('#iclr'); if (cl) cl.onclick = () => { Object.assign(IF, {q: '', disc: '', org: '', st: '', ctry: '', limit: 60}); rer('#iq'); };
   const m = $('#imore'); if (m) m.onclick = () => { IF.limit += 60; rer(); };
 }
 function route(){ render(); window.scrollTo(0, 0); gcPage(); }

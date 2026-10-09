@@ -342,6 +342,36 @@
    "source_type": "organiser's own website",
    "kind": "org",
    "retrieved": "2026-10-09"
+  },
+  "intl-ifaa": {
+   "name": "IFAA",
+   "file": "img/clubs/intl-ifaa.webp",
+   "sm": "img/clubs/intl-ifaa-sm.webp",
+   "source_url": "https://www.ifaa-archery.org/wp-content/uploads/2021/12/New-IFAA-recoloured.png",
+   "source_page": "https://www.ifaa-archery.org/",
+   "source_type": "organisation's own website",
+   "kind": "org",
+   "retrieved": "2026-10-09"
+  },
+  "intl-wae": {
+   "name": "World Archery Europe",
+   "file": "img/clubs/intl-wae.webp",
+   "sm": "img/clubs/intl-wae-sm.webp",
+   "source_url": "https://www.archeryeurope.org/wp-content/uploads/2020/05/logo_world_archery_europe-330x96.png",
+   "source_page": "https://www.archeryeurope.org/",
+   "source_type": "organisation's own website",
+   "kind": "org",
+   "retrieved": "2026-10-09"
+  },
+  "intl-swiss-archery": {
+   "name": "Swiss Archery",
+   "file": "img/clubs/intl-swiss-archery.webp",
+   "sm": "img/clubs/intl-swiss-archery-sm.webp",
+   "source_url": "https://www.swissarchery.org/wp-content/uploads/2024/03/SwissArchery-Small-08.02.2022.webp",
+   "source_page": "https://www.swissarchery.org/",
+   "source_type": "organisation's own website",
+   "kind": "org",
+   "retrieved": "2026-10-09"
   }
  }
 }
