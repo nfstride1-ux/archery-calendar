@@ -1,8 +1,75 @@
 {
- "hero":   {"file":"img/hero-galston-gorge.jpg","sm":"img/hero-galston-gorge-sm.jpg","alt":"Archery range with target butts among gum trees","by":"43MZrinyiII","title":"Archery Range CRU Galston Gorge 2022","source":"Wikimedia Commons","url":"https://commons.wikimedia.org/wiki/File:Archery_Range_CRU_Galston_Gorge_2022.jpg","license":"CC BY-SA 4.0","license_url":"https://creativecommons.org/licenses/by-sa/4.0/"},
- "field":  {"file":"img/field-aus-nationals.jpg","sm":"img/field-aus-nationals-sm.jpg","alt":"Archers walking a bush field course at the Australian National Archery Championship","by":"LauraHale","title":"Australia National Archery Championship 012","source":"Wikimedia Commons","url":"https://commons.wikimedia.org/wiki/File:Australia_National_Archery_Championship_012.JPG","license":"CC BY-SA 3.0","license_url":"https://creativecommons.org/licenses/by-sa/3.0/"},
- "3d":     {"file":"img/3d-badger.jpg","sm":"img/3d-badger-sm.jpg","alt":"Foam 3D badger target with arrows on a forest course","by":"Byp","title":"3D target badger with arrows","source":"Wikimedia Commons","url":"https://commons.wikimedia.org/wiki/File:3D_target_badger_with_arrows.jpg","license":"CC BY 3.0","license_url":"https://creativecommons.org/licenses/by/3.0/"},
- "target": {"file":"img/target-archery-match.jpg","sm":"img/target-archery-match-sm.jpg","alt":"Archer at full draw on an outdoor target range","by":"Wiaskara","title":"Archery match","source":"Wikimedia Commons","url":"https://commons.wikimedia.org/wiki/File:Archery_match.jpg","license":"CC BY-SA 4.0","license_url":"https://creativecommons.org/licenses/by-sa/4.0/"},
- "indoor": {"file":"img/indoor-heartland.jpg","sm":"img/indoor-heartland-sm.jpg","alt":"Indoor archery range with rows of 3-spot target faces","by":"Justin Ladia (jrladia)","title":"Heartland Archery | Winnipeg","source":"Flickr","url":"https://www.flickr.com/photos/jrladia/7245526680/","license":"CC BY 2.0","license_url":"https://creativecommons.org/licenses/by/2.0/"},
- "nathe":  {"file":"img/nathe-target-face.jpg","sm":"img/nathe-target-face-sm.jpg","alt":"Arrows grouped in a target face on a WA range","by":"Nathe Stride","title":"Own photo (GoPro frame, 2016)","source":"Nathe's own photos","url":"","license":"© Nathe Stride – used with permission","license_url":""}
+ "hero": {
+  "file": "img/hero-paralympics-2024-aus.jpg",
+  "sm": "img/hero-paralympics-2024-aus-sm.jpg",
+  "title": "Para Archery at the 2024 Summer Paralympics - Mixed Team Compound Open Elimination France vs Australia - 10",
+  "by": "Daieuxetdailleurs",
+  "source": "Wikimedia Commons",
+  "url": "https://commons.wikimedia.org/wiki/File:Para_Archery_at_the_2024_Summer_Paralympics_-_Mixed_Team_Compound_Open_Elimination_France_vs_Australia_-_10.jpg",
+  "license": "CC BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0",
+  "date": "2024-09-02",
+  "year": 2024
+ },
+ "field": {
+  "file": "img/field-tuscany-2026.jpg",
+  "sm": "img/field-tuscany-2026-sm.jpg",
+  "title": "Female archer with longbow shoots at a rubber owl in a 3D competition in Tuscany Italy",
+  "by": "TizVan",
+  "source": "Wikimedia Commons",
+  "url": "https://commons.wikimedia.org/wiki/File:Female_archer_with_longbow_shoots_at_a_rubber_owl_in_a_3D_competition_in_Tuscany_Italy.jpg",
+  "license": "CC0",
+  "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+  "date": "2026-02-14",
+  "year": 2026
+ },
+ "3d": {
+  "file": "img/3d-longbow-2026.jpg",
+  "sm": "img/3d-longbow-2026-sm.jpg",
+  "title": "Cecilia Santacroce arciera italiana longbow World Archery 3D Championships",
+  "by": "TizVan",
+  "source": "Wikimedia Commons",
+  "url": "https://commons.wikimedia.org/wiki/File:Cecilia_Santacroce_arciera_italiana_longbow_World_Archery_3D_Championships.jpeg",
+  "license": "CC0",
+  "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+  "date": "2026-03-01",
+  "year": 2026
+ },
+ "target": {
+  "file": "img/target-dresden-2025.jpg",
+  "sm": "img/target-dresden-2025-sm.jpg",
+  "title": "2025-08-02 Die Finals 2025 in Dresden – Bogensport, Compound, Frauen by Sandro Halank–007",
+  "by": "Sandro Halank",
+  "source": "Wikimedia Commons",
+  "url": "https://commons.wikimedia.org/wiki/File:2025-08-02_Die_Finals_2025_in_Dresden_%E2%80%93_Bogensport,_Compound,_Frauen_by_Sandro_Halank%E2%80%93007.jpg",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "date": "2025-08-02",
+  "year": 2025
+ },
+ "indoor": {
+  "file": "img/indoor-heartland.jpg",
+  "sm": "img/indoor-heartland-sm.jpg",
+  "alt": "Indoor archery range with rows of 3-spot target faces",
+  "by": "Justin Ladia (jrladia)",
+  "title": "Heartland Archery | Winnipeg",
+  "source": "Flickr",
+  "url": "https://www.flickr.com/photos/jrladia/7245526680/",
+  "license": "CC BY 2.0",
+  "license_url": "https://creativecommons.org/licenses/by/2.0/",
+  "date": "2012-05-21",
+  "year": 2012
+ },
+ "nathe": {
+  "file": "img/nathe-target-face.jpg",
+  "sm": "img/nathe-target-face-sm.jpg",
+  "alt": "Arrows grouped in a target face on a WA range",
+  "by": "Nathe Stride",
+  "title": "Own photo (GoPro frame, 2016)",
+  "source": "Nathe's own photos",
+  "url": "",
+  "license": "© Nathe Stride – used with permission",
+  "license_url": "",
+  "year": 2016
+ }
 }

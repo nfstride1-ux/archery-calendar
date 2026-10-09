@@ -1,8 +1,7 @@
-const C='archcal-0bbb549c52';
+const C='archcal-82a31b2197';
 const CORE=['./','./index.html','./styles.css','./config.js','./app.js','./manifest.webmanifest','./data/events.json','./data/organisations.json','./icons/icon-192.png',
  './img/credits.json','./fonts/Inter-var.woff2','./fonts/BarlowCondensed-SemiBold.woff2','./fonts/BarlowCondensed-Bold.woff2','./fonts/BarlowCondensed-ExtraBold.woff2',
- './img/hero-galston-gorge.jpg','./img/hero-galston-gorge-sm.jpg','./img/field-aus-nationals.jpg','./img/field-aus-nationals-sm.jpg','./img/3d-badger.jpg','./img/3d-badger-sm.jpg',
- './img/target-archery-match.jpg','./img/target-archery-match-sm.jpg','./img/indoor-heartland.jpg','./img/indoor-heartland-sm.jpg','./img/nathe-target-face.jpg','./img/nathe-target-face-sm.jpg'];
+ './img/hero-paralympics-2024-aus.jpg','./img/hero-paralympics-2024-aus-sm.jpg','./img/field-tuscany-2026.jpg','./img/field-tuscany-2026-sm.jpg','./img/3d-longbow-2026.jpg','./img/3d-longbow-2026-sm.jpg','./img/target-dresden-2025.jpg','./img/target-dresden-2025-sm.jpg','./img/indoor-heartland.jpg','./img/indoor-heartland-sm.jpg','./img/nathe-target-face.jpg','./img/nathe-target-face-sm.jpg'];
 // All paths are relative to the service worker, so it works at / and under a project subpath like /archery-calendar/.
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(CORE)));self.skipWaiting();});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))));self.clients.claim();});
