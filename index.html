@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Archery Calendar – every archery shoot in one calendar</title>
+<meta name="theme-color" content="#0d1b2a">
+<meta name="description" content="Find archery shoots across Australia – Field, 3D, Target and Indoor. Save them, get reminders and track your entries.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="preload" href="fonts/Inter-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/BarlowCondensed-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#view">Skip to content</a>
+<header class="site-head">
+  <div class="wrap head-row">
+    <a class="logo" href="#/home" aria-label="Archery Calendar home"><span class="logo-mark" aria-hidden="true"></span><span>Archery<b>Calendar</b></span></a>
+    <nav class="nav" aria-label="Main">
+      <a href="#/home" data-tab="home">Home</a>
+      <a href="#/browse" data-tab="browse">Find shoots</a>
+      <a href="#/calendar" data-tab="calendar">My shoots</a>
+      <a href="#/entries" data-tab="entries">Entries</a>
+      <a href="#/settings" data-tab="settings">Settings</a>
+      <a href="#/advertise" data-tab="advertise" class="nav-ad">Advertise</a>
+    </nav>
+    <span class="today" id="todayLbl"></span>
+  </div>
+</header>
+<main id="view" tabindex="-1"><p class="loading">Loading shoots…</p></main>
+<footer class="site-foot">
+  <div class="wrap foot-grid">
+    <div><a class="logo" href="#/home"><span class="logo-mark" aria-hidden="true"></span><span>Archery<b>Calendar</b></span></a>
+      <p>Every archery shoot – Field, 3D, Target and Indoor – in one calendar. Australia-wide. Built in Perth, WA by an archer, for archers.</p></div>
+    <div><h3>Explore</h3><a href="#/browse">Find shoots</a><a href="#/calendar">My shoots</a><a href="#/entries">Entries &amp; payments</a><a href="#/settings">Settings &amp; reminders</a></div>
+    <div><h3>Business</h3><a href="#/advertise">Advertise with us</a><a href="mailto:nfshold@gmail.com?subject=Our%20shoot%20%2F%20flyer%20for%20Archery%20Register">Clubs: send us your flyer</a><a href="#/credits">Photo &amp; font credits</a><a href="#/privacy">Privacy &amp; disclaimer</a><a href="mailto:nfshold@gmail.com">nfshold@gmail.com</a><span class="foot-co">NFS Strategic Holdings</span></div>
+  </div>
+  <div class="wrap foot-small"><b>Dates come from organisers' public calendars; always check with the organiser.</b> Your saved shoots and entries stay in your browser on this device (<a href="#/privacy">privacy</a>). Photos: 43MZrinyiII, LauraHale, Wiaskara (CC BY-SA), Byp, Justin Ladia (CC BY), Nathe Stride – <a href="#/credits">full credits</a>.</div>
+</footer>
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
