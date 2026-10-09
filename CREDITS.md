@@ -11,6 +11,7 @@ Photos were replaced on 9 Oct 2026 with the newest suitable free-licensed action
 | aba-field-owl-2026.jpg | ABA shoots (field, and any ABA shoot without a 3D theme) | 2026-02-14 | TizVan | [Wikimedia Commons – Female archer with longbow shoots at a rubber owl in a 3D competition in Tuscany Italy](https://commons.wikimedia.org/wiki/File:Female_archer_with_longbow_shoots_at_a_rubber_owl_in_a_3D_competition_in_Tuscany_Italy.jpg) | [CC0](https://creativecommons.org/publicdomain/zero/1.0/) |
 | target-outdoor-nathe.jpg | Target shoots | – | Supplied by Nathaniel Stride | Compound archer on an outdoor target range (Nathe's own photo) | – |
 | indoor-hall.jpg | Indoor shoots | 2026 | Archery Australia and club social media (supplied) | Indoor range in a sports hall | – |
+| youth-aa-juniors-2026.jpg (+ .webp) | Youth training category (banner + home tile); never on ABA pages | 2026 | Supplied by Nathaniel Stride | Junior archers group photo (AA/AWA youth) | – |
 | nathe-target-face.jpg | Advertise page | 2016 | Nathe Stride | Own photo (GoPro frame, 2016) | © Nathe Stride – used with permission |
 
 Year notes: Field (Yankton 2026), Indoor (2026) and 3D (1 Mar 2026) are 2026 photos. Field and Indoor were supplied by Nathe (Archery Australia and club social media); no on-photo credit, listed here and on the Credits page. The hero is Australia's para compound team at Paris 2024 and the target (outdoor) photo is Nathe's own, supplied by Nathaniel Stride (no on-photo credit).

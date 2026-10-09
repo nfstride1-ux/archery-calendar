@@ -456,3 +456,25 @@ details.panel summary{cursor:pointer;padding:4px 0}
 .chip-logo img{height:18px;width:auto;vertical-align:-3px;margin-right:6px}
 .cal-head h2.with-logo{display:flex;align-items:center;gap:12px}.head-logo img{height:56px;width:auto;display:block}
 @media(max-width:600px){.head-logo img{height:44px}}
+.linkbtn.club-name{font-weight:700;text-decoration:underline;padding:0;background:none;border:0;color:inherit;cursor:pointer;font-size:inherit}
+.club-pop-wrap{position:fixed;inset:0;background:rgba(10,16,30,.45);display:flex;align-items:flex-end;justify-content:center;z-index:200}
+@media(min-width:700px){.club-pop-wrap{align-items:center}}
+.club-pop{background:#fff;color:var(--night);border-radius:16px 16px 0 0;padding:20px;width:min(460px,100%);position:relative;max-height:85vh;overflow:auto}
+@media(min-width:700px){.club-pop{border-radius:16px}}
+.club-pop h2{margin:0 40px 4px 0}.club-pop .cp-x{position:absolute;right:12px;top:12px;width:40px;height:40px;border-radius:50%;border:2px solid var(--night);background:#fff;font-size:1.1em;cursor:pointer}
+.club-pop .club-acts{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+/* 'My clubs' dropdown on the Club shoots filter */
+.mc{position:relative;margin:10px 0 0}
+.mc-btn{border:2px solid var(--night);background:#fff;color:var(--night);border-radius:999px;padding:8px 16px;font-weight:800;min-height:44px;cursor:pointer}
+.mc-btn[aria-expanded="true"]{background:var(--night);color:#fff}
+.mc-panel{position:absolute;z-index:60;top:calc(100% + 6px);left:0;width:min(420px,calc(100vw - 32px));background:#fff;color:var(--night);border:2px solid var(--night);border-radius:14px;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+.mc-opts{border:0;padding:0;margin:0 0 8px;display:flex;flex-direction:column;gap:6px}.mc-opts legend{font-weight:800;margin-bottom:4px}
+.mc-opts label{display:flex;align-items:center;gap:8px;font-weight:600}.mc-opts input{width:20px;height:20px}
+.mc-h{display:block;font-size:1em;font-weight:800;margin:10px 0 6px}
+.mc-list{list-style:none;margin:6px 0;padding:0;max-height:240px;overflow:auto}
+.mc-list li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #e5e7eb}
+.mc-list small{color:#555;font-weight:400}
+/* Youth training photo (supplied group photo): keep the whole frame visible; on phones it sits under the heading */
+.split-img picture{display:contents}
+.cat-link .cat-img{display:block;margin:-14px -16px 8px;aspect-ratio:16/9;background-size:cover;border-radius:calc(var(--r) - 2px) calc(var(--r) - 2px) 0 0}
+@media (max-width:720px){.phead.split.keep .split-img{display:block;margin-top:12px}}

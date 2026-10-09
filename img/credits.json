@@ -121,5 +121,23 @@
   "date": "2026-03-01",
   "year": 2026,
   "pos": "center 40%"
+ },
+ "youth": {
+  "file": "img/youth-aa-juniors-2026.jpg",
+  "sm": "img/youth-aa-juniors-2026-sm.jpg",
+  "webp": "img/youth-aa-juniors-2026.webp",
+  "sm_webp": "img/youth-aa-juniors-2026-sm.webp",
+  "title": "Junior archers group photo (youth development)",
+  "by": "Supplied by Nathaniel Stride",
+  "source": null,
+  "url": null,
+  "license": null,
+  "license_url": null,
+  "date": null,
+  "year": null,
+  "pos": "center 40%",
+  "layout": "split",
+  "alt": "A group of junior archers in club and state shirts on an archery field",
+  "used_for": "Youth training (youth development) category – AA/AWA youth; never on ABA pages"
  }
 }
