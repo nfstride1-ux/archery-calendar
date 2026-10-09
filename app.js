@@ -91,7 +91,7 @@ function toast(t){ const el = $('#toast'); el.textContent = t; el.classList.add(
 
 async function boot(){
   $('#todayLbl').textContent = today().toLocaleDateString('en-AU', {weekday:'short', day:'numeric', month:'short'});
-  const [e, o, ph, cl] = await Promise.all([fetch('data/events.json').then(r => r.json()), fetch('data/organisations.json').then(r => r.json()), fetch('img/credits.json').then(r => r.json()).catch(() => ({})), fetch('data/clubs.json').then(r => r.json()).catch(() => ({clubs: []})), fetch('data/club_logos.json').then(r => r.json()).then(j => { LOGO = j.logos || {}; }).catch(() => {})]);
+  const [e, o, ph, cl] = await Promise.all([fetch('data/events.json').then(r => r.json()), fetch('data/organisations.json').then(r => r.json()), fetch('img/credits.json', {cache: 'no-cache'}).then(r => r.json()).catch(() => ({})), fetch('data/clubs.json').then(r => r.json()).catch(() => ({clubs: []})), fetch('data/club_logos.json').then(r => r.json()).then(j => { LOGO = j.logos || {}; }).catch(() => {})]);
   CLUBS = cl.clubs || []; CLUBS.forEach(c => CLUB[c.id] = c);
   PH = ph; SCOPE = e.scope || 'WORLD';
   migrateSettings();
@@ -273,7 +273,7 @@ function heroOpen(cls, p){
   return p.layout === 'split' ? `<section class="${cls} split${p.keep ? ' keep' : ''}"><div class="wrap split-row"><div class="split-txt">`
     : `<section class="${cls}" style="--img:url('${esc(p.file)}');--pos:${esc(p.pos || 'center 35%')}"><div class="wrap">`;
 }
-const heroClose = p => p.layout === 'split' ? `</div><figure class="split-img${p.shape === 'portrait' ? ' tall' : ''}">${p.webp ? `<picture><source type="image/webp" srcset="${esc(p.webp)}">` : ''}<img src="${esc(p.file)}" alt="${esc(p.alt || p.title || '')}" style="object-position:${esc(p.shape === 'portrait' ? 'center' : (p.pos || 'center'))}" width="${p.shape === 'portrait' ? 960 : 1600}" height="${p.shape === 'portrait' ? 1200 : 900}">${p.webp ? '</picture>' : ''}</figure></div></section>` : `</div></section>`;
+const heroClose = p => p.layout === 'split' ? `</div><figure class="split-img${p.shape === 'portrait' ? ' tall' : ''}">${p.webp ? `<picture><source type="image/webp" srcset="${esc(p.webp)}">` : ''}<img src="${esc(p.file)}" onerror="this.closest('figure').remove()" alt="${esc(p.alt || p.title || '')}" style="object-position:${esc(p.shape === 'portrait' ? 'center' : (p.pos || 'center'))}" width="${p.shape === 'portrait' ? 960 : 1600}" height="${p.shape === 'portrait' ? 1200 : 900}">${p.webp ? '</picture>' : ''}</figure></div></section>` : `</div></section>`;
 function pageHead(title, sub, t = 'mixed'){
   const p = (t === 'youth' || t === 'come_try') ? Object.assign({keep: true}, PH[t] || photo('mixed')) : photo(t);
   return `${heroOpen('phead', p)}<h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}${heroClose(p)}`;
