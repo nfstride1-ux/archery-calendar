@@ -9,19 +9,23 @@
   "license": "CC BY 4.0",
   "license_url": "https://creativecommons.org/licenses/by/4.0",
   "date": "2024-09-02",
-  "year": 2024
+  "year": 2024,
+  "pos": "center 35%"
  },
  "field": {
-  "file": "img/field-tuscany-2026.jpg",
-  "sm": "img/field-tuscany-2026-sm.jpg",
-  "title": "Female archer with longbow shoots at a rubber owl in a 3D competition in Tuscany Italy",
-  "by": "TizVan",
-  "source": "Wikimedia Commons",
-  "url": "https://commons.wikimedia.org/wiki/File:Female_archer_with_longbow_shoots_at_a_rubber_owl_in_a_3D_competition_in_Tuscany_Italy.jpg",
-  "license": "CC0",
-  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
-  "date": "2026-02-14",
-  "year": 2026
+  "file": "img/field-aus-team-yankton-2026.jpg",
+  "sm": "img/field-aus-team-yankton-2026-sm.jpg",
+  "title": "Australian team at the 2026 World Archery Field Championships, Yankton, South Dakota (USA)",
+  "alt": "The Australian archery team in green and gold shirts, group photo in front of a Yankton banner",
+  "by": "Archery Australia / club social media",
+  "source": "Supplied by Nathe Stride (from Archery Australia / club social media)",
+  "url": "",
+  "license": "Used with permission requested",
+  "license_url": "",
+  "date": "2026",
+  "year": 2026,
+  "layout": "split",
+  "pos": "center 50%"
  },
  "3d": {
   "file": "img/3d-longbow-2026.jpg",
@@ -33,7 +37,8 @@
   "license": "CC0",
   "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
   "date": "2026-03-01",
-  "year": 2026
+  "year": 2026,
+  "pos": "center 40%"
  },
  "target": {
   "file": "img/target-dresden-2025.jpg",
@@ -45,20 +50,22 @@
   "license": "CC BY-SA 4.0",
   "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
   "date": "2025-08-02",
-  "year": 2025
+  "year": 2025,
+  "pos": "center 30%"
  },
  "indoor": {
-  "file": "img/indoor-heartland.jpg",
-  "sm": "img/indoor-heartland-sm.jpg",
-  "alt": "Indoor archery range with rows of 3-spot target faces",
-  "by": "Justin Ladia (jrladia)",
-  "title": "Heartland Archery | Winnipeg",
-  "source": "Flickr",
-  "url": "https://www.flickr.com/photos/jrladia/7245526680/",
-  "license": "CC BY 2.0",
-  "license_url": "https://creativecommons.org/licenses/by/2.0/",
-  "date": "2012-05-21",
-  "year": 2012
+  "file": "img/indoor-hall.jpg",
+  "sm": "img/indoor-hall-sm.jpg",
+  "title": "Indoor archery range: a sports hall with a line of target bosses",
+  "alt": "Indoor sports hall with a row of target bosses and 3-spot faces along the far wall",
+  "by": "Club social media",
+  "source": "Supplied by Nathe Stride (from Archery Australia / club social media)",
+  "url": "",
+  "license": "Used with permission requested",
+  "license_url": "",
+  "date": "2026",
+  "year": 2026,
+  "pos": "center 39%"
  },
  "nathe": {
   "file": "img/nathe-target-face.jpg",

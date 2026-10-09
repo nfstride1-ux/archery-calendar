@@ -3,4 +3,5 @@ window.SITE = {flyers: 'hosted', ads: false, contact: 'nfshold@gmail.com', freeU
   formEndpoint: 'https://formsubmit.co/nfshold@gmail.com'};  /* Submit-a-shoot form -> emails nfshold@gmail.com (FormSubmit) */
 window.SUPABASE_URL = 'https://sllsqpfqwckwtljzjxli.supabase.co';   // project archery-calendar, Sydney (ap-southeast-2)
 window.SUPABASE_ANON_KEY = 'sb_publishable_t2g3KYdoGeTtcXTO-URK9g_Nf69SEFq';   // PUBLIC publishable key (safe in the browser; RLS protects data)
+window.SUPABASE_ENABLED = false; // master switch: true only after Auth > URL Configuration is saved (Site URL + redirect URLs)
 window.SUPABASE_GOOGLE = false;  // true once Google sign-in is set up in Supabase (docs/SUPABASE_SETUP.md, step G)

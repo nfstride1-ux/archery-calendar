@@ -169,7 +169,7 @@ function badges(x, onCard){
 function evCard(x){
   const on = !!S.saved[x.id], t = theme(x), p = photo(t);
   return `<article class="ev th-${t}" role="link" tabindex="0" data-open="${esc(x.id)}" aria-label="${esc(x.name)}">
-    <div class="ev-img" style="background-image:url('${esc(p.sm)}')">${dateBox(x)}</div>
+    <div class="ev-img" style="background-image:url('${esc(p.sm)}');background-position:${esc(p.pos || 'center')}">${dateBox(x)}</div>
     <div class="body"><div class="tags">${catTag(x)}${t !== 'mixed' && catOf(x) === 'competition' ? tagHtml(t) : ''}${x.flyer_local ? `<span class="tag fl">📄 ${x.flyer_is_current ? x.flyer_year + ' flyer' : 'Last year’s flyer'}</span>` : ''}</div>
       <h3 class="name">${esc(x.name)}</h3>
       <div class="meta">${esc([x.location, x.country_code && x.country_code !== 'AUS' ? x.country : x.state].filter(Boolean).join(' · '))}</div>
@@ -204,9 +204,16 @@ function toggleSave(id){
   save(); const y = scrollY; render(); scrollTo(0, y);
 }
 function setTitle(t){ document.title = t === 'Archery Calendar' ? 'Archery Calendar – every archery shoot in one calendar' : t + ' · Archery Calendar'; }
+/* Banners: wide photos fill the banner (with a per-photo focal point, credits.json "pos"); group photos ("layout":"split")
+   sit beside the text at their full 16:9 frame so nobody's face is cut off. */
+function heroOpen(cls, p){
+  return p.layout === 'split' ? `<section class="${cls} split"><div class="wrap split-row"><div class="split-txt">`
+    : `<section class="${cls}" style="--img:url('${esc(p.file)}');--pos:${esc(p.pos || 'center 35%')}"><div class="wrap">`;
+}
+const heroClose = p => p.layout === 'split' ? `</div><figure class="split-img"><img src="${esc(p.file)}" alt="${esc(p.alt || p.title || '')}" style="object-position:${esc(p.pos || 'center')}" width="1600" height="900"></figure></div></section>` : `</div></section>`;
 function pageHead(title, sub, t = 'mixed'){
   const p = photo(t);
-  return `<section class="phead" style="--img:url('${esc(p.file)}')"><div class="wrap"><h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}</div>${credit(t)}</section>`;
+  return `${heroOpen('phead', p)}<h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}${heroClose(p)}`;
 }
 function clubCta(compact){
   const m = `mailto:${SITE.contact}?subject=${encodeURIComponent('Our shoot / flyer for Archery Calendar')}`;
@@ -309,7 +316,7 @@ function vHome(){
     <div class="stats four"><a class="stat" href="#/calendar"><b>${up.length}</b><span>★ My shoots</span></a><a class="stat" href="#/entries"><b>${nEnt}</b><span>✓ Entered</span></a><a class="stat" href="#/entries"><b>${nTodo}</b><span>☐ To enter</span></a><a class="stat" href="#/entries"><b>${nPay}</b><span>$ To pay</span></a></div>
     ${adSlot('banner')}
     <h2 class="sec-h">Pick your discipline</h2>
-    <div class="types">${['field','3d','target','indoor'].map(t => `<a class="type th-${t}" href="#/browse" data-th="${t}" style="--img:url('${esc(photo(t).sm)}')"><span class="type-name">${THEMES[t][0]} ${THEMES[t][1]}</span><span class="type-sub">${{field:'Bush courses, marked & unmarked', '3d':'Foam animals in the bush', target:'Outdoor ranges, 18–90 m', indoor:'18 m halls, 3-spot & Vegas'}[t]}</span></a>`).join('')}</div>
+    <div class="types">${['field','3d','target','indoor'].map(t => `<a class="type th-${t}" href="#/browse" data-th="${t}" style="--img:url('${esc(photo(t).sm)}');--pos:${esc(photo(t).pos || 'center')}"><span class="type-name">${THEMES[t][0]} ${THEMES[t][1]}</span><span class="type-sub">${{field:'Bush courses, marked & unmarked', '3d':'Foam animals in the bush', target:'Outdoor ranges, 18–90 m', indoor:'18 m halls, 3-spot & Vegas'}[t]}</span></a>`).join('')}</div>
     <div class="cats-row" aria-label="More than competitions">${['coaching', 'youth', 'come_try'].map(c => `<a class="cat-link cat-${c}" href="#/browse" data-cat="${c}"><span class="ci" aria-hidden="true">${CATS[c][0]}</span><b>${CATS[c][2]}</b><span>${EV.filter(x => catOf(x) === c && visible(x) && !isPast(x)).length} coming up</span></a>`).join('')}</div>
     <div class="two">
       <section><h2 class="sec-h">Reminders</h2>
@@ -471,11 +478,11 @@ function vShoot(id){
     : `<div class="warn">⚠ No online entry link found yet. ${x.org_id === 'aba' ? 'ABA shoots are entered through the host club.' : 'Check the source page below.'}</div>`;
   const closed = !!x.entry_close_date && daysTo(x.entry_close_date) < 0 && !isPast(x) && !x.info_only;
   const closeTxt = x.entry_close_date ? pd(x.entry_close_date).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'long',year:'numeric'}) + (x.entry_close_time ? ', ' + x.entry_close_time : '') : '';
-  return `<section class="dhero" style="--img:url('${esc(p.file)}')"><div class="wrap">
+  return `${heroOpen('dhero', p)}
     <a class="crumb" href="#/browse">← All shoots</a>
     <div class="tags">${catTag(x)}${catOf(x) === 'competition' ? tagHtml(t) : ''}${x.level ? `<span class="tag lvl">${esc(x.level)}</span>` : ''}</div>
     <h1>${esc(x.name)}</h1><p class="sub">${esc(range(x))}${x.location ? ' · ' + esc(x.location) : ''}</p>${badges(x)}
-  </div>${credit(t)}</section>
+  ${heroClose(p)}
   <div class="wrap detail">
    <div class="main">
     ${flyerCard(x)}
@@ -654,6 +661,7 @@ function vPrivacy(){
     <li>No analytics, advertising or tracking cookies. Reminders are made on your device.</li>
     <li>"Register / enter" and email links go straight to the organiser. Anything you send them is between you and the organiser.</li>
     <li><b>Submit a shoot form:</b> what a club sends us (contact name, email, phone, shoot details and flyer) is emailed to us at ${esc(SITE.contact)} via the form service FormSubmit (formsubmit.co). We use it only to check and list the shoot and, if you ask, to set up your entry form. Contact details aren't published unless they're on your flyer. Ask us any time to correct or delete them.</li>
+    <li><b>Fans photos:</b> if you send us a photo, your name, email, the photo and its details are emailed to us via FormSubmit. We publish only approved photos with the caption and your name as credit – never your email. In a photo and want it removed? Email ${esc(SITE.contact)}.</li>
     <li>The site is hosted on GitHub Pages, which keeps standard server logs (e.g. IP address) – see GitHub's privacy statement.</li></ul>
     <p class="note">Questions: <a href="mailto:${SITE.contact}">${SITE.contact}</a> (NFS Strategic Holdings).</p></section>
     ${AUTH.on ? `<section class="panel" id="privAcct"><h2 class="sec">If you create an account (optional)</h2><ul class="ticks">
@@ -666,7 +674,7 @@ function vPrivacy(){
 }
 function vCredits(){
   setTitle('Credits');
-  return `${pageHead('Photo &amp; font credits', 'Thanks to the photographers who share their work under open licences.', 'mixed')}<div class="wrap narrow"><section class="panel"><ul class="credits">${Object.entries(PH).map(([k, p]) => `<li><img src="${esc(p.sm)}" alt="" loading="lazy"><div><b>${esc(p.title)}</b><br>${esc(p.by)} · ${esc(p.source)}${p.url ? ` · <a href="${esc(p.url)}" target="_blank" rel="noopener">source</a>` : ''}<br>${p.license_url ? `<a href="${esc(p.license_url)}" target="_blank" rel="noopener">${esc(p.license)}</a>` : esc(p.license)}. Resized for this site.</div></li>`).join('')}</ul>
+  return `${pageHead('Photo &amp; font credits', 'Thanks to the photographers who share their work under open licences.', 'mixed')}<div class="wrap narrow"><section class="panel"><ul class="credits">${Object.entries(PH).map(([k, p]) => `<li><img src="${esc(p.sm)}" alt="" loading="lazy"><div><b>${esc(p.title)}</b><br>${esc(p.by)} · ${esc(p.source)}${p.url ? ` · <a href="${esc(p.url)}" target="_blank" rel="noopener">source</a>` : ''}<br>${p.license_url ? `<a href="${esc(p.license_url)}" target="_blank" rel="noopener">${esc(p.license)}</a>` : esc(p.license)}. ${p.license_url ? 'Resized for this site.' : 'Cropped and resized for this site.'}</div></li>`).join('')}</ul>
   <p class="note">Fonts: Inter and Barlow Condensed, SIL Open Font License 1.1, self-hosted. Event flyers belong to their organisers${SITE.flyers === 'local' ? ' and are shown for private testing only' : ' – we link to them at the source and do not host copies'}.</p></section></div>`;
 }
 
@@ -751,11 +759,13 @@ function sbKeyOk(k){
   try { const p = JSON.parse(atob(k.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); return p.role === 'anon'; } catch { return false; }
 }
 const AUTH = {configured: false, on: /^https:\/\/[^\s/]+\/?$/.test(SB_URL) && sbKeyOk(SB_KEY), client: null, user: null, sync: null, ready: false, msg: '', sent: '', chain: Promise.resolve()};
-AUTH.configured = AUTH.on;
+AUTH.configured = AUTH.on; if (window.SUPABASE_ENABLED !== true) AUTH.on = false;   // master switch in config.js
 if (SB_URL && !AUTH.on) console.warn('Archery Calendar: Supabase config ignored – needs SUPABASE_URL (https://…supabase.co) and the PUBLIC anon/publishable key (never the service_role/secret key).');
 const loadScript = src => new Promise((ok, no) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => no(new Error('load ' + src)); document.head.appendChild(s); });
 const redirectUrl = () => location.origin + location.pathname;
 function softRender(){ const a = document.activeElement; if (a && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && a.closest('#view')) return; const y = scrollY; render(); scrollTo(0, y); }
+// pages whose content depends on sign-in; other pages aren't re-drawn when sign-in finishes loading (no jumps mid-click)
+function authRender(){ if (['account', 'privacy', 'settings'].includes(document.body.dataset.page)) softRender(); }
 function updateNav(){
   const a = $('#navAcct'); if (!a) return; a.hidden = !(AUTH.on && AUTH.ready); if (a.hidden) return;
   const fs = $('#footStore'); if (fs) fs.textContent = 'Your saved shoots and entries are kept in your browser on this device, and in your account if you sign in';
@@ -780,27 +790,27 @@ async function sbReady(){
 }
 async function initAuth(){
   if (AUTH.on && !(await sbReady())) { AUTH.on = false; AUTH.pending = true; console.info('Archery Calendar: accounts configured but the database tables are not set up yet (run supabase/schema.sql) – sign-in hidden.'); }
-  updateNav(); if (!AUTH.on) { if (document.body.dataset.page === 'account' || document.body.dataset.page === 'privacy') softRender(); return; }
+  updateNav(); if (!AUTH.on) { authRender(); return; }
   try { if (!window.supabase) await loadScript('vendor/supabase-js-2.117.3.js'); }
-  catch { AUTH.msg = 'Sign-in couldn’t load. Are you offline? Your shoots are still saved on this device.'; AUTH.ready = true; softRender(); return; }
+  catch { AUTH.msg = 'Sign-in couldn’t load. Are you offline? Your shoots are still saved on this device.'; AUTH.ready = true; authRender(); return; }
   const qp = new URLSearchParams(location.search);
   if (qp.get('error_description') || qp.get('error')) AUTH.msg = 'Sign-in didn’t work: ' + (qp.get('error_description') || qp.get('error')) + '. Links expire after an hour and only work once – ask for a new one.';
   AUTH.client = window.supabase.createClient(SB_URL, SB_KEY, {auth: {flowType: 'pkce', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: 'archcal.auth'}});
   AUTH.sync = ArchSync.create({client: AUTH.client, storage: localStorage, getS: () => S, saveS: () => { save(); softRender(); },
-    isOnline: () => navigator.onLine, onChange: () => { updateNav(); if (document.body.dataset.page === 'account') softRender(); }});
+    isOnline: () => navigator.onLine, onChange: () => { updateNav(); if (document.body.dataset.page === 'account') authRender(); }});
   const cameBack = qp.has('code') || qp.has('error');
   AUTH.client.auth.onAuthStateChange((ev, sess) => { const u = sess ? sess.user : null; AUTH.chain = AUTH.chain.then(() => onUser(u, ev)).catch(e => { AUTH.msg = String(e.message || e); }); });
   await AUTH.client.auth.getSession().catch(() => {});
   await AUTH.chain;
   if (cameBack) { history.replaceState(null, '', location.pathname + (AUTH.user ? '#/account' : (location.hash || '#/account'))); }
-  AUTH.ready = true; updateNav(); softRender();
+  AUTH.ready = true; updateNav(); authRender();
   addEventListener('online', () => AUTH.sync.flush());
   document.addEventListener('visibilitychange', () => { if (!document.hidden) AUTH.sync.flush(); });
   setInterval(() => AUTH.sync.flush(), 5 * 60 * 1000);
 }
 async function onUser(u){
   const prev = AUTH.user && AUTH.user.id; AUTH.user = u;
-  if (!u) { AUTH.sync.setUser(null); updateNav(); softRender(); return; }
+  if (!u) { AUTH.sync.setUser(null); updateNav(); authRender(); return; }
   AUTH.sent = '';
   if (prev === u.id && AUTH.sync.linked()) return;
   AUTH.sync.setUser(u);
@@ -808,7 +818,7 @@ async function onUser(u){
     if (AUTH.sync.needsMergeChoice(u)) { AUTH.ask = true; if (!location.hash.startsWith('#/account')) location.hash = '#/account'; }
     else await AUTH.sync.link(u, 'account');
   }
-  updateNav(); softRender();
+  updateNav(); authRender();
 }
 const counts = () => ({saved: Object.keys(S.saved).length, ent: Object.keys(S.entries).length});
 function vAccount(){
@@ -889,6 +899,91 @@ function bindAccount(){
     AUTH.msg = ''; toast('Your account and its data were deleted'); softRenderForce(); };
 }
 function softRenderForce(){ const y = scrollY; render(); scrollTo(0, y); }
+/* ---------- Fans: community photo wall ----------
+   Photos come from data/fans.json (added by hand after review). "Send us your photo" posts to FormSubmit like the shoot form;
+   big or non-JPEG photos are shrunk in the browser first (max 2400 px JPEG) so they fit the email. */
+let FANS = null;
+const FAN_MAX_MB = 8;
+function loadFans(){ return FANS ? Promise.resolve(FANS) : fetch('data/fans.json').then(r => r.json()).then(j => (FANS = j.photos || [])).catch(() => (FANS = [])); }
+function vFans(){
+  setTitle('Fans');
+  const head = pageHead('Fans', 'Photos from the archery community: podiums, club days and shoots. Send us yours.', 'field');
+  if (!FANS) { loadFans().then(() => { if (document.body.dataset.page === 'fans') softRenderForce(); }); return `${head}<div class="wrap"><p class="loading">Loading photos…</p></div>`; }
+  const sent = /(?:^|[?&])fsent=1/.test(location.search);
+  if (sent) history.replaceState(null, '', location.pathname + '#/fans');
+  const fdate = d => !d ? '' : /^\d{4}-\d{2}-\d{2}$/.test(d) ? pd(d).toLocaleDateString('en-AU', {day: 'numeric', month: 'short', year: 'numeric'}) : d;
+  const wall = FANS.map((f, i) => `<figure class="fan"><button type="button" class="fan-img" data-zoom="${i}" aria-label="Enlarge: ${esc(f.caption)}"><img src="${esc(f.sm)}" alt="${esc(f.alt || f.caption)}" loading="lazy" width="${f.w ? 480 : ''}" height="${f.w ? Math.round(480 * f.h / f.w) : ''}"><span class="zoom" aria-hidden="true">⤢ Enlarge</span></button>
+    <figcaption><b>${esc(f.caption)}</b><span class="fan-meta">📷 ${esc(f.credit)}${f.event ? ' · ' + esc(f.event) : ''}${f.date ? ' · ' + esc(fdate(f.date)) : ''}</span></figcaption></figure>`).join('');
+  const fld = (id, lab, inp, hint = '', req = true) => `<div class="fld" data-f="${id}"><label for="${id}">${lab}${req ? ' <span class="req" aria-hidden="true">*</span>' : ' <span class="opt">(optional)</span>'}</label>${inp}${hint ? `<p class="hint">${hint}</p>` : ''}<p class="err" id="${id}_e" role="alert"></p></div>`;
+  return `${head}<div class="wrap fans">
+  ${sent ? `<section class="panel thanks" id="fanThanks" tabindex="-1"><span class="thanks-mark" aria-hidden="true">✓</span><h2 class="sec">Thanks, we’ve got your photo</h2><p>We check every photo before it goes up, usually within a few days. We’ll email you if we have a question.</p></section>` : ''}
+  <div class="fan-wall">${wall || '<p class="note">No photos yet – be the first!</p>'}</div>
+  <p class="note fan-rm">In a photo and want it removed? Email <a href="mailto:${esc(SITE.contact)}?subject=${encodeURIComponent('Photo removal – Archery Calendar Fans page')}">${esc(SITE.contact)}</a> and we’ll take it down.</p>
+  <section class="panel sub fan-send" id="send"><h2 class="sec">📷 Send us your photo</h2>
+   <ul class="ticks"><li>Podiums, club days, a great shot on the course – archery photos from Australia.</li><li>Every photo is <b>reviewed before it’s posted</b>. We may crop or resize it.</li><li>Fields marked <span class="req">*</span> are required.</li></ul>
+   <form id="fanForm" class="sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate>
+    <input type="hidden" name="_subject" value="Fan photo – Archery Calendar"><input type="hidden" name="_template" value="table"><input type="hidden" name="_next" value="">
+    <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <div class="grid2">${fld('f_name', 'Your name', `<input id="f_name" name="name" required maxlength="80" autocomplete="name">`, 'Shown as the photo credit.')}
+    ${fld('f_email', 'Your email', `<input id="f_email" name="email" type="email" required maxlength="120" autocomplete="email" inputmode="email">`, 'Not published.')}</div>
+    ${fld('f_file', 'Photo', `<input id="f_file" name="attachment" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.heic" required>`, `JPG, PNG or phone photo, up to ${FAN_MAX_MB} MB.`)}
+    ${fld('f_cap', 'Caption', `<input id="f_cap" name="caption" required maxlength="200" placeholder="e.g. Our juniors at the Gosnells club champs">`)}
+    <div class="grid2">${fld('f_event', 'Event or club', `<input id="f_event" name="event_or_club" maxlength="140">`, '', false)}
+    ${fld('f_date', 'Date taken', `<input id="f_date" name="date_taken" type="date" max="${iso(today())}">`, '', false)}</div>
+    <div class="fld consent" data-f="f_ok"><label class="chk tick"><input type="checkbox" id="f_ok" name="consent" value="Yes – took the photo or has permission; everyone pictured is happy for it to be shown" required><span>I took this photo or have permission to share it, and everyone pictured is happy for it to be shown. <span class="req" aria-hidden="true">*</span></span></label><p class="err" id="f_ok_e" role="alert"></p></div>
+    <p class="note">👪 <b>Under 18s:</b> we only post photos of archers under 18 with a parent or guardian’s consent. If a child is pictured, please tell us in the caption that their parent/guardian agreed (or send it from the parent’s email).</p>
+    <p class="note priv">🔒 Your name, email and photo are emailed to us (${esc(SITE.contact)}, NFS Strategic Holdings) via FormSubmit. Only the photo, caption and your name as credit are published, and only if we approve it. <a href="#/privacy">Privacy</a></p>
+    <p class="err sum" id="fanErr" role="alert"></p>
+    <button class="btn gold block" id="fanBtn" type="submit">Send my photo</button>
+   </form></section></div>
+  <dialog id="lb" class="lb" aria-label="Photo"><form method="dialog"><button class="lb-x" aria-label="Close">✕</button></form><img id="lbImg" alt=""><p id="lbCap"></p></dialog>`;
+}
+async function shrinkPhoto(file){   // -> File (JPEG, max 2400 px) or the original if the browser can't decode it
+  try {
+    const bmp = await createImageBitmap(file), k = Math.min(1, 2400 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.86));
+    return blob ? new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', {type: 'image/jpeg'}) : file;
+  } catch { return file; }
+}
+function bindFans(){
+  document.querySelectorAll('[data-zoom]').forEach(b => b.onclick = () => { const f = FANS[+b.dataset.zoom], d = $('#lb');
+    $('#lbImg').src = f.file; $('#lbImg').alt = f.alt || f.caption; $('#lbCap').textContent = `${f.caption} · 📷 ${f.credit}`; d.showModal ? d.showModal() : d.setAttribute('open', ''); });
+  const lb = $('#lb'); if (lb) lb.onclick = e => { if (e.target === lb) lb.close(); };
+  const t = $('#fanThanks'); if (t) t.focus();
+  const fm = $('#fanForm'); if (!fm) return;
+  const g = id => $('#' + id), val = id => (g(id).value || '').trim();
+  const setErr = (id, m) => { g(id + '_e').textContent = m || ''; const w = fm.querySelector(`[data-f="${id}"]`); w && w.classList.toggle('bad', !!m); const i = g(id); i && i.setAttribute('aria-invalid', m ? 'true' : 'false'); };
+  function check(){
+    const errs = [], add = (id, m) => { setErr(id, m); if (m) errs.push(id); };
+    add('f_name', val('f_name') ? '' : 'Enter your name.');
+    const em = val('f_email'); add('f_email', !em ? 'Enter your email.' : /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em) ? '' : 'That email doesn’t look right.');
+    const f = g('f_file').files[0];
+    add('f_file', !f ? 'Choose a photo.' : !/^image\//.test(f.type) && !/\.(jpe?g|png|webp|heic|heif)$/i.test(f.name) ? 'That isn’t a photo file.' : f.size > FAN_MAX_MB * 1048576 ? `That photo is ${(f.size / 1048576).toFixed(1)} MB. The limit is ${FAN_MAX_MB} MB.` : '');
+    add('f_cap', val('f_cap') ? '' : 'Add a caption.');
+    add('f_date', val('f_date') && val('f_date') > iso(today()) ? 'The date is in the future.' : '');
+    add('f_ok', g('f_ok').checked ? '' : 'Please tick to confirm.');
+    return errs;
+  }
+  fm.addEventListener('change', () => { if (fm.dataset.tried) check(); });
+  fm.onsubmit = async e => {
+    e.preventDefault(); fm.dataset.tried = 1;
+    const errs = check();
+    if (errs.length) { $('#fanErr').textContent = `Please fix ${errs.length === 1 ? 'the highlighted field' : `the ${errs.length} highlighted fields`}.`; const i = g(errs[0]); i && i.focus(); return; }
+    $('#fanErr').textContent = '';
+    if (!SITE.formEndpoint || !navigator.onLine) { location.href = `mailto:${SITE.contact}?subject=${encodeURIComponent('Fan photo: ' + val('f_cap'))}&body=${encodeURIComponent(`Name: ${val('f_name')}\nCaption: ${val('f_cap')}\nEvent/club: ${val('f_event')}\nDate: ${val('f_date')}\nConsent: Yes\n\n>>> Please attach your photo to this email. <<<\n`)}`; return; }
+    const b = g('fanBtn'); b.disabled = true; b.textContent = 'Preparing photo…';
+    const f = g('f_file').files[0];
+    if (f.size > 4 * 1048576 || !/^image\/(jpeg|png)$/.test(f.type)) {
+      const s = await shrinkPhoto(f);
+      if (s !== f && typeof DataTransfer === 'function') { try { const dt = new DataTransfer(); dt.items.add(s); g('f_file').files = dt.files; } catch {} }
+    }
+    fm.querySelector('[name=_next]').value = location.href.split('#')[0].split('?')[0] + '?fsent=1#/fans';
+    fm.querySelector('[name=_subject]').value = `Fan photo: ${val('f_cap').slice(0, 80)} – ${val('f_name')}`;
+    b.textContent = 'Sending…'; HTMLFormElement.prototype.submit.call(fm);
+  };
+}
 function route(){ render(); window.scrollTo(0, 0); }
 function render(){
   const h = location.hash || '#/home', [, p, arg] = h.split('/'), v = $('#view');
@@ -902,6 +997,7 @@ function render(){
   else if (p === 'advertise') v.innerHTML = vAdvertise();
   else if (p === 'credits') v.innerHTML = vCredits();
   else if (p === 'privacy') v.innerHTML = vPrivacy();
+  else if (p === 'fans') { v.innerHTML = vFans(); bindFans(); }
   else if (p === 'account') { v.innerHTML = vAccount(); bindAccount(); }
   else if (p === 'submit') { v.innerHTML = vSubmit(); bindSubmit(); }
   else if (p === 'calendars') { v.innerHTML = vCals(arg); bindCals(); }
