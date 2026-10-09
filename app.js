@@ -111,7 +111,8 @@ async function boot(){
     navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(r => { r.update();
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') r.update().catch(() => {}); }); }).catch(() => {});
   }
-  importHandoff(); clubUpdates(); route(); checkReminders(); setInterval(checkReminders, 60 * 60 * 1000);
+  importHandoff(); clubUpdates(); route();
+  if (Object.keys(S.saved).concat(Object.keys(S.entries)).some(id => !BYID[id])) loadIntl().then(() => { const y = scrollY; render(); scrollTo(0, y); }).catch(() => {}); checkReminders(); setInterval(checkReminders, 60 * 60 * 1000);
   initAuth().catch(e => console.warn('auth', e));
 }
 
@@ -270,7 +271,7 @@ function adSlot(kind, t){
 function bindCards(root = document){
   bindToggles(root);
   root.querySelectorAll('[data-star]').forEach(b => b.onclick = ev => { ev.stopPropagation(); toggleSave(b.dataset.star); });
-  root.querySelectorAll('[data-open]').forEach(c => { c.onclick = () => location.hash = '#/shoot/' + encodeURIComponent(c.dataset.open);
+  root.querySelectorAll('[data-open]').forEach(c => { c.onclick = ev => { const i = ev && ev.target.closest && ev.target.closest('a,button,input,select,textarea,label'); if (i && i !== c && c.contains(i)) return; location.hash = '#/shoot/' + encodeURIComponent(c.dataset.open); };
     c.onkeydown = e => { if (e.key === 'Enter' && e.target === c) c.click(); }; });
 }
 function toggleSave(id){
@@ -575,24 +576,29 @@ function vShoot(id){
     : `<div class="warn">⚠ No online entry link found yet. ${x.org_id === 'aba' ? 'ABA shoots are entered through the host club.' : 'Check the source page below.'}</div>`;
   const closed = !!x.entry_close_date && daysTo(x.entry_close_date) < 0 && !isPast(x) && !x.info_only;
   const closeTxt = x.entry_close_date ? pd(x.entry_close_date).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'long',year:'numeric'}) + (x.entry_close_time ? ', ' + x.entry_close_time : '') : '';
+  /* International shoots (data/intl.json): same page, plus country, venue time zone and a map link; back goes to the country page. */
+  const I = !!x._intl, back = I ? iBackHash(x) : '#/browse', tzTxt = I && x.tz ? TZ_NAME[x.tz] || x.tz : '';
+  const where = I ? [(x.location || '').replace(/[,\s]+$/, ''), x.us_state && US_ST[x.us_state], x.country_name || x.country].filter(Boolean).filter((v, i, a) => !(i && (a[0] || '').includes(v))).join(', ') : '';
+  const mapUrl = I && x.location ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(where) : '';
+  const srcName = x.source_name || (() => { try { return new URL(x.source_url).hostname.replace(/^www\./, ''); } catch { return x.source_url; } })();
   return `<section class="dhero host-hero"><div class="wrap host-row"><div class="host-txt">
-    <a class="crumb" href="#/browse">← All shoots</a>
-    <div class="tags">${catTag(x)}${isShoot(x) ? tagHtml(t) : ''}${x.level ? `<span class="tag lvl">${esc(x.level)}</span>` : ''}</div>
-    <h1>${esc(x.name)}</h1><p class="sub">${esc(range(x))}${x.location ? ' · ' + esc(x.location) : ''}</p>${badges(x)}
-  </div><figure class="host-fig">${hostMark(x, true)}<figcaption>${hostOf(x).org ? 'Listed by' : 'Hosted by'}<br><b>${esc(hostOf(x).name)}</b></figcaption></figure></div></section>
+    <a class="crumb" href="${back}" id="backLink">← ${I ? esc(back === '#/intl/WORLD' ? 'World events' : iName(back.split('/')[2])) + ' shoots' : 'All shoots'}</a>
+    <div class="tags">${I ? `<span class="tag ctry">${flag(x.iso2)} ${esc(x.country_name || 'International')}</span>` : ''}${catTag(x)}${isShoot(x) ? tagHtml(t) : ''}${x.level ? `<span class="tag lvl">${esc(x.level)}</span>` : ''}</div>
+    <h1>${esc(x.name)}</h1><p class="sub">${esc(range(x))}${tzTxt ? ` <small>(local: ${esc(tzTxt)})</small>` : ''}${I ? (where ? ' · ' + esc(where) : '') : x.location ? ' · ' + esc(x.location) : ''}</p>${I ? `<div class="badges">${iStatus(x)}${x.world_level ? '<span class="b world">🌐 World event</span>' : ''}</div>` : badges(x)}
+  </div><figure class="host-fig">${I ? iMark(x).replace('class="hm ', 'class="hm big ') : hostMark(x, true)}<figcaption>${I ? 'Organised by' : hostOf(x).org ? 'Listed by' : 'Hosted by'}<br><b>${esc(I ? iHost(x).name : hostOf(x).name)}</b></figcaption></figure></div></section>
   <div class="wrap detail">
    <div class="main">
     ${x.date_note ? `<div class="warn date-note" id="dateNote">⚠ <b>Check the dates:</b> ${esc(x.date_note)}</div>` : ''}
     ${clashBox(x)}
     ${flyerCard(x)}
     <section class="panel"><h2 class="sec">Shoot details</h2><dl class="kv">
-      <dt>When</dt><dd>${esc(range(x))}${x.date_note ? '<br><span class="note">⚠ Dates differ between sources – see the note above.</span>' : ''}</dd>
-      <dt>Where</dt><dd>${esc(x.location || '—')}${x.host ? `<br><span class="note">Host club: ${esc(x.host)}${x.venue_is_host_only ? ' – check the organiser for the exact range' : ''}</span>` : ''}${x.state && !(x.location || '').includes(' ' + x.state) ? ' · ' + esc(x.state) : ''}${x.country ? '<br><span class="note">' + esc(x.country) + '</span>' : ''}</dd>
+      <dt>When</dt><dd>${esc(range(x))}${I ? `<br><span class="note">Dates are local to the venue${tzTxt ? ' (' + esc(tzTxt) + ')' : ''}.</span>` : ''}${x.date_note ? '<br><span class="note">⚠ Dates differ between sources – see the note above.</span>' : ''}</dd>
+      ${I ? `<dt>Where</dt><dd>${esc(where || 'Venue not published yet')}${mapUrl ? `<br><a href="${esc(mapUrl)}" target="_blank" rel="noopener" id="mapLink">📍 Map ↗</a>` : ''}</dd>` : `<dt>Where</dt><dd>${esc(x.location || '—')}${x.host ? `<br><span class="note">Host club: ${esc(x.host)}${x.venue_is_host_only ? ' – check the organiser for the exact range' : ''}</span>` : ''}${x.state && !(x.location || '').includes(' ' + x.state) ? ' · ' + esc(x.state) : ''}${x.country ? '<br><span class="note">' + esc(x.country) + '</span>' : ''}</dd>`}
       ${CLUB[x.club_id] ? `<dt>Club</dt><dd><button type="button" class="linkbtn club-name" data-clubpop="${esc(x.club_id)}" aria-haspopup="dialog">${esc(CLUB[x.club_id].name)}</button>${clubBadge(x) ? ' ' + clubBadge(x) : ''}</dd>` : ''}
       <dt>Type</dt><dd>${CATS[catOf(x)][0]} ${CATS[catOf(x)][1]}${x.class_basis ? ` <span class="note">(${esc(x.class_basis)})</span>` : ''}</dd>
       <dt>Discipline</dt><dd>${esc(x.discipline || '—')}</dd>
       <dt>Level</dt><dd>${esc(x.level || '—')}</dd>
-      <dt>Organiser</dt><dd>${isAba(x) ? abaLogo(32, 'org-logo') : ''}${esc(x.org || '—')}${x.aba_branch ? '<br><span class="note">ABA ' + esc(x.aba_branch) + '</span>' : ''}</dd>
+      <dt>Organiser</dt><dd>${!I && isAba(x) ? abaLogo(32, 'org-logo') : ''}${esc(x.org || '—')}${x.aba_branch ? '<br><span class="note">ABA ' + esc(x.aba_branch) + '</span>' : ''}</dd>
       ${x.rounds && x.rounds !== x.name && !x.name.includes(x.rounds) ? `<dt>Rounds</dt><dd>${esc(x.rounds)}${x.field_sources?.rounds ? ` <span class="src">${esc(srcTxt(x.field_sources.rounds))}</span>` : ''}</dd>` : ''}
       ${x.start_times ? `<dt>Times</dt><dd>${esc(x.start_times)}${x.field_sources?.start_times ? ` <span class="src">${esc(srcTxt(x.field_sources.start_times))}</span>` : ''}</dd>` : ''}
       ${x.divisions ? `<dt>Divisions</dt><dd>${esc(x.divisions)}${x.field_sources?.divisions ? ` <span class="src">${esc(srcTxt(x.field_sources.divisions))}</span>` : ''}</dd>` : ''}
@@ -601,7 +607,7 @@ function vShoot(id){
       ${x.fee ? `<dt>Fee</dt><dd>${esc(x.fee)}${x.field_sources?.fee ? ` <span class="src">from ${esc(x.field_sources.fee)}</span>` : ''}</dd>` : ''}
     </dl>${x.notes ? `<p class="note">${esc(x.notes)}</p>` : ''}</section>
     ${CALS[x.org_group] ? `<p class="note"><a href="#/calendars/${x.org_group}">📅 See it in the full ${esc(CALS[x.org_group].name)} calendar</a></p>` : ''}
-    <p class="note" id="srcLine">Source: <a href="${esc(x.source_url)}" target="_blank" rel="noopener">${esc(x.source_name || x.source_url)}</a>${x.source_extra ? ` · <a href="${esc(x.source_extra)}" target="_blank" rel="noopener">host club's event page</a>` : ''}${x.also_listed ? ` · also <a href="${esc(x.also_listed)}" target="_blank" rel="noopener">${/worldarchery/.test(x.also_listed) ? 'World Archery listing' : 'listed here'}</a>` : ''}${x.source_note ? `<br>${esc(x.source_note)}` : ''}${x.branch_source ? `<br>Branch source: <a href="${esc(x.branch_source.url)}" target="_blank" rel="noopener" id="branchSrc">${esc(x.branch_source.name)}</a>` : ''}<br>Checked ${esc(x.last_checked)}. Always confirm details with the organiser.</p>
+    <p class="note" id="srcLine">${I ? 'Official source' : 'Source'}: <a href="${esc(x.source_url)}" target="_blank" rel="noopener">${esc(srcName)}</a>${x.source_extra ? ` · <a href="${esc(x.source_extra)}" target="_blank" rel="noopener">host club's event page</a>` : ''}${x.also_listed ? ` · also <a href="${esc(x.also_listed)}" target="_blank" rel="noopener">${/worldarchery/.test(x.also_listed) ? 'World Archery listing' : 'listed here'}</a>` : ''}${x.source_note ? `<br>${esc(x.source_note)}` : ''}${x.branch_source ? `<br>Branch source: <a href="${esc(x.branch_source.url)}" target="_blank" rel="noopener" id="branchSrc">${esc(x.branch_source.name)}</a>` : ''}<br>${x.last_checked ? `Checked ${esc(x.last_checked)}. ` : ''}Always confirm details with the organiser.</p>
     <p class="note fix-link"><a href="#/fix/${esc(encodeURIComponent(x.id))}" id="fixLink">✏️ Something wrong? Suggest a fix</a></p>
    </div>
    <aside class="side">
@@ -612,7 +618,7 @@ function vShoot(id){
       ${x.info_only ? '' : `<button class="btn ${on ? 'alt' : ''} block" id="saveBtn" aria-pressed="${on}">${on ? '★ In My shoots – remove' : '☆ Add to My shoots'}</button>`}
       ${x.start_date && !x.info_only ? `<button class="btn alt block" id="icsOne">▦ Add to my calendar (.ics)</button>` : ''}</section>
     ${adSlot('side', t)}
-    ${clubCta(true)}
+    ${I ? '' : clubCta(true)}
    </aside>
   </div>`;
 }
@@ -735,7 +741,7 @@ const CONTACT = 'nfshold@gmail.com';
 const AD_MAIL = 'mailto:' + CONTACT + '?subject=Advertising%20on%20Archery%20Calendar';
 function vAdvertise(){
   setTitle('Advertise with us');
-  const n = photo('nathe');
+  const n = photo('advertise');
   return `<section class="phead tall" style="--img:url('${esc(n.file)}')"><div class="wrap"><p class="kicker">For archery shops, ranges, coaches &amp; brands</p><h1>Advertise to archers</h1>
     <p>Put your shop in front of archers while they plan their next shoot and the gear they need for it.</p><a class="btn gold" href="${AD_MAIL}">Email us about advertising</a></div></section>
   <div class="wrap narrow adv">
@@ -756,6 +762,7 @@ function vAdvertise(){
       <li>Every ad is clearly labelled "Sponsored". Archery-related businesses only.</li>
       <li>No cookies or ad trackers (visits are counted anonymously). Ads link straight to your website.</li></ul></section>
     <section class="panel dark"><h2 class="sec">Get in touch</h2><p class="big-mail"><a href="${AD_MAIL}">${CONTACT}</a></p>
+      <p class="foot-tag"><i>Created by an archer, for archers.</i></p>
       <p class="note">NFS Strategic Holdings</p></section>
   </div>`;
 }
@@ -1356,7 +1363,7 @@ function bindFans(){
     b.textContent = 'Sending…'; HTMLFormElement.prototype.submit.call(fm);
   };
 }
-/* Moving from the old address (nfstride1-ux.github.io/archery-calendar): its migration page sends this device's saved data here as
+/* Moving from the old github.io address: its migration page sends this device's saved data here as
    #/import/<base64url JSON>. We merge it (shoots and entries added; where both have an entry the newer change wins) and never delete. */
 function importHandoff(){
   const m = (location.hash || '').match(/^#\/import\/([A-Za-z0-9_-]+)$/); if (!m) return false;
@@ -1395,7 +1402,11 @@ function gcSearch(q){
 let ICTRY = {countries: []}, INTL = null, INTLP = null;
 let IF = {code: '', q: '', disc: '', org: '', st: '', past: false, limit: 60};
 const flag = iso => iso && /^[A-Z]{2}$/.test(iso) ? String.fromCodePoint(...[...iso].map(c => 0x1F1A5 + c.charCodeAt(0))) : '🌐';
-const loadIntl = () => INTL ? Promise.resolve(INTL) : (INTLP = INTLP || fetch('data/intl.json').then(r => r.json()).then(j => (INTL = j)));
+const loadIntl = () => INTL ? Promise.resolve(INTL) : (INTLP = INTLP || fetch('data/intl.json').then(r => r.json()).then(j => {
+  j.events.forEach(x => { x._intl = true; if (!BYID[x.id]) BYID[x.id] = x; }); return (INTL = j); }));
+/* Back from an international shoot page returns to the same country page, filters (IF) and scroll position. */
+const IBACK = {};
+const iBackHash = x => '#/intl/' + (IF.code && (IF.code === 'WORLD' ? x.country_code !== 'USA' : IF.code === x.country_code) ? IF.code : x.country_code === 'USA' ? 'USA' : 'WORLD');
 const US_ST = {AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',CO:'Colorado',CT:'Connecticut',DE:'Delaware',FL:'Florida',GA:'Georgia',HI:'Hawaii',ID:'Idaho',IL:'Illinois',
   IN:'Indiana',IA:'Iowa',KS:'Kansas',KY:'Kentucky',LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',MT:'Montana',
   NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',NY:'New York',NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',OR:'Oregon',PA:'Pennsylvania',
@@ -1470,10 +1481,10 @@ function iStatus(x){
 }
 function iCard(x){
   const t = theme(x), here = [x.location || 'Venue not published yet', x.us_state && US_ST[x.us_state]].filter(Boolean).join(' · ');
-  return `<article class="ev iev th-${t}" data-iid="${esc(x.id)}" aria-label="${esc(x.name)}">
+  return `<article class="ev iev th-${t}" data-iid="${esc(x.id)}" role="link" tabindex="0" data-open="${esc(x.id)}" aria-label="${esc(x.name)}">
     <div class="ev-img ev-host">${dateBox(x)}${iMark(x)}</div>
     <div class="body"><div class="tags"><span class="tag ctry">${flag(x.iso2)} ${esc(x.country_name || 'International')}</span>${t !== 'mixed' ? tagHtml(t) : ''}</div>
-      <h3 class="name">${esc(x.name)}</h3>
+      <h3 class="name"><a class="iopen" href="#/shoot/${esc(encodeURIComponent(x.id))}">${esc(x.name)}</a></h3>
       <div class="meta">📅 ${esc(range(x))}${x.tz ? ` <small>(local: ${esc(TZ_NAME[x.tz] || x.tz)})</small>` : ''}</div>
       <div class="meta">📍 ${esc(here)}</div>
       <div class="meta">${esc([x.discipline || 'Discipline not listed', x.org].filter(Boolean).join(' · '))}</div>
@@ -1530,13 +1541,19 @@ function bindIntl(){
   const cl = $('#iclr'); if (cl) cl.onclick = () => { Object.assign(IF, {q: '', disc: '', org: '', st: '', ctry: '', limit: 60}); rer('#iq'); };
   const m = $('#imore'); if (m) m.onclick = () => { IF.limit += 60; rer(); };
 }
-function route(){ render(); window.scrollTo(0, 0); gcPage(); }
+function route(){
+  const h = location.hash || '#/home', last = route.last; route.last = h;
+  if (last && last.startsWith('#/intl')) IBACK[last] = scrollY;
+  render();
+  window.scrollTo(0, h.startsWith('#/intl') && last && last.startsWith('#/shoot/') && IBACK[h] ? IBACK[h] : 0); gcPage(); }
 function render(){
   const h = location.hash || '#/home', [, p, arg] = h.split('/'), v = $('#view');
-  document.querySelectorAll('.nav a').forEach(a => { const on = a.dataset.tab === (p || 'home') || (p === 'shoot' && a.dataset.tab === 'browse'); a.classList.toggle('on', on); on ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'); });
+  document.querySelectorAll('.nav a').forEach(a => { const on = a.dataset.tab === (p || 'home') || (p === 'shoot' && a.dataset.tab === ((BYID[decodeURIComponent(arg || '')] || {})._intl ? 'intl' : 'browse')); a.classList.toggle('on', on); on ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'); });
   document.body.dataset.page = p || 'home';
   if (p === 'browse') { v.innerHTML = vBrowse(); bindBrowse(); }
-  else if (p === 'shoot') { const id = decodeURIComponent(arg || ''); if (S.clubNew[id]) { delete S.clubNew[id]; save(); } v.innerHTML = vShoot(id); bindShoot(id); }
+  else if (p === 'shoot') { const id = decodeURIComponent(arg || ''); if (S.clubNew[id]) { delete S.clubNew[id]; save(); }
+    if (!BYID[id] && !INTL) { v.innerHTML = '<div class="wrap"><p class="loading">Loading shoot…</p></div>'; loadIntl().then(() => { if (location.hash === h) render(); }).catch(() => { if (location.hash === h) { v.innerHTML = vShoot(id); } }); }
+    else { v.innerHTML = vShoot(id); bindShoot(id); } }
   else if (p === 'calendar') { v.innerHTML = vCalendar(); bindCalendar(); }
   else if (p === 'entries') v.innerHTML = vEntries();
   else if (p === 'settings') { v.innerHTML = vSettings(); bindSettings(); if (arg === 'clubs') setTimeout(() => { const c = $('#clubs'); c && c.scrollIntoView(); }, 30); }

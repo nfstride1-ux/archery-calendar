@@ -161,14 +161,14 @@ test('first sign-in, "use my account only": device data replaced, nothing upload
 
 test('settings + display name sync, last write wins; name is not wiped by a settings push', async () => {
   const srv = server(), A = device(srv, 'u1'), B = device(srv, 'u1');
-  await A.sync.link(A.user, 'merge'); await A.sync.setDisplayName('Nathe');
+  await A.sync.link(A.user, 'merge'); await A.sync.setDisplayName('Alex');
   await B.sync.link(B.user, 'account');
   tick(5); A.S.states = ['WA']; A.save(); await A.sync.flush();
-  assert.strictEqual(srv.prof.u1.display_name, 'Nathe'); assert.deepStrictEqual(srv.prof.u1.settings.states, ['WA']);
+  assert.strictEqual(srv.prof.u1.display_name, 'Alex'); assert.deepStrictEqual(srv.prof.u1.settings.states, ['WA']);
   tick(5); await B.sync.flush(); assert.deepStrictEqual(B.S.states, ['WA']);
-  assert.strictEqual(B.sync.state().displayName, 'Nathe');
+  assert.strictEqual(B.sync.state().displayName, 'Alex');
   tick(5); B.S.remindDays = [7]; B.save(); await B.sync.flush(); tick(5); await A.sync.flush();
-  assert.deepStrictEqual(A.S.remindDays, [7]); assert.strictEqual(srv.prof.u1.display_name, 'Nathe');
+  assert.deepStrictEqual(A.S.remindDays, [7]); assert.strictEqual(srv.prof.u1.display_name, 'Alex');
 });
 
 test('users never see each other\'s data; signing out keeps or clears the device as asked', async () => {

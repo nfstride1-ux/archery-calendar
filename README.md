@@ -4,7 +4,7 @@ Every Australian archery shoot – Archery Australia, ABA and Archery WA; Field,
 Save shoots, get reminders before entries close and track what you've paid. Static site / PWA, no build step, no tracking:
 your saved shoots and entries stay in your browser (localStorage).
 
-- Live: https://archerycalendars.com/ (the old address https://nfstride1-ux.github.io/archery-calendar/ redirects here)
+- Live: https://archerycalendars.com/
 - Dates come from organisers' public calendars; always check with the organiser.
 - Clubs: send us your flyer – nfshold@gmail.com (NFS Strategic Holdings). No online entries? We'll list your shoot, set up an entry form and send you the entry list.
 - Photo and font credits: [CREDITS.md](CREDITS.md) and the Credits page on the site.

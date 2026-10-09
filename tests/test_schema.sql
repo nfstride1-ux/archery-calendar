@@ -1,10 +1,10 @@
 -- RLS + sync function tests (run as the two test users). Every check raises an exception on failure.
 \set ON_ERROR_STOP on
 insert into auth.users (id, email, raw_user_meta_data) values
- ('11111111-1111-1111-1111-111111111111', 'nathe@example.com', '{"full_name":"Nathe S"}'),
+ ('11111111-1111-1111-1111-111111111111', 'alex@example.com', '{"full_name":"Alex T"}'),
  ('22222222-2222-2222-2222-222222222222', 'other@example.com', '{}');
 do $$ begin assert (select count(*) from public.profiles) = 2, 'profiles auto-created';
-  assert (select display_name from public.profiles where id = '11111111-1111-1111-1111-111111111111') = 'Nathe S', 'name from Google/metadata'; end $$;
+  assert (select display_name from public.profiles where id = '11111111-1111-1111-1111-111111111111') = 'Alex T', 'name from Google/metadata'; end $$;
 
 -- user 1 writes
 set role authenticated; select set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', false);
@@ -27,9 +27,9 @@ do $$ begin
   exception when insufficient_privilege then null; end; end $$;
 -- settings LWW + name kept
 select display_name from public.save_profile(null, '{"states":["WA"]}', '2026-10-09T05:00:00Z');
-do $$ begin assert (select display_name from public.profiles where id = auth.uid()) = 'Nathe S', 'name not wiped';
+do $$ begin assert (select display_name from public.profiles where id = auth.uid()) = 'Alex T', 'name not wiped';
   assert (select settings->'states'->>0 from public.profiles where id = auth.uid()) = 'WA'; end $$;
-select 1 from public.save_profile('Nathe', '{"states":["SA"]}', '2026-10-09T04:00:00Z');
+select 1 from public.save_profile('Alex', '{"states":["SA"]}', '2026-10-09T04:00:00Z');
 do $$ begin assert (select settings->'states'->>0 from public.profiles where id = auth.uid()) = 'WA', 'older settings ignored'; end $$;
 -- limits
 do $$ begin begin perform public.sync_user_events((select jsonb_agg(jsonb_build_object('event_id','x'||g)) from generate_series(1,501) g)); raise exception 'FAIL: 501 rows accepted';
