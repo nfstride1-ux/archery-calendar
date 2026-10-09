@@ -16,13 +16,20 @@ const DEFAULT = {
   notified: {},                                // reminder key -> timestamp
   notify: false,
   states: [],                                  // AUS scope: empty = all states
-  groups: ['aa','aba','awa']                   // AUS scope: Archery Australia (incl. RGBs/clubs), ABA, Archery WA
+  groups: ['aa','aba','awa'],                  // AUS scope: Archery Australia (incl. RGBs/clubs), ABA, Archery WA
+  myClubs: [],                                 // club ids I belong to (clubs.json)
+  homeClub: null,                              // one of myClubs
+  watchClubs: [],                              // clubs I watch
+  clubNotify: false,                           // browser notification for new shoots / flyers from my clubs (needs notifications on)
+  clubSeen: {},                                // device only: event id -> flyer key, for "New" detection
+  clubSeenClubs: {},                           // device only: club ids whose events have been baselined
+  clubNew: {}                                  // device only: event id -> {t, why: 'event'|'flyer'}
 };
-let S = load(), EV = [], ORGS = [], BYID = {}, CMAP = {}, PH = {}, SCOPE = 'WORLD';
+let S = load(), EV = [], ORGS = [], CLUBS = [], CLUB = {}, BYID = {}, CMAP = {}, PH = {}, SCOPE = 'WORLD';
 const STATES = [['WA','Western Australia'],['SA','South Australia'],['VIC','Victoria'],['NSW','New South Wales'],['ACT','Australian Capital Territory'],['QLD','Queensland'],['TAS','Tasmania'],['NT','Northern Territory']];
 const GROUPS = [['aa','Archery Australia','State associations (RGBs) and clubs – target, field, indoor, clout, QREs'],['aba','Australian Bowhunters Association (ABA)','All 10 branches (A–J) – field, 3D, IFAA'],['awa','Archery WA','WA state events, QREs and club shoots']];
 const AUS = () => SCOPE === 'AUS';
-const SITE = Object.assign({flyers:'local', ads:true, contact:'nfshold@gmail.com', freeUntil:'31 Dec 2026'}, window.SITE || {});
+const SITE = Object.assign({flyers:'local', ads:true, contact:'nfshold@gmail.com'}, window.SITE || {});
 const today = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
 const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const pd = s => s ? new Date(s + 'T00:00:00') : null;
@@ -84,7 +91,8 @@ function toast(t){ const el = $('#toast'); el.textContent = t; el.classList.add(
 
 async function boot(){
   $('#todayLbl').textContent = today().toLocaleDateString('en-AU', {weekday:'short', day:'numeric', month:'short'});
-  const [e, o, ph] = await Promise.all([fetch('data/events.json').then(r => r.json()), fetch('data/organisations.json').then(r => r.json()), fetch('img/credits.json').then(r => r.json()).catch(() => ({}))]);
+  const [e, o, ph, cl] = await Promise.all([fetch('data/events.json').then(r => r.json()), fetch('data/organisations.json').then(r => r.json()), fetch('img/credits.json').then(r => r.json()).catch(() => ({})), fetch('data/clubs.json').then(r => r.json()).catch(() => ({clubs: []}))]);
+  CLUBS = cl.clubs || []; CLUBS.forEach(c => CLUB[c.id] = c);
   PH = ph; SCOPE = e.scope || 'WORLD';
   migrateSettings();
   EV = e.events.filter(x => !x.info_only || true); ORGS = o.organisations;
@@ -97,7 +105,7 @@ async function boot(){
     navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadSW && !sessionStorage.getItem('swReloaded')) { sessionStorage.setItem('swReloaded', '1'); location.reload(); } });
     navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(r => r.update()).catch(() => {});
   }
-  importHandoff(); route(); checkReminders(); setInterval(checkReminders, 60 * 60 * 1000);
+  importHandoff(); clubUpdates(); route(); checkReminders(); setInterval(checkReminders, 60 * 60 * 1000);
   initAuth().catch(e => console.warn('auth', e));
 }
 
@@ -128,6 +136,13 @@ function visible(x, anyState){
 }
 const THEMES = {field:['🌲','Field'], '3d':['🦌','3D'], target:['🎯','Target'], indoor:['🏠','Indoor'], mixed:['🏹','Archery']};
 const photo = t => PH[t === 'mixed' ? 'hero' : t] || PH.hero || {};
+// ABA pages never show Archery Australia / World Archery team imagery: ABA events use their own bush / 3D animal photo set.
+// ABA logo (transparent; 32/64/128/256 px PNG + WebP). Only ever used on ABA content.
+const abaLogo = (n = 32, cls = 'org-logo') => `<picture class="${cls}"><source type="image/webp" srcset="img/logos/aba-logo-${n}.webp 1x, img/logos/aba-logo-${Math.min(n * 2, 256)}.webp 2x"><img src="img/logos/aba-logo-${n}.png" srcset="img/logos/aba-logo-${Math.min(n * 2, 256)}.png 2x" alt="Australian Bowhunters Association" height="${n}" width="${Math.round(n * 263 / 342)}" loading="lazy" decoding="async"></picture>`;
+const isAba = x => x && (x.org_group === 'aba' || x.org_id === 'aba');
+const abaKey = t => t === '3d' ? 'aba_3d' : 'aba_field';
+const evTheme = x => isAba(x) ? abaKey(theme(x)) : theme(x);
+const evPhoto = x => photo(evTheme(x));
 const credit = () => '';   // photo credits live on the Credits page only (linked from every footer), not on the photos
 function theme(x){
   const d = (x.discipline || '') + ' ' + (x.name || '') + ' ' + (x.rounds || '');
@@ -173,7 +188,7 @@ function entryBadge(x){
   return '';
 }
 function badges(x, onCard){
-  const b = [orgBadge(x), entryBadge(x)].filter(Boolean), en = S.entries[x.id];
+  const b = [clubBadge(x), clashBadge(x), orgBadge(x), entryBadge(x)].filter(Boolean), en = S.entries[x.id];
   if (x.book_anytime) b.push(`<span class="b tbc">📞 Book any time</span>`);
   else if (x.info_only) b.push(`<span class="b tbc">${isShoot(x) ? 'ℹ Info only' : '↻ Ongoing program'}</span>`);
   if (x.titles) b.push(`<span class="b titles">🏅 ${x.titles === 'state' ? 'State Titles' : 'Branch Titles'}</span>`);
@@ -192,13 +207,13 @@ function badges(x, onCard){
   return b.length ? `<div class="badges">${b.join('')}</div>` : '';
 }
 function evCard(x){
-  const on = !!S.saved[x.id], t = theme(x), p = photo(t);
+  const on = !!S.saved[x.id], t = theme(x), p = evPhoto(x);
   return `<article class="ev th-${t}" role="link" tabindex="0" data-open="${esc(x.id)}" aria-label="${esc(x.name)}">
     <div class="ev-img" style="background-image:url('${esc(p.sm)}');background-position:${esc(p.pos || 'center')}">${dateBox(x)}</div>
     <div class="body"><div class="tags">${catTag(x)}${t !== 'mixed' && isShoot(x) ? tagHtml(t) : ''}${x.flyer_local ? `<span class="tag fl">📄 ${x.flyer_is_current ? x.flyer_year + ' flyer' : 'Last year’s flyer'}</span>` : ''}</div>
       <h3 class="name">${esc(x.name)}</h3>
       <div class="meta">${esc([x.location, x.country_code && x.country_code !== 'AUS' ? x.country : x.state].filter(Boolean).join(' · '))}</div>
-      <div class="meta">${esc([x.discipline, x.org, x.aba_branch && x.aba_branch.split(' – ')[0]].filter(Boolean).join(' · '))}</div>${badges(x, true)}
+      <div class="meta">${isAba(x) ? abaLogo(32, 'org-logo') : ''}${esc([x.discipline, x.org, x.aba_branch && x.aba_branch.split(' – ')[0]].filter(Boolean).join(' · '))}</div>${badges(x, true)}
       ${x.info_only ? '' : statusToggles(x)}</div>
     ${x.info_only ? '' : `<button class="star" aria-pressed="${on}" aria-label="${on ? 'Remove from' : 'Add to'} my shoots" data-star="${esc(x.id)}">${on ? '★' : '☆'}</button>`}
   </article>`;
@@ -243,7 +258,7 @@ function pageHead(title, sub, t = 'mixed'){
 function clubCta(compact){
   const m = `mailto:${SITE.contact}?subject=${encodeURIComponent('Our shoot / flyer for Archery Calendar')}`;
   return `<aside class="cta${compact ? ' compact' : ''}"><span class="kicker">Clubs &amp; organisers</span><b class="cta-h">Send us your flyer</b>
-    <p>No online entries? We'll list your shoot, set up a <b>free entry form</b> and send you the entry list. Free until ${esc(SITE.freeUntil)}.</p>
+    <p>No online entries? We'll list your shoot, set up an entry form and send you the entry list.</p>
     <div class="cta-btns"><a class="btn gold" href="#/submit">Submit a shoot</a><a class="cta-mail" href="${m}">or email ${esc(SITE.contact)}</a></div></aside>`;
 }
 function flyerLinkCard(x){
@@ -265,14 +280,22 @@ function flyerHosted(x){
   const rows = [['How to enter', ex.registration], [cur && !(ex.entry_close && daysTo(ex.entry_close) < 0) ? 'Entries close' : 'Entries closed', close], ['Fee', ex.fee], ['Rounds', ex.rounds], ['Times', ex.start_times], ['Contact', ex.contact], ['Notes', ex.notes]].filter(r => r[1]);
   const src = x.flyer_source_url, org = x.flyer_org || x.org || 'the organiser';
   const mail = `mailto:${SITE.contact}?subject=${encodeURIComponent('Flyer on Archery Calendar: ' + x.name)}`;
-  return `<section class="panel flyer-panel" id="flyer"><h2 class="sec">${cur ? '📄 Flyer' : '⚠ Last year’s flyer'}</h2>
-    <span class="fl-badge ${cur ? 'cur' : 'old'}">${cur ? '📄 ' + x.flyer_year + ' flyer' : `⚠ Last year’s flyer (${x.flyer_year}) – the ${x.start_date ? x.start_date.slice(0, 4) : 'new'} flyer isn’t out yet; details may change`}</span>
+  const ey = x.start_date ? +x.start_date.slice(0, 4) : 0, lastYr = !ey || x.flyer_year === ey - 1, oldH = lastYr ? 'Last year’s flyer' : `Earlier flyer (${x.flyer_year})`;
+  const oldB = `⚠ ${lastYr ? `Last year’s flyer (${x.flyer_year})` : `Earlier flyer from ${x.flyer_year}`} – ${isPast(x) ? `we don’t have the ${ey || 'new'} flyer` : `the ${ey || 'new'} flyer isn’t out yet; details may change`}`;
+  return `<section class="panel flyer-panel" id="flyer"><h2 class="sec">${cur ? '📄 ' + esc(x.flyer_kind || 'Flyer') : '⚠ ' + oldH}</h2>
+    <span class="fl-badge ${cur ? 'cur' : 'old'}">${cur ? '📄 ' + x.flyer_year + ' ' + esc((x.flyer_kind || 'flyer').toLowerCase()) : oldB}</span>
     <a class="flyer-big${cur ? '' : ' old'}" href="${esc(x.flyer_web)}" target="_blank" rel="noopener" aria-label="Open the flyer full size">
       <img src="${esc(x.flyer_web_sm)}" alt="${esc((cur ? '' : 'Last year’s ') + 'flyer for ' + x.name + (x.flyer_is_pdf ? ' (page 1)' : ''))}" loading="lazy" width="640">
       <span class="zoom">🔍 Tap to enlarge${x.flyer_is_pdf ? ' (page 1)' : ''}</span></a>
     <p class="fl-cap">Flyer: ${esc(org)}. Organisers: want it removed or updated? Email <a href="${mail}">${esc(SITE.contact)}</a>.</p>
     ${src ? `<p class="note"><a href="${esc(src)}" target="_blank" rel="noopener">📄 View the original at source ↗</a>${x.flyer_source_name ? ' (' + esc(x.flyer_source_name) + ')' : ''}${x.flyer_is_pdf ? ' – all pages' : ''}</p>` : ''}
-    ${rows.length ? `<h2 class="sec">${cur ? 'From the flyer' : 'From last year’s flyer – may change this year'}</h2><dl class="kv fx">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${ly}${esc(v)}</dd>`).join('')}</dl>` : ''}</section>`;
+    ${rows.length ? `<h2 class="sec">${cur ? 'From the ' + esc((x.flyer_kind || 'flyer').toLowerCase()) : `From the ${x.flyer_year} flyer – may change this year`}</h2><dl class="kv fx">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${cur ? '' : `<span class="lastyr">${x.flyer_year}</span>`}${esc(v)}</dd>`).join('')}</dl>` : ''}
+    ${moreFlyers(x)}</section>`;
+}
+function moreFlyers(x){
+  const m = (x.flyers_more || []).filter(f => f.web); if (!m.length) return '';
+  return `<h2 class="sec" id="moreFlyers">More flyers (${m.length})</h2><div class="more-flyers">${m.map(f => `<a class="mf${f.is_current ? '' : ' old'}" href="${esc(f.web)}" target="_blank" rel="noopener" aria-label="Open ${esc(f.label)} full size">
+    <img src="${esc(f.web_sm)}" alt="${esc(f.label + ' – ' + x.name)}" loading="lazy" width="200"><span>${f.is_current ? '📄' : '🗂'} ${esc(f.label)}</span></a>`).join('')}</div>`;
 }
 function flyerCard(x){
   if (!x.flyer_year) return '';
@@ -341,8 +364,9 @@ function vHome(){
     <div class="stats four"><a class="stat" href="#/calendar"><b>${up.length}</b><span>★ My shoots</span></a><a class="stat" href="#/entries"><b>${nEnt}</b><span>✓ Entered</span></a><a class="stat" href="#/entries"><b>${nTodo}</b><span>☐ To enter</span></a><a class="stat" href="#/entries"><b>${nPay}</b><span>$ To pay</span></a></div>
     ${adSlot('banner')}
     <h2 class="sec-h">Pick your discipline</h2>
-    <div class="types">${['field','3d','target','indoor'].map(t => `<a class="type th-${t}" href="#/browse" data-th="${t}" style="--img:url('${esc(photo(t).sm)}');--pos:${esc(photo(t).pos || 'center')}"><span class="type-name">${THEMES[t][0]} ${THEMES[t][1]}</span><span class="type-sub">${{field:'Bush courses, marked & unmarked', '3d':'Foam animals in the bush', target:'Outdoor ranges, 18–90 m', indoor:'18 m halls, 3-spot & Vegas'}[t]}</span></a>`).join('')}</div>
+    <div class="types">${['field','3d','target','indoor'].map(t => `<a class="type th-${t}" href="#/browse" data-th="${t}" style="--img:url('${esc(photo(t === 'field' ? 'aba_field' : t).sm)}');--pos:${esc(photo(t === 'field' ? 'aba_field' : t).pos || 'center')}"><span class="type-name">${THEMES[t][0]} ${THEMES[t][1]}</span><span class="type-sub">${{field:'Bush courses, marked & unmarked', '3d':'Foam animals in the bush', target:'Outdoor ranges, 18–90 m', indoor:'18 m halls, 3-spot & Vegas'}[t]}</span></a>`).join('')}</div>
     <div class="cats-row" aria-label="Club shoots, coaching, youth and come & try">${['club', 'coaching', 'youth', 'come_try'].map(c => `<a class="cat-link cat-${c}" href="#/browse" data-cat="${c}"><span class="ci" aria-hidden="true">${CATS[c][0]}</span><b>${CATS[c][2]}</b><span>${EV.filter(x => catOf(x) === c && visible(x) && !isPast(x)).length} coming up</span></a>`).join('')}</div>
+    ${homeClubs()}
     <div class="two">
       <section><h2 class="sec-h">Reminders</h2>
       ${rem.length ? rem.map(r => `<div class="panel rem" data-open="${esc(r.x.id)}" role="link" tabindex="0"><b><span aria-hidden="true">${REM_ICON[r.kind]}</span> ${esc(r.x.name)}</b><div>${esc(r.text)}</div><div class="badges">${r.kind === 'close' ? '<span class="b close">⏳ Enter now</span>' : r.kind === 'pay' ? '<span class="b ent">$ Pay now</span>' : REM_BADGE[r.st]}</div></div>`).join('')
@@ -377,7 +401,7 @@ function hay(x){
     /national/i.test((x.level || '') + ' ' + x.name) && !/registered/i.test(x.level || '') ? 'nationals national' : '', x.members_only ? 'club championship members' : ''];
   const cat = catOf(x), catTxt = {competition:'competition shoot tournament', club:'club shoot clubshoot social local', coaching:'coaching course coach', youth:'youth junior kids training', come_try:'come and try beginners'}[cat] + (x.book_anytime ? ' corporate team building book anytime' : '');
   const stat = [x.org_status === 'flyer' ? 'flyer out details' : 'no entry details yet', x.entry_close_date ? (daysTo(x.entry_close_date) < 0 ? 'entries closed' : 'entries open') : x.registration_url ? 'entries open' : ''];
-  const words = snorm([x.name, x.host, x.location, x.org, sc, st && st[1], sc && CAPITAL[sc], x.discipline, catTxt, ...lvl, grpTxt, x.branch ? 'branch ' + x.branch : '', x.branch_name, ...months, ...stat, x.series_part, x.notes, ...Object.entries(x.flyer_extract || {}).filter(([k, v]) => typeof v === 'string' && !/url|source/.test(k)).map(([, v]) => v), roundTerms(x)].filter(Boolean).join(' '));
+  const cb = CLUB[x.club_id], words = snorm([x.name, x.host, cb && cb.name, ...(cb ? cb.aliases : []), x.location, x.org, sc, st && st[1], sc && CAPITAL[sc], x.discipline, catTxt, ...lvl, grpTxt, x.branch ? 'branch ' + x.branch : '', x.branch_name, ...months, ...stat, x.series_part, x.notes, ...Object.entries(x.flyer_extract || {}).filter(([k, v]) => typeof v === 'string' && !/url|source/.test(k)).map(([, v]) => v), roundTerms(x)].filter(Boolean).join(' '));
   return x._hay = {s: ' ' + words + ' ', w: [...new Set(words.split(' '))]};
 }
 function roundTerms(x){   // archery jargon derived from rounds/discipline text
@@ -419,7 +443,7 @@ function wordHit1(w, H){
   return false;
 }
 const matchQ = (x, Q) => (!Q.states.length || Q.states.includes(x.state_code)) && Q.words.every(w => wordHit(w, hay(x)));
-let BF = {q:'', disc:'', cat:'', ost:'', scope:'all', state:'', past:false, limit:60};
+let BF = {q:'', disc:'', cat:'', ost:'', scope:'all', state:'', club:'', past:false, hideClash:false, limit:60};
 function vBrowse(){
   setTitle('Find shoots');
   const grp = AUS() && BF.scope.startsWith('g:') ? BF.scope.slice(2) : null;
@@ -436,27 +460,32 @@ function vBrowse(){
   if (BF.scope.startsWith('g:')) list = list.filter(x => x.org_group === BF.scope.slice(2));
   else if (BF.scope === 'world') list = list.filter(x => x.world_level);
   else if (BF.scope !== 'all') list = list.filter(x => x.country_code === BF.scope && !x.world_level && !['aba','archery-wa'].includes(x.org_id) || x.org_id === BF.scope);
-  if (BF.state) list = list.filter(x => x.state_code === BF.state);
-  const active = [BF.q && `search “${esc(BF.q)}”`, BF.state && (STATES.find(s => s[0] === BF.state) || [, BF.state])[1], BF.disc && `discipline ${esc(BF.disc)}`, BF.cat && CATS[BF.cat] && CATS[BF.cat][2], BF.ost && OST[BF.ost] && OST[BF.ost][2], qState && `state from your search: ${Q.states.join(', ')}${!grp && !BF.state && S.states.length ? ' (overrides your Settings states)' : ''}`, !grp && !BF.state && !qState && S.states.length && AUS() && `your states in Settings (${S.states.join(', ')})`].filter(Boolean);
+  if (BF.club) list = (BF.state ? EV.filter(x => x.state_code === BF.state) : EV).filter(clubFilter(BF.club));
+  else if (BF.state) list = list.filter(x => x.state_code === BF.state);
+  const active = [BF.q && `search “${esc(BF.q)}”`, BF.state && (STATES.find(s => s[0] === BF.state) || [, BF.state])[1], BF.disc && `discipline ${esc(BF.disc)}`, BF.cat && CATS[BF.cat] && CATS[BF.cat][2], BF.ost && OST[BF.ost] && OST[BF.ost][2], BF.club && CLUBF[BF.club], qState && `state from your search: ${Q.states.join(', ')}${!grp && !BF.state && S.states.length ? ' (overrides your Settings states)' : ''}`, !grp && !BF.state && !qState && S.states.length && AUS() && `your states in Settings (${S.states.join(', ')})`].filter(Boolean);
   if (BF.disc) list = list.filter(x => (x.discipline || '').startsWith(BF.disc));
   const tc = typeCounts(list.filter(x => BF.past || !isPast(x)));
   if (BF.cat) list = list.filter(x => catOf(x) === BF.cat);
   if (BF.ost) list = list.filter(x => x.org_status === BF.ost);
   if (Q) list = list.filter(x => matchQ(x, Q));
+  const myD = myDated(), nClash = myD.length ? list.filter(x => !BF.past && !S.saved[x.id] && !S.entries[x.id] && clashes(x, myD).length).length : 0;
+  if (BF.hideClash && myD.length) list = list.filter(x => S.saved[x.id] || S.entries[x.id] || !clashes(x, myD).length);
   let showPastNote = false;
   if (!BF.past) { const up = list.filter(x => !isPast(x)); if (!up.length && Q && list.length) showPastNote = true; else list = up; }
   const sk = x => x.book_anytime ? '9999-99' : x.start_date || '9999';
   list.sort((a, b) => sk(a) < sk(b) ? -1 : 1);
   const total = list.length; list = list.slice(0, BF.limit);
-  let html = `${pageHead('Find a shoot', 'Field, 3D, Target and Indoor shoots from the calendars you follow.', {Field:'field','3D':'3d',Target:'target',Indoor:'indoor'}[BF.disc] || 'mixed')}<div class="wrap">${typeSel(BF.cat, tc)}</div><div class="wrap browse"><div class="filters"><input type="search" id="q" placeholder="Search shoot, club, town…" value="${esc(BF.q)}" aria-label="Search shoots">
-  <div class="chips" role="group" aria-label="Show">${scopes.map(([k, l]) => `<button class="chip" data-scope="${esc(k)}" aria-pressed="${BF.scope === k}">${esc(l)}</button>`).join('')}</div>
+  let html = `${pageHead('Find a shoot', 'Field, 3D, Target and Indoor shoots from the calendars you follow.', BF.scope === 'g:aba' ? abaKey(BF.disc === '3D' ? '3d' : 'field') : BF.disc === 'Field' && !['g:aa', 'g:awa'].includes(BF.scope) ? 'aba_field' : {Field:'field','3D':'3d',Target:'target',Indoor:'indoor'}[BF.disc] || 'mixed')}<div class="wrap">${clubNotice()}${typeSel(BF.cat, tc)}</div><div class="wrap browse"><div class="filters"><input type="search" id="q" placeholder="Search shoot, club, town…" value="${esc(BF.q)}" aria-label="Search shoots">
+  <div class="chips" role="group" aria-label="Show">${scopes.map(([k, l]) => `<button class="chip" data-scope="${esc(k)}" aria-pressed="${BF.scope === k && !BF.club}">${k === 'g:aba' ? abaLogo(32, 'chip-logo') : ''}${esc(l)}</button>`).join('')}</div>
+  ${clubChips(BF.club, BF.past)}
   ${AUS() ? `<label for="st" class="sr">State</label><select id="st" aria-label="State"><option value="">All states &amp; territories</option>${STATES.map(([c, n]) => `<option value="${c}" ${BF.state === c ? 'selected' : ''}>${n}</option>`).join('')}</select>` : ''}
   <label for="ost" class="sr">Organisation status</label><select id="ost" aria-label="Organisation status"><option value="">All – any status</option>${Object.entries(OST).map(([k, v]) => `<option value="${k}" ${BF.ost === k ? 'selected' : ''}>${v[0]} ${v[2]}</option>`).join('')}</select>
   <div class="row"><select id="disc" aria-label="Discipline"><option value="">All disciplines</option>${discs.map(d => `<option ${BF.disc === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select>
   <label style="display:flex;align-items:center;gap:8px;margin:0;flex:0 0 auto"><input type="checkbox" id="past" ${BF.past ? 'checked' : ''} style="width:22px;min-height:22px"> Show finished</label></div>
+  ${myD.length ? `<label class="chk hide-clash" style="display:flex;align-items:center;gap:8px;margin:6px 0 0"><input type="checkbox" id="hideClash" ${BF.hideClash ? 'checked' : ''} style="width:22px;min-height:22px"> ⚠️ Hide clashes with my shoots${BF.hideClash ? '' : ` (${nClash})`}</label>` : ''}
   ${showPastNote ? `<p class="note" id="pastNote">◷ No upcoming shoots match – showing finished shoots.</p>` : ''}
   ${active.length && total ? `<p class="note" id="activeF">Filtered by: ${active.join(' · ')} <button class="linkbtn" id="clearF2">✕ Clear</button></p>` : ''}
-  <p class="note">${total} shoot${total !== 1 ? 's' : ''}. Change ${AUS() ? 'states &amp; organisations' : 'countries &amp; bodies'} in <a href="#/settings">Settings</a>.</p></div><div class="results">`;
+  <p class="note" id="countNote">${total} shoot${total !== 1 ? 's' : ''}. Change ${AUS() ? 'states &amp; organisations' : 'countries &amp; bodies'} in <a href="#/settings">Settings</a>.</p></div><div class="results">`;
   let m = '', n = 0;
   for (const x of list) { const k = x.book_anytime ? 'ANY' : x.start_date ? x.start_date.slice(0, 7) : 'TBC'; if (k !== m) { m = k; html += `<div class="month">${k === 'ANY' ? '📞 Book any time' : k === 'TBC' ? 'Dates to be confirmed' : MONL[+k.slice(5) - 1] + ' ' + k.slice(0, 4)}</div>`; } html += evCard(x); if (++n % 10 === 0 && n < list.length) html += adSlot('feed'); }
   if (!total) html += `<div class="empty">No shoots match${active.length ? ': ' + active.join(' · ') : ''}. ${active.length ? '<button class="btn alt" id="clearF">✕ Clear filters</button>' : `Try another filter${AUS() ? '' : ' or add countries in Settings'}.`}</div>`;
@@ -465,14 +494,17 @@ function vBrowse(){
 }
 function bindBrowse(){
   const q = $('#q'); q.oninput = () => { BF.q = q.value; BF.limit = 60; clearTimeout(bindBrowse.t); bindBrowse.t = setTimeout(() => { render(); const n = $('#q'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }, 250); };
-  document.querySelectorAll('[data-scope]').forEach(b => b.onclick = () => { BF.scope = b.dataset.scope; BF.disc = ''; BF.limit = 60; render(); });
-  const clr = () => { Object.assign(BF, {q:'', disc:'', cat:'', ost:'', state:'', limit:60}); if (S.states.length) { S.states = []; save(); } render(); };
+  document.querySelectorAll('[data-scope]').forEach(b => b.onclick = () => { BF.scope = b.dataset.scope; BF.club = ''; BF.disc = ''; BF.limit = 60; render(); });
+  document.querySelectorAll('[data-clubf]').forEach(b => b.onclick = () => { BF.club = BF.club === b.dataset.clubf ? '' : b.dataset.clubf; BF.limit = 60; render(); });
+  bindClubNotice();
+  const clr = () => { Object.assign(BF, {q:'', disc:'', cat:'', ost:'', state:'', club:'', limit:60}); if (S.states.length) { S.states = []; save(); } render(); };
   ['#clearF', '#clearF2'].forEach(s => { const b = $(s); if (b) b.onclick = clr; });
   $('#disc').onchange = e => { BF.disc = e.target.value; render(); };
   document.querySelectorAll('[data-tcat]').forEach(b => b.onclick = () => { BF.cat = b.dataset.tcat; BF.limit = 60; render(); });
   $('#ost').onchange = e => { BF.ost = e.target.value; BF.limit = 60; render(); };
   const st = $('#st'); if (st) st.onchange = e => { BF.state = e.target.value; BF.limit = 60; render(); };
   $('#past').onchange = e => { BF.past = e.target.checked; render(); };
+  const hc = $('#hideClash'); if (hc) hc.onchange = e => { BF.hideClash = e.target.checked; BF.limit = 60; render(); };
   const mo = $('#more'); if (mo) mo.onclick = () => { BF.limit += 60; render(); };
 }
 
@@ -495,7 +527,7 @@ function vShoot(id){
   const on = !!S.saved[id], en = S.entries[id];
   const kind = {how_to_guide:'How to enter (guide)', event_page:'Event page & entry', entry_page:'Register / enter', entry_system:'Enter via Archers Diary (search the event)', email:'✉ Email your nomination', nominate_aba_j:'How to nominate (ABA Branch J contacts)'}[x.registration_url_kind] || 'Register / enter';
   const kindLbl = catOf(x) === 'come_try' && x.registration_url ? 'Book a place' : !isShoot(x) && x.registration_url ? 'Register / book' : null;
-  const t = theme(x), p = photo(t), isMail = x.registration_url_kind === 'email';
+  const t = theme(x), p = evPhoto(x), isMail = x.registration_url_kind === 'email';
   const closedNow = !!x.entry_close_date && daysTo(x.entry_close_date) < 0;
   const regBtn = x.info_only && !x.book_anytime ? '' : x.registration_url ? `<a class="btn ${closedNow ? 'alt' : 'gold'} block big-btn" id="regBtn" href="${esc(x.registration_url)}" ${isMail ? '' : 'target="_blank" rel="noopener"'}>${isMail ? '' : '↗ '}${kindLbl && !closedNow ? kindLbl : closedNow ? kind.replace(/^Register \/ enter$/, 'Entry page') + ' (entries closed)' : kind}</a>
       ${x.registration_email ? `<p class="note">Opens your email app addressed to <b>${esc(x.registration_email.to)}</b>${x.registration_email.cc ? `, cc ${esc(x.registration_email.cc)}` : ''}, with ${esc(x.registration_email.fields.join(', '))} ready to fill in.</p>` : ''}
@@ -510,21 +542,24 @@ function vShoot(id){
   ${heroClose(p)}
   <div class="wrap detail">
    <div class="main">
+    ${x.date_note ? `<div class="warn date-note" id="dateNote">⚠ <b>Check the dates:</b> ${esc(x.date_note)}</div>` : ''}
+    ${clashBox(x)}
     ${flyerCard(x)}
     <section class="panel"><h2 class="sec">Shoot details</h2><dl class="kv">
-      <dt>When</dt><dd>${esc(range(x))}</dd>
+      <dt>When</dt><dd>${esc(range(x))}${x.date_note ? '<br><span class="note">⚠ Dates differ between sources – see the note above.</span>' : ''}</dd>
       <dt>Where</dt><dd>${esc(x.location || '—')}${x.host ? `<br><span class="note">Host club: ${esc(x.host)}${x.venue_is_host_only ? ' – check the organiser for the exact range' : ''}</span>` : ''}${x.state && !(x.location || '').includes(' ' + x.state) ? ' · ' + esc(x.state) : ''}${x.country ? '<br><span class="note">' + esc(x.country) + '</span>' : ''}</dd>
+      ${CLUB[x.club_id] ? `<dt>Club</dt><dd><a href="#/club/${esc(x.club_id)}">${esc(CLUB[x.club_id].name)} →</a>${clubBadge(x) ? ' ' + clubBadge(x) : ''}</dd>` : ''}
       <dt>Type</dt><dd>${CATS[catOf(x)][0]} ${CATS[catOf(x)][1]}${x.class_basis ? ` <span class="note">(${esc(x.class_basis)})</span>` : ''}</dd>
       <dt>Discipline</dt><dd>${esc(x.discipline || '—')}</dd>
       <dt>Level</dt><dd>${esc(x.level || '—')}</dd>
-      <dt>Organiser</dt><dd>${esc(x.org || '—')}${x.aba_branch ? '<br><span class="note">ABA ' + esc(x.aba_branch) + '</span>' : ''}</dd>
+      <dt>Organiser</dt><dd>${isAba(x) ? abaLogo(32, 'org-logo') : ''}${esc(x.org || '—')}${x.aba_branch ? '<br><span class="note">ABA ' + esc(x.aba_branch) + '</span>' : ''}</dd>
       ${x.rounds && x.rounds !== x.name && !x.name.includes(x.rounds) ? `<dt>Rounds</dt><dd>${esc(x.rounds)}</dd>` : ''}
       ${x.registration_opens ? `<dt>Entries open</dt><dd>${esc(x.registration_opens)}</dd>` : ''}
       ${closeTxt ? `<dt>Entries close</dt><dd>${esc(closeTxt)}${x.field_sources?.entry_close_date ? ` <span class="src">from ${esc(x.field_sources.entry_close_date)}</span>` : ''}</dd>` : ''}
       ${x.fee ? `<dt>Fee</dt><dd>${esc(x.fee)}${x.field_sources?.fee ? ` <span class="src">from ${esc(x.field_sources.fee)}</span>` : ''}</dd>` : ''}
     </dl>${x.notes ? `<p class="note">${esc(x.notes)}</p>` : ''}</section>
     ${CALS[x.org_group] ? `<p class="note"><a href="#/calendars/${x.org_group}">📅 See it in the full ${esc(CALS[x.org_group].name)} calendar</a></p>` : ''}
-    <p class="note">Source: <a href="${esc(x.source_url)}" target="_blank" rel="noopener">${esc(x.source_url)}</a>${x.also_listed ? ` · also <a href="${esc(x.also_listed)}" target="_blank" rel="noopener">World Archery listing</a>` : ''}<br>Checked ${esc(x.last_checked)}. Always confirm details with the organiser.</p>
+    <p class="note">Source: <a href="${esc(x.source_url)}" target="_blank" rel="noopener">${esc(x.source_url)}</a>${x.also_listed ? ` · also <a href="${esc(x.also_listed)}" target="_blank" rel="noopener">World Archery listing</a>` : ''}${x.branch_source ? `<br>Branch source: <a href="${esc(x.branch_source.url)}" target="_blank" rel="noopener" id="branchSrc">${esc(x.branch_source.name)}</a>` : ''}<br>Checked ${esc(x.last_checked)}. Always confirm details with the organiser.</p>
    </div>
    <aside class="side">
     <section class="panel act">${closeTxt && ST(id) === 'none' && daysTo(x.entry_close_date) >= 0 ? `<p class="closes">⏳ Entries close<br><b>${esc(closeTxt)}</b></p>` : ''}
@@ -571,6 +606,7 @@ function vCalendar(){
   const up = mine.filter(x => !isPast(x)), past = mine.filter(isPast);
   return `${pageHead('My shoots', 'Your saved shoots, month by month.', 'target')}<div class="wrap narrow"><div class="calnav"><button id="pm" aria-label="Previous month">‹</button><b>${MONL[m]} ${y}</b><button id="nm" aria-label="Next month">›</button></div>
   <div class="grid">${g}</div>
+  ${clashPairsHtml()}
   <div class="legend"><span class="b lg-day">■ shoot day</span><span class="b lg-day">✓ entered</span><span class="b lg-day">✓$ entered + paid</span><span class="b lg-today">□ today</span></div>
   ${inMonth.length ? `<h2>In ${MONL[m]}</h2>${inMonth.map(evCard).join('')}` : ''}
   <h2>All my upcoming shoots (${up.length})</h2>
@@ -592,6 +628,7 @@ function vEntries(){
   const tot = {}; paid.forEach(x => { const e = S.entries[x.id]; const v = parseFloat(e.amount); if (!isNaN(v)) tot[e.currency || 'AUD'] = (tot[e.currency || 'AUD'] || 0) + v; });
   const byDate = (a, b) => (a.entry_close_date || a.start_date || '9') < (b.entry_close_date || b.start_date || '9') ? -1 : 1;
   return `${pageHead('Entries &amp; payments', 'What you have entered, paid and still need to enter.', 'field')}<div class="wrap narrow"><div class="panel dark"><div class="kicker">Total entry fees recorded</div><div class="big">${Object.keys(tot).length ? Object.entries(tot).map(([c, v]) => `${c} ${v.toFixed(2)}`).join(' + ') : '—'}</div></div>
+  ${clashPairsHtml()}
   <h2>☐ Still to enter (${todo.length})</h2>${todo.length ? todo.sort(byDate).map(evCard).join('') : '<p class="note">Nothing waiting. 👍</p>'}
   <h2>$ Entered – still to pay (${ent.length})</h2>${ent.length ? ent.sort(byDate).map(evCard).join('') : '<p class="note">Nothing to pay.</p>'}
   <h2>✓$ Entered + paid (${paid.length})</h2>${paid.length ? paid.map(x => { const e = S.entries[x.id]; return evCard(x).replace('</h3>', `</h3><div class="badges"><span class="b paid">$ Paid${e.amount ? ' ' + esc(e.currency || 'AUD') + ' ' + esc(e.amount) : ''}${e.paid_date ? ' · ' + esc(pd(e.paid_date).toLocaleDateString('en-AU', {day:'numeric', month:'short'})) : ''}</span>${e.ref ? `<span class="b world"># ${esc(e.ref)}</span>` : ''}</div>`); }).join('') : '<p class="note">Tick “I’ve entered” and “I’ve paid” on any shoot to track it here.</p>'}</div>`;
@@ -607,7 +644,7 @@ function vSettings(){
   const ausHtml = `<h2>States &amp; territories</h2><p class="note">Pick the states you shoot in. Leave all unticked to see the whole of Australia. National events always show.</p>
   <div class="list-check">${STATES.map(([c, n]) => `<label><input type="checkbox" data-s="${c}" ${S.states.includes(c) ? 'checked' : ''}> <span style="flex:1">${n} (${c})</span><span class="note">${cnt(x => x.state_code === c)} shoots</span></label>`).join('')}</div>
   <h2>Organisations</h2><div class="list-check">${GROUPS.map(([g, n, d]) => `<label><input type="checkbox" data-g="${g}" ${S.groups.includes(g) ? 'checked' : ''}> <span style="flex:1"><b>${n}</b><br><span class="note">${d}</span></span><span class="note">${cnt(x => x.org_group === g)} shoots</span></label>`).join('')}</div>`;
-  return `${pageHead('Settings', 'Choose your calendars and reminders.', 'indoor')}<div class="wrap narrow">${AUS() ? ausHtml : `<h2>Countries</h2><p class="note">Shows each country's national calendar. Pick as many as you like.</p>
+  return `${pageHead('Settings', 'Choose your clubs, calendars and reminders.', 'indoor')}<div class="wrap narrow">${clubSettings()}${AUS() ? ausHtml : `<h2>Countries</h2><p class="note">Shows each country's national calendar. Pick as many as you like.</p>
   <input type="search" id="cq" placeholder="Find a country…" aria-label="Find a country">
   <div class="list-check" id="clist">${countries.map(([c, n]) => `<label data-n="${esc(n.toLowerCase())}"><input type="checkbox" data-c="${c}" ${S.countries.includes(c) ? 'checked' : ''}> <span style="flex:1">${esc(n)}</span><span class="note">${counts[c] ? counts[c] + (counts[c] === 1 ? ' shoot' : ' shoots') : 'no calendar yet'}</span></label>`).join('')}</div>
   <h2>Organisations &amp; series</h2>
@@ -624,6 +661,7 @@ function vSettings(){
   <p class="note">Data: ${EV.length} shoots from ${ORGS.length} organisations. Sources: ${AUS() ? 'World Archery calendar (Australian events),' : 'World Archery calendar,'} ABA 2026 National Calendar, Archery Australia, Archery WA, organiser sites. Checked 9 Oct 2026.</p></div>`;
 }
 function bindSettings(){
+  bindClubPicker();
   document.querySelectorAll('[data-s]').forEach(c => c.onchange = () => { S.states = c.checked ? [...new Set([...S.states, c.dataset.s])] : S.states.filter(x => x !== c.dataset.s); BF.state = ''; save(); toast('Saved'); });
   document.querySelectorAll('[data-g]').forEach(c => c.onchange = () => { S.groups = c.checked ? [...new Set([...S.groups, c.dataset.g])] : S.groups.filter(x => x !== c.dataset.g); BF.scope = 'all'; save(); toast('Saved'); });
   if (!$('#cq')) { bindCommon(); return; }
@@ -671,7 +709,7 @@ function vAdvertise(){
       <tr><td><b>Discipline sponsor</b> <span class="note">(later)</span></td><td>Every Field, 3D, Target or Indoor page</td><td>All slots in one discipline</td></tr>
       </tbody></table></div></section>
     <section class="panel"><h2 class="sec">How it works</h2>
-      <ul class="ticks"><li>Sold directly to archery businesses, monthly or per season. Pricing on request during launch.</li>
+      <ul class="ticks"><li>Sold directly to archery businesses, monthly or per season. Email us to talk it through.</li>
       <li>Every ad is clearly labelled "Sponsored". Archery-related businesses only.</li>
       <li>No tracking cookies at launch. Ads link straight to your website.</li></ul></section>
     <section class="panel dark"><h2 class="sec">Get in touch</h2><p class="big-mail"><a href="${AD_MAIL}">${CONTACT}</a></p>
@@ -699,7 +737,7 @@ function vPrivacy(){
 }
 function vCredits(){
   setTitle('Credits');
-  return `${pageHead('Photo &amp; font credits', 'Thanks to the photographers who share their work under open licences.', 'mixed')}<div class="wrap narrow"><section class="panel"><ul class="credits">${Object.entries(PH).map(([k, p]) => `<li><img src="${esc(p.sm)}" alt="" loading="lazy"><div><b>${esc(p.title)}</b><br>${esc([p.by, p.source].filter(Boolean).join(' · '))}${p.url ? ` · <a href="${esc(p.url)}" target="_blank" rel="noopener">source</a>` : ''}${p.license ? `<br>${p.license_url ? `<a href="${esc(p.license_url)}" target="_blank" rel="noopener">${esc(p.license)}</a>` : esc(p.license)}. Resized for this site.` : ''}</div></li>`).join('')}</ul>
+  return `${pageHead('Photo &amp; font credits', 'Thanks to the photographers who share their work under open licences.', 'mixed')}<div class="wrap narrow"><section class="panel"><ul class="credits">${Object.entries(PH).filter(([k]) => k !== 'aba_3d').map(([k, p]) => `<li><img src="${esc(p.sm)}" alt="" loading="lazy"><div><b>${esc(p.title)}</b><br>${esc([p.by, p.source].filter(Boolean).join(' · '))}${p.url ? ` · <a href="${esc(p.url)}" target="_blank" rel="noopener">source</a>` : ''}${p.license ? `<br>${p.license_url ? `<a href="${esc(p.license_url)}" target="_blank" rel="noopener">${esc(p.license)}</a>` : esc(p.license)}. Resized for this site.` : ''}</div></li>`).join('')}</ul>
   <p class="note">Fonts: Inter and Barlow Condensed, SIL Open Font License 1.1, self-hosted. Event flyers belong to their organisers${SITE.flyers === 'local' ? ' and are shown for private testing only' : ' – we link to them at the source and do not host copies'}.</p></section></div>`;
 }
 
@@ -731,10 +769,11 @@ function dl(blob, name){ const a = document.createElement('a'); a.href = URL.cre
 const CALS = {aba:{name:'ABA', full:'Australian Bowhunters Association', src:'ABA 2026 National Calendar (12 Jun 2026)', url:'https://www.bowhunters.org.au/aba-shoot-calendar/', by:'Branch'},
   aa:{name:'Archery Australia', full:'Archery Australia (national, state and club events)', src:'Archery Australia events + World Archery calendar (Australian events)', url:'https://www.archery.org.au/events/', by:'State'},
   awa:{name:'Archery WA', full:'Archery WA (state events, QREs and club shoots)', src:'Archery WA events', url:'https://www.archerywa.com.au/', by:'State'}};
-let CF = {org:'aba', where:'', disc:'', cat:'', past:true};
+let CF = {org:'aba', where:'', disc:'', cat:'', club:'', past:true};
 const calWhere = x => x.org_group === 'aba' ? (x.branch ? `${x.branch} – ${x.branch_name || ''}` : (x.state_code || '')) : (x.state_code || '');
 function vCals(arg){
-  if (CALS[arg]) { if (CF.org !== arg) { CF.where = ''; CF.disc = ''; } CF.org = arg; }
+  if (arg === 'aba-j') { CF.org = 'aba'; CF.where = 'J – WA'; CF.disc = ''; }
+  else if (CALS[arg]) { if (CF.org !== arg) { CF.where = ''; CF.disc = ''; } CF.org = arg; }
   const c = CALS[CF.org]; setTitle(c.name + ' calendar');
   const all = EV.filter(x => x.org_group === CF.org && x.start_date && x.start_date >= '2026-01-01').sort((a, b) => a.start_date < b.start_date ? -1 : a.start_date > b.start_date ? 1 : a.name < b.name ? -1 : 1);
   const years = [...new Set(all.map(x => x.start_date.slice(0, 4)))];
@@ -742,16 +781,22 @@ function vCals(arg){
   const discs = [...new Set(all.map(x => (x.discipline || '').split(/[ (/]/)[0]).filter(Boolean))].sort();
   if (CF.where && !wheres.includes(CF.where)) CF.where = ''; if (CF.disc && !discs.includes(CF.disc)) CF.disc = '';
   let list = all.filter(x => (!CF.where || calWhere(x) === CF.where) && (!CF.disc || (x.discipline || '').startsWith(CF.disc)) && (CF.past || !isPast(x)));
+  if (CF.club) list = list.filter(clubFilter(CF.club));
   const tc = typeCounts(list); if (CF.cat) list = list.filter(x => catOf(x) === CF.cat);
   const nPast = list.filter(isPast).length;
-  let html = `${pageHead('Calendars', 'Each organisation’s full calendar, in one place. Tap a shoot for details, entry and reminders.', 'mixed')}<div class="wrap cals">
-  <div class="tabs" role="tablist" aria-label="Organisation">${Object.entries(CALS).map(([k, o]) => `<a role="tab" class="tab" href="#/calendars/${k}" aria-selected="${k === CF.org}">${esc(o.name)}</a>`).join('')}</div>
-  <div class="panel cal-head"><h2 class="sec">${esc(c.full)} – ${years.join(' & ') || '2026'}</h2>
+  let html = `${pageHead('Calendars', 'Each organisation’s full calendar, in one place. Tap a shoot for details, entry and reminders.', CF.org === 'aba' ? 'aba_field' : 'mixed')}<div class="wrap cals">
+  <div class="tabs" role="tablist" aria-label="Organisation">${Object.entries(CALS).map(([k, o]) => `<a role="tab" class="tab" href="#/calendars/${k}" aria-selected="${k === CF.org}">${k === 'aba' ? abaLogo(32, 'chip-logo') : ''}${esc(o.name)}</a>`).join('')}</div>
+  <div class="panel cal-head"><h2 class="sec${CF.org === 'aba' ? ' with-logo' : ''}">${CF.org === 'aba' ? abaLogo(64, 'head-logo') : ''}<span>${esc(c.full)} – ${years.join(' & ') || '2026'}</span></h2>
   ${typeSel(CF.cat, tc)}
+  ${clubChips(CF.club, CF.past, x => x.org_group === CF.org)}
+  ${CF.org === 'aba' ? `<div class="chips" role="group" aria-label="Branch"><a class="chip" href="#/calendars/aba" id="brAll" aria-pressed="${!CF.where}">All branches</a><a class="chip" href="#/calendars/aba-j" id="brJ" aria-pressed="${CF.where === 'J – WA'}">Branch J (WA)</a></div>` : ''}
+  ${CF.org === 'aba' && CF.where === 'J – WA' ? `<div class="branch-src" id="branchJ"><a class="bs-img" href="sources/aba-j-2026-branch-calendar.jpg" target="_blank" rel="noopener" aria-label="Open the Branch J calendar full size"><img src="sources/aba-j-2026-branch-calendar-sm.jpg" alt="ABA Branch J (WA) Shoot Calendar 2026" width="110" loading="lazy"></a>
+    <div><b>ABA Branch J (WA) Shoot Calendar 2026</b><p class="note">The branch source for WA ABA shoots (supported by the WA Government and Lotterywest).<br><b>Interclub times:</b> Sat sign-in 10:00–11:00, muster 11:45, start 12:00 · Sun sign-in 8:00–9:00, muster 9:45, start 10:00.</p>
+    <a href="sources/aba-j-2026-branch-calendar.jpg" target="_blank" rel="noopener">📄 View the Branch J calendar ↗</a></div></div>` : ''}
   <div class="cal-filters"><label>${c.by}<select id="cw"><option value="">All ${c.by === 'Branch' ? 'branches' : 'states'}</option>${wheres.map(w => `<option ${CF.where === w ? 'selected' : ''}>${esc(w)}</option>`).join('')}</select></label>
   <label>Discipline<select id="cd"><option value="">All disciplines</option>${discs.map(d => `<option ${CF.disc === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select></label>
   <label class="chk"><input type="checkbox" id="cp" ${CF.past ? 'checked' : ''}> Show finished</label></div>
-  <p class="note">${list.length} shoot${list.length !== 1 ? 's' : ''}${CF.past && nPast ? ` (${nPast} finished, shown greyed out)` : ''}. Official source: <a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.src)} ↗</a></p></div>
+  <p class="note"><a href="#/clubs">🏠 Find &amp; follow your club →</a></p><p class="note">${list.length} shoot${list.length !== 1 ? 's' : ''}${CF.past && nPast ? ` (${nPast} finished, shown greyed out)` : ''}. Official source: <a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.src)} ↗</a></p></div>
   <div class="cal-list" role="table" aria-label="${esc(c.name)} calendar"><div class="cal-row cal-th" role="row"><span role="columnheader">Date</span><span role="columnheader">Shoot</span><span role="columnheader">Club / venue</span><span role="columnheader">${c.by}</span><span role="columnheader">Discipline</span></div>`;
   let m = '';
   for (const x of list) {
@@ -762,7 +807,7 @@ function vCals(arg){
     const stb = st === 'paid' ? '<span class="b paid">✓$ Paid</span>' : st === 'entered' ? '<span class="b ent">✓ Entered</span>' : '';
     html += `<a class="cal-row${past ? ' past' : ''}" role="row" href="#/shoot/${esc(x.id)}">
       <span class="c-date" role="cell">${esc(range(x).replace(/ 20\d\d$/, ''))}${past ? '<small> · finished</small>' : ''}</span>
-      <span class="c-name" role="cell"><b>${esc(x.name.replace(/ – [^–]+$/, '') || x.name)}</b>${tb}${stb}${catTag(x)}</span>
+      <span class="c-name" role="cell"><b>${esc(x.name.replace(/ – [^–]+$/, '') || x.name)}</b>${tb}${stb}${catTag(x)}${clubBadge(x)}${clashBadge(x)}</span>
       <span class="c-club" role="cell">${esc(x.host || x.location || '')}</span>
       <span class="c-where" role="cell">${esc(calWhere(x))}</span>
       <span class="c-disc" role="cell">${esc(x.discipline || '')}</span></a>`;
@@ -771,11 +816,188 @@ function vCals(arg){
   return html + `</div><p class="note">Rebuilt from the organisers’ published calendars and checked ${esc(EV[0] ? EV[0].last_checked || '' : '')}. Always confirm with the host club.</p></div>`;
 }
 function bindCals(){
+  [['#brAll', ''], ['#brJ', 'J – WA']].forEach(([sel, w]) => { const a = $(sel); if (a) a.onclick = e => { CF.where = w; if (location.hash === a.getAttribute('href')) { e.preventDefault(); render(); } }; });
   $('#cw').onchange = e => { CF.where = e.target.value; render(); };
   $('#cd').onchange = e => { CF.disc = e.target.value; render(); };
   $('#cp').onchange = e => { CF.past = e.target.checked; render(); };
   document.querySelectorAll('[data-tcat]').forEach(b => b.onclick = () => { CF.cat = b.dataset.tcat; render(); });
+  document.querySelectorAll('[data-clubf]').forEach(b => b.onclick = () => { CF.club = CF.club === b.dataset.clubf ? '' : b.dataset.clubf; render(); });
 }
+/* ---------- clubs: directory, my clubs / watching, club pages, "New from your clubs" ---------- */
+const CLUBF = {mine: '🏠 My clubs', watch: '👁 Watching', new: '✦ New from your clubs'};
+const isMine = id => S.myClubs.includes(id), isWatch = id => S.watchClubs.includes(id);
+const followed = () => [...new Set([...S.myClubs, ...S.watchClubs])].filter(id => CLUB[id]);
+const clubFilter = k => k === 'mine' ? x => isMine(x.club_id) : k === 'watch' ? x => isWatch(x.club_id) : k === 'new' ? x => !!S.clubNew[x.id] : () => true;
+/* ---------- date clashes: overlap (every day of multi-day shoots) with shoots I've saved / entered / paid ---------- */
+const evEnd = x => x.end_date && x.end_date >= x.start_date ? x.end_date : x.start_date;
+const datable = x => x && x.start_date && !x.book_anytime && !x.info_only;
+const overlaps = (a, b) => a.start_date <= evEnd(b) && b.start_date <= evEnd(a);
+const normName = n => (n || '').toLowerCase().replace(/20\d\d|[^a-z0-9]+/g, '');
+// Same real-world shoot listed twice (e.g. AA + state calendar) is not a clash.
+const sameShoot = (a, b) => a.id === b.id || (a.start_date === b.start_date && evEnd(a) === evEnd(b) && (normName(a.name) === normName(b.name) || (a.club_id && a.club_id === b.club_id)));
+const isEnt = x => ST(x.id) !== 'none';
+function myDated(){ return Object.keys(S.saved).concat(Object.keys(S.entries)).filter((v, i, a) => a.indexOf(v) === i).map(id => BYID[id]).filter(datable); }
+function clashes(x, mine = myDated()){
+  if (!datable(x) || isPast(x)) return [];
+  return mine.filter(y => !sameShoot(x, y) && !isPast(y) && overlaps(x, y))
+    .sort((a, b) => (isEnt(b) - isEnt(a)) || (a.start_date < b.start_date ? -1 : 1));
+}
+const shortName = n => { n = n || ''; return n.length > 52 ? n.slice(0, 50).replace(/\s+\S*$/, '') + '…' : n; };
+function clashBadge(x){
+  const c = clashes(x); if (!c.length) return '';
+  const lead = isEnt(c[0]) ? 'Clashes with your entered shoot: ' : 'Clashes with ';
+  return `<span class="b clash" title="${esc(c.map(y => y.name + ' (' + range(y) + ')').join('; '))}">⚠️ ${lead}${esc(shortName(c[0].name))}${c.length > 1 ? ` +${c.length - 1} more` : ''}</span>`;
+}
+function clashBox(x){
+  const c = clashes(x); if (!c.length) return '';
+  return `<section class="panel clash-box" id="clashBox"><h2 class="sec">⚠️ Date clash</h2><p class="note">This shoot overlaps ${c.length === 1 ? 'a shoot' : c.length + ' shoots'} in My shoots:</p><ul>${c.map(y => `<li><a href="#/shoot/${encodeURIComponent(y.id)}">${esc(y.name)}</a> · ${esc(range(y))}${isEnt(y) ? ` <span class="b ${ST(y.id) === 'paid' ? 'paid' : 'ent'}">${ST(y.id) === 'paid' ? '✓$ Entered + paid' : '✓ Entered'}</span>` : ' <span class="b todo">★ Saved</span>'}</li>`).join('')}</ul></section>`;
+}
+// Pairs of my own upcoming shoots that clash (for My shoots / Entries).
+function myClashPairs(){
+  const m = myDated().filter(x => !isPast(x)).sort((a, b) => a.start_date < b.start_date ? -1 : 1), out = [];
+  for (let i = 0; i < m.length; i++) for (let j = i + 1; j < m.length; j++) if (!sameShoot(m[i], m[j]) && overlaps(m[i], m[j])) out.push([m[i], m[j]]);
+  return out;
+}
+function clashPairsHtml(){
+  const p = myClashPairs(); if (!p.length) return '';
+  const lnk = y => `<a href="#/shoot/${encodeURIComponent(y.id)}">${esc(shortName(y.name))}</a> <small>(${esc(range(y))}${isEnt(y) ? ', entered' : ''})</small>`;
+  return `<section class="panel clash-box" id="myClashes"><h2 class="sec">⚠️ Date clashes in your shoots (${p.length})</h2><ul>${p.map(([a, b]) => `<li>${lnk(a)} <b>↔</b> ${lnk(b)}</li>`).join('')}</ul><p class="note">Overlapping dates – check you can get to both, or remove one.</p></section>`;
+}
+function clubBadge(x){
+  const id = x.club_id; if (!id) return '';
+  const nw = S.clubNew[x.id] ? `<span class="b new">✦ New${S.clubNew[x.id].why === 'flyer' ? ' flyer' : ''}</span>` : '';
+  return isMine(id) ? `<span class="b myclub">🏠 My club</span>${nw}` : isWatch(id) ? `<span class="b watching">👁 Watching</span>${nw}` : '';
+}
+function clubChips(cur, past, extra){
+  const f = followed(); if (!f.length) return `<p class="note club-hint">🏠 <a href="#/settings/clubs">Pick your clubs</a> to see their shoots here.</p>`;
+  const n = k => EV.filter(x => clubFilter(k)(x) && (!extra || extra(x)) && (past || !isPast(x))).length, nn = Object.keys(S.clubNew).filter(id => BYID[id]).length;
+  const ks = [S.myClubs.length && 'mine', S.watchClubs.length && 'watch', nn && 'new'].filter(Boolean);
+  return `<div class="chips club-chips" role="group" aria-label="Clubs">${ks.map(k => `<button class="chip" data-clubf="${k}" aria-pressed="${cur === k}">${CLUBF[k]} <small>${n(k)}</small></button>`).join('')}</div>`;
+}
+const flyerKey = x => x.flyer_is_current ? 'f' + (x.flyer_year || '') : '';
+// Baseline a club's events (no "New" flood when you first follow it, or when follows arrive from another device).
+function baselineClub(id){ EV.filter(x => x.club_id === id).forEach(x => { S.clubSeen[x.id] = flyerKey(x); }); S.clubSeenClubs[id] = 1; }
+function clubUpdates(){
+  const now = Date.now(), fresh = [];
+  for (const [id, v] of Object.entries(S.clubNew)) if (!BYID[id] || now - v.t > 14 * 864e5) delete S.clubNew[id];   // New lasts 14 days or until opened
+  for (const id of followed()) {
+    if (!S.clubSeenClubs[id]) { baselineClub(id); continue; }
+    for (const x of EV.filter(e => e.club_id === id)) {
+      const fk = flyerKey(x), was = S.clubSeen[x.id];
+      if (was === undefined) { if (!isPast(x)) { S.clubNew[x.id] = {t: now, why: 'event'}; fresh.push(x); } }
+      else if (fk && was !== fk && !isPast(x)) { S.clubNew[x.id] = {t: now, why: 'flyer'}; fresh.push(x); }
+      S.clubSeen[x.id] = fk;
+    }
+  }
+  save(true);
+  if (fresh.length && S.clubNotify && S.notify && 'Notification' in window && Notification.permission === 'granted')
+    for (const x of fresh.slice(0, 5)) { const why = S.clubNew[x.id].why === 'flyer' ? 'New flyer' : 'New shoot', o = {body: `${range(x)} · ${(CLUB[x.club_id] || {}).name || ''}`, tag: 'club-new-' + x.id, icon: 'icons/icon-192.png', data: {id: x.id}};
+      navigator.serviceWorker?.ready.then(reg => reg.showNotification(`${why}: ${x.name}`, o)).catch(() => {}); }
+  return fresh;
+}
+function clubNotice(){
+  const ids = Object.keys(S.clubNew).filter(id => BYID[id]); if (!ids.length) return '';
+  const nf = ids.filter(id => S.clubNew[id].why === 'flyer').length, ne = ids.length - nf;
+  return `<div class="club-new" role="status"><span>✦ <b>New from your clubs:</b> ${[ne && `${ne} new shoot${ne === 1 ? '' : 's'}`, nf && `${nf} new flyer${nf === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}</span>
+    <button type="button" class="linkbtn" id="cnView">Show</button><button type="button" class="linkbtn" id="cnClear" aria-label="Dismiss new from your clubs">✕ Dismiss</button></div>`;
+}
+function bindClubNotice(){
+  const v = $('#cnView'), c = $('#cnClear');
+  if (v) v.onclick = () => { Object.assign(BF, {club: 'new', q: '', cat: '', disc: '', state: '', limit: 60}); if (location.hash.startsWith('#/browse')) render(); else location.hash = '#/browse'; };
+  if (c) c.onclick = () => { S.clubNew = {}; save(); render(); };
+}
+function homeClubs(){
+  const f = followed();
+  if (!f.length) return `<section class="panel your-clubs empty-clubs"><h2 class="sec-h">Your clubs</h2><p>Follow your club to see its next shoots here, and get a “New” badge when it adds a shoot or a flyer.</p><a class="btn alt" href="#/settings/clubs">🏠 Pick your clubs</a></section>`;
+  const next = EV.filter(x => f.includes(x.club_id) && !isPast(x) && x.start_date).sort((a, b) => a.start_date < b.start_date ? -1 : 1).slice(0, 4);
+  return `<section class="your-clubs"><h2 class="sec-h">Your clubs</h2>${clubNotice()}
+    <p class="club-links">${f.map(id => `<a class="chip" href="#/club/${esc(id)}">${isMine(id) ? (S.homeClub === id ? '🏠 ' : '🏠 ') : '👁 '}${esc(CLUB[id].name)}${S.homeClub === id ? ' · home' : ''}</a>`).join('')}</p>
+    ${next.length ? `<div class="list">${next.map(evCard).join('')}</div>` : '<p class="note">No upcoming shoots listed for your clubs yet.</p>'}
+    <p><a href="#/browse" id="ycAll" class="linkbtn">All shoots from my clubs →</a></p></section>`;
+}
+// picker
+const clubKey = c => snorm([c.name, ...(c.aliases || []), c.suburb, c.state, (STATES.find(s => s[0] === c.state) || [])[1]].filter(Boolean).join(' '));
+function clubSearch(q){
+  const w = snorm(q).split(' ').filter(Boolean); if (!w.length) return [];
+  return CLUBS.filter(c => { const k = ' ' + clubKey(c) + ' '; return w.every(t => k.includes(' ' + t) ); })
+    .sort((a, b) => (b.n_events > 0) - (a.n_events > 0) || a.name.localeCompare(b.name)).slice(0, 15);
+}
+const clubLine = c => [c.suburb, c.state, (c.orgs || []).map(o => ({aa: 'Archery Australia', awa: 'Archery WA', aba: 'ABA'}[o])).filter(Boolean).join(' / ')].filter(Boolean).join(' · ');
+function clubRow(c){
+  const up = EV.filter(x => x.club_id === c.id && !isPast(x)).length;
+  return `<li class="club-row" data-club="${esc(c.id)}"><a href="#/club/${esc(c.id)}"><b>${esc(c.name)}</b></a><span class="note">${esc(clubLine(c))}${up ? ` · ${up} upcoming shoot${up === 1 ? '' : 's'}` : ''}</span>
+    <span class="club-acts"><button type="button" class="tbtn" data-join="${esc(c.id)}" aria-pressed="${isMine(c.id)}">${isMine(c.id) ? '✓ 🏠 My club' : '+ 🏠 My club'}</button><button type="button" class="tbtn" data-watch="${esc(c.id)}" aria-pressed="${isWatch(c.id)}">${isWatch(c.id) ? '✓ 👁 Watching' : '+ 👁 Watch'}</button>${isMine(c.id) ? `<button type="button" class="tbtn" data-home="${esc(c.id)}" aria-pressed="${S.homeClub === c.id}">${S.homeClub === c.id ? '★ Home club' : '☆ Make home club'}</button>` : ''}</span></li>`;
+}
+function clubPickerHtml(){
+  const mine = S.myClubs.filter(id => CLUB[id]).map(id => CLUB[id]), watch = S.watchClubs.filter(id => CLUB[id] && !isMine(id)).map(id => CLUB[id]);
+  return `<div class="club-picker" id="clubPicker">
+    <h3>🏠 My clubs <span class="note">(clubs I belong to)</span></h3>${mine.length ? `<ul class="club-list" id="myClubList">${mine.map(clubRow).join('')}</ul>` : '<p class="note" id="myClubList">None yet – search below and tap “+ My club”.</p>'}
+    <h3>👁 Clubs I watch</h3>${watch.length ? `<ul class="club-list" id="watchList">${watch.map(clubRow).join('')}</ul>` : '<p class="note" id="watchList">None yet – watch a club to see its shoots and new flyers.</p>'}
+    <label for="clubQ">Find a club by name, suburb or state</label><input type="search" id="clubQ" placeholder="e.g. Gosnells, KGSA, Yokine, QLD…" autocomplete="off" value="${esc(clubPickerHtml.q || '')}">
+    <ul class="club-list" id="clubRes" aria-live="polite">${clubPickerHtml.q ? clubSearch(clubPickerHtml.q).map(clubRow).join('') || '<li class="note">No club found. Try part of the name or the state.</li>' : ''}</ul>
+    <p class="note">${CLUBS.length} clubs from the Archery WA, Archery SA, SQAS and Archery Victoria club lists and the shoots on our calendars. Missing yours? <a href="#/submit">Tell us</a>.</p></div>`;
+}
+function clubSettings(){
+  const perm = 'Notification' in window ? Notification.permission : 'unsupported';
+  return `<h2 id="clubs">Your clubs</h2><p class="note">Saved on this device${AUTH.on ? ' and in your account if you sign in' : ''}. Their shoots get a 🏠 My club or 👁 Watching badge, and a ✦ New badge when they add a shoot or a current flyer.</p>
+  ${clubPickerHtml()}
+  <label class="chk"><input type="checkbox" id="clubNotify" ${S.clubNotify ? 'checked' : ''}> 🔔 Also send a phone/browser notification for new shoots and flyers from my clubs${perm !== 'granted' || !S.notify ? ' <span class="note">(turns on notifications)</span>' : ''}</label>`;
+}
+function toggleClub(kind, id){
+  const was = kind === 'my' ? isMine(id) : isWatch(id), k = kind === 'my' ? 'myClubs' : 'watchClubs';
+  S[k] = was ? S[k].filter(x => x !== id) : [...S[k], id];
+  if (kind === 'my' && was && S.homeClub === id) S.homeClub = null;
+  if (kind === 'my' && !was && !S.homeClub) S.homeClub = id;
+  if (!was && !S.clubSeenClubs[id]) baselineClub(id);
+  save(); toast(was ? 'Removed' : kind === 'my' ? '✓ Added to My clubs' : '✓ Watching');
+}
+function bindClubBtns(root){
+  root.querySelectorAll('[data-join],[data-watch],[data-home]').forEach(b => b.onclick = () => {
+    const d = b.dataset, sel = d.join ? `[data-join="${CSS.escape(d.join)}"]` : d.watch ? `[data-watch="${CSS.escape(d.watch)}"]` : `[data-home="${CSS.escape(d.home)}"]`, inRes = !!b.closest('#clubRes');
+    if (d.join) toggleClub('my', d.join); else if (d.watch) toggleClub('watch', d.watch); else { S.homeClub = d.home; save(); toast('★ Home club set'); }
+    const y = scrollY; render(); scrollTo(0, y); const nb = (inRes && $('#clubRes ' + sel)) || $(sel); nb && nb.focus({preventScroll: true});
+  });
+}
+function bindClubPicker(){
+  const q = $('#clubQ');
+  if (q) q.oninput = () => { clubPickerHtml.q = q.value; $('#clubRes').innerHTML = q.value.trim() ? clubSearch(q.value).map(clubRow).join('') || '<li class="note">No club found. Try part of the name or the state.</li>' : ''; bindClubBtns($('#clubRes')); };
+  bindClubBtns($('#view'));
+  const cn = $('#clubNotify'); if (cn) cn.onchange = async () => {
+    S.clubNotify = cn.checked;
+    if (cn.checked && (!S.notify || !('Notification' in window) || Notification.permission !== 'granted')) {
+      if (!('Notification' in window)) { S.clubNotify = false; toast('This browser can’t show notifications'); }
+      else { const p = await Notification.requestPermission(); S.notify = p === 'granted'; if (!S.notify) { S.clubNotify = false; toast('Notifications are blocked in this browser'); } }
+    }
+    save(); toast(S.clubNotify ? '🔔 We’ll notify you about new shoots from your clubs' : 'Saved'); render();
+  };
+}
+function vClubs(){
+  setTitle('Clubs');
+  return `${pageHead('Clubs', 'Find your club, follow it, and see all its shoots in one place.', 'mixed')}<div class="wrap narrow"><section class="panel">${clubPickerHtml()}</section>
+  ${STATES.map(([c, n]) => { const cs = CLUBS.filter(x => x.state === c); return cs.length ? `<details class="panel"><summary><b>${n}</b> <span class="note">${cs.length} clubs</span></summary><ul class="club-list">${cs.map(clubRow).join('')}</ul></details>` : ''; }).join('')}</div>`;
+}
+function vClub(id){
+  const c = CLUB[id];
+  if (!c) { setTitle('Club'); return `${pageHead('Club not found', '', 'mixed')}<div class="wrap narrow"><p>We couldn’t find that club. <a href="#/clubs">All clubs</a></p></div>`; }
+  setTitle(c.name);
+  const evs = EV.filter(x => x.club_id === id).sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1), up = evs.filter(x => !isPast(x)), past = evs.filter(isPast).reverse();
+  const addr = c.address || [c.name, c.suburb, c.state, 'Australia'].filter(Boolean).join(', ');
+  const map = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(addr);
+  return `${pageHead(c.name, clubLine(c), (c.orgs || []).includes('aba') && !(c.orgs || []).some(o => o !== 'aba') ? 'aba_field' : 'mixed')}<div class="wrap narrow club-page">
+    <section class="panel"><div class="club-acts big">
+      <button type="button" class="btn ${isMine(id) ? '' : 'alt'}" data-join="${esc(id)}" aria-pressed="${isMine(id)}">${isMine(id) ? '✓ 🏠 My club' : '🏠 Join – add to My clubs'}</button>
+      <button type="button" class="btn ${isWatch(id) ? '' : 'alt'}" data-watch="${esc(id)}" aria-pressed="${isWatch(id)}">${isWatch(id) ? '✓ 👁 Watching' : '👁 Watch this club'}</button>
+      ${isMine(id) ? `<button type="button" class="btn alt" data-home="${esc(id)}" aria-pressed="${S.homeClub === id}">${S.homeClub === id ? '★ Home club' : '☆ Make home club'}</button>` : ''}</div>
+      <p class="note">“Join” here just marks it as your club in this app – to become a member, contact the club.</p>
+      <dl class="kv">${c.aliases && c.aliases.length ? `<dt>Also known as</dt><dd>${esc(c.aliases.join(', '))}</dd>` : ''}
+        <dt>Where</dt><dd>${esc(c.address || [c.suburb, c.state].filter(Boolean).join(', ') || '—')}<br><a href="${esc(map)}" target="_blank" rel="noopener">📍 Open in Maps ↗</a></dd>
+        ${c.website ? `<dt>Website</dt><dd><a href="${esc(c.website)}" target="_blank" rel="noopener">${esc(c.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '').slice(0, 50))} ↗</a></dd>` : ''}
+        <dt>Calendars</dt><dd>${esc((c.orgs || []).map(o => ({aa: 'Archery Australia', awa: 'Archery WA', aba: 'ABA'}[o])).filter(Boolean).join(', ') || '—')}</dd></dl></section>
+    <h2 class="sec-h">Upcoming shoots (${up.length})</h2>${up.length ? `<div class="list">${up.map(evCard).join('')}</div>` : '<p class="note">No upcoming shoots listed yet. Watch the club to get a “New” badge when one is added.</p>'}
+    ${past.length ? `<details class="past-shoots"><summary><h2 class="sec-h">Past shoots (${past.length})</h2></summary><div class="list">${past.map(evCard).join('')}</div></details>` : ''}
+    <p class="note"><a href="#/clubs">← All clubs</a></p></div>`;
+}
+function bindClub(id){ bindClubPicker(); }
 /* ---------- router ---------- */
 /* ---------- optional accounts (Supabase) ----------
    Off unless config.js sets SUPABASE_URL + SUPABASE_ANON_KEY. Off = the site works exactly as before (no sign-in UI, nothing loaded).
@@ -888,7 +1110,8 @@ function vAccount(){
     <button class="btn alt" type="submit">Save name</button></form></section>
    <section class="panel"><h2 class="sec">My states &amp; organisations</h2><dl class="kv"><dt>States</dt><dd>${esc(stTxt)}</dd><dt>Organisations</dt><dd>${esc(grTxt || '—')}</dd>
     <dt>Reminders</dt><dd>${esc(S.remindDays.join(', '))} days before · entries close ${esc(S.closeDays.join(' / '))}</dd></dl>
-    <a class="btn alt" href="#/settings">Change in Settings</a><p class="note">Settings sync to your other devices.</p></section>
+    <dl class="kv"><dt>My clubs</dt><dd>${esc(S.myClubs.map(i => (CLUB[i] || {}).name).filter(Boolean).map(n => n + (CLUB[S.homeClub] && CLUB[S.homeClub].name === n ? ' (home)' : '')).join(', ') || '—')}</dd><dt>Watching</dt><dd>${esc(S.watchClubs.map(i => (CLUB[i] || {}).name).filter(Boolean).join(', ') || '—')}</dd></dl>
+    <a class="btn alt" href="#/settings">Change in Settings</a><p class="note">Settings and clubs sync to your other devices.</p></section>
    <section class="panel"><h2 class="sec">Sync</h2><p class="sync-st" id="syncSt">${syncTxt}</p>
     <p class="note">${c.saved} saved shoot${c.saved === 1 ? '' : 's'} · ${c.ent} entr${c.ent === 1 ? 'y' : 'ies'}. Changes save on this device straight away and sync in the background, also after being offline.</p>
     <button class="btn alt" id="syncNow">↻ Sync now</button></section>
@@ -1037,10 +1260,10 @@ function render(){
   document.querySelectorAll('.nav a').forEach(a => { const on = a.dataset.tab === (p || 'home') || (p === 'shoot' && a.dataset.tab === 'browse'); a.classList.toggle('on', on); on ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'); });
   document.body.dataset.page = p || 'home';
   if (p === 'browse') { v.innerHTML = vBrowse(); bindBrowse(); }
-  else if (p === 'shoot') { const id = decodeURIComponent(arg || ''); v.innerHTML = vShoot(id); bindShoot(id); }
+  else if (p === 'shoot') { const id = decodeURIComponent(arg || ''); if (S.clubNew[id]) { delete S.clubNew[id]; save(); } v.innerHTML = vShoot(id); bindShoot(id); }
   else if (p === 'calendar') { v.innerHTML = vCalendar(); bindCalendar(); }
   else if (p === 'entries') v.innerHTML = vEntries();
-  else if (p === 'settings') { v.innerHTML = vSettings(); bindSettings(); }
+  else if (p === 'settings') { v.innerHTML = vSettings(); bindSettings(); if (arg === 'clubs') setTimeout(() => { const c = $('#clubs'); c && c.scrollIntoView(); }, 30); }
   else if (p === 'advertise') v.innerHTML = vAdvertise();
   else if (p === 'credits') v.innerHTML = vCredits();
   else if (p === 'privacy') v.innerHTML = vPrivacy();
@@ -1048,9 +1271,12 @@ function render(){
   else if (p === 'account') { v.innerHTML = vAccount(); bindAccount(); }
   else if (p === 'submit') { v.innerHTML = vSubmit(); bindSubmit(); }
   else if (p === 'calendars') { v.innerHTML = vCals(arg); bindCals(); }
+  else if (p === 'club') { const id = decodeURIComponent(arg || ''); v.innerHTML = vClub(id); bindClub(id); }
+  else if (p === 'clubs') { v.innerHTML = vClubs(); bindClubPicker(); }
   else { v.innerHTML = vHome();
     v.querySelectorAll('[data-cat]').forEach(a => a.onclick = () => { BF.cat = a.dataset.cat; BF.disc = ''; BF.scope = 'all'; });
     v.querySelectorAll('[data-th]').forEach(a => a.onclick = () => { BF.cat = ''; BF.disc = {field:'Field','3d':'3D',target:'Target',indoor:'Indoor'}[a.dataset.th]; BF.scope = 'all'; });
+    bindClubNotice(); const ya = $('#ycAll'); if (ya) ya.onclick = () => { Object.assign(BF, {club: S.myClubs.length ? 'mine' : 'watch', q: '', cat: '', disc: '', state: '', limit: 60}); };
     $('#heroSearch').onsubmit = e => { e.preventDefault(); BF.q = $('#hq').value; BF.scope = 'all'; location.hash = '#/browse'; }; }
   bindCards(v); updateNav();
 }
@@ -1069,14 +1295,14 @@ function vSubmit(){
   if (sent) return `${head}<div class="wrap narrow"><section class="panel thanks" id="subThanks" tabindex="-1">
     <span class="thanks-mark" aria-hidden="true">✓</span><h2 class="sec">Thanks, your shoot is in</h2>
     <p>We'll check the details against your flyer and usually have it live <b>within 48 hours</b>. If anything's unclear we'll reply to the email you gave us.</p>
-    <p class="note">Asked for a free entry form? We'll email you a link to check before it goes live. Free until ${esc(SITE.freeUntil)}.</p>
+    <p class="note">Asked for an entry form? We'll email you a link to check before it goes live.</p>
     <div class="row"><a class="btn gold" href="#/submit">Submit another shoot</a><a class="btn alt" href="#/browse">Find shoots</a></div></section></div>`;
   const opt = (a, ph) => `<option value="">${ph}</option>` + a.map(x => `<option>${esc(x)}</option>`).join('');
   const f = (id, lab, inp, hint = '', req = true) => `<div class="fld" data-f="${id}"><label for="${id}">${lab}${req ? ' <span class="req" aria-hidden="true">*</span>' : ' <span class="opt">(optional)</span>'}</label>${inp}${hint ? `<p class="hint" id="${id}_h">${hint}</p>` : ''}<p class="err" id="${id}_e" role="alert"></p></div>`;
   return `${head}<div class="wrap narrow sub">
   <section class="panel sub-intro"><ul class="ticks">
-    <li>Free to list. Every shoot is <b>reviewed before it goes live, usually within 48 hours</b>.</li>
-    <li>No online entries? Tick "yes" below and we'll set up a <b>free entry form</b> and email you the entry list. Free until ${esc(SITE.freeUntil)}.</li>
+    <li>Every shoot is <b>reviewed before it goes live, usually within 48 hours</b>.</li>
+    <li>No online entries? We'll list your shoot, set up an entry form and send you the entry list. Tick "yes" below.</li>
     <li>Fields marked <span class="req">*</span> are required.</li></ul></section>
   <form id="subForm" class="panel sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate>
     <input type="hidden" name="_subject" value="New shoot submission – Archery Calendar">
@@ -1105,8 +1331,8 @@ function vSubmit(){
       <div class="grid2">${f('s_close', 'Entries close', `<input id="s_close" name="entry_close_date" type="date">`, '', false)}
       ${f('s_method', 'How do archers enter now?', `<select id="s_method" name="entry_method" required>${opt(ENTRY_METHODS, 'Choose…')}</select>`)}</div>
       ${f('s_link', 'Entry link', `<input id="s_link" name="entry_link" type="text" maxlength="300" placeholder="https://" inputmode="url">`, 'Your Assemble or Archers Diary page, or the email or phone number archers should use.', false)}
-      <div class="fld" data-f="s_want"><span class="lab" id="s_want_l">Want us to set up a free entry form? <span class="req" aria-hidden="true">*</span></span>
-        <div class="seg" role="radiogroup" aria-labelledby="s_want_l" id="s_want"><label class="chk"><input type="radio" name="want_free_entry_form" value="Yes" required><span>Yes please</span></label><label class="chk"><input type="radio" name="want_free_entry_form" value="No"><span>No thanks</span></label></div><p class="err" id="s_want_e" role="alert"></p></div>
+      <div class="fld" data-f="s_want"><span class="lab" id="s_want_l">Want us to set up an entry form? <span class="req" aria-hidden="true">*</span></span>
+        <div class="seg" role="radiogroup" aria-labelledby="s_want_l" id="s_want"><label class="chk"><input type="radio" name="want_entry_form" value="Yes" required><span>Yes please</span></label><label class="chk"><input type="radio" name="want_entry_form" value="No"><span>No thanks</span></label></div><p class="err" id="s_want_e" role="alert"></p></div>
     </fieldset>
     <fieldset><legend>Flyer</legend>
       ${f('s_file', 'Upload the flyer', `<input id="s_file" name="attachment" type="file" accept=".pdf,.jpg,.jpeg,application/pdf,image/jpeg">`, `PDF or JPG, up to ${MAX_MB} MB.`, false)}
@@ -1149,7 +1375,7 @@ function bindSubmit(){
     const me = val('s_method'), ln = val('s_link');
     add('s_method', me ? '' : 'Choose how archers enter now.');
     add('s_link', (me === 'Assemble' || me === 'Archers Diary') && !ln ? `Add your ${me} link.` : ln && /^(https?:|www\.)/i.test(ln) && !isUrl(ln.replace(/^www\./i, 'https://www.')) ? 'That link doesn’t look right.' : '');
-    add('s_want', fm.querySelector('[name=want_free_entry_form]:checked') ? '' : 'Choose yes or no.');
+    add('s_want', fm.querySelector('[name=want_entry_form]:checked') ? '' : 'Choose yes or no.');
     const file = g('s_file').files[0];
     add('s_file', !file ? '' : !/\.(pdf|jpe?g)$/i.test(file.name) ? 'Flyers must be a PDF or JPG.' : file.size > MAX_MB * 1048576 ? `That file is ${(file.size / 1048576).toFixed(1)} MB. The limit is ${MAX_MB} MB; try a link instead.` : '');
     const fl = val('s_flink'); add('s_flink', fl && !isUrl(fl) ? 'Use a full link starting with https://' : '');
@@ -1162,7 +1388,7 @@ function bindSubmit(){
     const L = [['Organisation type', val('s_orgtype')], ['Club', val('s_club')], ['Contact name', val('s_name')], ['Contact email', val('s_email')], ['Phone', val('s_phone')],
       ['Shoot', val('s_shoot')], ['Discipline', discs().join(', ')], ['Start', val('s_start')], ['End', val('s_end')], ['Venue', val('s_venue')], ['Suburb', val('s_suburb')], ['State', val('s_state')],
       ['Entries close', val('s_close')], ['Entry method', val('s_method')], ['Entry link', val('s_link')],
-      ['Free entry form wanted', (fm.querySelector('[name=want_free_entry_form]:checked') || {}).value || ''], ['Flyer link', val('s_flink')], ['Notes', val('s_notes')],
+      ['Entry form wanted', (fm.querySelector('[name=want_entry_form]:checked') || {}).value || ''], ['Flyer link', val('s_flink')], ['Notes', val('s_notes')],
       ['Permission to publish', g('s_ok').checked ? 'Yes' : 'Not ticked']];
     return L.map(([k, v]) => `${k}: ${v}`).join('\n') + '\n\n>>> Please attach the flyer (PDF or JPG) to this email before sending. <<<\n';
   }

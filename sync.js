@@ -7,7 +7,7 @@
 (function (root) {
   'use strict';
   const SKEY = 'archreg.sync.v1';
-  const SETTING_KEYS = ['states', 'groups', 'remindDays', 'closeDays', 'countries', 'orgs', 'world'];
+  const SETTING_KEYS = ['states', 'groups', 'remindDays', 'closeDays', 'countries', 'orgs', 'world', 'myClubs', 'homeClub', 'watchClubs', 'clubNotify'];
   const ST_OUT = {none: 'not_entered', entered: 'entered', paid: 'paid'};
   const isDate = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
   const stable = v => Array.isArray(v) ? '[' + v.map(stable).join(',') + ']'

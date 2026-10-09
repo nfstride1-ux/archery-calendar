@@ -92,5 +92,34 @@
   "license": "",
   "license_url": "",
   "year": 2026
+ },
+ "aba_field": {
+  "file": "img/aba-field-owl-2026.jpg",
+  "sm": "img/aba-field-owl-2026-sm.jpg",
+  "title": "Female archer with longbow shoots at a rubber owl in a 3D competition in Tuscany Italy",
+  "alt": "Two archers with longbows on a bush course, aiming at a 3D owl target among the trees",
+  "by": "TizVan",
+  "source": "Wikimedia Commons",
+  "url": "https://commons.wikimedia.org/wiki/File:Female_archer_with_longbow_shoots_at_a_rubber_owl_in_a_3D_competition_in_Tuscany_Italy.jpg",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "date": "2026-02-14",
+  "year": 2026,
+  "layout": "split",
+  "shape": "portrait",
+  "pos": "center 35%"
+ },
+ "aba_3d": {
+  "file": "img/3d-longbow-2026.jpg",
+  "sm": "img/3d-longbow-2026-sm.jpg",
+  "title": "Cecilia Santacroce arciera italiana longbow World Archery 3D Championships",
+  "by": "TizVan",
+  "source": "Wikimedia Commons",
+  "url": "https://commons.wikimedia.org/wiki/File:Cecilia_Santacroce_arciera_italiana_longbow_World_Archery_3D_Championships.jpeg",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "date": "2026-03-01",
+  "year": 2026,
+  "pos": "center 40%"
  }
 }

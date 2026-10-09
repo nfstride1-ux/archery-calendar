@@ -6,7 +6,7 @@ your saved shoots and entries stay in your browser (localStorage).
 
 - Live: https://archerycalendars.com/ (the old address https://nfstride1-ux.github.io/archery-calendar/ redirects here)
 - Dates come from organisers' public calendars; always check with the organiser.
-- Clubs: send us your flyer – nfshold@gmail.com (NFS Strategic Holdings). No online entries? We'll list your shoot, set up a free entry form and send you the entry list. Free until 31 Dec 2026.
+- Clubs: send us your flyer – nfshold@gmail.com (NFS Strategic Holdings). No online entries? We'll list your shoot, set up an entry form and send you the entry list.
 - Photo and font credits: [CREDITS.md](CREDITS.md) and the Credits page on the site.
 
 Event flyers: page-1 previews only (bank details removed); organisers can ask for removal or updates at nfshold@gmail.com.
@@ -34,8 +34,33 @@ Rules (`tools/classify.py`, applied by `tools/build_data.py`; first match wins):
 8. Anything else: Competition (open tournament).
 Coaching, youth and come & try events keep their own types. Search: "club" and "club shoot(s)" find club shoots.
 
+## Club directory, My clubs and Watching
+`tools/clubs.py` (run by `tools/build_data.py`) builds `app/data/clubs.json` – one record per club: `id`, `name`, `aliases`, `state`, `suburb`, `address` (only when an event's venue line names the club and has a street address), `website`, `orgs` (aa / awa / aba), `sources`, `n_events` – and sets `club_id` on every event.
+- Sources: Archery WA club list (research/awa_clubs.json), Archery SA, SQAS and Archery Victoria club pages (research/clubs/*.html, saved 9 Oct 2026), plus the host, contact email, name and venue of every shoot. ABA clubs come from the ABA calendar (no public ABA club list). NSW/ACT/TAS/NT lists are map widgets, so those clubs come from events only.
+- Name clean-up: curated aliases in `SEED` (e.g. Gosnells Archers = Gosnells Archery Club; Kalamunda Governor Stirling Archers = KGSA = Kalamunda Archery; Whiteman Park Archers = WPA; Bowmen of Melville = BOM; Waverley City Archers = Waverly Archers; Cressy Archers = Cressy Bowmen; SOPA = Sydney Olympic Park Archery Centre). Longest alias match wins; a contact email on the club's own domain also counts (Old Coot's → Whiteman Park Archers).
+- State-body events (Archery WA QREs at Archery Park Whiteman, AA Matchplay at "various clubs", Archery SA / SQAS championships, nationals) have no host club (`club_id: null`).
+- Users: Settings → Your clubs (search by name, alias, suburb or state; "+ My club", "+ Watch", one home club). Stored in `myClubs`, `homeClub`, `watchClubs`, `clubNotify` – saved locally and synced via `profiles.settings`. "New" detection is per device (`clubSeen`, `clubNew`): a shoot or a current-year flyer that appears for a followed club after it was first followed gets a ✦ New badge for 14 days or until opened; optional browser notification if notifications are on.
+- Pages: `#/clubs` (directory), `#/club/<id>` (upcoming + past shoots, map link, website, Join / Watch). Find shoots and Calendars have 🏠 My clubs / 👁 Watching / ✦ New chips.
+
 ## Optional user accounts (Supabase), off until configured
 - Built in: `app/sync.js` (sync engine), the Account page (`#/account`), `supabase/schema.sql` (tables + Row Level Security + sync functions), `docs/SUPABASE_SETUP.md` (setup steps).
 - Switched on only when `app/config.js` has `SUPABASE_URL` and the public `SUPABASE_ANON_KEY` (publishable/anon key). Empty = no sign-in UI and no extra code loaded.
 - Sign-in: magic link by email (PKCE) and optionally Google. Data region: Sydney (ap-southeast-2). Never commit the secret/service_role key; the build refuses one.
 - Tests: `node tests/test_sync.js`, `bash tests/test_schema.sh` (local PostgreSQL), `tools/qa_accounts.py <url>` (browser, mock Supabase).
+
+## Date clashes
+Any shoot whose dates overlap a shoot you've saved, entered or paid (every day of multi-day shoots counts) shows a
+`⚠️ Clashes with <shoot>` badge on cards (Find shoots, Calendars, club pages, Home, My shoots) and on the shoot page,
+which also lists the clashing shoots with links. Entered/paid clashes are listed first and worded
+"Clashes with your entered shoot: …"; several clashes add "+N more". The same shoot listed twice (same dates and name or club)
+is not a clash, and finished shoots are never flagged. My shoots and Entries list pairs of your own shoots that clash.
+Find shoots has a "Hide clashes with my shoots" toggle (your own shoots stay listed). QA: `tools/qa_clashes.py`.
+
+## ABA Branch J (WA) and several flyers per shoot
+- `app/sources/aba-j-2026-branch-calendar.jpg` is the ABA Branch J (WA) Shoot Calendar 2026, the branch source for WA ABA shoots.
+  `tools/build_data.py` (step 1b) adds the shoots missing from the national calendar: 3D Sat 28 Feb + ABA Interclub Sun 1 Mar at Peel, and the Stick Bow Shoot on 28 Nov at WAFBC.
+  It also adds the interclub times, fixes the "Western Plains" spelling, and flags the IFAA State Titles date clash between the branch calendar (28–29 Mar) and the national calendar (25–26 Apr) with `date_note`.
+  Each WA ABA shoot links to the branch calendar (`branch_source`). Calendars → ABA → "Branch J (WA)" (`#/calendars/aba-j`) shows the branch view.
+- A shoot can have several flyers in `tools/flyers.json`, one entry per file. The primary flyer is picked in this order: current year first, then the lowest `priority`, then the newest year.
+  The primary drives the flyer panel and status; the others are listed under "More flyers", and older years are marked "archive".
+  Old-year flyers never count as current, so those shoots keep the "No entry details yet" status. QA: `tools/qa_aba_j.py`.

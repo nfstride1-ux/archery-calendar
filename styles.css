@@ -410,3 +410,49 @@ label.chk input{width:auto;min-height:auto}
 body.has-inst{padding-bottom:70px}
 body.has-inst #toast{bottom:80px}
 @media (max-width:720px){.phead.split .split-img{display:none}.phead.split .split-row{display:block}}
+
+/* clubs */
+.b.myclub{background:var(--night);color:#fff;border-color:var(--night)}
+.b.watching{background:#fff;color:var(--night);border:2px dashed var(--night)}
+.b.new{background:var(--gold);color:var(--night);border-color:var(--night);font-weight:800}
+.club-chips{margin-top:6px}
+.chip small{font-weight:600;opacity:.75}
+.club-hint{margin:8px 0}
+.club-new{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;background:#fff8dc;border:2px solid var(--gold-d);border-radius:12px;padding:10px 14px;margin:14px 0 4px;color:var(--ink)}
+.club-new span{flex:1 1 260px}
+.club-picker h3{font-family:var(--disp);text-transform:uppercase;font-size:20px;margin:14px 0 6px}
+.club-picker h3 .note{font-family:inherit;text-transform:none;font-size:14px}
+.club-list{list-style:none;margin:0 0 10px;padding:0;display:grid;gap:8px}
+.club-row{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;background:#fff;border:1px solid var(--line,#dfe3ea);border-radius:10px;padding:10px 12px}
+.club-row>a{color:var(--ink);text-decoration:none}.club-row>a:hover b{text-decoration:underline}
+.club-row .note{grid-column:1}
+.club-acts{grid-column:2;grid-row:1 / span 2;display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.club-acts.big{justify-content:flex-start;margin-bottom:6px}
+.tbtn{font:inherit;font-size:14px;font-weight:700;min-height:40px;padding:6px 10px;border-radius:8px;border:2px solid var(--night);background:#fff;color:var(--night);cursor:pointer}
+.tbtn[aria-pressed="true"]{background:var(--night);color:#fff}
+#clubQ{margin-bottom:8px}
+.your-clubs{margin:26px 0 6px}.your-clubs .club-links{display:flex;flex-wrap:wrap;gap:8px}
+.your-clubs .club-links .chip{text-decoration:none}
+.empty-clubs p{margin:4px 0 12px}
+.past-shoots summary{cursor:pointer;list-style:none}.past-shoots summary h2{display:inline}
+.past-shoots summary::before{content:"▸ ";font-size:22px}.past-shoots[open] summary::before{content:"▾ "}
+details.panel summary{cursor:pointer;padding:4px 0}
+@media (max-width:620px){.club-row{grid-template-columns:1fr}.club-acts{grid-column:1;grid-row:auto;justify-content:flex-start}}
+/* date clashes */
+.b.clash{background:#fff4d6;color:#7a3e00;border:2px solid #c96a00;font-weight:700}
+.clash-box{border-left:6px solid #c96a00;background:#fffaf0}
+.clash-box ul{margin:6px 0 0;padding-left:20px}.clash-box li{margin:6px 0;line-height:1.45}
+.clash-box .b{font-size:.8em;vertical-align:middle}
+/* more flyers, date notes, ABA branch source */
+.more-flyers{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-top:8px}
+.more-flyers .mf{display:flex;flex-direction:column;gap:6px;text-decoration:none;color:var(--night);font-weight:700;font-size:.9em}
+.more-flyers img{width:100%;height:auto;border:2px solid var(--night);border-radius:8px;background:#fff}
+.more-flyers .mf.old img{filter:grayscale(.5);opacity:.85}
+.date-note{margin:0 0 14px}
+.branch-src{display:flex;gap:14px;align-items:flex-start;margin:12px 0;padding:12px;border:2px solid var(--night);border-radius:12px;background:#fff}
+.branch-src img{width:110px;height:auto;border-radius:6px;border:1px solid #ccc}.branch-src p{margin:4px 0 8px}
+/* ABA logo (ABA content only) */
+.org-logo img{height:20px;width:auto;vertical-align:-4px;margin-right:6px}
+.chip-logo img{height:18px;width:auto;vertical-align:-3px;margin-right:6px}
+.cal-head h2.with-logo{display:flex;align-items:center;gap:12px}.head-logo img{height:56px;width:auto;display:block}
+@media(max-width:600px){.head-logo img{height:44px}}

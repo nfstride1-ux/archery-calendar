@@ -197,6 +197,21 @@ test('errors leave the queue intact and are reported; retried later', async () =
   assert.ok(srv.ev.u1.e1.saved);
 });
 
+test('club follows sync via profiles.settings (my clubs, home club, watching, notify); device-only New state is not uploaded', async () => {
+  const srv = server(), A = device(srv, 'u1'), B = device(srv, 'u1');
+  await A.sync.link(A.user, 'merge'); tick();
+  Object.assign(A.S, {myClubs: ['gosnells-archers', 'kgsa'], homeClub: 'gosnells-archers', watchClubs: ['yokine-archery-club'], clubNotify: true,
+    clubSeen: {x: 'f2026'}, clubSeenClubs: {kgsa: 1}, clubNew: {x: {t: 1, why: 'event'}}}); A.save(); await A.sync.flush();
+  const up = srv.prof.u1.settings;
+  assert.deepStrictEqual(up.myClubs, ['gosnells-archers', 'kgsa']); assert.strictEqual(up.homeClub, 'gosnells-archers');
+  assert.deepStrictEqual(up.watchClubs, ['yokine-archery-club']); assert.strictEqual(up.clubNotify, true);
+  assert.ok(!('clubSeen' in up) && !('clubNew' in up) && !('clubSeenClubs' in up), 'device-only keys must not be uploaded');
+  tick(); await B.sync.link(B.user, 'account');
+  assert.deepStrictEqual(B.S.myClubs, ['gosnells-archers', 'kgsa']); assert.strictEqual(B.S.homeClub, 'gosnells-archers'); assert.deepStrictEqual(B.S.watchClubs, ['yokine-archery-club']);
+  tick(); B.S.watchClubs = []; B.save(); await B.sync.flush(); tick(); await A.sync.pull();
+  assert.deepStrictEqual(A.S.watchClubs, [], 'unwatch on B reaches A');
+});
+
 test('600 shoots are pushed in batches of 200', async () => {
   const srv = server(), A = device(srv, 'u1'); await A.sync.link(A.user, 'merge');
   for (let i = 0; i < 600; i++) A.S.saved['e' + i] = {}; A.save(); await A.sync.flush();
