@@ -1,4 +1,4 @@
-const C='archcal-v7';
+const C='archcal-d9b6c3a0d6';
 const CORE=['./','./index.html','./styles.css','./config.js','./app.js','./manifest.webmanifest','./data/events.json','./data/organisations.json','./icons/icon-192.png',
  './img/credits.json','./fonts/Inter-var.woff2','./fonts/BarlowCondensed-SemiBold.woff2','./fonts/BarlowCondensed-Bold.woff2','./fonts/BarlowCondensed-ExtraBold.woff2',
  './img/hero-galston-gorge.jpg','./img/hero-galston-gorge-sm.jpg','./img/field-aus-nationals.jpg','./img/field-aus-nationals-sm.jpg','./img/3d-badger.jpg','./img/3d-badger-sm.jpg',
@@ -11,7 +11,8 @@ self.addEventListener('fetch',e=>{
   const u=new URL(e.request.url); if(u.origin!==location.origin||e.request.method!=='GET') return;
   const media=/\/(img|fonts|icons|flyers)\//.test(u.pathname);
   if(!media){
-    e.respondWith(fetch(e.request).then(r=>{if(r.ok){const cp=r.clone();caches.open(C).then(c=>c.put(e.request,cp));}return r;})
+    // cache:'no-cache' makes the browser revalidate with GitHub Pages, so a new app.js is never hidden behind the 10-min HTTP cache.
+    e.respondWith(fetch(u.href,{cache:'no-cache',credentials:'same-origin'}).then(r=>{if(r.ok){const cp=r.clone();caches.open(C).then(c=>c.put(e.request,cp));}return r;})
       .catch(()=>caches.match(e.request,{ignoreSearch:true}).then(r=>r||caches.match('./index.html'))));
   } else e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(n=>{if(n.ok){const cp=n.clone();caches.open(C).then(c=>c.put(e.request,cp));}return n;})));
 });

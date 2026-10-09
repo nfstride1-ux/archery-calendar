@@ -30,6 +30,35 @@ const daysTo = s => Math.round((pd(s) - today()) / 864e5);
 
 function load(){ try { return Object.assign({}, DEFAULT, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch { return {...DEFAULT}; } }
 function save(){ localStorage.setItem(KEY, JSON.stringify(S)); }
+/* ---------- my entry status: none | entered | paid ----------
+   Works for ANY shoot (no need to save it first): marking entered/paid adds it to My shoots automatically.
+   Old records (before status existed) meant "entered and paid". */
+const ST = id => { const e = S.entries[id]; return !e ? 'none' : (e.status === 'entered' ? 'entered' : 'paid'); };
+const ST_TXT = {none:'☐ Not entered', entered:'✓ Entered · ☐ not paid', paid:'✓ Entered · $ Paid'};
+function setStatus(id, st){
+  const x = BYID[id]; if (!x) return;
+  const was = ST(id);
+  if (st === 'none') delete S.entries[id];
+  else { const e = S.entries[id] || {date: iso(new Date()), currency: x.country_code === 'USA' ? 'USD' : 'AUD'};
+    e.status = st; if (!e.date) e.date = iso(new Date()); if (st === 'paid' && !e.paid_date) e.paid_date = iso(new Date());
+    e.saved = new Date().toISOString(); S.entries[id] = e; }
+  const added = st !== 'none' && !S.saved[id]; if (added) S.saved[id] = {added: iso(new Date())};
+  save();
+  toast(st === 'none' ? '☐ Marked as not entered' : st === 'entered' ? `✓ Marked as entered${was === 'paid' ? ' – not paid' : ''}${added ? ' · added to My shoots' : ''}` : `$ Marked as entered + paid${added ? ' · added to My shoots' : ''}`);
+}
+function statusToggles(x, big){
+  const s = ST(x.id), n = esc(x.name);
+  return `<div class="est${big ? ' big' : ''}" role="group" aria-label="My entry for ${n}">
+    <button type="button" class="et" data-ent="${esc(x.id)}" data-st="entered" aria-pressed="${s !== 'none'}"><span class="ico" aria-hidden="true">${s !== 'none' ? '☑' : '☐'}</span> I’ve entered</button>
+    <button type="button" class="et" data-ent="${esc(x.id)}" data-st="paid" aria-pressed="${s === 'paid'}"><span class="ico" aria-hidden="true">${s === 'paid' ? '☑' : '☐'}</span> I’ve paid</button></div>`;
+}
+function bindToggles(root = document){
+  root.querySelectorAll('[data-ent]').forEach(b => b.onclick = ev => { ev.stopPropagation(); ev.preventDefault();
+    const id = b.dataset.ent, s = ST(id), on = b.getAttribute('aria-pressed') === 'true';
+    setStatus(id, b.dataset.st === 'entered' ? (on ? 'none' : 'entered') : (on ? 'entered' : 'paid'));
+    const y = scrollY; render(); scrollTo(0, y);
+    const nb = document.querySelector(`[data-ent="${CSS.escape(id)}"][data-st="${b.dataset.st}"]`); nb && nb.focus({preventScroll: true}); });
+}
 function toast(t){ const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 2200); }
 
 async function boot(){
@@ -41,7 +70,12 @@ async function boot(){
   EV.forEach(x => BYID[x.id] = x);
   ORGS.filter(x => x.country_code).forEach(x => { CMAP[x.country_code] = CMAP[x.country_code] || x.country; });
   window.addEventListener('hashchange', route);
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    // A new service worker takes over at once (skipWaiting + clients.claim); reload once so this tab runs the new code too.
+    const hadSW = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadSW && !sessionStorage.getItem('swReloaded')) { sessionStorage.setItem('swReloaded', '1'); location.reload(); } });
+    navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(r => r.update()).catch(() => {});
+  }
   route(); checkReminders(); setInterval(checkReminders, 60 * 60 * 1000);
 }
 
@@ -81,13 +115,18 @@ function range(x){
   const a = pd(x.start_date), b = pd(x.end_date || x.start_date), o = {day:'numeric', month:'short', year:'numeric'};
   return x.start_date === x.end_date || !x.end_date ? a.toLocaleDateString('en-AU', {weekday:'short', ...o}) : `${a.toLocaleDateString('en-AU',{day:'numeric',month:'short'})} – ${b.toLocaleDateString('en-AU', o)}`;
 }
-function badges(x){
+function badges(x, onCard){
   const b = [], en = S.entries[x.id];
   if (x.info_only) b.push(`<span class="b tbc">ℹ Info only</span>`);
   if (isPast(x)) b.push(`<span class="b past">◷ Finished</span>`);
-  if (S.saved[x.id] && en) b.push(`<span class="b paid">✓ Entered${en.amount ? ' · $' + esc(en.amount) : ''}</span>`);
-  else if (S.saved[x.id] && !isPast(x) && !x.info_only) b.push(`<span class="b todo">☐ Not entered yet</span>`);
-  if (x.entry_close_date && !en && daysTo(x.entry_close_date) >= 0) b.push(`<span class="b close">⏳ Entries close ${pd(x.entry_close_date).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</span>`);
+  const st = ST(x.id);
+  if (!onCard) {
+    if (st === 'paid') b.push(`<span class="b paid">✓ Entered · $ Paid${en.amount ? ' ' + esc(en.currency || '') + ' ' + esc(en.amount) : ''}</span>`);
+    else if (st === 'entered') b.push(`<span class="b ent">✓ Entered · ☐ Not paid yet</span>`);
+    else if (S.saved[x.id] && !isPast(x) && !x.info_only) b.push(`<span class="b todo">☐ Not entered yet</span>`);
+  }
+  if (x.entry_close_date && daysTo(x.entry_close_date) < 0 && !isPast(x) && !x.info_only) b.push(`<span class="b closed">🔒 Entries closed ${pd(x.entry_close_date).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</span>`);
+  if (x.entry_close_date && st === 'none' && daysTo(x.entry_close_date) >= 0) b.push(`<span class="b close">⏳ Entries close ${pd(x.entry_close_date).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</span>`);
   if (!x.dates_confirmed) b.push(`<span class="b tbc">? Dates TBC</span>`);
   if (x.world_level) b.push(AUS() ? `<span class="b world">🏆 International event</span>` : `<span class="b world">🌐 World / major</span>`);
   return b.length ? `<div class="badges">${b.join('')}</div>` : '';
@@ -99,7 +138,8 @@ function evCard(x){
     <div class="body"><div class="tags">${t !== 'mixed' ? tagHtml(t) : ''}${x.flyer_local ? `<span class="tag fl">📄 ${x.flyer_is_current ? x.flyer_year + ' flyer' : 'Last year’s flyer'}</span>` : ''}</div>
       <h3 class="name">${esc(x.name)}</h3>
       <div class="meta">${esc([x.location, x.country_code && x.country_code !== 'AUS' ? x.country : x.state].filter(Boolean).join(' · '))}</div>
-      <div class="meta">${esc([x.discipline, x.org, x.aba_branch && x.aba_branch.split(' – ')[0]].filter(Boolean).join(' · '))}</div>${badges(x)}</div>
+      <div class="meta">${esc([x.discipline, x.org, x.aba_branch && x.aba_branch.split(' – ')[0]].filter(Boolean).join(' · '))}</div>${badges(x, true)}
+      ${x.info_only ? '' : statusToggles(x)}</div>
     ${x.info_only ? '' : `<button class="star" aria-pressed="${on}" aria-label="${on ? 'Remove from' : 'Add to'} my shoots" data-star="${esc(x.id)}">${on ? '★' : '☆'}</button>`}
   </article>`;
 }
@@ -118,14 +158,15 @@ function adSlot(kind, t){
     <a class="btn gold block" href="#/advertise">Advertise with us</a></aside>`;
 }
 function bindCards(root = document){
+  bindToggles(root);
   root.querySelectorAll('[data-star]').forEach(b => b.onclick = ev => { ev.stopPropagation(); toggleSave(b.dataset.star); });
   root.querySelectorAll('[data-open]').forEach(c => { c.onclick = () => location.hash = '#/shoot/' + encodeURIComponent(c.dataset.open);
-    c.onkeydown = e => { if (e.key === 'Enter') c.click(); }; });
+    c.onkeydown = e => { if (e.key === 'Enter' && e.target === c) c.click(); }; });
 }
 function toggleSave(id){
   if (S.saved[id]) { delete S.saved[id]; toast('Removed from My shoots'); }
   else { S.saved[id] = {added: iso(new Date())}; toast('★ Added to My shoots'); }
-  save(); route();
+  save(); const y = scrollY; render(); scrollTo(0, y);
 }
 function setTitle(t){ document.title = t === 'Archery Calendar' ? 'Archery Calendar – every archery shoot in one calendar' : t + ' · Archery Calendar'; }
 function pageHead(title, sub, t = 'mixed'){
@@ -141,12 +182,13 @@ function clubCta(compact){
 function flyerLinkCard(x){
   const ex = x.flyer_extract || {}, cur = x.flyer_is_current, ly = cur ? '' : '<span class="lastyr">Last year</span>';
   const close = ex.entry_close ? pd(ex.entry_close).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'}) + (ex.entry_close_note ? ', ' + ex.entry_close_note : '') : null;
-  const rows = [['How to enter', ex.registration], [cur ? 'Entries close' : 'Entries closed', close], ['Fee', ex.fee], ['Rounds', ex.rounds], ['Times', ex.start_times], ['Contact', ex.contact], ['Notes', ex.notes]].filter(r => r[1]);
+  const rows = [['How to enter', ex.registration], [cur && !(ex.entry_close && daysTo(ex.entry_close) < 0) ? 'Entries close' : 'Entries closed', close], ['Fee', ex.fee], ['Rounds', ex.rounds], ['Times', ex.start_times], ['Contact', ex.contact], ['Notes', ex.notes]].filter(r => r[1]);
   const src = x.flyer_source_url;
   return `<section class="panel flyer-panel"><div class="flyer-link">
     <span class="fl-badge ${cur ? 'cur' : 'old'}">${cur ? '📄 ' + x.flyer_year + ' flyer' : '⚠ ' + x.flyer_year + ' flyer – last year'}</span>
     <p class="fl-label">${esc(x.flyer_label)}</p>
     ${src ? `<a class="btn alt" href="${esc(src)}" target="_blank" rel="noopener">📄 View flyer at source ↗</a><p class="note">Opens the organiser's own page or file${x.flyer_source_name ? ' (' + esc(x.flyer_source_name) + ')' : ''}.</p>`
+          : cur && rows.length ? `<p class="soon">📄 Details below are from the ${x.flyer_year} flyer${x.flyer_source_name ? ' (' + esc(x.flyer_source_name) + ')' : ''}. The flyer image isn't published here.</p>`
           : `<p class="soon">📄 Flyer coming soon${x.flyer_source_name ? ` – details below are from the ${esc(x.flyer_source_name)}` : ''}.</p>`}</div>
     ${rows.length ? `<h2 class="sec">${cur ? 'From the flyer' : 'From last year’s flyer – may change this year'}</h2><dl class="kv fx">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${ly}${esc(v)}</dd>`).join('')}</dl>` : ''}</section>`;
 }
@@ -155,7 +197,7 @@ function flyerCard(x){
   if (SITE.flyers !== 'local' || !x.flyer_local) return flyerLinkCard(x);
   const ex = x.flyer_extract || {}, cur = x.flyer_is_current, ly = cur ? '' : '<span class="lastyr">Last year</span>';
   const close = ex.entry_close ? pd(ex.entry_close).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'}) + (ex.entry_close_note ? ', ' + ex.entry_close_note : '') : null;
-  const rows = [['How to enter', ex.registration], [cur ? 'Entries close' : 'Entries closed', close], ['Fee', ex.fee], ['Rounds', ex.rounds], ['Times', ex.start_times], ['Contact', ex.contact], ['Notes', ex.notes]].filter(r => r[1]);
+  const rows = [['How to enter', ex.registration], [cur && !(ex.entry_close && daysTo(ex.entry_close) < 0) ? 'Entries close' : 'Entries closed', close], ['Fee', ex.fee], ['Rounds', ex.rounds], ['Times', ex.start_times], ['Contact', ex.contact], ['Notes', ex.notes]].filter(r => r[1]);
   return `<section class="panel flyer-panel"><div class="flyer"><a class="thumb" href="${esc(x.flyer_local)}" target="_blank" rel="noopener" aria-label="Open the full flyer"><img src="${esc(x.flyer_thumb)}" alt="Flyer page 1" loading="lazy"><span>View flyer ↗</span></a>
     <div><span class="fl-badge ${cur ? 'cur' : 'old'}">${cur ? '📄 ' + x.flyer_year + ' flyer – current' : '⚠ ' + x.flyer_year + ' flyer – last year'}</span>
     <p class="fl-label">${esc(x.flyer_label)}</p><p class="note">Tap the flyer to open it full size.<br>${x.flyer_url ? `Original: <a href="${esc(x.flyer_url)}" target="_blank" rel="noopener">organiser's file</a>` : esc(x.flyer_found_on || '')}</p></div></div>
@@ -164,23 +206,29 @@ function flyerCard(x){
 }
 /* ---------- reminders ---------- */
 function reminders(){
-  const out = [];
+  const out = [], pl = n => `${n} day${n !== 1 ? 's' : ''}`;
   for (const id of Object.keys(S.saved)) {
-    const x = BYID[id]; if (!x || !x.start_date || isPast(x)) continue;
-    const dt = daysTo(x.start_date), en = S.entries[id];
-    for (const d of S.remindDays) if (dt <= d && dt >= 0) { out.push({key:`${id}:shoot:${d}`, x, when:dt, text: dt === 0 ? 'is TODAY' : `starts in ${dt} day${dt>1?'s':''}`, paid: !!en}); break; }
-    if (!en && x.entry_close_date) {
+    const x = BYID[id]; if (!x || !x.start_date || isPast(x) || x.info_only) continue;
+    const dt = daysTo(x.start_date), st = ST(id);
+    for (const d of S.remindDays) if (dt <= d && dt >= 0) { out.push({key:`${id}:shoot:${d}`, x, when:dt, kind:'shoot', st, text: dt === 0 ? 'is TODAY' : `starts in ${pl(dt)}`}); break; }
+    if (st === 'none' && x.entry_close_date) {           // enter-now reminder only while NOT entered
       const dc = daysTo(x.entry_close_date);
-      for (const d of S.closeDays) if (dc <= d && dc >= 0) { out.push({key:`${id}:close:${d}`, x, when:dc, text:`entries close in ${dc} day${dc!==1?'s':''} – you haven't entered`, close:true}); break; }
+      for (const d of S.closeDays) if (dc <= d && dc >= 0) { out.push({key:`${id}:close:${d}`, x, when:dc, kind:'close', st, text:`entries close in ${pl(dc)} – you haven't entered`}); break; }
+    }
+    if (st === 'entered') {                               // pay reminder only if entered but not paid
+      const ref = x.entry_close_date && daysTo(x.entry_close_date) >= 0 ? x.entry_close_date : x.start_date, dp = daysTo(ref), days = ref === x.start_date ? S.remindDays : S.closeDays;
+      for (const d of days) if (dp <= d && dp >= 0) { out.push({key:`${id}:pay:${d}`, x, when:dp, kind:'pay', st, text: ref === x.start_date ? `you're entered but haven't marked it paid – shoot in ${pl(dp)}` : `you're entered but haven't marked it paid – entries close in ${pl(dp)}`}); break; }
     }
   }
   return out.sort((a, b) => a.when - b.when);
 }
+const REM_BADGE = {none:'<span class="b todo">☐ Not entered</span>', entered:'<span class="b ent">✓ Entered · ☐ Not paid</span>', paid:'<span class="b paid">✓ Entered · $ Paid</span>'};
+const REM_ICON = {shoot:'⏰', close:'⏳', pay:'$'};
 function checkReminders(){
   if (!S.notify || !('Notification' in window) || Notification.permission !== 'granted') return;
   for (const r of reminders()) {
     if (S.notified[r.key]) continue;
-    const body = `${range(r.x)} · ${r.x.location || ''}\n${r.paid ? '✓ You are entered and paid.' : r.close ? 'Tap to open the entry page.' : '☐ You have NOT marked this as entered.'}`;
+    const body = `${range(r.x)} · ${r.x.location || ''}\n${r.kind === 'close' ? 'Tap to open the entry page.' : r.kind === 'pay' ? 'Tap to open the shoot and mark it paid.' : {paid:'✓ You are entered and paid.', entered:'✓ Entered · ☐ not marked paid.', none:'☐ You have NOT marked this as entered.'}[r.st]}`;
     const opts = {body, tag:r.key, icon:'icons/icon-192.png', data:{id:r.x.id}};
     navigator.serviceWorker?.ready.then(reg => reg.showNotification(`${r.x.name} ${r.text}`, opts)).catch(() => new Notification(`${r.x.name} ${r.text}`, opts));
     S.notified[r.key] = Date.now();
@@ -193,7 +241,7 @@ function vHome(){
   setTitle('Archery Calendar');
   const mine = Object.keys(S.saved).map(id => BYID[id]).filter(Boolean);
   const up = mine.filter(x => !isPast(x)).sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
-  const paid = up.filter(x => S.entries[x.id]).length;
+  const nEnt = up.filter(x => ST(x.id) !== 'none').length, nPay = up.filter(x => ST(x.id) === 'entered').length, nTodo = up.filter(x => ST(x.id) === 'none' && !x.info_only).length;
   const rem = reminders();
   const next = up.find(x => x.start_date);
   const suggest = EV.filter(x => visible(x) && !isPast(x) && x.start_date && !S.saved[x.id] && !x.info_only).sort((a,b)=>a.start_date<b.start_date?-1:1).slice(0, 6);
@@ -204,17 +252,17 @@ function vHome(){
       <p class="lead">${AUS() ? 'Find archery shoots across Australia – Archery Australia, ABA and Archery WA.' : 'Find shoots across WA, Australia and the world.'} Save them, get reminders before entries close, and keep track of what you've paid.</p>
       <form class="hero-search" id="heroSearch" role="search"><input type="search" id="hq" placeholder="Search a shoot, club or town…" aria-label="Search shoots"><button class="btn gold" type="submit">Find shoots</button></form></div>
     ${next ? `<a class="next-card" href="#/shoot/${esc(next.id)}"><span class="kicker">Your next shoot</span><b class="big">${daysTo(next.start_date) <= 0 ? 'On now' : daysTo(next.start_date) + ' days'}</b>
-      <span class="nm">${esc(next.name)}</span><span>${esc(range(next))}</span><span class="st">${S.entries[next.id] ? '✓ Entered &amp; paid' : '☐ Not entered yet'}</span></a>` : ''}
+      <span class="nm">${esc(next.name)}</span><span>${esc(range(next))}</span><span class="st">${ST_TXT[ST(next.id)]}</span></a>` : ''}
   </div>${credit('mixed')}</section>
   <div class="wrap">
-    <div class="stats"><a class="stat" href="#/calendar"><b>${up.length}</b><span>My shoots</span></a><a class="stat" href="#/entries"><b>${paid}</b><span>✓ Entered</span></a><a class="stat" href="#/entries"><b>${up.length - paid}</b><span>☐ To enter</span></a></div>
+    <div class="stats four"><a class="stat" href="#/calendar"><b>${up.length}</b><span>★ My shoots</span></a><a class="stat" href="#/entries"><b>${nEnt}</b><span>✓ Entered</span></a><a class="stat" href="#/entries"><b>${nTodo}</b><span>☐ To enter</span></a><a class="stat" href="#/entries"><b>${nPay}</b><span>$ To pay</span></a></div>
     ${adSlot('banner')}
     <h2 class="sec-h">Pick your discipline</h2>
     <div class="types">${['field','3d','target','indoor'].map(t => `<a class="type th-${t}" href="#/browse" data-th="${t}" style="--img:url('${esc(photo(t).sm)}')"><span class="type-name">${THEMES[t][0]} ${THEMES[t][1]}</span><span class="type-sub">${{field:'Bush courses, marked & unmarked', '3d':'Foam animals in the bush', target:'Outdoor ranges, 18–90 m', indoor:'18 m halls, 3-spot & Vegas'}[t]}</span></a>`).join('')}</div>
     <div class="two">
       <section><h2 class="sec-h">Reminders</h2>
-      ${rem.length ? rem.map(r => `<div class="panel rem" data-open="${esc(r.x.id)}" role="link" tabindex="0"><b>${r.close ? '⏳' : '⏰'} ${esc(r.x.name)}</b><div>${esc(r.text)}</div><div class="badges">${r.paid ? '<span class="b paid">✓ Entered &amp; paid</span>' : r.close ? '<span class="b close">⏳ Enter now</span>' : '<span class="b todo">☐ Not entered</span>'}</div></div>`).join('')
-        : `<p class="note">Nothing due. You'll get reminders ${S.remindDays.join(', ')} days before each shoot, and ${S.closeDays.join(' / ')} days before entries close.</p>`}</section>
+      ${rem.length ? rem.map(r => `<div class="panel rem" data-open="${esc(r.x.id)}" role="link" tabindex="0"><b><span aria-hidden="true">${REM_ICON[r.kind]}</span> ${esc(r.x.name)}</b><div>${esc(r.text)}</div><div class="badges">${r.kind === 'close' ? '<span class="b close">⏳ Enter now</span>' : r.kind === 'pay' ? '<span class="b ent">$ Pay now</span>' : REM_BADGE[r.st]}</div></div>`).join('')
+        : `<p class="note">Nothing due. You'll get reminders ${S.remindDays.join(', ')} days before each shoot, and ${S.closeDays.join(' / ')} days before entries close (only if you haven't entered), plus a pay reminder if you've entered but not paid.</p>`}</section>
       <section><h2 class="sec-h">Coming up in my shoots</h2>
       ${up.length ? `<div class="list">${up.slice(0, 4).map(evCard).join('')}</div>` : `<div class="empty">No shoots yet. Tap ☆ on any shoot in <a href="#/browse">Find shoots</a>.</div>`}</section>
     </div>
@@ -227,7 +275,7 @@ function vBrowse(){
   setTitle('Find shoots');
   const vis = EV.filter(visible);
   const scopes = AUS() ? [['all','All Australia'], ...GROUPS.filter(g => S.groups.includes(g[0])).map(g => ['g:' + g[0], {aa:'Archery Australia', aba:'ABA', awa:'Archery WA'}[g[0]]])] : [['all','All'], ['world','🌐 World'], ...S.countries.map(c => [c, CMAP[c] || c]), ...S.orgs.map(o => [o, (ORGS.find(x => x.id === o) || {}).name?.replace(/\s*\(.*\)/,'') || o])];
-  const discs = [...new Set(vis.map(x => (x.discipline || '').split(/[ (/]/)[0]).filter(Boolean))].sort();
+  const discs = [...new Set(vis.filter(x => BF.past || !isPast(x)).map(x => (x.discipline || '').split(/[ (/]/)[0]).filter(Boolean))].sort();   // only disciplines with shoots to show
   let list = vis.filter(x => BF.past || !isPast(x));
   if (BF.scope.startsWith('g:')) list = list.filter(x => x.org_group === BF.scope.slice(2));
   else if (BF.scope === 'world') list = list.filter(x => x.world_level);
@@ -258,16 +306,31 @@ function bindBrowse(){
   const mo = $('#more'); if (mo) mo.onclick = () => { BF.limit += 60; render(); };
 }
 
+function myEntry(x){
+  const s = ST(x.id), en = S.entries[x.id] || {};
+  return `<div class="myent" id="myEntry"><h2 class="sec">My entry</h2>
+    <p class="st-now st-${s}" id="stNow">${ST_TXT[s]}</p>
+    ${statusToggles(x, true)}
+    ${s === 'none' ? `<p class="note">Entered somewhere else (Assemble, Archers Diary, email)? Tick it here. It's added to My shoots automatically.</p>` : `
+    <form id="entryForm" class="ent-form"><p class="note">Optional details</p>
+      <div class="row"><div><label for="f_amt">Amount paid ($)</label><input id="f_amt" inputmode="decimal" placeholder="e.g. 85" value="${esc(en.amount || '')}"></div>
+      <div><label for="f_pd">Date paid</label><input type="date" id="f_pd" value="${esc(en.paid_date || '')}"></div></div>
+      <label for="f_ref">Receipt / entry number</label><input id="f_ref" value="${esc(en.ref || '')}" placeholder="e.g. Assemble #12345">
+      <label for="f_notes">Notes (division, target, camping…)</label><textarea id="f_notes" rows="2">${esc(en.notes || '')}</textarea>
+      <button class="btn alt block" type="submit">Save details</button></form>`}</div>`;
+}
 function vShoot(id){
   const x = BYID[id]; if (!x) return `<div class="wrap"><div class="empty">Shoot not found.</div></div>`;
   setTitle(x.name);
   const on = !!S.saved[id], en = S.entries[id];
   const kind = {how_to_guide:'How to enter (guide)', event_page:'Event page & entry', entry_page:'Register / enter', entry_system:'Enter via Archers Diary (search the event)', email:'✉ Email your nomination'}[x.registration_url_kind] || 'Register / enter';
   const t = theme(x), p = photo(t), isMail = x.registration_url_kind === 'email';
-  const regBtn = x.info_only ? '' : x.registration_url ? `<a class="btn gold block big-btn" id="regBtn" href="${esc(x.registration_url)}" ${isMail ? '' : 'target="_blank" rel="noopener"'}>${isMail ? '' : '↗ '}${kind}</a>
+  const closedNow = !!x.entry_close_date && daysTo(x.entry_close_date) < 0;
+  const regBtn = x.info_only ? '' : x.registration_url ? `<a class="btn ${closedNow ? 'alt' : 'gold'} block big-btn" id="regBtn" href="${esc(x.registration_url)}" ${isMail ? '' : 'target="_blank" rel="noopener"'}>${isMail ? '' : '↗ '}${closedNow ? kind.replace(/^Register \/ enter$/, 'Entry page') + ' (entries closed)' : kind}</a>
       ${x.registration_email ? `<p class="note">Opens your email app addressed to <b>${esc(x.registration_email.to)}</b>${x.registration_email.cc ? `, cc ${esc(x.registration_email.cc)}` : ''}, with ${esc(x.registration_email.fields.join(', '))} ready to fill in.</p>` : ''}
       ${x.registration_url_source ? `<p class="note">Entry details from ${esc(x.registration_url_source)}.</p>` : ''}`
     : `<div class="warn">⚠ No online entry link found yet. ${x.org_id === 'aba' ? 'ABA shoots are entered through the host club.' : 'Check the source page below.'}</div>`;
+  const closed = !!x.entry_close_date && daysTo(x.entry_close_date) < 0 && !isPast(x) && !x.info_only;
   const closeTxt = x.entry_close_date ? pd(x.entry_close_date).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'long',year:'numeric'}) + (x.entry_close_time ? ', ' + x.entry_close_time : '') : '';
   return `<section class="dhero" style="--img:url('${esc(p.file)}')"><div class="wrap">
     <a class="crumb" href="#/browse">← All shoots</a>
@@ -279,7 +342,7 @@ function vShoot(id){
     ${flyerCard(x)}
     <section class="panel"><h2 class="sec">Shoot details</h2><dl class="kv">
       <dt>When</dt><dd>${esc(range(x))}</dd>
-      <dt>Where</dt><dd>${esc(x.location || '—')}${x.state && !(x.location || '').includes(' ' + x.state) ? ' · ' + esc(x.state) : ''}${x.country ? '<br><span class="note">' + esc(x.country) + '</span>' : ''}</dd>
+      <dt>Where</dt><dd>${esc(x.location || '—')}${x.host ? `<br><span class="note">Host club: ${esc(x.host)}${x.venue_is_host_only ? ' – check the organiser for the exact range' : ''}</span>` : ''}${x.state && !(x.location || '').includes(' ' + x.state) ? ' · ' + esc(x.state) : ''}${x.country ? '<br><span class="note">' + esc(x.country) + '</span>' : ''}</dd>
       <dt>Discipline</dt><dd>${esc(x.discipline || '—')}</dd>
       <dt>Level</dt><dd>${esc(x.level || '—')}</dd>
       <dt>Organiser</dt><dd>${esc(x.org || '—')}${x.aba_branch ? '<br><span class="note">ABA ' + esc(x.aba_branch) + '</span>' : ''}</dd>
@@ -288,22 +351,13 @@ function vShoot(id){
       ${closeTxt ? `<dt>Entries close</dt><dd>${esc(closeTxt)}${x.field_sources?.entry_close_date ? ` <span class="src">from ${esc(x.field_sources.entry_close_date)}</span>` : ''}</dd>` : ''}
       ${x.fee ? `<dt>Fee</dt><dd>${esc(x.fee)}${x.field_sources?.fee ? ` <span class="src">from ${esc(x.field_sources.fee)}</span>` : ''}</dd>` : ''}
     </dl>${x.notes ? `<p class="note">${esc(x.notes)}</p>` : ''}</section>
-    ${on && !x.info_only ? `<section class="panel"><h2 class="sec">${en ? '✓ You are entered' : '☐ Mark as entered / paid'}</h2>
-      <form id="entryForm">
-        <div class="row"><div><label for="f_date">Date entered</label><input type="date" id="f_date" value="${esc(en?.date || iso(new Date()))}"></div>
-        <div><label for="f_amt">Amount paid</label><input id="f_amt" inputmode="decimal" placeholder="e.g. 85" value="${esc(en?.amount || '')}"></div>
-        <div style="flex:0 0 100px"><label for="f_cur">Currency</label><select id="f_cur">${['AUD','USD','NZD','GBP','EUR','CAD','JPY'].map(c => `<option ${((en?.currency) || (x.country_code === 'USA' ? 'USD' : 'AUD')) === c ? 'selected' : ''}>${c}</option>`).join('')}</select></div></div>
-        <label for="f_ref">Receipt / entry number</label><input id="f_ref" value="${esc(en?.ref || '')}" placeholder="e.g. Assemble #12345">
-        <label for="f_link">Link to receipt or confirmation email</label><input id="f_link" type="url" value="${esc(en?.link || '')}" placeholder="https://…">
-        <label for="f_notes">Notes (division, target, camping…)</label><textarea id="f_notes" rows="2">${esc(en?.notes || '')}</textarea>
-        <button class="btn block" type="submit">${en ? 'Update entry' : '✓ Save – I’ve entered and paid'}</button>
-        ${en ? `<button class="btn alt block" type="button" id="unEnter">Undo – not entered</button>` : ''}
-      </form></section>` : ''}
     <p class="note">Source: <a href="${esc(x.source_url)}" target="_blank" rel="noopener">${esc(x.source_url)}</a>${x.also_listed ? ` · also <a href="${esc(x.also_listed)}" target="_blank" rel="noopener">World Archery listing</a>` : ''}<br>Checked ${esc(x.last_checked)}. Always confirm details with the organiser.</p>
    </div>
    <aside class="side">
-    <section class="panel act">${closeTxt && !en && daysTo(x.entry_close_date) >= 0 ? `<p class="closes">⏳ Entries close<br><b>${esc(closeTxt)}</b></p>` : ''}
+    <section class="panel act">${closeTxt && ST(id) === 'none' && daysTo(x.entry_close_date) >= 0 ? `<p class="closes">⏳ Entries close<br><b>${esc(closeTxt)}</b></p>` : ''}
+      ${closed ? `<p class="closed-note" id="closedNote">🔒 <b>Entries closed</b><br>${esc(closeTxt)}${x.flyer_extract && /no late/i.test(x.flyer_extract.entry_close_note || '') ? ' · no late entries' : ''}</p>` : ''}
       ${regBtn}
+      ${x.info_only ? '' : myEntry(x)}
       ${x.info_only ? '' : `<button class="btn ${on ? 'alt' : ''} block" id="saveBtn" aria-pressed="${on}">${on ? '★ In My shoots – remove' : '☆ Add to My shoots'}</button>`}
       ${x.start_date && !x.info_only ? `<button class="btn alt block" id="icsOne">▦ Add to my calendar (.ics)</button>` : ''}</section>
     ${adSlot('side', t)}
@@ -313,10 +367,16 @@ function vShoot(id){
 }
 function bindShoot(id){
   const sb = $('#saveBtn'); if (sb) sb.onclick = () => toggleSave(id);
-  const f = $('#entryForm'); if (f) f.onsubmit = e => { e.preventDefault();
-    S.entries[id] = {date: $('#f_date').value, amount: $('#f_amt').value.trim(), currency: $('#f_cur').value, ref: $('#f_ref').value.trim(), link: $('#f_link').value.trim(), notes: $('#f_notes').value.trim(), saved: new Date().toISOString()};
-    save(); toast('✓ Saved – marked as entered'); render(); };
-  const u = $('#unEnter'); if (u) u.onclick = () => { delete S.entries[id]; save(); toast('Marked as not entered'); render(); };
+  bindToggles($('#view'));
+  const f = $('#entryForm'); if (f) {
+    const keep = () => { const e = S.entries[id]; if (!e) return;
+      const amt = $('#f_amt').value.trim().replace(/^\$/, ''); if (amt && isNaN(parseFloat(amt))) { toast('Amount should be a number, e.g. 85'); return false; }
+      Object.assign(e, {amount: amt, paid_date: $('#f_pd').value, ref: $('#f_ref').value.trim(), notes: $('#f_notes').value.trim(), saved: new Date().toISOString()});
+      if (amt && e.status === 'entered') { e.status = 'paid'; if (!e.paid_date) e.paid_date = iso(new Date()); }
+      save(); return true; };
+    f.onchange = () => keep();
+    f.onsubmit = e => { e.preventDefault(); if (keep()) { toast('✓ Details saved'); const y = scrollY; render(); scrollTo(0, y); } };
+  }
   const ic = $('#icsOne'); if (ic) ic.onclick = () => downloadIcs([BYID[id]], 'shoot');
 }
 
@@ -331,13 +391,14 @@ function vCalendar(){
   let g = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => `<div class="h">${d}</div>`).join('');
   for (let i = 0; i < start; i++) g += `<div class="c o"></div>`;
   for (let d = 1; d <= dim; d++) { const k = iso(new Date(y, m, d)), ev = byDay[k] || [], t = k === iso(today());
-    const allPaid = ev.length && ev.every(x => S.entries[x.id]);
-    g += `<div class="c ${ev.length ? 'has' : ''} ${allPaid ? 'paid' : ''} ${t ? 't' : ''}" ${ev.length ? `data-open="${esc(ev[0].id)}" role="link" tabindex="0" aria-label="${d} ${MONL[m]}: ${esc(ev.map(x => x.name).join(', '))}${allPaid ? ', entered' : ''}"` : ''}>${d}${ev.length ? `<span class="dot">${ev.length > 1 ? ev.length + ' shoots' : '●'}</span>` : ''}</div>`; }
+    const allPaid = ev.length && ev.every(x => ST(x.id) === 'paid'), allEnt = ev.length && ev.every(x => ST(x.id) !== 'none');
+    const mk = allPaid ? '✓$' : allEnt ? '✓' : '';
+    g += `<div class="c ${ev.length ? 'has' : ''} ${t ? 't' : ''}" ${ev.length ? `data-open="${esc(ev[0].id)}" role="link" tabindex="0" aria-label="${d} ${MONL[m]}: ${esc(ev.map(x => x.name + ' – ' + ST_TXT[ST(x.id)].replace(/[☐✓$·]/g, '').replace(/\s+/g, ' ').trim()).join(', '))}"` : ''}>${d}${mk ? `<span class="mk" aria-hidden="true">${mk}</span>` : ''}${ev.length ? `<span class="dot">${ev.length > 1 ? ev.length + ' shoots' : '●'}</span>` : ''}</div>`; }
   const inMonth = mine.filter(x => x.start_date && (x.start_date.slice(0, 7) === iso(first).slice(0, 7) || (x.end_date || '').slice(0, 7) === iso(first).slice(0, 7)));
   const up = mine.filter(x => !isPast(x)), past = mine.filter(isPast);
   return `${pageHead('My shoots', 'Your saved shoots, month by month.', 'target')}<div class="wrap narrow"><div class="calnav"><button id="pm" aria-label="Previous month">‹</button><b>${MONL[m]} ${y}</b><button id="nm" aria-label="Next month">›</button></div>
   <div class="grid">${g}</div>
-  <div class="legend"><span class="b" style="background:var(--navy);color:#fff">■ shoot day</span><span class="b" style="background:var(--navy);color:var(--gold)">✓ entered</span><span class="b" style="outline:2px solid var(--navy)">□ today</span></div>
+  <div class="legend"><span class="b lg-day">■ shoot day</span><span class="b lg-day">✓ entered</span><span class="b lg-day">✓$ entered + paid</span><span class="b lg-today">□ today</span></div>
   ${inMonth.length ? `<h2>In ${MONL[m]}</h2>${inMonth.map(evCard).join('')}` : ''}
   <h2>All my upcoming shoots (${up.length})</h2>
   ${up.length ? up.map(evCard).join('') : `<div class="empty">Nothing saved yet. Tap ☆ on shoots in <a href="#/browse">Browse</a>.</div>`}
@@ -353,13 +414,14 @@ function bindCalendar(){
 function vEntries(){
   setTitle('Entries & payments');
   const ids = Object.keys(S.saved).filter(id => BYID[id] && !BYID[id].info_only);
-  const paid = ids.filter(id => S.entries[id]).map(id => BYID[id]), todo = ids.filter(id => !S.entries[id] && !isPast(BYID[id])).map(id => BYID[id]);
-  const tot = {}; paid.forEach(x => { const e = S.entries[x.id]; const v = parseFloat(e.amount); if (!isNaN(v)) tot[e.currency] = (tot[e.currency] || 0) + v; });
-  const row = x => { const e = S.entries[x.id]; return `<div class="card" data-open="${esc(x.id)}" role="link" tabindex="0" style="cursor:pointer"><b>${esc(x.name)}</b><div class="note">${esc(range(x))}</div>
-    <div class="badges"><span class="b paid">✓ Entered ${esc(e.date || '')}</span>${e.amount ? `<span class="b paid">${esc(e.currency)} ${esc(e.amount)}</span>` : ''}${e.ref ? `<span class="b world"># ${esc(e.ref)}</span>` : ''}</div></div>`; };
+  const by = st => ids.filter(id => ST(id) === st).map(id => BYID[id]);
+  const paid = by('paid'), ent = by('entered').filter(x => !isPast(x)), todo = by('none').filter(x => !isPast(x));
+  const tot = {}; paid.forEach(x => { const e = S.entries[x.id]; const v = parseFloat(e.amount); if (!isNaN(v)) tot[e.currency || 'AUD'] = (tot[e.currency || 'AUD'] || 0) + v; });
+  const byDate = (a, b) => (a.entry_close_date || a.start_date || '9') < (b.entry_close_date || b.start_date || '9') ? -1 : 1;
   return `${pageHead('Entries &amp; payments', 'What you have entered, paid and still need to enter.', 'field')}<div class="wrap narrow"><div class="panel dark"><div class="kicker">Total entry fees recorded</div><div class="big">${Object.keys(tot).length ? Object.entries(tot).map(([c, v]) => `${c} ${v.toFixed(2)}`).join(' + ') : '—'}</div></div>
-  <h2>☐ Still to enter (${todo.length})</h2>${todo.length ? todo.sort((a,b)=>(a.entry_close_date||a.start_date||'9')<(b.entry_close_date||b.start_date||'9')?-1:1).map(evCard).join('') : '<p class="note">All your upcoming shoots are entered. 👍</p>'}
-  <h2>✓ Entered &amp; paid (${paid.length})</h2>${paid.length ? paid.map(row).join('') : '<p class="note">Open a saved shoot and tap “I’ve entered and paid” to record it here.</p>'}</div>`;
+  <h2>☐ Still to enter (${todo.length})</h2>${todo.length ? todo.sort(byDate).map(evCard).join('') : '<p class="note">Nothing waiting. 👍</p>'}
+  <h2>$ Entered – still to pay (${ent.length})</h2>${ent.length ? ent.sort(byDate).map(evCard).join('') : '<p class="note">Nothing to pay.</p>'}
+  <h2>✓$ Entered + paid (${paid.length})</h2>${paid.length ? paid.map(x => { const e = S.entries[x.id]; return evCard(x).replace('</h3>', `</h3><div class="badges"><span class="b paid">$ Paid${e.amount ? ' ' + esc(e.currency || 'AUD') + ' ' + esc(e.amount) : ''}${e.paid_date ? ' · ' + esc(pd(e.paid_date).toLocaleDateString('en-AU', {day:'numeric', month:'short'})) : ''}</span>${e.ref ? `<span class="b world"># ${esc(e.ref)}</span>` : ''}</div>`); }).join('') : '<p class="note">Tick “I’ve entered” and “I’ve paid” on any shoot to track it here.</p>'}</div>`;
 }
 
 function vSettings(){
@@ -383,6 +445,7 @@ function vSettings(){
   <label for="cd">…and before entries close (if not entered)</label><input id="cd" value="${esc(S.closeDays.join(', '))}">
   <p class="note">Phone notifications: <b>${esc(perm)}</b>. On iPhone, first tap Share → “Add to Home Screen”, then open from the icon (needs iOS 16.4+).</p>
   <button class="btn block" id="notif">🔔 ${S.notify && perm === 'granted' ? 'Notifications on – send a test' : 'Turn on notifications'}</button>
+  ${S.notify ? `<button class="btn alt block" id="notifOff">🔕 Turn notifications off</button>` : ''}
   <h2>Backup</h2><p class="note">Your shoots and entries are stored only on this device.</p>
   <div class="row"><button class="btn alt" id="exp">⇩ Export backup</button><label class="btn alt" style="margin:0">⇧ Import<input type="file" id="imp" accept="application/json" hidden></label></div>
   <p class="note">Data: ${EV.length} shoots from ${ORGS.length} organisations. Sources: ${AUS() ? 'World Archery calendar (Australian events),' : 'World Archery calendar,'} ABA 2026 National Calendar, Archery Australia, Archery WA, organiser sites. Checked 9 Oct 2026.</p></div>`;
@@ -408,6 +471,7 @@ function bindCommon(){
       reg ? reg.showNotification('🎯 Archery Calendar', o) : new Notification('🎯 Archery Calendar', o); S.notified = {}; checkReminders(); }
     render();
   };
+  const off = $('#notifOff'); if (off) off.onclick = () => { S.notify = false; save(); toast('Notifications off'); render(); };
   $('#exp').onclick = () => dl(new Blob([JSON.stringify(S, null, 1)], {type:'application/json'}), 'archery-calendar-backup.json');
   $('#imp').onchange = async e => { try { S = Object.assign({}, DEFAULT, JSON.parse(await e.target.files[0].text())); save(); toast('Backup restored'); render(); } catch { toast('That file isn’t a valid backup'); } };
 }
@@ -468,9 +532,9 @@ function downloadIcs(list, name){
   const L = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Archery Calendar//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:My archery shoots'];
   for (const x of list) {
     const e = S.entries[x.id], end = pd(x.end_date || x.start_date); end.setDate(end.getDate() + 1);
-    const desc = [e ? `ENTERED & PAID${e.amount ? ' ' + e.currency + ' ' + e.amount : ''}${e.ref ? ' (#' + e.ref + ')' : ''}` : 'NOT ENTERED YET', x.discipline, x.registration_url ? 'Entry: ' + x.registration_url : '', 'Source: ' + x.source_url].filter(Boolean).join('\n');
+    const st = ST(x.id), desc = [st === 'paid' ? `ENTERED + PAID${e.amount ? ' ' + (e.currency || 'AUD') + ' ' + e.amount : ''}${e.ref ? ' (#' + e.ref + ')' : ''}` : st === 'entered' ? 'ENTERED – NOT PAID YET' : 'NOT ENTERED YET', x.discipline, x.registration_url ? 'Entry: ' + x.registration_url : '', 'Source: ' + x.source_url].filter(Boolean).join('\n');
     L.push('BEGIN:VEVENT', `UID:${x.id}@archery-calendar`, `DTSTAMP:${stamp}`, `DTSTART;VALUE=DATE:${x.start_date.replace(/-/g, '')}`, `DTEND;VALUE=DATE:${iso(end).replace(/-/g, '')}`,
-      fold(`SUMMARY:${icsEsc((e ? '✓ ' : '') + x.name)}`), fold(`LOCATION:${icsEsc([x.location, x.country].filter(Boolean).join(', '))}`), fold(`DESCRIPTION:${icsEsc(desc)}`));
+      fold(`SUMMARY:${icsEsc((st === 'paid' ? '✓$ ' : st === 'entered' ? '✓ ' : '') + x.name)}`), fold(`LOCATION:${icsEsc([x.location, x.country].filter(Boolean).join(', '))}`), fold(`DESCRIPTION:${icsEsc(desc)}`));
     if (x.registration_url || x.source_url) L.push(fold(`URL:${x.registration_url || x.source_url}`));
     for (const d of S.remindDays) L.push('BEGIN:VALARM', 'ACTION:DISPLAY', fold(`DESCRIPTION:${icsEsc(x.name)}`), `TRIGGER:-P${d}D`, 'END:VALARM');
     L.push('END:VEVENT');

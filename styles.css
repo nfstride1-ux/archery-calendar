@@ -272,3 +272,23 @@ dl.kv.fx dd{font-weight:500}
 .thanks-mark{display:inline-grid;place-items:center;width:64px;height:64px;border-radius:50%;background:var(--gold);color:var(--night);font-size:34px;font-weight:800;margin-bottom:10px}
 @media (max-width:720px){.sub .grid2{grid-template-columns:1fr;gap:0}.cta-btns{grid-column:1;grid-row:auto;align-items:stretch;text-align:center}.cta{grid-template-columns:1fr}}
 .thanks:focus{outline:none}
+/* my entry status: icons + text, never colour alone */
+.est{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;position:relative;z-index:1}
+.et{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:6px 14px;border-radius:10px;border:2px solid var(--night);background:#fff;color:var(--night);font:700 15px/1.2 var(--body);cursor:pointer}
+.et .ico{font-size:19px;line-height:1}
+.et:hover{background:#eef2f7}
+.et[aria-pressed=true]{background:var(--night);color:#fff}
+.et[data-st=paid][aria-pressed=true]{background:var(--gold);border-color:var(--night);color:var(--night)}
+.est.big .et{flex:1 1 140px;justify-content:center;min-height:52px;font-size:16px}
+.b.ent{background:#fff;color:var(--night);border:1.5px dashed var(--night)}
+.myent{border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:14px}
+.myent h2.sec{margin-bottom:6px}
+.st-now{margin:0;font-weight:800;font-size:17px}
+.ent-form{margin-top:6px}.ent-form .note{margin:8px 0 0}
+.stats.four{grid-template-columns:repeat(4,1fr)}
+.grid .c .mk{position:absolute;right:3px;top:2px;font-size:11px;color:var(--gold);font-weight:800}
+.grid .c.has.paid::after{content:none}
+.lg-day{background:var(--night);color:#fff}.lg-today{outline:2px solid var(--night);background:#fff;color:var(--night)}
+@media (max-width:720px){.stats.four{grid-template-columns:repeat(2,1fr);margin-top:-20px}.et{font-size:14px;padding:6px 10px}}
+.b.closed{background:var(--grey-bg);color:#1f2937;border:1.5px solid #1f2937}
+.act .closed-note{background:var(--grey-bg);border:2px solid #1f2937;color:#1f2937;border-radius:12px;padding:10px 12px;margin:0 0 10px;font-size:14px}.act .closed-note b{font-size:17px}
