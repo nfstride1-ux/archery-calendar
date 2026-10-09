@@ -41,20 +41,18 @@
   "pos": "center 40%"
  },
  "target": {
-  "file": "img/target-outdoor-nathe.jpg",
-  "sm": "img/target-outdoor-nathe-sm.jpg",
-  "title": "Compound archer at full draw on an outdoor target range",
-  "alt": "An archer in a black and yellow shirt at full draw with a blue compound bow, facing a line of target bosses on a grass range",
-  "by": "Supplied by Nathaniel Stride",
-  "source": "",
+  "file": "img/nathe-target-face.jpg",
+  "sm": "img/nathe-target-face-sm.jpg",
+  "alt": "Arrows grouped in a target face on an outdoor range",
+  "by": "Nathe Stride",
+  "title": "Arrows grouped in a target face on an outdoor range",
+  "source": "Nathe's own photos",
   "url": "",
-  "license": "",
+  "license": "© Nathe Stride – used with permission",
   "license_url": "",
-  "date": "",
-  "year": 2026,
-  "layout": "split",
-  "shape": "portrait",
-  "pos": "center 15%"
+  "year": 2016,
+  "pos": "center 50%",
+  "used_for": "Target theme banner (no people)"
  },
  "indoor": {
   "file": "img/indoor-hall.jpg",

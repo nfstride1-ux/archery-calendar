@@ -478,3 +478,22 @@ details.panel summary{cursor:pointer;padding:4px 0}
 .split-img picture{display:contents}
 .cat-link .cat-img{display:block;margin:-14px -16px 8px;aspect-ratio:16/9;background-size:cover;border-radius:calc(var(--r) - 2px) calc(var(--r) - 2px) 0 0}
 @media (max-width:720px){.phead.split.keep .split-img{display:block;margin-top:12px}}
+/* Host club mark (logo or initials) – replaces photos on shoot cards and the shoot page header */
+.ev-img.ev-host{background:linear-gradient(180deg,var(--night) 0%,var(--night2) 100%);flex-direction:column;align-items:center;justify-content:flex-start;gap:12px;padding:12px 10px}
+.ev-img.ev-host::after{display:none}
+.ev-host .date{align-self:center}
+.hm{display:flex;align-items:center;justify-content:center;width:84px;height:84px;flex:none;border-radius:14px;background:#fff;padding:6px;box-shadow:0 2px 6px rgba(0,0,0,.3);overflow:hidden}
+.hm img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain}
+.hm .aba-pic{display:contents}
+.hm-ini{background:var(--night);border:3px solid var(--gold);border-radius:50%;padding:0;box-shadow:inset 0 0 0 4px var(--night),inset 0 0 0 5px rgba(255,198,41,.45),0 2px 6px rgba(0,0,0,.3)}
+.hm-ini b{font-family:var(--disp);font-weight:800;color:var(--gold);font-size:30px;line-height:1;letter-spacing:.03em}
+.hm-ini[data-n="3"] b{font-size:25px}.hm-ini[data-n="4"] b{font-size:21px}
+.hm.big{width:150px;height:150px;border-radius:20px;padding:10px}
+.hm-ini.big{border-radius:50%;border-width:4px}.hm-ini.big b{font-size:54px}.hm-ini.big[data-n="3"] b{font-size:44px}.hm-ini.big[data-n="4"] b{font-size:36px}
+.dhero.host-hero{background:linear-gradient(100deg,#09121e 0%,#13243a 100%)}
+.host-row{display:flex;gap:28px;align-items:center;justify-content:space-between}
+.host-txt{min-width:0;flex:1}
+.host-fig{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;color:#cbd5e1;font-size:14px;max-width:190px;flex:none}
+.host-fig b{color:#fff}
+@media (max-width:720px){.host-row{flex-direction:column;align-items:flex-start;gap:14px}.host-fig{flex-direction:row;max-width:none;text-align:left;gap:12px}.hm.big{width:72px;height:72px;border-radius:12px;padding:5px}.hm-ini.big{border-radius:50%;border-width:3px}.hm-ini.big b{font-size:26px}.hm-ini.big[data-n="3"] b{font-size:22px}.hm-ini.big[data-n="4"] b{font-size:18px}}
+@media (max-width:480px){.ev-img.ev-host{flex-basis:96px;padding:10px 6px}.hm{width:70px;height:70px}.hm-ini b{font-size:26px}.hm-ini[data-n="3"] b{font-size:22px}.hm-ini[data-n="4"] b{font-size:18px}}
