@@ -347,3 +347,15 @@ a.cal-row:hover{background:#f6f3e6}
 /* status/titles badges: always dark text on white, also inside the dark shoot hero */
 .b.ost,.b.open,.b.titles,.b.members,.b.series{color:var(--night);border-color:var(--night);background:#fff}
 .b.ost-no_details{color:#374151;border-color:#6b7280}
+/* accounts */
+.acct-btn{color:var(--night);background:var(--gold);text-decoration:none;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;white-space:nowrap;margin-left:8px}
+.acct-btn.on{outline:2px solid #fff;outline-offset:2px}
+.okbox{background:#eef7ee;border:1.5px solid #2f6b3a;color:#173d1f;border-radius:12px;padding:12px;font-size:15px;margin:6px 0}
+.or{display:flex;align-items:center;gap:10px;margin:14px 0;color:#6b7280;font-size:13px}.or::before,.or::after{content:"";flex:1;border-top:1px solid var(--line)}
+.panel.danger{border:2px solid #9b1c1c}
+.btn.danger{background:#9b1c1c;color:#fff;border-color:#9b1c1c}
+.sync-st{font-weight:700;font-size:16px}
+label.chk{display:flex;align-items:center;gap:8px;font-weight:500;margin:10px 0}
+label.chk input{width:auto;min-height:auto}
+#dn{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}#dn label{flex-basis:100%;margin:0}#dn input{flex:1 1 220px}
+@media (max-width:760px){.acct-btn{margin-left:auto;padding:6px 12px;font-size:13px}}

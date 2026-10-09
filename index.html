@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta name="build" content="d65ac82602">
+<meta name="build" content="40abc44951">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Archery Calendar – every archery shoot in one calendar</title>
@@ -13,7 +13,7 @@
 <link rel="preload" href="fonts/Inter-var.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/BarlowCondensed-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="stylesheet" href="styles.css?v=d65ac82602">
+<link rel="stylesheet" href="styles.css?v=40abc44951">
 </head>
 <body>
 <a class="skip" href="#view">Skip to content</a>
@@ -29,6 +29,7 @@
       <a href="#/settings" data-tab="settings">Settings</a>
       <a href="#/advertise" data-tab="advertise" class="nav-ad">Advertise</a>
     </nav>
+    <a href="#/account" id="navAcct" class="acct-btn" hidden>Sign in</a>
     <span class="today" id="todayLbl"></span>
   </div>
 </header>
@@ -40,10 +41,11 @@
     <div><h3>Explore</h3><a href="#/browse">Find shoots</a><a href="#/calendars/aba">ABA calendar</a><a href="#/calendars/aa">Archery Australia calendar</a><a href="#/calendars/awa">Archery WA calendar</a><a href="#/calendar">My shoots</a><a href="#/entries">Entries &amp; payments</a><a href="#/settings">Settings &amp; reminders</a></div>
     <div><h3>Business</h3><a href="#/advertise">Advertise with us</a><a href="#/submit">Clubs: submit a shoot / send us your flyer</a><a href="#/credits">Photo credits</a><a href="#/privacy">Privacy &amp; disclaimer</a><a href="mailto:nfshold@gmail.com">nfshold@gmail.com</a><span class="foot-co">NFS Strategic Holdings</span></div>
   </div>
-  <div class="wrap foot-small"><b>Dates come from organisers' public calendars; always check with the organiser.</b> Your saved shoots and entries stay in your browser on this device (<a href="#/privacy">privacy</a>). <a href="#/credits">Photo credits</a>.</div>
+  <div class="wrap foot-small"><b>Dates come from organisers' public calendars; always check with the organiser.</b> <span id="footStore">Your saved shoots and entries stay in your browser on this device</span> (<a href="#/privacy">privacy</a>). <a href="#/credits">Photo credits</a>.</div>
 </footer>
 <div id="toast" role="status" aria-live="polite"></div>
-<script src="config.js?v=d65ac82602"></script>
-<script src="app.js?v=d65ac82602"></script>
+<script src="config.js?v=40abc44951"></script>
+<script src="sync.js?v=40abc44951"></script>
+<script src="app.js?v=40abc44951"></script>
 </body>
 </html>

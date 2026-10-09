@@ -29,7 +29,7 @@ const pd = s => s ? new Date(s + 'T00:00:00') : null;
 const daysTo = s => Math.round((pd(s) - today()) / 864e5);
 
 function load(){ try { return Object.assign({}, DEFAULT, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch { return {...DEFAULT}; } }
-function save(){ localStorage.setItem(KEY, JSON.stringify(S)); }
+function save(){ localStorage.setItem(KEY, JSON.stringify(S)); if (typeof AUTH !== 'undefined' && AUTH.sync) AUTH.sync.track(); }
 /* ---------- my entry status: none | entered | paid ----------
    Works for ANY shoot (no need to save it first): marking entered/paid adds it to My shoots automatically.
    Old records (before status existed) meant "entered and paid". */
@@ -77,6 +77,7 @@ async function boot(){
     navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(r => r.update()).catch(() => {});
   }
   route(); checkReminders(); setInterval(checkReminders, 60 * 60 * 1000);
+  initAuth().catch(e => console.warn('auth', e));
 }
 
 /* ---------- settings migration: never let stale/odd saved settings hide everything ---------- */
@@ -586,7 +587,7 @@ function vSettings(){
   <p class="note">Phone notifications: <b>${esc(perm)}</b>. On iPhone, first tap Share → “Add to Home Screen”, then open from the icon (needs iOS 16.4+).</p>
   <button class="btn block" id="notif">🔔 ${S.notify && perm === 'granted' ? 'Notifications on – send a test' : 'Turn on notifications'}</button>
   ${S.notify ? `<button class="btn alt block" id="notifOff">🔕 Turn notifications off</button>` : ''}
-  <h2>Backup</h2><p class="note">Your shoots and entries are stored only on this device.</p>
+  <h2>Backup</h2><p class="note">${AUTH.on && AUTH.user && AUTH.sync && AUTH.sync.linked() ? 'Your shoots and entries are saved on this device and synced to your <a href="#/account">account</a>.' : 'Your shoots and entries are stored only on this device.'}${AUTH.on && !AUTH.user ? ' <a href="#/account">Sign in</a> to keep them on all your devices.' : ''}</p>
   <div class="row"><button class="btn alt" id="exp">⇩ Export backup</button><label class="btn alt" style="margin:0">⇧ Import<input type="file" id="imp" accept="application/json" hidden></label></div>
   <p class="note">Data: ${EV.length} shoots from ${ORGS.length} organisations. Sources: ${AUS() ? 'World Archery calendar (Australian events),' : 'World Archery calendar,'} ABA 2026 National Calendar, Archery Australia, Archery WA, organiser sites. Checked 9 Oct 2026.</p></div>`;
 }
@@ -648,13 +649,18 @@ function vAdvertise(){
 function vPrivacy(){
   setTitle('Privacy & disclaimer');
   return `${pageHead('Privacy &amp; disclaimer', 'Short version: your data stays in your browser.', 'mixed')}<div class="wrap narrow"><section class="panel"><h2 class="sec">Privacy</h2>
-    <ul class="ticks"><li>No account, no sign-up. The shoots you save, your entries and payments, and your reminder settings are stored only in <b>your browser on this device</b> (localStorage). They are never sent to us.</li>
+    <ul class="ticks"><li>${AUTH.on ? 'No account needed. If you don’t sign in, the' : 'No account, no sign-up. The'} shoots you save, your entries and payments, and your reminder settings are stored only in <b>your browser on this device</b> (localStorage). They are never sent to us.</li>
     <li>Clearing your browser data deletes them. Use <a href="#/settings">Settings → Export backup</a> to keep a copy or move to another device.</li>
     <li>No analytics, advertising or tracking cookies. Reminders are made on your device.</li>
     <li>"Register / enter" and email links go straight to the organiser. Anything you send them is between you and the organiser.</li>
     <li><b>Submit a shoot form:</b> what a club sends us (contact name, email, phone, shoot details and flyer) is emailed to us at ${esc(SITE.contact)} via the form service FormSubmit (formsubmit.co). We use it only to check and list the shoot and, if you ask, to set up your entry form. Contact details aren't published unless they're on your flyer. Ask us any time to correct or delete them.</li>
     <li>The site is hosted on GitHub Pages, which keeps standard server logs (e.g. IP address) – see GitHub's privacy statement.</li></ul>
     <p class="note">Questions: <a href="mailto:${SITE.contact}">${SITE.contact}</a> (NFS Strategic Holdings).</p></section>
+    ${AUTH.on ? `<section class="panel" id="privAcct"><h2 class="sec">If you create an account (optional)</h2><ul class="ticks">
+    <li><b>What we store:</b> your email address; a display name if you add one; the shoots you save; your entry status (entered / paid), amount paid, payment date, receipt or entry number and notes; which reminders have been sent; and your Settings (states, organisations, reminder days). Sign-in with Google also gives us your name from Google. We never see or store passwords.</li>
+    <li><b>Where:</b> Supabase (supabase.com), our database and sign-in provider, in its <b>Sydney, Australia</b> region (AWS ap-southeast-2). Sign-in emails are sent through Supabase. Supabase keeps standard security logs (e.g. IP address, sign-in times).</li>
+    <li><b>Who can see it:</b> only you. Every row is locked to your account by the database (row-level security). We don’t sell it, share it or use it for advertising.</li>
+    <li><b>Deleting it:</b> <a href="#/account">Account → Delete account and data</a> removes your account and everything in it straight away. Signing out keeps a copy on your device unless you choose “remove from this device”. Or email us and we’ll delete it.</li></ul></section>` : ''}
     <section class="panel"><h2 class="sec">Disclaimer</h2><p><b>Dates come from organisers' public calendars; always check with the organiser.</b></p>
     <p class="note">Shoot details are collected from Archery Australia, Archery WA, the ABA, World Archery and club websites and flyers, and can change at any time. Archery Calendar is independent and is not run by or affiliated with any of these organisations. Flyers belong to their organisers – we link to them at the source.</p></section></div>`;
 }
@@ -734,6 +740,155 @@ function bindCals(){
   $('#cp').onchange = e => { CF.past = e.target.checked; render(); };
 }
 /* ---------- router ---------- */
+/* ---------- optional accounts (Supabase) ----------
+   Off unless config.js sets SUPABASE_URL + SUPABASE_ANON_KEY. Off = the site works exactly as before (no sign-in UI, nothing loaded).
+   On = "Sign in" in the header; sign-in by emailed magic link (and Google if SUPABASE_GOOGLE). Data stays in localStorage as before and
+   is synced to the account by sync.js (queue + last write wins), so the site keeps working offline and without signing in. */
+const SB_URL = String(window.SUPABASE_URL || '').trim(), SB_KEY = String(window.SUPABASE_ANON_KEY || '').trim();
+function sbKeyOk(k){
+  if (!k || /YOUR|PLACEHOLDER|xxx/i.test(k) || /^sb_secret_/.test(k)) return false;       // never accept a secret key
+  if (/^sb_publishable_/.test(k)) return true;
+  try { const p = JSON.parse(atob(k.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); return p.role === 'anon'; } catch { return false; }
+}
+const AUTH = {configured: false, on: /^https:\/\/[^\s/]+\/?$/.test(SB_URL) && sbKeyOk(SB_KEY), client: null, user: null, sync: null, ready: false, msg: '', sent: '', chain: Promise.resolve()};
+AUTH.configured = AUTH.on;
+if (SB_URL && !AUTH.on) console.warn('Archery Calendar: Supabase config ignored – needs SUPABASE_URL (https://…supabase.co) and the PUBLIC anon/publishable key (never the service_role/secret key).');
+const loadScript = src => new Promise((ok, no) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => no(new Error('load ' + src)); document.head.appendChild(s); });
+const redirectUrl = () => location.origin + location.pathname;
+function softRender(){ const a = document.activeElement; if (a && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && a.closest('#view')) return; const y = scrollY; render(); scrollTo(0, y); }
+function updateNav(){
+  const a = $('#navAcct'); if (!a) return; a.hidden = !(AUTH.on && AUTH.ready); if (a.hidden) return;
+  const fs = $('#footStore'); if (fs) fs.textContent = 'Your saved shoots and entries are kept in your browser on this device, and in your account if you sign in';
+  const n = AUTH.sync ? AUTH.sync.pending() : 0, linked = AUTH.sync && AUTH.sync.linked();
+  a.textContent = AUTH.user ? `👤 ${linked && n ? '⏳ ' : ''}Account` : 'Sign in';
+  a.classList.toggle('on', (location.hash || '').startsWith('#/account'));
+}
+/* Tables-ready check (no library needed): as a signed-out visitor, the tables and sync function must EXIST (answering
+   "permission denied" is fine – that's RLS/grants working). Missing (PGRST205 / PGRST202 / 404) = schema.sql not run yet:
+   keep sign-in hidden and stay local-only. Offline: reuse the last answer. */
+async function sbReady(){
+  const prev = (localStorage.getItem('archcal.sbReady') || '').split(':');      // '0:<time>' = not ready; re-check at most every 30 min
+  if (prev[0] === '0' && Date.now() - (+prev[1] || 0) < 30 * 60 * 1000) return false;
+  const h = {apikey: SB_KEY}, base = SB_URL.replace(/\/$/, '');
+  const missing = r => r.status === 404;     // PostgREST answers 404 (PGRST205 table / PGRST202 function not found)
+  try {
+    const [t, f] = await Promise.all([fetch(base + '/rest/v1/user_events?select=event_id&limit=1', {headers: h}),
+      fetch(base + '/rest/v1/rpc/sync_user_events', {method: 'POST', headers: Object.assign({'Content-Type': 'application/json'}, h), body: '{"rows":[]}'})]);
+    const ok = !missing(t) && !missing(f) && t.status < 500 && f.status < 500;
+    localStorage.setItem('archcal.sbReady', ok ? '1' : '0:' + Date.now()); return ok;
+  } catch { return localStorage.getItem('archcal.sbReady') === '1'; }
+}
+async function initAuth(){
+  if (AUTH.on && !(await sbReady())) { AUTH.on = false; AUTH.pending = true; console.info('Archery Calendar: accounts configured but the database tables are not set up yet (run supabase/schema.sql) – sign-in hidden.'); }
+  updateNav(); if (!AUTH.on) { if (document.body.dataset.page === 'account' || document.body.dataset.page === 'privacy') softRender(); return; }
+  try { if (!window.supabase) await loadScript('vendor/supabase-js-2.117.3.js'); }
+  catch { AUTH.msg = 'Sign-in couldn’t load. Are you offline? Your shoots are still saved on this device.'; AUTH.ready = true; softRender(); return; }
+  const qp = new URLSearchParams(location.search);
+  if (qp.get('error_description') || qp.get('error')) AUTH.msg = 'Sign-in didn’t work: ' + (qp.get('error_description') || qp.get('error')) + '. Links expire after an hour and only work once – ask for a new one.';
+  AUTH.client = window.supabase.createClient(SB_URL, SB_KEY, {auth: {flowType: 'pkce', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: 'archcal.auth'}});
+  AUTH.sync = ArchSync.create({client: AUTH.client, storage: localStorage, getS: () => S, saveS: () => { save(); softRender(); },
+    isOnline: () => navigator.onLine, onChange: () => { updateNav(); if (document.body.dataset.page === 'account') softRender(); }});
+  const cameBack = qp.has('code') || qp.has('error');
+  AUTH.client.auth.onAuthStateChange((ev, sess) => { const u = sess ? sess.user : null; AUTH.chain = AUTH.chain.then(() => onUser(u, ev)).catch(e => { AUTH.msg = String(e.message || e); }); });
+  await AUTH.client.auth.getSession().catch(() => {});
+  await AUTH.chain;
+  if (cameBack) { history.replaceState(null, '', location.pathname + (AUTH.user ? '#/account' : (location.hash || '#/account'))); }
+  AUTH.ready = true; updateNav(); softRender();
+  addEventListener('online', () => AUTH.sync.flush());
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) AUTH.sync.flush(); });
+  setInterval(() => AUTH.sync.flush(), 5 * 60 * 1000);
+}
+async function onUser(u){
+  const prev = AUTH.user && AUTH.user.id; AUTH.user = u;
+  if (!u) { AUTH.sync.setUser(null); updateNav(); softRender(); return; }
+  AUTH.sent = '';
+  if (prev === u.id && AUTH.sync.linked()) return;
+  AUTH.sync.setUser(u);
+  if (!AUTH.sync.linked()) {
+    if (AUTH.sync.needsMergeChoice(u)) { AUTH.ask = true; if (!location.hash.startsWith('#/account')) location.hash = '#/account'; }
+    else await AUTH.sync.link(u, 'account');
+  }
+  updateNav(); softRender();
+}
+const counts = () => ({saved: Object.keys(S.saved).length, ent: Object.keys(S.entries).length});
+function vAccount(){
+  setTitle(AUTH.user ? 'Account' : 'Sign in');
+  const head = pageHead(AUTH.user ? 'Your account' : 'Sign in', 'Optional. Keep your shoots, entries and settings on all your devices.', 'target');
+  const msg = AUTH.msg ? `<div class="warn" role="alert">⚠ ${esc(AUTH.msg)}</div>` : '';
+  if (!AUTH.on) return `${head}<div class="wrap narrow"><section class="panel"><p>Accounts aren’t switched on yet. Everything you save is kept in this browser on this device – no sign-up needed.</p><p><a class="btn" href="#/browse">Find shoots</a></p></section></div>`;
+  if (!AUTH.ready) return `${head}<div class="wrap narrow"><p class="loading">Loading…</p></div>`;
+  if (!AUTH.client) return `${head}<div class="wrap narrow">${msg}</div>`;
+  if (!AUTH.user) return `${head}<div class="wrap narrow">${msg}
+    <section class="panel"><h2 class="sec">Sign in or create an account</h2>
+    ${AUTH.sent ? `<div class="okbox" role="status">✉ <b>Check your email.</b> We sent a sign-in link to <b>${esc(AUTH.sent)}</b>. Open it <b>in this browser on this device</b>. It works once and expires in an hour. No email? Check junk, or <button type="button" class="linkbtn" id="again">send it again</button>.</div>`
+      : `<form id="signin" novalidate><label for="em">Email</label><input id="em" type="email" autocomplete="email" required placeholder="you@example.com">
+      <button class="btn gold block" type="submit">✉ Email me a sign-in link</button></form>
+      <p class="note">No password. New here? The same link creates your account.</p>`}
+    ${window.SUPABASE_GOOGLE ? `<div class="or"><span>or</span></div><button class="btn alt block" id="google" type="button"><b>G</b>&nbsp; Continue with Google</button>` : ''}
+    </section>
+    <section class="panel"><h2 class="sec">What an account does</h2><ul class="ticks">
+      <li>Your saved shoots, “I’ve entered / I’ve paid”, amounts, receipt numbers, notes, reminders and Settings are kept in your account and synced across your devices.</li>
+      <li>Not signed in? Everything still works and stays on this device, as now.</li>
+      <li>Stored in Australia (Sydney). Delete your account and data any time. <a href="#/privacy">Privacy</a></li></ul></section></div>`;
+  const u = AUTH.user, st = AUTH.sync.state(), c = counts();
+  if (!AUTH.sync.linked()) return `${head}<div class="wrap narrow">${msg}<section class="panel"><h2 class="sec">Add this device’s shoots to your account?</h2>
+    <p>Signed in as <b>${esc(u.email)}</b>. This device has <b>${c.saved}</b> saved shoot${c.saved === 1 ? '' : 's'} and <b>${c.ent}</b> entr${c.ent === 1 ? 'y' : 'ies'} recorded.</p>
+    <button class="btn gold block" id="mergeYes">✓ Yes, add them to my account</button>
+    <button class="btn alt block" id="mergeNo">✕ No, use my account’s data only</button>
+    <p class="note">“Yes” combines both; where the same shoot differs, the most recent change wins. “No” replaces what’s on this device with your account’s shoots – <button type="button" class="linkbtn" id="bk">download a backup first</button>.</p>
+    <button class="linkbtn" id="so0">Sign out instead</button></section></div>`;
+  const n = AUTH.sync.pending(), when = st.lastSync ? new Date(st.lastSync).toLocaleString('en-AU', {weekday: 'short', hour: 'numeric', minute: '2-digit'}) : '';
+  const syncTxt = !navigator.onLine ? `⏳ Offline – ${n} change${n === 1 ? '' : 's'} saved on this device, will sync when you’re back online`
+    : st.error && n ? `⚠ ${n} change${n === 1 ? '' : 's'} not synced yet (${esc(st.error)}). We’ll keep trying.` : n ? `⏳ Syncing ${n} change${n === 1 ? '' : 's'}…` : `✓ Synced${when ? ' · ' + esc(when) : ''}`;
+  const stTxt = S.states.length ? S.states.join(', ') : 'All of Australia', grTxt = GROUPS.filter(g => S.groups.includes(g[0])).map(g => g[0] === 'aba' ? 'ABA' : g[1]).join(', ');
+  return `${head}<div class="wrap narrow">${msg}
+   <section class="panel"><h2 class="sec">Your details</h2><dl class="kv"><dt>Email</dt><dd>${esc(u.email || '—')}</dd></dl>
+    <form id="dn"><label for="dname">Display name</label><input id="dname" maxlength="80" autocomplete="nickname" value="${esc(st.displayName || '')}">
+    <button class="btn alt" type="submit">Save name</button></form></section>
+   <section class="panel"><h2 class="sec">My states &amp; organisations</h2><dl class="kv"><dt>States</dt><dd>${esc(stTxt)}</dd><dt>Organisations</dt><dd>${esc(grTxt || '—')}</dd>
+    <dt>Reminders</dt><dd>${esc(S.remindDays.join(', '))} days before · entries close ${esc(S.closeDays.join(' / '))}</dd></dl>
+    <a class="btn alt" href="#/settings">Change in Settings</a><p class="note">Settings sync to your other devices.</p></section>
+   <section class="panel"><h2 class="sec">Sync</h2><p class="sync-st" id="syncSt">${syncTxt}</p>
+    <p class="note">${c.saved} saved shoot${c.saved === 1 ? '' : 's'} · ${c.ent} entr${c.ent === 1 ? 'y' : 'ies'}. Changes save on this device straight away and sync in the background, also after being offline.</p>
+    <button class="btn alt" id="syncNow">↻ Sync now</button></section>
+   <section class="panel"><h2 class="sec">Sign out</h2>
+    <button class="btn alt block" id="so">Sign out (keep my shoots on this device)</button>
+    <button class="btn alt block" id="soClear">Sign out and remove my shoots from this device</button>
+    <p class="note">Use the second one on a shared or borrowed device.</p></section>
+   <section class="panel danger"><h2 class="sec">Delete account and data</h2>
+    <p>Permanently deletes your account and everything stored in it (saved shoots, entries, payments, notes, reminders, settings). This can’t be undone.</p>
+    <form id="del"><label for="delc">Type <b>DELETE</b> to confirm</label><input id="delc" autocomplete="off" autocapitalize="characters">
+    <label class="chk"><input type="checkbox" id="delLocal" checked> Also remove my shoots from this device</label>
+    <button class="btn danger block" type="submit">🗑 Delete my account and data</button></form></section></div>`;
+}
+function bindAccount(){
+  const busy = (b, t) => { if (b) { b.disabled = true; b.dataset.t = b.textContent; b.textContent = t; } };
+  const f = $('#signin');
+  if (f) f.onsubmit = async e => { e.preventDefault(); const em = $('#em').value.trim(), b = f.querySelector('button');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { AUTH.msg = 'Please enter a valid email address.'; return softRenderForce(); }
+    busy(b, 'Sending…'); AUTH.msg = '';
+    const {error} = await AUTH.client.auth.signInWithOtp({email: em, options: {emailRedirectTo: redirectUrl(), shouldCreateUser: true}});
+    if (error) AUTH.msg = /rate|seconds/i.test(error.message) ? 'Too many sign-in emails – please wait a minute and try again.' : error.message; else AUTH.sent = em;
+    softRenderForce(); };
+  const ag = $('#again'); if (ag) ag.onclick = () => { AUTH.sent = ''; softRenderForce(); };
+  const g = $('#google'); if (g) g.onclick = async () => { const {error} = await AUTH.client.auth.signInWithOAuth({provider: 'google', options: {redirectTo: redirectUrl()}}); if (error) { AUTH.msg = error.message; softRenderForce(); } };
+  const my = $('#mergeYes'), mn = $('#mergeNo');
+  if (my) my.onclick = async () => { busy(my, 'Adding…'); await AUTH.sync.link(AUTH.user, 'merge'); AUTH.ask = false; toast('✓ Added to your account'); softRenderForce(); };
+  if (mn) mn.onclick = async () => { busy(mn, 'Loading your account…'); await AUTH.sync.link(AUTH.user, 'account'); AUTH.ask = false; toast('Using your account’s shoots'); softRenderForce(); };
+  const bk = $('#bk'); if (bk) bk.onclick = () => dl(new Blob([JSON.stringify(S, null, 1)], {type: 'application/json'}), 'archery-calendar-backup.json');
+  const out = async clear => { await AUTH.client.auth.signOut({scope: 'local'}).catch(() => {}); AUTH.sync.unlink(clear); AUTH.user = null; AUTH.msg = ''; toast(clear ? 'Signed out · removed from this device' : 'Signed out'); location.hash = '#/account'; softRenderForce(); };
+  for (const [id, c] of [['so', false], ['so0', false], ['soClear', true]]) { const b = $('#' + id); if (b) b.onclick = () => out(c); }
+  const dn = $('#dn'); if (dn) dn.onsubmit = async e => { e.preventDefault(); await AUTH.sync.setDisplayName($('#dname').value); toast('Name saved'); softRenderForce(); };
+  const sn = $('#syncNow'); if (sn) sn.onclick = async () => { busy(sn, 'Syncing…'); const r = await AUTH.sync.flush(); toast(r && r.ok ? '✓ Synced' : r && r.skipped === 'offline' ? 'You’re offline – will sync later' : '⚠ Couldn’t sync yet'); softRenderForce(); };
+  const del = $('#del'); if (del) del.onsubmit = async e => { e.preventDefault();
+    if ($('#delc').value.trim().toUpperCase() !== 'DELETE') { toast('Type DELETE to confirm'); return; }
+    const b = del.querySelector('button'), clearLocal = $('#delLocal').checked; busy(b, 'Deleting…');
+    const {error} = await AUTH.client.rpc('delete_my_account');
+    if (error) { AUTH.msg = 'Couldn’t delete: ' + error.message + '. Nothing was deleted – try again, or email ' + SITE.contact + '.'; return softRenderForce(); }
+    await AUTH.client.auth.signOut({scope: 'local'}).catch(() => {}); AUTH.sync.unlink(clearLocal); AUTH.user = null;
+    AUTH.msg = ''; toast('Your account and its data were deleted'); softRenderForce(); };
+}
+function softRenderForce(){ const y = scrollY; render(); scrollTo(0, y); }
 function route(){ render(); window.scrollTo(0, 0); }
 function render(){
   const h = location.hash || '#/home', [, p, arg] = h.split('/'), v = $('#view');
@@ -747,13 +902,14 @@ function render(){
   else if (p === 'advertise') v.innerHTML = vAdvertise();
   else if (p === 'credits') v.innerHTML = vCredits();
   else if (p === 'privacy') v.innerHTML = vPrivacy();
+  else if (p === 'account') { v.innerHTML = vAccount(); bindAccount(); }
   else if (p === 'submit') { v.innerHTML = vSubmit(); bindSubmit(); }
   else if (p === 'calendars') { v.innerHTML = vCals(arg); bindCals(); }
   else { v.innerHTML = vHome();
     v.querySelectorAll('[data-cat]').forEach(a => a.onclick = () => { BF.cat = a.dataset.cat; BF.disc = ''; BF.scope = 'all'; });
     v.querySelectorAll('[data-th]').forEach(a => a.onclick = () => { BF.cat = ''; BF.disc = {field:'Field','3d':'3D',target:'Target',indoor:'Indoor'}[a.dataset.th]; BF.scope = 'all'; });
     $('#heroSearch').onsubmit = e => { e.preventDefault(); BF.q = $('#hq').value; BF.scope = 'all'; location.hash = '#/browse'; }; }
-  bindCards(v);
+  bindCards(v); updateNav();
 }
 /* ---------- submit a shoot (clubs) ----------
    Static site, no backend: the form POSTs (multipart, with the flyer file) to SITE.formEndpoint (FormSubmit), which emails

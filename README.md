@@ -20,3 +20,9 @@ Worked out in `tools/build_data.py` from the data (field `org_status`), never ty
 | ⏳ No entry details yet | `no_details` | Everything else: the date is on an official calendar (ABA 2026 National Calendar, World Archery/AA calendar, Archery WA feed) but there's no current-year flyer or entry link yet. This includes shoots where we only hold last year's flyer (e.g. Baldivis Breakfast Field, 15 Nov 2026) and placeholders (dates TBC, venue TBA). |
 
 Entry badges come from the same data: 🔒 Entries closed (close date passed), ◷ Entries open <date> (opening date in the future), ✍ Entries open · close <date> (status `flyer` with an entry link or close date). Icons and text are always shown together – never colour alone.
+
+## Optional user accounts (Supabase), off until configured
+- Built in: `app/sync.js` (sync engine), the Account page (`#/account`), `supabase/schema.sql` (tables + Row Level Security + sync functions), `docs/SUPABASE_SETUP.md` (setup steps).
+- Switched on only when `app/config.js` has `SUPABASE_URL` and the public `SUPABASE_ANON_KEY` (publishable/anon key). Empty = no sign-in UI and no extra code loaded.
+- Sign-in: magic link by email (PKCE) and optionally Google. Data region: Sydney (ap-southeast-2). Never commit the secret/service_role key; the build refuses one.
+- Tests: `node tests/test_sync.js`, `bash tests/test_schema.sh` (local PostgreSQL), `tools/qa_accounts.py <url>` (browser, mock Supabase).
