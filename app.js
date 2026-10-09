@@ -136,7 +136,7 @@ function clubCta(compact){
   const m = `mailto:${SITE.contact}?subject=${encodeURIComponent('Our shoot / flyer for Archery Calendar')}`;
   return `<aside class="cta${compact ? ' compact' : ''}"><span class="kicker">Clubs &amp; organisers</span><b class="cta-h">Send us your flyer</b>
     <p>No online entries? We'll list your shoot, set up a <b>free entry form</b> and send you the entry list. Free until ${esc(SITE.freeUntil)}.</p>
-    <a class="btn gold" href="${m}">Email ${esc(SITE.contact)}</a></aside>`;
+    <div class="cta-btns"><a class="btn gold" href="#/submit">Submit a shoot</a><a class="cta-mail" href="${m}">or email ${esc(SITE.contact)}</a></div></aside>`;
 }
 function flyerLinkCard(x){
   const ex = x.flyer_extract || {}, cur = x.flyer_is_current, ly = cur ? '' : '<span class="lastyr">Last year</span>';
@@ -414,7 +414,7 @@ function bindCommon(){
 
 /* ---------- advertise & credits ---------- */
 const CONTACT = 'nfshold@gmail.com';
-const AD_MAIL = 'mailto:' + CONTACT + '?subject=Advertising%20on%20Archery%20Register';
+const AD_MAIL = 'mailto:' + CONTACT + '?subject=Advertising%20on%20Archery%20Calendar';
 function vAdvertise(){
   setTitle('Advertise with us');
   const n = photo('nathe');
@@ -448,6 +448,7 @@ function vPrivacy(){
     <li>Clearing your browser data deletes them. Use <a href="#/settings">Settings → Export backup</a> to keep a copy or move to another device.</li>
     <li>No analytics, advertising or tracking cookies. Reminders are made on your device.</li>
     <li>"Register / enter" and email links go straight to the organiser. Anything you send them is between you and the organiser.</li>
+    <li><b>Submit a shoot form:</b> what a club sends us (contact name, email, phone, shoot details and flyer) is emailed to us at ${esc(SITE.contact)} via the form service FormSubmit (formsubmit.co). We use it only to check and list the shoot and, if you ask, to set up your entry form. Contact details aren't published unless they're on your flyer. Ask us any time to correct or delete them.</li>
     <li>The site is hosted on GitHub Pages, which keeps standard server logs (e.g. IP address) – see GitHub's privacy statement.</li></ul>
     <p class="note">Questions: <a href="mailto:${SITE.contact}">${SITE.contact}</a> (NFS Strategic Holdings).</p></section>
     <section class="panel"><h2 class="sec">Disclaimer</h2><p><b>Dates come from organisers' public calendars; always check with the organiser.</b></p>
@@ -493,10 +494,142 @@ function render(){
   else if (p === 'advertise') v.innerHTML = vAdvertise();
   else if (p === 'credits') v.innerHTML = vCredits();
   else if (p === 'privacy') v.innerHTML = vPrivacy();
+  else if (p === 'submit') { v.innerHTML = vSubmit(); bindSubmit(); }
   else { v.innerHTML = vHome();
     v.querySelectorAll('[data-th]').forEach(a => a.onclick = () => { BF.disc = {field:'Field','3d':'3D',target:'Target',indoor:'Indoor'}[a.dataset.th]; BF.scope = 'all'; });
     $('#heroSearch').onsubmit = e => { e.preventDefault(); BF.q = $('#hq').value; BF.scope = 'all'; location.hash = '#/browse'; }; }
   bindCards(v);
 }
+/* ---------- submit a shoot (clubs) ----------
+   Static site, no backend: the form POSTs (multipart, with the flyer file) to SITE.formEndpoint (FormSubmit), which emails
+   SITE.contact. If no endpoint is configured, or the browser is offline, "Email it instead" builds a pre-filled email. */
+const ORG_TYPES = ['Archery Australia club', 'Archery WA', 'Other state association', 'ABA club or branch', 'Other'];
+const SUB_DISC = [['Target','Target'],['Field','Field'],['3D','3D'],['Indoor','Indoor'],['Clout','Clout'],['Come and try','Come-and-try'],['Clinic','Clinic'],['League','League']];
+const ENTRY_METHODS = ['Assemble', 'Archers Diary', 'Email', 'Phone', 'None yet'];
+const MAX_MB = 5;
+function vSubmit(){
+  setTitle('Submit a shoot');
+  const sent = /(?:^|[?&])sent=1/.test(location.search);
+  if (sent) history.replaceState(null, '', location.pathname + '#/submit');
+  const head = pageHead('Submit a shoot', "Clubs and organisers: tell us about your shoot and we'll put it on the calendar.", '3d');
+  if (sent) return `${head}<div class="wrap narrow"><section class="panel thanks" id="subThanks" tabindex="-1">
+    <span class="thanks-mark" aria-hidden="true">✓</span><h2 class="sec">Thanks, your shoot is in</h2>
+    <p>We'll check the details against your flyer and usually have it live <b>within 48 hours</b>. If anything's unclear we'll reply to the email you gave us.</p>
+    <p class="note">Asked for a free entry form? We'll email you a link to check before it goes live. Free until ${esc(SITE.freeUntil)}.</p>
+    <div class="row"><a class="btn gold" href="#/submit">Submit another shoot</a><a class="btn alt" href="#/browse">Find shoots</a></div></section></div>`;
+  const opt = (a, ph) => `<option value="">${ph}</option>` + a.map(x => `<option>${esc(x)}</option>`).join('');
+  const f = (id, lab, inp, hint = '', req = true) => `<div class="fld" data-f="${id}"><label for="${id}">${lab}${req ? ' <span class="req" aria-hidden="true">*</span>' : ' <span class="opt">(optional)</span>'}</label>${inp}${hint ? `<p class="hint" id="${id}_h">${hint}</p>` : ''}<p class="err" id="${id}_e" role="alert"></p></div>`;
+  return `${head}<div class="wrap narrow sub">
+  <section class="panel sub-intro"><ul class="ticks">
+    <li>Free to list. Every shoot is <b>reviewed before it goes live, usually within 48 hours</b>.</li>
+    <li>No online entries? Tick "yes" below and we'll set up a <b>free entry form</b> and email you the entry list. Free until ${esc(SITE.freeUntil)}.</li>
+    <li>Fields marked <span class="req">*</span> are required.</li></ul></section>
+  <form id="subForm" class="panel sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate>
+    <input type="hidden" name="_subject" value="New shoot submission – Archery Calendar">
+    <input type="hidden" name="_template" value="table">
+    <input type="hidden" name="_next" value="">
+    <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <input type="hidden" name="discipline" id="s_disc_val">
+    <fieldset><legend>Your club</legend>
+      ${f('s_orgtype', 'Organisation type', `<select id="s_orgtype" name="organisation_type" required>${opt(ORG_TYPES, 'Choose…')}</select>`)}
+      ${f('s_club', 'Club or organisation name', `<input id="s_club" name="club_name" required maxlength="120" autocomplete="organization">`)}
+      <div class="grid2">${f('s_name', 'Contact name', `<input id="s_name" name="contact_name" required maxlength="80" autocomplete="name">`)}
+      ${f('s_email', 'Contact email', `<input id="s_email" name="email" type="email" required maxlength="120" autocomplete="email" inputmode="email">`)}</div>
+      ${f('s_phone', 'Phone', `<input id="s_phone" name="phone" type="tel" maxlength="20" autocomplete="tel" inputmode="tel">`, '', false)}
+    </fieldset>
+    <fieldset><legend>The shoot</legend>
+      ${f('s_shoot', 'Shoot name', `<input id="s_shoot" name="shoot_name" required maxlength="140" placeholder="e.g. Autumn 3D Classic">`)}
+      <div class="fld" data-f="s_disc"><span class="lab" id="s_disc_l">Discipline <span class="req" aria-hidden="true">*</span> <span class="opt">(tick all that apply)</span></span>
+        <div class="chips-check" role="group" aria-labelledby="s_disc_l" id="s_disc">${SUB_DISC.map(([v, l]) => `<label class="chk"><input type="checkbox" value="${esc(v)}"><span>${esc(l)}</span></label>`).join('')}</div><p class="err" id="s_disc_e" role="alert"></p></div>
+      <div class="grid2">${f('s_start', 'Start date', `<input id="s_start" name="start_date" type="date" required>`)}
+      ${f('s_end', 'End date', `<input id="s_end" name="end_date" type="date">`, 'Leave blank for a one-day shoot.', false)}</div>
+      ${f('s_venue', 'Venue', `<input id="s_venue" name="venue" required maxlength="140" placeholder="e.g. club range name or address">`)}
+      <div class="grid2">${f('s_suburb', 'Suburb or town', `<input id="s_suburb" name="suburb" required maxlength="80">`)}
+      ${f('s_state', 'State', `<select id="s_state" name="state" required><option value="">Choose…</option>${STATES.map(([c, n]) => `<option value="${c}">${esc(n)}</option>`).join('')}</select>`)}</div>
+    </fieldset>
+    <fieldset><legend>Entries</legend>
+      <div class="grid2">${f('s_close', 'Entries close', `<input id="s_close" name="entry_close_date" type="date">`, '', false)}
+      ${f('s_method', 'How do archers enter now?', `<select id="s_method" name="entry_method" required>${opt(ENTRY_METHODS, 'Choose…')}</select>`)}</div>
+      ${f('s_link', 'Entry link', `<input id="s_link" name="entry_link" type="text" maxlength="300" placeholder="https://" inputmode="url">`, 'Your Assemble or Archers Diary page, or the email or phone number archers should use.', false)}
+      <div class="fld" data-f="s_want"><span class="lab" id="s_want_l">Want us to set up a free entry form? <span class="req" aria-hidden="true">*</span></span>
+        <div class="seg" role="radiogroup" aria-labelledby="s_want_l" id="s_want"><label class="chk"><input type="radio" name="want_free_entry_form" value="Yes" required><span>Yes please</span></label><label class="chk"><input type="radio" name="want_free_entry_form" value="No"><span>No thanks</span></label></div><p class="err" id="s_want_e" role="alert"></p></div>
+    </fieldset>
+    <fieldset><legend>Flyer</legend>
+      ${f('s_file', 'Upload the flyer', `<input id="s_file" name="attachment" type="file" accept=".pdf,.jpg,.jpeg,application/pdf,image/jpeg">`, `PDF or JPG, up to ${MAX_MB} MB.`, false)}
+      ${f('s_flink', '…or link to the flyer', `<input id="s_flink" name="flyer_link" type="url" maxlength="300" placeholder="https://" inputmode="url">`, 'e.g. your website or Facebook post.', false)}
+      ${f('s_notes', 'Notes', `<textarea id="s_notes" name="notes" rows="4" maxlength="2000" placeholder="Rounds, fees, start times, camping, anything else"></textarea>`, '', false)}
+    </fieldset>
+    <div class="fld consent" data-f="s_ok"><label class="chk tick"><input type="checkbox" id="s_ok" name="consent" value="Yes – permission to publish the shoot details and flyer" required><span>I'm authorised by the club and give Archery Calendar permission to publish these shoot details and the flyer. <span class="req" aria-hidden="true">*</span></span></label><p class="err" id="s_ok_e" role="alert"></p></div>
+    <p class="note priv">🔒 Privacy: your details are emailed to us (${esc(SITE.contact)}, NFS Strategic Holdings) via FormSubmit. We use them only to check and list your shoot and to set up an entry form if you ask. We don't publish your contact details unless they're on your flyer, and we never sell them. <a href="#/privacy">Privacy</a></p>
+    <p class="err sum" id="subErr" role="alert"></p>
+    <div class="sub-actions"><button class="btn gold" type="submit" id="subBtn">Submit shoot for review</button>
+      <a class="btn alt" id="subMail" href="mailto:${esc(SITE.contact)}">Email it instead</a></div>
+    <p class="note">"Email it instead" opens your email app with the details filled in. Attach the flyer before you send.</p>
+  </form></div>`;
+}
+function bindSubmit(){
+  const fm = $('#subForm');
+  if (!fm) { const t = $('#subThanks'); t && t.focus(); return; }
+  const g = id => $('#' + id), val = id => (g(id).value || '').trim();
+  const discs = () => [...fm.querySelectorAll('#s_disc input:checked')].map(i => i.value);
+  const setErr = (id, msg) => { const e = g(id + '_e'), w = fm.querySelector(`[data-f="${id}"]`), inp = g(id);
+    if (e) e.textContent = msg || ''; w && w.classList.toggle('bad', !!msg);
+    if (inp && inp.matches('input,select,textarea')) { inp.setAttribute('aria-invalid', msg ? 'true' : 'false'); msg ? inp.setAttribute('aria-describedby', id + '_e') : inp.removeAttribute('aria-describedby'); } };
+  const isUrl = s => { try { const u = new URL(s); return /^https?:$/.test(u.protocol); } catch { return false; } };
+  function check(){
+    const errs = [], add = (id, m) => { setErr(id, m); if (m) errs.push(id); };
+    add('s_orgtype', val('s_orgtype') ? '' : 'Choose an organisation type.');
+    add('s_club', val('s_club') ? '' : 'Enter the club or organisation name.');
+    add('s_name', val('s_name') ? '' : 'Enter a contact name.');
+    const em = val('s_email'); add('s_email', !em ? 'Enter a contact email.' : /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em) ? '' : 'That email doesn’t look right.');
+    const ph = val('s_phone'); add('s_phone', !ph || /^[+()\d\s-]{8,20}$/.test(ph) ? '' : 'Use digits only, e.g. 0412 345 678.');
+    add('s_shoot', val('s_shoot') ? '' : 'Enter the shoot name.');
+    add('s_disc', discs().length ? '' : 'Tick at least one discipline.');
+    const st = val('s_start'), en = val('s_end'), cl = val('s_close'), t0 = iso(today());
+    add('s_start', !st ? 'Choose the start date.' : st < t0 ? 'The start date is in the past.' : '');
+    add('s_end', en && st && en < st ? 'The end date is before the start date.' : '');
+    add('s_close', cl && st && cl > (en || st) ? 'Entries should close on or before the shoot.' : '');
+    add('s_venue', val('s_venue') ? '' : 'Enter the venue.');
+    add('s_suburb', val('s_suburb') ? '' : 'Enter the suburb or town.');
+    add('s_state', val('s_state') ? '' : 'Choose the state.');
+    const me = val('s_method'), ln = val('s_link');
+    add('s_method', me ? '' : 'Choose how archers enter now.');
+    add('s_link', (me === 'Assemble' || me === 'Archers Diary') && !ln ? `Add your ${me} link.` : ln && /^(https?:|www\.)/i.test(ln) && !isUrl(ln.replace(/^www\./i, 'https://www.')) ? 'That link doesn’t look right.' : '');
+    add('s_want', fm.querySelector('[name=want_free_entry_form]:checked') ? '' : 'Choose yes or no.');
+    const file = g('s_file').files[0];
+    add('s_file', !file ? '' : !/\.(pdf|jpe?g)$/i.test(file.name) ? 'Flyers must be a PDF or JPG.' : file.size > MAX_MB * 1048576 ? `That file is ${(file.size / 1048576).toFixed(1)} MB. The limit is ${MAX_MB} MB; try a link instead.` : '');
+    const fl = val('s_flink'); add('s_flink', fl && !isUrl(fl) ? 'Use a full link starting with https://' : '');
+    add('s_ok', g('s_ok').checked ? '' : 'Please tick to give permission to publish.');
+    return errs;
+  }
+  fm.addEventListener('change', e => { if (fm.dataset.tried) check(); });
+  fm.addEventListener('input', e => { if (fm.dataset.tried) { const w = e.target.closest('[data-f]'); if (w && w.classList.contains('bad')) check(); } });
+  function mailBody(){
+    const L = [['Organisation type', val('s_orgtype')], ['Club', val('s_club')], ['Contact name', val('s_name')], ['Contact email', val('s_email')], ['Phone', val('s_phone')],
+      ['Shoot', val('s_shoot')], ['Discipline', discs().join(', ')], ['Start', val('s_start')], ['End', val('s_end')], ['Venue', val('s_venue')], ['Suburb', val('s_suburb')], ['State', val('s_state')],
+      ['Entries close', val('s_close')], ['Entry method', val('s_method')], ['Entry link', val('s_link')],
+      ['Free entry form wanted', (fm.querySelector('[name=want_free_entry_form]:checked') || {}).value || ''], ['Flyer link', val('s_flink')], ['Notes', val('s_notes')],
+      ['Permission to publish', g('s_ok').checked ? 'Yes' : 'Not ticked']];
+    return L.map(([k, v]) => `${k}: ${v}`).join('\n') + '\n\n>>> Please attach the flyer (PDF or JPG) to this email before sending. <<<\n';
+  }
+  g('subMail').onclick = e => { const sub = `Shoot submission: ${val('s_shoot') || 'new shoot'}${val('s_club') ? ' – ' + val('s_club') : ''}`;
+    e.currentTarget.href = `mailto:${SITE.contact}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(mailBody())}`; };
+  fm.onsubmit = e => {
+    fm.dataset.tried = 1;
+    const errs = check();
+    if (errs.length) { e.preventDefault(); $('#subErr').textContent = `Please fix ${errs.length === 1 ? 'the highlighted field' : `the ${errs.length} highlighted fields`}.`;
+      const first = g(errs[0]).matches('input,select,textarea') ? g(errs[0]) : g(errs[0]).querySelector('input'); first && first.focus(); return; }
+    $('#subErr').textContent = '';
+    if (!SITE.formEndpoint || !navigator.onLine) { e.preventDefault(); g('subMail').click(); location.href = g('subMail').href;
+      toast(navigator.onLine ? 'Opening your email app…' : 'You’re offline: opening your email app instead'); return; }
+    g('s_disc_val').value = discs().join(', ');
+    fm.querySelector('[name=_next]').value = location.href.split('#')[0].split('?')[0] + '?sent=1#/submit';
+    fm.querySelector('[name=_subject]').value = `New shoot: ${val('s_shoot')} – ${val('s_club')} (${val('s_state')})`;
+    if (!g('s_file').files.length) g('s_file').disabled = true;   // don't send an empty file part
+    const b = g('subBtn'); b.disabled = true; b.textContent = 'Sending…';
+  };
+  window.addEventListener('pageshow', () => { const b = $('#subBtn'); if (b) { b.disabled = false; b.textContent = 'Submit shoot for review'; g('s_file').disabled = false; } }, {once: true});
+}
+
 /* ---------- start ---------- */
 boot().catch(e => { $('#view').innerHTML = `<div class="empty">Couldn't load shoot data (${esc(e.message)}). If you opened the file directly, run it from a web server.</div>`; });
