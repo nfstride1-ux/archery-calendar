@@ -210,7 +210,7 @@ function heroOpen(cls, p){
   return p.layout === 'split' ? `<section class="${cls} split"><div class="wrap split-row"><div class="split-txt">`
     : `<section class="${cls}" style="--img:url('${esc(p.file)}');--pos:${esc(p.pos || 'center 35%')}"><div class="wrap">`;
 }
-const heroClose = p => p.layout === 'split' ? `</div><figure class="split-img"><img src="${esc(p.file)}" alt="${esc(p.alt || p.title || '')}" style="object-position:${esc(p.pos || 'center')}" width="1600" height="900"></figure></div></section>` : `</div></section>`;
+const heroClose = p => p.layout === 'split' ? `</div><figure class="split-img${p.shape === 'portrait' ? ' tall' : ''}"><img src="${esc(p.file)}" alt="${esc(p.alt || p.title || '')}" style="object-position:${esc(p.shape === 'portrait' ? 'center' : (p.pos || 'center'))}" width="${p.shape === 'portrait' ? 960 : 1600}" height="${p.shape === 'portrait' ? 1200 : 900}"></figure></div></section>` : `</div></section>`;
 function pageHead(title, sub, t = 'mixed'){
   const p = photo(t);
   return `${heroOpen('phead', p)}<h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}${heroClose(p)}`;

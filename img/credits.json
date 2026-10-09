@@ -41,17 +41,20 @@
   "pos": "center 40%"
  },
  "target": {
-  "file": "img/target-dresden-2025.jpg",
-  "sm": "img/target-dresden-2025-sm.jpg",
-  "title": "2025-08-02 Die Finals 2025 in Dresden – Bogensport, Compound, Frauen by Sandro Halank–007",
-  "by": "Sandro Halank",
-  "source": "Wikimedia Commons",
-  "url": "https://commons.wikimedia.org/wiki/File:2025-08-02_Die_Finals_2025_in_Dresden_%E2%80%93_Bogensport,_Compound,_Frauen_by_Sandro_Halank%E2%80%93007.jpg",
-  "license": "CC BY-SA 4.0",
-  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
-  "date": "2025-08-02",
-  "year": 2025,
-  "pos": "center 30%"
+  "file": "img/target-outdoor-nathe.jpg",
+  "sm": "img/target-outdoor-nathe-sm.jpg",
+  "title": "Compound archer at full draw on an outdoor target range",
+  "alt": "An archer in a black and yellow shirt at full draw with a blue compound bow, facing a line of target bosses on a grass range",
+  "by": "Supplied by Nathaniel Stride",
+  "source": "",
+  "url": "",
+  "license": "",
+  "license_url": "",
+  "date": "",
+  "year": 2026,
+  "layout": "split",
+  "shape": "portrait",
+  "pos": "center 15%"
  },
  "indoor": {
   "file": "img/indoor-hall.jpg",

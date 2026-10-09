@@ -367,10 +367,13 @@ label.chk input{width:auto;min-height:auto}
 .split-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,500px);gap:28px;align-items:center}
 .split-img{margin:0;border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.35);border:2px solid rgba(255,255,255,.15)}
 .split-img img{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover}
+.split-img.tall{justify-self:center;width:100%;max-width:300px}
+.split-img.tall img{aspect-ratio:4/5}
 @media (max-width:760px){
  .split-row{grid-template-columns:1fr;gap:14px}
  .phead.split{padding:18px 0 16px}
  .dhero.split .split-img{max-width:420px}
+ .split-img.tall,.dhero.split .split-img.tall{max-width:240px}
 }
 /* fans */
 .fan-wall{columns:3 260px;column-gap:16px;margin-top:6px}
