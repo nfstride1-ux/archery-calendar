@@ -132,8 +132,22 @@ function range(x){
   const a = pd(x.start_date), b = pd(x.end_date || x.start_date), o = {day:'numeric', month:'short', year:'numeric'};
   return x.start_date === x.end_date || !x.end_date ? a.toLocaleDateString('en-AU', {weekday:'short', ...o}) : `${a.toLocaleDateString('en-AU',{day:'numeric',month:'short'})} – ${b.toLocaleDateString('en-AU', o)}`;
 }
+const OST = {flyer:['📄','2026 flyer out','Flyer / details out'], date:['📅','Date confirmed · no flyer yet','Date confirmed, no flyer yet'], not_organised:['⏳','Not organised yet','Not organised yet']};
+function orgBadge(x){
+  const k = x.org_status; if (!OST[k] || x.info_only && !x.book_anytime) return '';
+  const lbl = k === 'flyer' ? (x.flyer_is_current ? `${x.flyer_year || (x.start_date || '').slice(0, 4)} flyer out` : 'Details & entry out') : OST[k][1];
+  return `<span class="b ost ost-${k}">${OST[k][0]} ${lbl}</span>`;
+}
+function entryBadge(x){
+  if (isPast(x) || x.info_only) return '';
+  const c = x.entry_close_date, f = d => pd(d).toLocaleDateString('en-AU',{day:'numeric',month:'short'});
+  if (c && daysTo(c) < 0) return `<span class="b closed">🔒 Entries closed ${f(c)}</span>`;
+  if (x.registration_opens && daysTo(x.registration_opens) > 0) return `<span class="b tbc">◷ Entries open ${f(x.registration_opens)}</span>`;
+  if (x.org_status === 'flyer' && (x.registration_url || c)) return `<span class="b open">✍ Entries open${c ? ' · close ' + f(c) : ''}</span>`;
+  return '';
+}
 function badges(x, onCard){
-  const b = [], en = S.entries[x.id];
+  const b = [orgBadge(x), entryBadge(x)].filter(Boolean), en = S.entries[x.id];
   if (x.book_anytime) b.push(`<span class="b tbc">📞 Book any time</span>`);
   else if (x.info_only) b.push(`<span class="b tbc">${catOf(x) === 'competition' ? 'ℹ Info only' : '↻ Ongoing program'}</span>`);
   if (x.titles) b.push(`<span class="b titles">🏅 ${x.titles === 'state' ? 'State Titles' : 'Branch Titles'}</span>`);
@@ -147,8 +161,6 @@ function badges(x, onCard){
     else if (st === 'entered') b.push(`<span class="b ent">✓ Entered · ☐ Not paid yet</span>`);
     else if (S.saved[x.id] && !isPast(x) && !x.info_only) b.push(`<span class="b todo">☐ Not entered yet</span>`);
   }
-  if (x.entry_close_date && daysTo(x.entry_close_date) < 0 && !isPast(x) && !x.info_only) b.push(`<span class="b closed">🔒 Entries closed ${pd(x.entry_close_date).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</span>`);
-  if (x.entry_close_date && st === 'none' && daysTo(x.entry_close_date) >= 0) b.push(`<span class="b close">⏳ Entries close ${pd(x.entry_close_date).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</span>`);
   if (!x.dates_confirmed) b.push(`<span class="b tbc">? Dates TBC</span>`);
   if (x.world_level) b.push(AUS() ? `<span class="b world">🏆 International event</span>` : `<span class="b world">🌐 World / major</span>`);
   return b.length ? `<div class="badges">${b.join('')}</div>` : '';
@@ -309,7 +321,7 @@ function vHome(){
     ${suggest.length ? `<h2 class="sec-h">Next shoots in your areas</h2><div class="list grid2">${suggest.map(evCard).join('')}</div><p class="center"><a class="btn" href="#/browse">See all shoots →</a></p>` : ''}
   </div>`;
 }
-let BF = {q:'', disc:'', cat:'', scope:'all', state:'', past:false, limit:60};
+let BF = {q:'', disc:'', cat:'', ost:'', scope:'all', state:'', past:false, limit:60};
 function vBrowse(){
   setTitle('Find shoots');
   const grp = AUS() && BF.scope.startsWith('g:') ? BF.scope.slice(2) : null;
@@ -325,9 +337,10 @@ function vBrowse(){
   else if (BF.scope === 'world') list = list.filter(x => x.world_level);
   else if (BF.scope !== 'all') list = list.filter(x => x.country_code === BF.scope && !x.world_level && !['aba','archery-wa'].includes(x.org_id) || x.org_id === BF.scope);
   if (BF.state) list = list.filter(x => x.state_code === BF.state);
-  const active = [BF.q && `search “${esc(BF.q)}”`, BF.state && (STATES.find(s => s[0] === BF.state) || [, BF.state])[1], BF.disc && `discipline ${esc(BF.disc)}`, BF.cat && CATS[BF.cat] && CATS[BF.cat][2], !grp && !BF.state && S.states.length && AUS() && `your states in Settings (${S.states.join(', ')})`].filter(Boolean);
+  const active = [BF.q && `search “${esc(BF.q)}”`, BF.state && (STATES.find(s => s[0] === BF.state) || [, BF.state])[1], BF.disc && `discipline ${esc(BF.disc)}`, BF.cat && CATS[BF.cat] && CATS[BF.cat][2], BF.ost && OST[BF.ost] && OST[BF.ost][2], !grp && !BF.state && S.states.length && AUS() && `your states in Settings (${S.states.join(', ')})`].filter(Boolean);
   if (BF.disc) list = list.filter(x => (x.discipline || '').startsWith(BF.disc));
   if (BF.cat) list = list.filter(x => catOf(x) === BF.cat);
+  if (BF.ost) list = list.filter(x => x.org_status === BF.ost);
   if (BF.q) { const q = BF.q.toLowerCase(); list = list.filter(x => [x.name, x.location, x.host, x.org, x.country, x.state, (STATES.find(s => s[0] === x.state_code) || [])[1], x.discipline, CATS[catOf(x)][2]].join(' ').toLowerCase().includes(q)); }
   const sk = x => x.book_anytime ? '9999-99' : x.start_date || '9999';
   list.sort((a, b) => sk(a) < sk(b) ? -1 : 1);
@@ -335,6 +348,7 @@ function vBrowse(){
   let html = `${pageHead('Find a shoot', 'Field, 3D, Target and Indoor shoots from the calendars you follow.', {Field:'field','3D':'3d',Target:'target',Indoor:'indoor'}[BF.disc] || 'mixed')}<div class="wrap browse"><div class="filters"><input type="search" id="q" placeholder="Search shoot, club, town…" value="${esc(BF.q)}" aria-label="Search shoots">
   <div class="chips" role="group" aria-label="Show">${scopes.map(([k, l]) => `<button class="chip" data-scope="${esc(k)}" aria-pressed="${BF.scope === k}">${esc(l)}</button>`).join('')}</div>
   ${AUS() ? `<label for="st" class="sr">State</label><select id="st" aria-label="State"><option value="">All states &amp; territories</option>${STATES.map(([c, n]) => `<option value="${c}" ${BF.state === c ? 'selected' : ''}>${n}</option>`).join('')}</select>` : ''}
+  <label for="ost" class="sr">Organisation status</label><select id="ost" aria-label="Organisation status"><option value="">All – any status</option>${Object.entries(OST).map(([k, v]) => `<option value="${k}" ${BF.ost === k ? 'selected' : ''}>${v[0]} ${v[2]}</option>`).join('')}</select>
   <label for="cat" class="sr">Event type</label><select id="cat" aria-label="Event type"><option value="">All event types</option>${Object.entries(CATS).map(([k, v]) => `<option value="${k}" ${BF.cat === k ? 'selected' : ''}>${v[0]} ${v[2]}</option>`).join('')}</select>
   <div class="row"><select id="disc" aria-label="Discipline"><option value="">All disciplines</option>${discs.map(d => `<option ${BF.disc === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select>
   <label style="display:flex;align-items:center;gap:8px;margin:0;flex:0 0 auto"><input type="checkbox" id="past" ${BF.past ? 'checked' : ''} style="width:22px;min-height:22px"> Show finished</label></div>
@@ -349,10 +363,11 @@ function vBrowse(){
 function bindBrowse(){
   const q = $('#q'); q.oninput = () => { BF.q = q.value; BF.limit = 60; clearTimeout(bindBrowse.t); bindBrowse.t = setTimeout(() => { render(); const n = $('#q'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }, 250); };
   document.querySelectorAll('[data-scope]').forEach(b => b.onclick = () => { BF.scope = b.dataset.scope; BF.disc = ''; BF.limit = 60; render(); });
-  const clr = () => { Object.assign(BF, {q:'', disc:'', cat:'', state:'', limit:60}); if (S.states.length) { S.states = []; save(); } render(); };
+  const clr = () => { Object.assign(BF, {q:'', disc:'', cat:'', ost:'', state:'', limit:60}); if (S.states.length) { S.states = []; save(); } render(); };
   ['#clearF', '#clearF2'].forEach(s => { const b = $(s); if (b) b.onclick = clr; });
   $('#disc').onchange = e => { BF.disc = e.target.value; render(); };
   $('#cat').onchange = e => { BF.cat = e.target.value; BF.limit = 60; render(); };
+  $('#ost').onchange = e => { BF.ost = e.target.value; BF.limit = 60; render(); };
   const st = $('#st'); if (st) st.onchange = e => { BF.state = e.target.value; BF.limit = 60; render(); };
   $('#past').onchange = e => { BF.past = e.target.checked; render(); };
   const mo = $('#more'); if (mo) mo.onclick = () => { BF.limit += 60; render(); };
