@@ -1,4 +1,4 @@
-const C='archcal-82a31b2197';
+const C='archcal-c3f7692466';
 const CORE=['./','./index.html','./styles.css','./config.js','./app.js','./manifest.webmanifest','./data/events.json','./data/organisations.json','./icons/icon-192.png',
  './img/credits.json','./fonts/Inter-var.woff2','./fonts/BarlowCondensed-SemiBold.woff2','./fonts/BarlowCondensed-Bold.woff2','./fonts/BarlowCondensed-ExtraBold.woff2',
  './img/hero-paralympics-2024-aus.jpg','./img/hero-paralympics-2024-aus-sm.jpg','./img/field-tuscany-2026.jpg','./img/field-tuscany-2026-sm.jpg','./img/3d-longbow-2026.jpg','./img/3d-longbow-2026-sm.jpg','./img/target-dresden-2025.jpg','./img/target-dresden-2025-sm.jpg','./img/indoor-heartland.jpg','./img/indoor-heartland-sm.jpg','./img/nathe-target-face.jpg','./img/nathe-target-face-sm.jpg'];
