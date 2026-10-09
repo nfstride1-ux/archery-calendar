@@ -1724,13 +1724,13 @@ function bindCombo(id, items, multi){
   const drawChips = () => { if (!chipsEl) return; chipsEl.innerHTML = st.chips.map((c, i) => `<span class="cb-chip">${esc(c)}<button type="button" data-rm="${i}" aria-label="Remove ${esc(c)}">✕</button></span>`).join('');
     chipsEl.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { st.chips.splice(+b.dataset.rm, 1); drawChips(); inp.dispatchEvent(new Event('change', {bubbles: true})); }); };
   st.reset = () => { st.chips = []; drawChips(); inp.value = ''; close(); };
-  const pick = it => { if (multi) { if (!st.chips.includes(it.value)) st.chips.push(it.value); inp.value = ''; drawChips(); open(); inp.focus(); }
+  const pick = it => { if (multi) { if (!st.chips.includes(it.value)) st.chips.push(it.value); inp.value = ''; drawChips(); close(); inp.focus(); }
     else { inp.value = it.value; close(); } inp.dispatchEvent(new Event('change', {bubbles: true})); };
   st.addFree = () => { const v = inp.value.trim(); if (multi && v && !st.chips.includes(v)) { st.chips.push(v); inp.value = ''; drawChips(); } };
   function open(){
     const q = norm(inp.value).split(' ').filter(Boolean);
     shown = items.filter(it => !(multi && st.chips.includes(it.value)) && q.every(w => (' ' + norm(it.label + ' ' + (it.sub || '') + ' ' + (it.group || ''))).includes(' ' + w) || norm(it.label).replace(/ /g, '').includes(w))).slice(0, 60);
-    if (!shown.length && !q.length) { close(); return; }
+    if (!shown.length && (!q.length || !multi)) { close(); return; }
     let g = null;
     lb.innerHTML = shown.length ? shown.map((it, i) => (it.group && it.group !== g ? `<li class="cb-g" role="presentation">${esc(g = it.group)}</li>` : '') +
       `<li role="option" id="${id}_o${i}" data-i="${i}" class="cb-o"><b>${esc(it.label)}</b>${it.sub ? `<span>${esc(it.sub)}</span>` : ''}</li>`).join('')
@@ -1740,11 +1740,15 @@ function bindCombo(id, items, multi){
   }
   const hi = n => { const os = lb.querySelectorAll('.cb-o'); if (!os.length) return; act = (n + os.length) % os.length; os.forEach((o, i) => o.classList.toggle('act', i === act));
     os[act].scrollIntoView({block: 'nearest'}); inp.setAttribute('aria-activedescendant', os[act].id); };
+  const wrap = inp.closest('.cb');
+  const outside = e => { if (!document.contains(inp)) { document.removeEventListener('pointerdown', outside, true); return; }
+    if (!lb.hidden && !wrap.contains(e.target)) { st.addFree(); close(); } };
+  document.addEventListener('pointerdown', outside, true);
   inp.addEventListener('input', open); inp.addEventListener('focus', open); inp.addEventListener('blur', () => setTimeout(() => { st.addFree(); close(); }, 150));
   inp.addEventListener('keydown', e => {
     if (e.key === 'ArrowDown') { e.preventDefault(); lb.hidden ? open() : hi(act + 1); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); hi(act - 1); }
-    else if (e.key === 'Enter') { if (!lb.hidden && act >= 0) { e.preventDefault(); pick(shown[act]); } else if (multi && inp.value.trim()) { e.preventDefault(); st.addFree(); open(); } else if (!lb.hidden) { e.preventDefault(); close(); } }
+    else if (e.key === 'Enter') { if (!lb.hidden && act >= 0) { e.preventDefault(); pick(shown[act]); } else if (multi && inp.value.trim()) { e.preventDefault(); st.addFree(); close(); } else if (!lb.hidden) { e.preventDefault(); close(); } }
     else if (e.key === 'Escape') close();
     else if (e.key === 'Backspace' && multi && !inp.value && st.chips.length) { st.chips.pop(); drawChips(); } });
 }
