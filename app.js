@@ -493,7 +493,7 @@ function vBrowse(){
   return html + '</div></div>';
 }
 function bindBrowse(){
-  const q = $('#q'); q.oninput = () => { BF.q = q.value; BF.limit = 60; clearTimeout(bindBrowse.t); bindBrowse.t = setTimeout(() => { render(); const n = $('#q'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }, 250); };
+  const q = $('#q'); q.oninput = () => { BF.q = q.value; gcSearch(q.value); BF.limit = 60; clearTimeout(bindBrowse.t); bindBrowse.t = setTimeout(() => { render(); const n = $('#q'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }, 250); };
   document.querySelectorAll('[data-scope]').forEach(b => b.onclick = () => { BF.scope = b.dataset.scope; BF.club = ''; BF.disc = ''; BF.limit = 60; render(); });
   document.querySelectorAll('[data-clubf]').forEach(b => b.onclick = () => { BF.club = BF.club === b.dataset.clubf ? '' : b.dataset.clubf; BF.limit = 60; render(); });
   bindClubNotice();
@@ -709,9 +709,9 @@ function vAdvertise(){
       <tr><td><b>Discipline sponsor</b> <span class="note">(later)</span></td><td>Every Field, 3D, Target or Indoor page</td><td>All slots in one discipline</td></tr>
       </tbody></table></div></section>
     <section class="panel"><h2 class="sec">How it works</h2>
-      <ul class="ticks"><li>Sold directly to archery businesses, monthly or per season. Email us to talk it through.</li>
+      <ul class="ticks"><li>Arranged directly with archery businesses. Email us to talk it through.</li>
       <li>Every ad is clearly labelled "Sponsored". Archery-related businesses only.</li>
-      <li>No tracking cookies at launch. Ads link straight to your website.</li></ul></section>
+      <li>No cookies or ad trackers (visits are counted anonymously). Ads link straight to your website.</li></ul></section>
     <section class="panel dark"><h2 class="sec">Get in touch</h2><p class="big-mail"><a href="${AD_MAIL}">${CONTACT}</a></p>
       <p class="note">NFS Strategic Holdings</p></section>
   </div>`;
@@ -721,7 +721,7 @@ function vPrivacy(){
   return `${pageHead('Privacy &amp; disclaimer', 'Short version: your data stays in your browser.', 'mixed')}<div class="wrap narrow"><section class="panel"><h2 class="sec">Privacy</h2>
     <ul class="ticks"><li>${AUTH.on ? 'No account needed. If you don’t sign in, the' : 'No account, no sign-up. The'} shoots you save, your entries and payments, and your reminder settings are stored only in <b>your browser on this device</b> (localStorage). They are never sent to us.</li>
     <li>Clearing your browser data deletes them. Use <a href="#/settings">Settings → Export backup</a> to keep a copy or move to another device.</li>
-    <li>No analytics, advertising or tracking cookies. Reminders are made on your device.</li>
+    <li id="privStats"><b>Visit counts:</b> we count visits anonymously with <a href="https://www.goatcounter.com/" target="_blank" rel="noopener">GoatCounter</a>: which pages are viewed and the words typed into Find shoots search. <b>No cookies</b>, no advertising trackers and nothing that identifies you. Searches that look like an email address or phone number are never counted. Reminders are made on your device.</li>
     <li>"Register / enter" and email links go straight to the organiser. Anything you send them is between you and the organiser.</li>
     <li><b>Submit a shoot form:</b> what a club sends us (contact name, email, phone, shoot details and flyer) is emailed to us at ${esc(SITE.contact)} via the form service FormSubmit (formsubmit.co). We use it only to check and list the shoot and, if you ask, to set up your entry form. Contact details aren't published unless they're on your flyer. Ask us any time to correct or delete them.</li>
     <li><b>Fans photos:</b> if you send us a photo, your name, email, the photo and its details are emailed to us via FormSubmit. We publish only approved photos with the caption and your name as credit – never your email. In a photo and want it removed? Email ${esc(SITE.contact)}.</li>
@@ -1254,7 +1254,25 @@ function importHandoff(){
   } catch { setTimeout(() => toast('Couldn’t bring your saved shoots across – use Settings → Export/Import backup'), 600); }
   return true;
 }
-function route(){ render(); window.scrollTo(0, 0); }
+/* ---------- anonymous visit stats: GoatCounter (no cookies, no personal data; fails silently) ---------- */
+const GCQ = [];
+function gc(o){ try { const g = window.goatcounter; if (g && typeof g.count === 'function') g.count(o); else if (GCQ.length < 30) GCQ.push(o); } catch {} }
+window.gcFlush = () => { const g = window.goatcounter; if (g && typeof g.count === 'function') GCQ.splice(0).forEach(gc); };
+function gcPage(){
+  const path = (location.hash || '#/home').replace(/^#/, '').split('?')[0].replace(/[^\w\/.-]/g, '').slice(0, 120) || '/home';
+  if (path === gcPage.last) return; gcPage.last = path; gc({path, title: document.title});
+}
+// Find-shoots searches as events: lower-case words only; nothing that looks like an email or a phone number is sent.
+function gcSearch(q){
+  clearTimeout(gcSearch.t);
+  gcSearch.t = setTimeout(() => {
+    if (/@/.test(q || '')) return;
+    const n = (q || '').toLowerCase().normalize('NFKD').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60);
+    if (n.length < 2 || /\d{5,}/.test(n.replace(/ /g, '')) || n === gcSearch.last) return;
+    gcSearch.last = n; gc({path: 'search/' + n.replace(/ /g, '-'), title: 'Search', event: true});
+  }, 1500);
+}
+function route(){ render(); window.scrollTo(0, 0); gcPage(); }
 function render(){
   const h = location.hash || '#/home', [, p, arg] = h.split('/'), v = $('#view');
   document.querySelectorAll('.nav a').forEach(a => { const on = a.dataset.tab === (p || 'home') || (p === 'shoot' && a.dataset.tab === 'browse'); a.classList.toggle('on', on); on ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'); });

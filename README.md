@@ -64,3 +64,8 @@ Find shoots has a "Hide clashes with my shoots" toggle (your own shoots stay lis
 - A shoot can have several flyers in `tools/flyers.json`, one entry per file. The primary flyer is picked in this order: current year first, then the lowest `priority`, then the newest year.
   The primary drives the flyer panel and status; the others are listed under "More flyers", and older years are marked "archive".
   Old-year flyers never count as current, so those shoots keep the "No entry details yet" status. QA: `tools/qa_aba_j.py`.
+
+## Visit stats (GoatCounter)
+We count visits anonymously with GoatCounter (`https://archerycalendars.goatcounter.com/count`, script `gc.zgo.at/count.js`, async, `no_onload`). It sets no cookies.
+The app counts each hash route as a page view (`gcPage()` in `route()`). Find-shoots searches are counted as events at `search/<normalised-words>`; anything that looks like an email address or phone number is dropped.
+If GoatCounter is down or blocked, nothing is counted and nothing breaks. count.js ignores localhost. QA: `tools/qa_goatcounter.py`, which stubs the script so no real counts are sent.
