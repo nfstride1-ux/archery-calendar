@@ -11,13 +11,12 @@ your saved shoots and entries stay in your browser (localStorage).
 
 Event flyers: page-1 previews only (bank details removed); organisers can ask for removal or updates at nfshold@gmail.com.
 
-## Organisation status (badge on every shoot card, filter on Find shoots)
-Worked out in `tools/build_data.py` from the data (field `org_status`), never typed in by hand:
+## Organisation status (badge on every shoot card and shoot page, filter on Find shoots)
+Worked out in `tools/build_data.py` from the data (field `org_status`), never typed in by hand. Filter options: All / Flyer out / No entry details yet.
 
 | Badge | `org_status` | Rule |
 |---|---|---|
-| 📄 2026 flyer out / Details & entry out | `flyer` | We hold a flyer for the event's own year (`flyer_is_current`), **or** the organiser has an event/entry page for this year (`registration_url` of kind entry page, Archers Diary, email nomination, ABA Branch J nomination – not one carried over from last year's flyer and not just the ABA calendar), **or** it's a coaching/youth/come & try listing with a booking link (incl. "Book any time"). |
-| 📅 Date confirmed · no flyer yet | `date` | On an official calendar with a confirmed date and venue (e.g. ABA 2026 National Calendar, World Archery/AA calendar, Archery WA feed) but no flyer or event page yet. |
-| ⏳ Not organised yet | `not_organised` | Only last year's flyer/info exists (e.g. Baldivis Breakfast Field 15 Nov 2026 – only the 2025 flyer), or the listing is a placeholder: no date, dates TBC, or venue TBA. |
+| 📄 2026 flyer out (or "Details & entry out" when the details come from an organiser page rather than a flyer) | `flyer` | Confirmed date **and** either a flyer for the event's own year (`flyer_is_current`), or an organiser event/entry page for this year (`registration_url` of kind entry page, Archers Diary, email nomination or ABA Branch J nomination – not one carried over from last year's flyer, and not just the ABA calendar). Coaching/youth/come & try listings with a booking link, and "Book any time" listings, also count. |
+| ⏳ No entry details yet | `no_details` | Everything else: the date is on an official calendar (ABA 2026 National Calendar, World Archery/AA calendar, Archery WA feed) but there's no current-year flyer or entry link yet. This includes shoots where we only hold last year's flyer (e.g. Baldivis Breakfast Field, 15 Nov 2026) and placeholders (dates TBC, venue TBA). |
 
 Entry badges come from the same data: 🔒 Entries closed (close date passed), ◷ Entries open <date> (opening date in the future), ✍ Entries open · close <date> (status `flyer` with an entry link or close date). Icons and text are always shown together – never colour alone.

@@ -342,6 +342,5 @@ a.cal-row:hover{background:#f6f3e6}
 }
 .b.ost{font-weight:700;border-width:2px}
 .b.ost-flyer{border-style:solid}
-.b.ost-date{border-style:dashed}
-.b.ost-not_organised{border-style:dotted;color:#374151}
+.b.ost-no_details{border-style:dotted;color:#374151}
 .b.open{border-style:solid}

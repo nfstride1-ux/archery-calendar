@@ -132,7 +132,7 @@ function range(x){
   const a = pd(x.start_date), b = pd(x.end_date || x.start_date), o = {day:'numeric', month:'short', year:'numeric'};
   return x.start_date === x.end_date || !x.end_date ? a.toLocaleDateString('en-AU', {weekday:'short', ...o}) : `${a.toLocaleDateString('en-AU',{day:'numeric',month:'short'})} – ${b.toLocaleDateString('en-AU', o)}`;
 }
-const OST = {flyer:['📄','2026 flyer out','Flyer / details out'], date:['📅','Date confirmed · no flyer yet','Date confirmed, no flyer yet'], not_organised:['⏳','Not organised yet','Not organised yet']};
+const OST = {flyer:['📄','2026 flyer out','Flyer out'], no_details:['⏳','No entry details yet','No entry details yet']};
 function orgBadge(x){
   const k = x.org_status; if (!OST[k] || x.info_only && !x.book_anytime) return '';
   const lbl = k === 'flyer' ? (x.flyer_is_current ? `${x.flyer_year || (x.start_date || '').slice(0, 4)} flyer out` : 'Details & entry out') : OST[k][1];
