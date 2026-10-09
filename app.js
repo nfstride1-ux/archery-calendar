@@ -1280,7 +1280,7 @@ function vFans(){
   if (!FANS) { loadFans().then(() => { if (document.body.dataset.page === 'fans') softRenderForce(); }); return `${head}<div class="wrap"><p class="loading">Loading photos…</p></div>`; }
   const sent = /(?:^|[?&])fsent=1/.test(location.search);
   if (sent) history.replaceState(null, '', location.pathname + '#/fans');
-  const fdate = d => !d ? '' : /^\d{4}-\d{2}-\d{2}$/.test(d) ? pd(d).toLocaleDateString('en-AU', {day: 'numeric', month: 'short', year: 'numeric'}) : d;
+const fdate = d => !d ? '' : /^\d{4}-\d{2}-\d{2}$/.test(d) ? pd(d).toLocaleDateString('en-AU', {day: 'numeric', month: 'short', year: 'numeric'}) : d;
   const wall = FANS.map((f, i) => `<figure class="fan"><button type="button" class="fan-img" data-zoom="${i}" aria-label="Enlarge: ${esc(f.caption)}"><img src="${esc(f.sm)}" alt="${esc(f.alt || f.caption)}" loading="lazy" width="${f.w ? 480 : ''}" height="${f.w ? Math.round(480 * f.h / f.w) : ''}"><span class="zoom" aria-hidden="true">⤢ Enlarge</span></button>
     <figcaption><b>${esc(f.caption)}</b>${[f.credit && '📷 ' + f.credit, f.event, fdate(f.date)].filter(Boolean).length ? `<span class="fan-meta">${esc([f.credit && '📷 ' + f.credit, f.event, fdate(f.date)].filter(Boolean).join(' · '))}</span>` : ''}</figcaption></figure>`).join('');
   const fld = (id, lab, inp, hint = '', req = true) => `<div class="fld" data-f="${id}"><label for="${id}">${lab}${req ? ' <span class="req" aria-hidden="true">*</span>' : ' <span class="opt">(optional)</span>'}</label>${inp}${hint ? `<p class="hint">${hint}</p>` : ''}<p class="err" id="${id}_e" role="alert"></p></div>`;
@@ -1683,15 +1683,19 @@ const fixNow = x => { if (!x) return {}; const fe = x.flyer_extract || {};
     rounds: x.rounds || fe.rounds || '', divs: fe.divisions || fe.classes || '', close: x.entry_close_date || '', link: x.registration_url || fe.registration || '',
     flyer: x.flyer_local || x.flyer_url ? (x.flyer_label || 'Flyer on file') : '', status: x.cancelled ? 'Cancelled' : 'Going ahead (as listed)'}; };
 // [key, label, kind]
-const FIX_ROWS = [['dates', 'Date(s)', 'dates'], ['time', 'Start time', 'text'], ['venue', 'Venue / address', 'text'], ['rounds', 'Round(s) / distances', 'area'],
-  ['divs', 'Divisions / bow classes', 'area'], ['close', 'Entry closing date', 'date'], ['link', 'Entry link / contact', 'text'], ['flyer', 'Flyer', 'file']];
+const FIX_ROWS = [['dates', 'Date(s)', 'dates'], ['time', 'Start time', 'time'], ['venue', 'Venue / address', 'venue'], ['rounds', 'Round(s) / distances', 'rounds'],
+  ['divs', 'Divisions / bow classes', 'divs'], ['close', 'Entry closing date', 'date'], ['link', 'Entry link / contact', 'text'], ['flyer', 'Flyer', 'file']];
 function fixRows(x){
   if (!x) return `<p class="note" id="fx_none">Pick a shoot above to see what we have listed.</p>`;
   const n = fixNow(x);
   const show = k => k === 'close' ? fdate(n.close) : n[k];
   const inp = (k, kind) => kind === 'dates' ? `<div class="grid2 fx-dates"><label class="sub-lab" for="fx_start">Start date<input id="fx_start" type="date" value="${esc(n.start)}"></label>
         <label class="sub-lab" for="fx_end">End date<input id="fx_end" type="date" value="${esc(n.end)}"></label></div><p class="hint">For a one-day shoot, make the end date the same as the start.</p>`
-    : kind === 'area' ? `<textarea id="fx_${k}" rows="3" maxlength="1500">${esc(n[k])}</textarea>`
+    : kind === 'time' ? `<div class="grid2 fx-times"><label class="sub-lab" for="fx_tasm">Assembly / registration<input id="fx_tasm" type="time" step="300"></label>
+        <label class="sub-lab" for="fx_tshoot">Shooting starts<input id="fx_tshoot" type="time" step="300"></label></div><p class="hint">Fill in one or both.</p>`
+    : kind === 'venue' ? comboHtml('fx_venue', 'Start typing a club, range or address') + '<p class="hint">Pick a club or range from the list, or type the address.</p>'
+    : kind === 'rounds' ? comboHtml('fx_rounds', 'Type a round, e.g. WA 720, Canb, Field…', true) + '<p class="hint">Pick one or more. Not listed? Type it and press Enter.</p>'
+    : kind === 'divs' ? comboHtml('fx_divs', 'Type a bow type or age class…', true) + '<p class="hint">Pick all that apply. Not listed? Type it and press Enter.</p>'
     : kind === 'date' ? `<input id="fx_${k}" type="date" value="${esc(n[k])}">`
     : kind === 'file' ? `<input id="fx_file" name="attachment" type="file" disabled accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"><p class="hint">PDF, JPG or PNG, up to ${MAX_MB} MB.</p>`
     : `<input id="fx_${k}" maxlength="300" value="${esc(n[k])}">`;
@@ -1702,6 +1706,61 @@ function fixRows(x){
     <li class="fx-row" data-k="status"><div class="fx-head"><span class="fx-lab">Status</span></div><div class="fx-cur">${esc(n.status)}</div>
       <label class="chk tick"><input type="checkbox" id="fx_cancel"><span>This shoot is <b>cancelled or postponed</b></span></label></li></ul>`;
 }
+/* ---------- #/fix helpers: type-ahead combobox (single or multi with chips), venue suggestions, round/division lists ---------- */
+let RNDS = null;
+const loadRounds = () => RNDS ? Promise.resolve(RNDS) : fetch('data/rounds.json').then(r => r.json()).then(j => (RNDS = j));
+const CB = {};   // id -> {items:[{label, sub, group, value}], multi, chips:[]}
+function comboHtml(id, ph, multi){
+  return `<div class="cb${multi ? ' multi' : ''}" data-cb="${id}">${multi ? `<div class="cb-chips" id="${id}_chips"></div>` : ''}
+    <input id="${id}" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="${id}_lb" autocomplete="off" placeholder="${esc(ph)}">
+    <ul class="cb-lb" id="${id}_lb" role="listbox" hidden></ul></div>`;
+}
+function bindCombo(id, items, multi){
+  const inp = $('#' + id), lb = $('#' + id + '_lb'); if (!inp) return;
+  const st = CB[id] = {items, multi, chips: []}; let act = -1, shown = [];
+  const norm = s => (s || '').toLowerCase().replace(/[^a-z0-9+/ ]+/g, ' ');
+  const close = () => { lb.hidden = true; inp.setAttribute('aria-expanded', 'false'); act = -1; };
+  const chipsEl = $('#' + id + '_chips');
+  const drawChips = () => { if (!chipsEl) return; chipsEl.innerHTML = st.chips.map((c, i) => `<span class="cb-chip">${esc(c)}<button type="button" data-rm="${i}" aria-label="Remove ${esc(c)}">✕</button></span>`).join('');
+    chipsEl.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { st.chips.splice(+b.dataset.rm, 1); drawChips(); inp.dispatchEvent(new Event('change', {bubbles: true})); }); };
+  st.reset = () => { st.chips = []; drawChips(); inp.value = ''; close(); };
+  const pick = it => { if (multi) { if (!st.chips.includes(it.value)) st.chips.push(it.value); inp.value = ''; drawChips(); open(); inp.focus(); }
+    else { inp.value = it.value; close(); } inp.dispatchEvent(new Event('change', {bubbles: true})); };
+  st.addFree = () => { const v = inp.value.trim(); if (multi && v && !st.chips.includes(v)) { st.chips.push(v); inp.value = ''; drawChips(); } };
+  function open(){
+    const q = norm(inp.value).split(' ').filter(Boolean);
+    shown = items.filter(it => !(multi && st.chips.includes(it.value)) && q.every(w => (' ' + norm(it.label + ' ' + (it.sub || '') + ' ' + (it.group || ''))).includes(' ' + w) || norm(it.label).replace(/ /g, '').includes(w))).slice(0, 60);
+    if (!shown.length && !q.length) { close(); return; }
+    let g = null;
+    lb.innerHTML = shown.length ? shown.map((it, i) => (it.group && it.group !== g ? `<li class="cb-g" role="presentation">${esc(g = it.group)}</li>` : '') +
+      `<li role="option" id="${id}_o${i}" data-i="${i}" class="cb-o"><b>${esc(it.label)}</b>${it.sub ? `<span>${esc(it.sub)}</span>` : ''}</li>`).join('')
+      : `<li class="cb-g" role="presentation">No match – ${multi ? 'press Enter to add' : 'keep typing'} “${esc(inp.value)}”</li>`;
+    lb.hidden = false; inp.setAttribute('aria-expanded', 'true'); act = -1;
+    lb.querySelectorAll('.cb-o').forEach(li => li.onmousedown = e => { e.preventDefault(); pick(shown[+li.dataset.i]); });
+  }
+  const hi = n => { const os = lb.querySelectorAll('.cb-o'); if (!os.length) return; act = (n + os.length) % os.length; os.forEach((o, i) => o.classList.toggle('act', i === act));
+    os[act].scrollIntoView({block: 'nearest'}); inp.setAttribute('aria-activedescendant', os[act].id); };
+  inp.addEventListener('input', open); inp.addEventListener('focus', open); inp.addEventListener('blur', () => setTimeout(() => { st.addFree(); close(); }, 150));
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); lb.hidden ? open() : hi(act + 1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); hi(act - 1); }
+    else if (e.key === 'Enter') { if (!lb.hidden && act >= 0) { e.preventDefault(); pick(shown[act]); } else if (multi && inp.value.trim()) { e.preventDefault(); st.addFree(); open(); } else if (!lb.hidden) { e.preventDefault(); close(); } }
+    else if (e.key === 'Escape') close();
+    else if (e.key === 'Backspace' && multi && !inp.value && st.chips.length) { st.chips.pop(); drawChips(); } });
+}
+const comboVal = id => { const st = CB[id], inp = $('#' + id); if (!st || !inp) return ''; if (st.multi) { const t = inp.value.trim(); return st.chips.concat(t && !st.chips.includes(t) ? [t] : []).join(', '); } return inp.value.trim(); };
+function venueItems(x){
+  const seen = new Set(), out = [], st = x && (x.state_code || x.state);
+  const add = (label, sub, state, value) => { const k = (value || '').toLowerCase(); if (!value || seen.has(k)) return; seen.add(k); out.push({label, sub, state, value}); };
+  CLUBS.forEach(c => { const addr = c.address || [c.suburb, c.state].filter(Boolean).join(' '); add(c.name, addr || c.state, c.state, c.address ? `${c.name}, ${c.address}` : [c.name, c.suburb, c.state].filter(Boolean).join(', ')); });
+  EV.forEach(e => { const l = e.location || ''; if (!/\d/.test(l) || !l.includes(',')) return; const [h, ...r] = l.split(','); add(h.trim(), r.join(',').trim(), e.state_code, l); });
+  const rank = it => it.state === st ? 0 : 1;
+  return out.sort((a, b) => rank(a) - rank(b) || a.label.localeCompare(b.label)).map(it => ({...it, group: it.state === st ? `In ${st}` : 'Rest of Australia'}));
+}
+const listItems = (groups, prefer) => { const g = groups.slice(); if (prefer) g.sort((a, b) => (b[0].includes(prefer) ? 1 : 0) - (a[0].includes(prefer) ? 1 : 0));
+  return g.flatMap(([grp, arr]) => arr.map(v => ({label: v, value: v, group: grp}))); };
+const catDisc = x => { const d = ((x && x.discipline) || '') + ' ' + ((x && x.name) || ''); return /field/i.test(d) ? 'Field' : /indoor/i.test(d) ? 'Indoor' : /clout/i.test(d) ? 'Clout' : /3d/i.test(d) ? '3D' : 'Target'; };
+const fmtTime = t => { if (!t) return ''; const [h, m] = t.split(':').map(Number); return `${(h % 12) || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`; };
 function vFix(id){
   setTitle('Fix a shoot');
   const sent = /(?:^|[?&])fixed=1/.test(location.search);
@@ -1760,21 +1819,29 @@ function bindFix(){
     ed.hidden = !on; row.classList.toggle('editing', on); b.setAttribute('aria-expanded', on);
     b.innerHTML = on ? '↩ <span>Keep as is</span>' : '✏️ <span>Edit</span>';
     const fi = g('fx_file'); if (row.dataset.k === 'flyer' && fi) { fi.disabled = !on; if (!on) fi.value = ''; }
-    if (!on) { const n = fixNow(cur); row.querySelectorAll('input:not([type=file]),textarea').forEach(i => { i.value = i.id === 'fx_start' ? n.start : i.id === 'fx_end' ? n.end : n[i.id.slice(3)] || ''; }); }
-    else { const i = ed.querySelector('input,textarea'); i && i.focus(); }
+    const k = row.dataset.k;
+    if (!on) { const n = fixNow(cur); if (CB['fx_' + k]) CB['fx_' + k].reset();
+      row.querySelectorAll('input:not([type=file]):not([role=combobox]),textarea').forEach(i => { i.value = i.id === 'fx_start' ? n.start : i.id === 'fx_end' ? n.end : i.type === 'time' ? '' : n[i.id.slice(3)] || ''; }); }
+    else {
+      if (k === 'venue' && !CB.fx_venue) bindCombo('fx_venue', venueItems(cur), false);
+      if ((k === 'rounds' || k === 'divs') && !CB['fx_' + k]) loadRounds().then(R => bindCombo('fx_' + k, k === 'rounds' ? listItems(R.rounds, catDisc(cur)) : listItems(R.divisions, cur && cur.org_group === 'aba' ? 'ABA' : ''), true)).catch(() => {});
+      const i = ed.querySelector('input,textarea'); i && setTimeout(() => i.focus(), 0); }
     if (fm.dataset.tried) check(); });
   const pick = () => { const x = list.find(e => fixLabel(e) === val('fx_ev')) || null;
     if (x === cur) return x; cur = x;
     g('fx_id').value = x ? x.id : ''; g('fx_name').value = x ? x.name : ''; g('fx_date').value = fixDates(x);
     g('fx_page').value = x ? SITE_URL() + '#/shoot/' + encodeURIComponent(x.id) : '';
-    g('fx_body').innerHTML = fixRows(x); bindRows();
+    Object.keys(CB).forEach(k => delete CB[k]); g('fx_body').innerHTML = fixRows(x); bindRows();
     if (x && x.host && !val('fx_club')) g('fx_club').value = x.host; return x; };
+  Object.keys(CB).forEach(k => delete CB[k]);
   g('fx_ev').addEventListener('input', pick); g('fx_ev').addEventListener('change', pick); bindRows();
   // only rows that are open AND differ from what's listed
   const changes = () => { if (!cur) return []; const n = fixNow(cur), out = [];
     fm.querySelectorAll('.fx-row.editing').forEach(row => { const k = row.dataset.k, lab = FIX_ROWS.find(r => r[0] === k)[1];
       if (k === 'dates') { const s = val('fx_start'), e = val('fx_end') || s; if (s && (s !== n.start || e !== n.end)) out.push([lab, n.dates || 'Not listed', s === e ? fdate(s) : `${fdate(s)} to ${fdate(e)}`]); }
       else if (k === 'flyer') { const fl = g('fx_file').files[0]; if (fl) out.push([lab, n.flyer || 'Not listed', 'New flyer attached: ' + fl.name]); }
+      else if (k === 'time') { const a = val('fx_tasm'), sh = val('fx_tshoot'); if (a || sh) out.push([lab, n.time || 'Not listed', [a && 'Assembly ' + fmtTime(a), sh && 'shooting starts ' + fmtTime(sh)].filter(Boolean).join(', ')]); }
+      else if (k === 'venue' || k === 'rounds' || k === 'divs') { const v = comboVal('fx_' + k); if (v && v !== (n[k] || '').trim()) out.push([lab, n[k] || 'Not listed', v]); }
       else { const v = val('fx_' + k); if (v !== (n[k] || '').trim()) out.push([lab, (k === 'close' ? fdate(n.close) : n[k]) || 'Not listed', (k === 'close' ? fdate(v) : v) || '(remove)']); } });
     if (g('fx_cancel') && g('fx_cancel').checked) out.push(['Status', n.status, 'Cancelled or postponed']);
     return out; };
