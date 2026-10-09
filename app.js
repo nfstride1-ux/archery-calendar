@@ -1292,7 +1292,7 @@ const fdate = d => !d ? '' : /^\d{4}-\d{2}-\d{2}$/.test(d) ? pd(d).toLocaleDateS
    <ul class="ticks"><li>Podiums, club days, a great shot on the course – archery photos from Australia.</li><li>Every photo is <b>reviewed before it’s posted</b>. We may crop or resize it.</li><li>Fields marked <span class="req">*</span> are required.</li></ul>
    <form id="fanForm" class="sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate>
     <input type="hidden" name="_subject" value="Fan photo – Archery Calendar"><input type="hidden" name="_template" value="table"><input type="hidden" name="_next" value="">
-    <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true"><input type="hidden" name="_captcha" value="false">
     <div class="grid2">${fld('f_name', 'Your name', `<input id="f_name" name="name" required maxlength="80" autocomplete="name">`, 'Shown as the photo credit.')}
     ${fld('f_email', 'Your email', `<input id="f_email" name="email" type="email" required maxlength="120" autocomplete="email" inputmode="email">`, 'Not published.')}</div>
     ${fld('f_file', 'Photo', `<input id="f_file" name="attachment" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.heic" required>`, `JPG, PNG or phone photo, up to ${FAN_MAX_MB} MB.`)}
@@ -1569,7 +1569,7 @@ function vSubmit(){
     <input type="hidden" name="_subject" value="New shoot submission – Archery Calendar">
     <input type="hidden" name="_template" value="table">
     <input type="hidden" name="_next" value="">
-    <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true"><input type="hidden" name="_captcha" value="false">
     <input type="hidden" name="discipline" id="s_disc_val">
     <fieldset><legend>Your club</legend>
       ${f('s_orgtype', 'Organisation type', `<select id="s_orgtype" name="organisation_type" required>${opt(ORG_TYPES, 'Choose…')}</select>`)}
@@ -1781,7 +1781,7 @@ function vFix(id){
     <input type="hidden" name="_subject" value="Correction:">
     <input type="hidden" name="_template" value="table">
     <input type="hidden" name="_next" value="">
-    <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true"><input type="hidden" name="_captcha" value="false">
     <input type="hidden" name="form" value="Correction to an existing shoot (review before changing the site)">
     <input type="hidden" name="event_id" id="fx_id" value="${esc(x ? x.id : '')}">
     <input type="hidden" name="event_name" id="fx_name" value="${esc(x ? x.name : '')}">

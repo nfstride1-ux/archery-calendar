@@ -1,4 +1,4 @@
-const C='archcal-77f6480e09';
+const C='archcal-1bcc2932df';
 const CORE=['./','./index.html','./styles.css','./config.js','./sync.js','./app.js','./manifest.webmanifest','./data/events.json','./data/organisations.json','./data/fans.json','./data/clubs.json','./data/club_logos.json','./data/intl_countries.json','./data/rounds.json','./img/logos/aba-logo-32.png','./img/logos/aba-logo-64.png','./img/logos/aba-logo-32.webp','./img/logos/aba-logo-64.webp','./icons/icon-192.png',
  './img/credits.json','./fonts/Inter-var.woff2','./fonts/BarlowCondensed-SemiBold.woff2','./fonts/BarlowCondensed-Bold.woff2','./fonts/BarlowCondensed-ExtraBold.woff2',
  './img/hero-paralympics-2024-aus.jpg','./img/hero-paralympics-2024-aus-sm.jpg','./img/field-aus-team-yankton-2026.jpg','./img/field-aus-team-yankton-2026-sm.jpg','./img/3d-longbow-2026.jpg','./img/3d-longbow-2026-sm.jpg','./img/aba-field-owl-2026.jpg','./img/aba-field-owl-2026-sm.jpg','./img/indoor-hall.jpg','./img/indoor-hall-sm.jpg','./img/nathe-target-face.jpg','./img/nathe-target-face-sm.jpg','./img/come-and-try-poster.jpg','./img/come-and-try-poster-sm.jpg'];
