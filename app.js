@@ -59,6 +59,27 @@ function bindToggles(root = document){
     const y = scrollY; render(); scrollTo(0, y);
     const nb = document.querySelector(`[data-ent="${CSS.escape(id)}"][data-st="${b.dataset.st}"]`); nb && nb.focus({preventScroll: true}); });
 }
+/* 'Sign in' in the header: go to the account page and bring the email box into view (also when already there). */
+function focusSignin(){ const go = () => { const em = $('#em'), f = em || $('#view .panel'); if (!f) return;
+    const r = f.getBoundingClientRect(); if (r.top < 70 || r.bottom > innerHeight - 20) f.scrollIntoView({block: 'center'});
+    if (em && matchMedia('(hover: hover) and (pointer: fine)').matches) em.focus({preventScroll: true}); };
+  requestAnimationFrame(() => setTimeout(go, 60)); }
+document.addEventListener('click', e => { const a = e.target.closest && e.target.closest('#navAcct'); if (!a) return;
+  if ((location.hash || '').startsWith('#/account')) { e.preventDefault(); focusSignin(); } else setTimeout(focusSignin, 0); });
+/* Install as an app: our own small, dismissible bar instead of the browser's prompt; never blocks the page. */
+let instEv = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); instEv = e; showInstall(); });
+window.addEventListener('appinstalled', () => { instEv = null; const b = $('#instBar'); if (b) b.remove(); document.body.classList.remove('has-inst'); });
+function showInstall(){
+  if (!instEv || $('#instBar') || matchMedia('(display-mode: standalone)').matches) return;
+  if (+localStorage.getItem('archcal.instDismissed') > Date.now() - 30 * 864e5) return;     // dismissed: ask again after 30 days
+  const b = document.createElement('div'); b.id = 'instBar'; b.setAttribute('role', 'region'); b.setAttribute('aria-label', 'Install the app');
+  b.innerHTML = `<span>📲 Add Archery Calendar to your home screen</span><button type="button" class="ib-go">Install</button><button type="button" class="ib-x" aria-label="Dismiss">✕</button>`;
+  document.body.appendChild(b); document.body.classList.add('has-inst');
+  const close = () => { b.remove(); document.body.classList.remove('has-inst'); };
+  b.querySelector('.ib-x').onclick = () => { localStorage.setItem('archcal.instDismissed', String(Date.now())); close(); };
+  b.querySelector('.ib-go').onclick = async () => { const ev = instEv; instEv = null; close(); if (!ev) return; ev.prompt(); try { const r = await ev.userChoice; if (r && r.outcome === 'dismissed') localStorage.setItem('archcal.instDismissed', String(Date.now())); } catch {} };
+}
 function toast(t){ const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 2200); }
 
 async function boot(){
@@ -116,9 +137,13 @@ function theme(x){
   if (/target|clout|para|matchplay|qre|1440|720|900|canberra|olympic|world cup|championships/i.test(d)) return 'target';
   return 'mixed';
 }
-const CATS = {competition:['🏹','Competition','Competitions'], coaching:['🎓','Coaching course','Coaching courses'], youth:['🧒','Youth training','Youth training'], come_try:['👋','Come & try','Come & try / have-a-go']};
+const CATS = {competition:['🏹','Competition','Competitions'], club:['👥','Club shoot','Club shoots'], coaching:['🎓','Coaching course','Coaching courses'], youth:['🧒','Youth training','Youth training'], come_try:['👋','Come & try','Come & try / have-a-go']};
 const catOf = x => CATS[x.category] ? x.category : 'competition';
+const isShoot = x => ['competition', 'club'].includes(catOf(x));   // real shoots (have a discipline theme), vs courses / programs
 const catTag = x => catOf(x) === 'competition' ? '' : `<span class="tag cat cat-${catOf(x)}">${CATS[catOf(x)][0]} ${CATS[catOf(x)][1]}</span>`;
+const TSEL = [['competition','🏹 Competitions'], ['club','👥 Club shoots'], ['coaching','🎓 Coaching'], ['youth','🧒 Youth'], ['come_try','👋 Come & try'], ['','All']];
+const typeSel = (cur, counts) => `<div class="typesel" role="group" aria-label="Type of event">${TSEL.map(([k, l]) => `<button type="button" class="tsel" data-tcat="${k}" aria-pressed="${(cur || '') === k}">${l}${counts ? ` <small>${counts[k] || 0}</small>` : ''}</button>`).join('')}</div>`;
+const typeCounts = list => list.reduce((c, x) => (c[catOf(x)] = (c[catOf(x)] || 0) + 1, c['']++, c), {'': 0});
 const tagHtml = t => `<span class="tag">${THEMES[t][0]} ${THEMES[t][1]}</span>`;
 const isPast = x => x.end_date && daysTo(x.end_date) < 0;
 function dateBox(x){
@@ -150,7 +175,7 @@ function entryBadge(x){
 function badges(x, onCard){
   const b = [orgBadge(x), entryBadge(x)].filter(Boolean), en = S.entries[x.id];
   if (x.book_anytime) b.push(`<span class="b tbc">📞 Book any time</span>`);
-  else if (x.info_only) b.push(`<span class="b tbc">${catOf(x) === 'competition' ? 'ℹ Info only' : '↻ Ongoing program'}</span>`);
+  else if (x.info_only) b.push(`<span class="b tbc">${isShoot(x) ? 'ℹ Info only' : '↻ Ongoing program'}</span>`);
   if (x.titles) b.push(`<span class="b titles">🏅 ${x.titles === 'state' ? 'State Titles' : 'Branch Titles'}</span>`);
   else if (/state champ/i.test(x.level || '')) b.push(`<span class="b titles">🏅 State Championship</span>`);
   if (x.members_only) b.push(`<span class="b members">👥 Club members only</span>`);
@@ -170,7 +195,7 @@ function evCard(x){
   const on = !!S.saved[x.id], t = theme(x), p = photo(t);
   return `<article class="ev th-${t}" role="link" tabindex="0" data-open="${esc(x.id)}" aria-label="${esc(x.name)}">
     <div class="ev-img" style="background-image:url('${esc(p.sm)}');background-position:${esc(p.pos || 'center')}">${dateBox(x)}</div>
-    <div class="body"><div class="tags">${catTag(x)}${t !== 'mixed' && catOf(x) === 'competition' ? tagHtml(t) : ''}${x.flyer_local ? `<span class="tag fl">📄 ${x.flyer_is_current ? x.flyer_year + ' flyer' : 'Last year’s flyer'}</span>` : ''}</div>
+    <div class="body"><div class="tags">${catTag(x)}${t !== 'mixed' && isShoot(x) ? tagHtml(t) : ''}${x.flyer_local ? `<span class="tag fl">📄 ${x.flyer_is_current ? x.flyer_year + ' flyer' : 'Last year’s flyer'}</span>` : ''}</div>
       <h3 class="name">${esc(x.name)}</h3>
       <div class="meta">${esc([x.location, x.country_code && x.country_code !== 'AUS' ? x.country : x.state].filter(Boolean).join(' · '))}</div>
       <div class="meta">${esc([x.discipline, x.org, x.aba_branch && x.aba_branch.split(' – ')[0]].filter(Boolean).join(' · '))}</div>${badges(x, true)}
@@ -317,7 +342,7 @@ function vHome(){
     ${adSlot('banner')}
     <h2 class="sec-h">Pick your discipline</h2>
     <div class="types">${['field','3d','target','indoor'].map(t => `<a class="type th-${t}" href="#/browse" data-th="${t}" style="--img:url('${esc(photo(t).sm)}');--pos:${esc(photo(t).pos || 'center')}"><span class="type-name">${THEMES[t][0]} ${THEMES[t][1]}</span><span class="type-sub">${{field:'Bush courses, marked & unmarked', '3d':'Foam animals in the bush', target:'Outdoor ranges, 18–90 m', indoor:'18 m halls, 3-spot & Vegas'}[t]}</span></a>`).join('')}</div>
-    <div class="cats-row" aria-label="More than competitions">${['coaching', 'youth', 'come_try'].map(c => `<a class="cat-link cat-${c}" href="#/browse" data-cat="${c}"><span class="ci" aria-hidden="true">${CATS[c][0]}</span><b>${CATS[c][2]}</b><span>${EV.filter(x => catOf(x) === c && visible(x) && !isPast(x)).length} coming up</span></a>`).join('')}</div>
+    <div class="cats-row" aria-label="Club shoots, coaching, youth and come & try">${['club', 'coaching', 'youth', 'come_try'].map(c => `<a class="cat-link cat-${c}" href="#/browse" data-cat="${c}"><span class="ci" aria-hidden="true">${CATS[c][0]}</span><b>${CATS[c][2]}</b><span>${EV.filter(x => catOf(x) === c && visible(x) && !isPast(x)).length} coming up</span></a>`).join('')}</div>
     <div class="two">
       <section><h2 class="sec-h">Reminders</h2>
       ${rem.length ? rem.map(r => `<div class="panel rem" data-open="${esc(r.x.id)}" role="link" tabindex="0"><b><span aria-hidden="true">${REM_ICON[r.kind]}</span> ${esc(r.x.name)}</b><div>${esc(r.text)}</div><div class="badges">${r.kind === 'close' ? '<span class="b close">⏳ Enter now</span>' : r.kind === 'pay' ? '<span class="b ent">$ Pay now</span>' : REM_BADGE[r.st]}</div></div>`).join('')
@@ -334,7 +359,7 @@ const CAPITAL = {WA:'perth', SA:'adelaide', VIC:'melbourne', NSW:'sydney', ACT:'
 const STATE_ALIASES = {wa:'WA', 'western australia':'WA', sa:'SA', 'south australia':'SA', vic:'VIC', victoria:'VIC', nsw:'NSW', 'new south wales':'NSW', act:'ACT',
   'australian capital territory':'ACT', qld:'QLD', queensland:'QLD', tas:'TAS', tasmania:'TAS', nt:'NT', 'northern territory':'NT',
   perth:'WA', adelaide:'SA', melbourne:'VIC', sydney:'NSW', canberra:'ACT', brisbane:'QLD', hobart:'TAS', darwin:'NT'};
-const PHRASES = [[/\b(come (and|n|&) try|come ?n ?try|have ?a ?go|cnt|try archery|come and trial)\b/g, ' cometry '], [/\bworld record status\b/g, ' qre '],
+const PHRASES = [[/\b(come (and|n|&) try|come ?n ?try|have ?a ?go|cnt|try archery|come and trial)\b/g, ' cometry '], [/\bworld record status\b/g, ' qre '], [/\bclub ?shoots?\b/g, ' clubshoot '],
   [/\b3 ?- ?d\b/g, ' 3d '], [/\bnats\b/g, ' nationals '], [/\bchamps?\b/g, ' championships '], [/\btitle\b/g, ' titles '], [/\bover ?50s?\b/g, ' over50 '], [/\b(wa|fita) (1440|720|960)\b/g, ' $2 '], [/\bhunter round\b/g, ' hunter round '],
   [/\bstate titles\b/g, ' statetitles state titles '], [/\bbranch titles\b/g, ' branchtitles branch titles ']];
 function snorm(t){
@@ -350,7 +375,7 @@ function hay(x){
   const grpTxt = {aa:'aa archery australia', aba:'aba bowhunters australian bowhunters association', awa:'awa archery wa archerywa'}[x.org_group] || '';
   const lvl = [x.level, x.rounds, x.titles === 'state' ? 'state titles' : x.titles === 'branch' ? 'branch titles' : '', /\bqre\b|world record/i.test((x.name || '') + ' ' + (x.level || '')) ? 'qre world record status' : '',
     /national/i.test((x.level || '') + ' ' + x.name) && !/registered/i.test(x.level || '') ? 'nationals national' : '', x.members_only ? 'club championship members' : ''];
-  const cat = catOf(x), catTxt = {competition:'competition shoot tournament', coaching:'coaching course coach', youth:'youth junior kids training', come_try:'come and try beginners'}[cat] + (x.book_anytime ? ' corporate team building book anytime' : '');
+  const cat = catOf(x), catTxt = {competition:'competition shoot tournament', club:'club shoot clubshoot social local', coaching:'coaching course coach', youth:'youth junior kids training', come_try:'come and try beginners'}[cat] + (x.book_anytime ? ' corporate team building book anytime' : '');
   const stat = [x.org_status === 'flyer' ? 'flyer out details' : 'no entry details yet', x.entry_close_date ? (daysTo(x.entry_close_date) < 0 ? 'entries closed' : 'entries open') : x.registration_url ? 'entries open' : ''];
   const words = snorm([x.name, x.host, x.location, x.org, sc, st && st[1], sc && CAPITAL[sc], x.discipline, catTxt, ...lvl, grpTxt, x.branch ? 'branch ' + x.branch : '', x.branch_name, ...months, ...stat, x.series_part, x.notes, ...Object.entries(x.flyer_extract || {}).filter(([k, v]) => typeof v === 'string' && !/url|source/.test(k)).map(([, v]) => v), roundTerms(x)].filter(Boolean).join(' '));
   return x._hay = {s: ' ' + words + ' ', w: [...new Set(words.split(' '))]};
@@ -414,6 +439,7 @@ function vBrowse(){
   if (BF.state) list = list.filter(x => x.state_code === BF.state);
   const active = [BF.q && `search “${esc(BF.q)}”`, BF.state && (STATES.find(s => s[0] === BF.state) || [, BF.state])[1], BF.disc && `discipline ${esc(BF.disc)}`, BF.cat && CATS[BF.cat] && CATS[BF.cat][2], BF.ost && OST[BF.ost] && OST[BF.ost][2], qState && `state from your search: ${Q.states.join(', ')}${!grp && !BF.state && S.states.length ? ' (overrides your Settings states)' : ''}`, !grp && !BF.state && !qState && S.states.length && AUS() && `your states in Settings (${S.states.join(', ')})`].filter(Boolean);
   if (BF.disc) list = list.filter(x => (x.discipline || '').startsWith(BF.disc));
+  const tc = typeCounts(list.filter(x => BF.past || !isPast(x)));
   if (BF.cat) list = list.filter(x => catOf(x) === BF.cat);
   if (BF.ost) list = list.filter(x => x.org_status === BF.ost);
   if (Q) list = list.filter(x => matchQ(x, Q));
@@ -422,11 +448,10 @@ function vBrowse(){
   const sk = x => x.book_anytime ? '9999-99' : x.start_date || '9999';
   list.sort((a, b) => sk(a) < sk(b) ? -1 : 1);
   const total = list.length; list = list.slice(0, BF.limit);
-  let html = `${pageHead('Find a shoot', 'Field, 3D, Target and Indoor shoots from the calendars you follow.', {Field:'field','3D':'3d',Target:'target',Indoor:'indoor'}[BF.disc] || 'mixed')}<div class="wrap browse"><div class="filters"><input type="search" id="q" placeholder="Search shoot, club, town…" value="${esc(BF.q)}" aria-label="Search shoots">
+  let html = `${pageHead('Find a shoot', 'Field, 3D, Target and Indoor shoots from the calendars you follow.', {Field:'field','3D':'3d',Target:'target',Indoor:'indoor'}[BF.disc] || 'mixed')}<div class="wrap">${typeSel(BF.cat, tc)}</div><div class="wrap browse"><div class="filters"><input type="search" id="q" placeholder="Search shoot, club, town…" value="${esc(BF.q)}" aria-label="Search shoots">
   <div class="chips" role="group" aria-label="Show">${scopes.map(([k, l]) => `<button class="chip" data-scope="${esc(k)}" aria-pressed="${BF.scope === k}">${esc(l)}</button>`).join('')}</div>
   ${AUS() ? `<label for="st" class="sr">State</label><select id="st" aria-label="State"><option value="">All states &amp; territories</option>${STATES.map(([c, n]) => `<option value="${c}" ${BF.state === c ? 'selected' : ''}>${n}</option>`).join('')}</select>` : ''}
   <label for="ost" class="sr">Organisation status</label><select id="ost" aria-label="Organisation status"><option value="">All – any status</option>${Object.entries(OST).map(([k, v]) => `<option value="${k}" ${BF.ost === k ? 'selected' : ''}>${v[0]} ${v[2]}</option>`).join('')}</select>
-  <label for="cat" class="sr">Event type</label><select id="cat" aria-label="Event type"><option value="">All event types</option>${Object.entries(CATS).map(([k, v]) => `<option value="${k}" ${BF.cat === k ? 'selected' : ''}>${v[0]} ${v[2]}</option>`).join('')}</select>
   <div class="row"><select id="disc" aria-label="Discipline"><option value="">All disciplines</option>${discs.map(d => `<option ${BF.disc === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select>
   <label style="display:flex;align-items:center;gap:8px;margin:0;flex:0 0 auto"><input type="checkbox" id="past" ${BF.past ? 'checked' : ''} style="width:22px;min-height:22px"> Show finished</label></div>
   ${showPastNote ? `<p class="note" id="pastNote">◷ No upcoming shoots match – showing finished shoots.</p>` : ''}
@@ -444,7 +469,7 @@ function bindBrowse(){
   const clr = () => { Object.assign(BF, {q:'', disc:'', cat:'', ost:'', state:'', limit:60}); if (S.states.length) { S.states = []; save(); } render(); };
   ['#clearF', '#clearF2'].forEach(s => { const b = $(s); if (b) b.onclick = clr; });
   $('#disc').onchange = e => { BF.disc = e.target.value; render(); };
-  $('#cat').onchange = e => { BF.cat = e.target.value; BF.limit = 60; render(); };
+  document.querySelectorAll('[data-tcat]').forEach(b => b.onclick = () => { BF.cat = b.dataset.tcat; BF.limit = 60; render(); });
   $('#ost').onchange = e => { BF.ost = e.target.value; BF.limit = 60; render(); };
   const st = $('#st'); if (st) st.onchange = e => { BF.state = e.target.value; BF.limit = 60; render(); };
   $('#past').onchange = e => { BF.past = e.target.checked; render(); };
@@ -469,7 +494,7 @@ function vShoot(id){
   setTitle(x.name);
   const on = !!S.saved[id], en = S.entries[id];
   const kind = {how_to_guide:'How to enter (guide)', event_page:'Event page & entry', entry_page:'Register / enter', entry_system:'Enter via Archers Diary (search the event)', email:'✉ Email your nomination', nominate_aba_j:'How to nominate (ABA Branch J contacts)'}[x.registration_url_kind] || 'Register / enter';
-  const kindLbl = catOf(x) === 'come_try' && x.registration_url ? 'Book a place' : catOf(x) !== 'competition' && x.registration_url ? 'Register / book' : null;
+  const kindLbl = catOf(x) === 'come_try' && x.registration_url ? 'Book a place' : !isShoot(x) && x.registration_url ? 'Register / book' : null;
   const t = theme(x), p = photo(t), isMail = x.registration_url_kind === 'email';
   const closedNow = !!x.entry_close_date && daysTo(x.entry_close_date) < 0;
   const regBtn = x.info_only && !x.book_anytime ? '' : x.registration_url ? `<a class="btn ${closedNow ? 'alt' : 'gold'} block big-btn" id="regBtn" href="${esc(x.registration_url)}" ${isMail ? '' : 'target="_blank" rel="noopener"'}>${isMail ? '' : '↗ '}${kindLbl && !closedNow ? kindLbl : closedNow ? kind.replace(/^Register \/ enter$/, 'Entry page') + ' (entries closed)' : kind}</a>
@@ -480,7 +505,7 @@ function vShoot(id){
   const closeTxt = x.entry_close_date ? pd(x.entry_close_date).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'long',year:'numeric'}) + (x.entry_close_time ? ', ' + x.entry_close_time : '') : '';
   return `${heroOpen('dhero', p)}
     <a class="crumb" href="#/browse">← All shoots</a>
-    <div class="tags">${catTag(x)}${catOf(x) === 'competition' ? tagHtml(t) : ''}${x.level ? `<span class="tag lvl">${esc(x.level)}</span>` : ''}</div>
+    <div class="tags">${catTag(x)}${isShoot(x) ? tagHtml(t) : ''}${x.level ? `<span class="tag lvl">${esc(x.level)}</span>` : ''}</div>
     <h1>${esc(x.name)}</h1><p class="sub">${esc(range(x))}${x.location ? ' · ' + esc(x.location) : ''}</p>${badges(x)}
   ${heroClose(p)}
   <div class="wrap detail">
@@ -489,7 +514,7 @@ function vShoot(id){
     <section class="panel"><h2 class="sec">Shoot details</h2><dl class="kv">
       <dt>When</dt><dd>${esc(range(x))}</dd>
       <dt>Where</dt><dd>${esc(x.location || '—')}${x.host ? `<br><span class="note">Host club: ${esc(x.host)}${x.venue_is_host_only ? ' – check the organiser for the exact range' : ''}</span>` : ''}${x.state && !(x.location || '').includes(' ' + x.state) ? ' · ' + esc(x.state) : ''}${x.country ? '<br><span class="note">' + esc(x.country) + '</span>' : ''}</dd>
-      <dt>Type</dt><dd>${CATS[catOf(x)][0]} ${CATS[catOf(x)][1]}</dd>
+      <dt>Type</dt><dd>${CATS[catOf(x)][0]} ${CATS[catOf(x)][1]}${x.class_basis ? ` <span class="note">(${esc(x.class_basis)})</span>` : ''}</dd>
       <dt>Discipline</dt><dd>${esc(x.discipline || '—')}</dd>
       <dt>Level</dt><dd>${esc(x.level || '—')}</dd>
       <dt>Organiser</dt><dd>${esc(x.org || '—')}${x.aba_branch ? '<br><span class="note">ABA ' + esc(x.aba_branch) + '</span>' : ''}</dd>
@@ -706,7 +731,7 @@ function dl(blob, name){ const a = document.createElement('a'); a.href = URL.cre
 const CALS = {aba:{name:'ABA', full:'Australian Bowhunters Association', src:'ABA 2026 National Calendar (12 Jun 2026)', url:'https://www.bowhunters.org.au/aba-shoot-calendar/', by:'Branch'},
   aa:{name:'Archery Australia', full:'Archery Australia (national, state and club events)', src:'Archery Australia events + World Archery calendar (Australian events)', url:'https://www.archery.org.au/events/', by:'State'},
   awa:{name:'Archery WA', full:'Archery WA (state events, QREs and club shoots)', src:'Archery WA events', url:'https://www.archerywa.com.au/', by:'State'}};
-let CF = {org:'aba', where:'', disc:'', past:true};
+let CF = {org:'aba', where:'', disc:'', cat:'', past:true};
 const calWhere = x => x.org_group === 'aba' ? (x.branch ? `${x.branch} – ${x.branch_name || ''}` : (x.state_code || '')) : (x.state_code || '');
 function vCals(arg){
   if (CALS[arg]) { if (CF.org !== arg) { CF.where = ''; CF.disc = ''; } CF.org = arg; }
@@ -717,10 +742,12 @@ function vCals(arg){
   const discs = [...new Set(all.map(x => (x.discipline || '').split(/[ (/]/)[0]).filter(Boolean))].sort();
   if (CF.where && !wheres.includes(CF.where)) CF.where = ''; if (CF.disc && !discs.includes(CF.disc)) CF.disc = '';
   let list = all.filter(x => (!CF.where || calWhere(x) === CF.where) && (!CF.disc || (x.discipline || '').startsWith(CF.disc)) && (CF.past || !isPast(x)));
+  const tc = typeCounts(list); if (CF.cat) list = list.filter(x => catOf(x) === CF.cat);
   const nPast = list.filter(isPast).length;
   let html = `${pageHead('Calendars', 'Each organisation’s full calendar, in one place. Tap a shoot for details, entry and reminders.', 'mixed')}<div class="wrap cals">
   <div class="tabs" role="tablist" aria-label="Organisation">${Object.entries(CALS).map(([k, o]) => `<a role="tab" class="tab" href="#/calendars/${k}" aria-selected="${k === CF.org}">${esc(o.name)}</a>`).join('')}</div>
   <div class="panel cal-head"><h2 class="sec">${esc(c.full)} – ${years.join(' & ') || '2026'}</h2>
+  ${typeSel(CF.cat, tc)}
   <div class="cal-filters"><label>${c.by}<select id="cw"><option value="">All ${c.by === 'Branch' ? 'branches' : 'states'}</option>${wheres.map(w => `<option ${CF.where === w ? 'selected' : ''}>${esc(w)}</option>`).join('')}</select></label>
   <label>Discipline<select id="cd"><option value="">All disciplines</option>${discs.map(d => `<option ${CF.disc === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select></label>
   <label class="chk"><input type="checkbox" id="cp" ${CF.past ? 'checked' : ''}> Show finished</label></div>
@@ -747,6 +774,7 @@ function bindCals(){
   $('#cw').onchange = e => { CF.where = e.target.value; render(); };
   $('#cd').onchange = e => { CF.disc = e.target.value; render(); };
   $('#cp').onchange = e => { CF.past = e.target.checked; render(); };
+  document.querySelectorAll('[data-tcat]').forEach(b => b.onclick = () => { CF.cat = b.dataset.tcat; render(); });
 }
 /* ---------- router ---------- */
 /* ---------- optional accounts (Supabase) ----------
@@ -826,7 +854,7 @@ async function onUser(u){
 const counts = () => ({saved: Object.keys(S.saved).length, ent: Object.keys(S.entries).length});
 function vAccount(){
   setTitle(AUTH.user ? 'Account' : 'Sign in');
-  const head = pageHead(AUTH.user ? 'Your account' : 'Sign in', 'Optional. Keep your shoots, entries and settings on all your devices.', 'target');
+  const head = pageHead(AUTH.user ? 'Your account' : 'Sign in', 'Optional. Keep your shoots, entries and settings on all your devices.', 'mixed');   // short banner: the form stays above the fold on small phones
   const msg = AUTH.msg ? `<div class="warn" role="alert">⚠ ${esc(AUTH.msg)}</div>` : '';
   if (!AUTH.on) return `${head}<div class="wrap narrow"><section class="panel"><p>Accounts aren’t switched on yet. Everything you save is kept in this browser on this device – no sign-up needed.</p><p><a class="btn" href="#/browse">Find shoots</a></p></section></div>`;
   if (!AUTH.ready) return `${head}<div class="wrap narrow"><p class="loading">Loading…</p></div>`;
@@ -882,7 +910,7 @@ function bindAccount(){
     busy(b, 'Sending…'); AUTH.msg = '';
     const {error} = await AUTH.client.auth.signInWithOtp({email: em, options: {emailRedirectTo: redirectUrl(), shouldCreateUser: true}});
     if (error) AUTH.msg = /rate|seconds/i.test(error.message) ? 'Too many sign-in emails – please wait a minute and try again.' : error.message; else AUTH.sent = em;
-    softRenderForce(); };
+    softRenderForce(); if (AUTH.sent) { toast('✉ Sign-in link sent – check your email'); const ok = $('.okbox'); if (ok) ok.scrollIntoView({block: 'center'}); } };
   const ag = $('#again'); if (ag) ag.onclick = () => { AUTH.sent = ''; softRenderForce(); };
   const g = $('#google'); if (g) g.onclick = async () => { const {error} = await AUTH.client.auth.signInWithOAuth({provider: 'google', options: {redirectTo: redirectUrl()}}); if (error) { AUTH.msg = error.message; softRenderForce(); } };
   const my = $('#mergeYes'), mn = $('#mergeNo');

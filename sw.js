@@ -1,4 +1,4 @@
-const C='archcal-4a7adad648';
+const C='archcal-6bd08c30b3';
 const CORE=['./','./index.html','./styles.css','./config.js','./sync.js','./app.js','./manifest.webmanifest','./data/events.json','./data/organisations.json','./data/fans.json','./icons/icon-192.png',
  './img/credits.json','./fonts/Inter-var.woff2','./fonts/BarlowCondensed-SemiBold.woff2','./fonts/BarlowCondensed-Bold.woff2','./fonts/BarlowCondensed-ExtraBold.woff2',
  './img/hero-paralympics-2024-aus.jpg','./img/hero-paralympics-2024-aus-sm.jpg','./img/field-aus-team-yankton-2026.jpg','./img/field-aus-team-yankton-2026-sm.jpg','./img/3d-longbow-2026.jpg','./img/3d-longbow-2026-sm.jpg','./img/target-outdoor-nathe.jpg','./img/target-outdoor-nathe-sm.jpg','./img/indoor-hall.jpg','./img/indoor-hall-sm.jpg','./img/nathe-target-face.jpg','./img/nathe-target-face-sm.jpg'];

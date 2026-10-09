@@ -297,12 +297,21 @@ dl.kv.fx dd{font-weight:500}
 .tag.cat-coaching{border-style:double;border-width:3px}
 .tag.cat-youth{border-style:dashed}
 .tag.cat-come_try{border-style:dotted;border-width:3px}
+.tag.cat-club,.dhero .tag.cat-club{background:var(--night);color:#fff;border-color:var(--night);box-shadow:inset 0 0 0 2px #fff}
+.typesel{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}
+.cals .typesel{margin:0 0 12px}
+.tsel{font:inherit;font-weight:700;font-size:15px;min-height:44px;padding:8px 14px;border-radius:999px;border:2px solid var(--night);background:#fff;color:var(--night);cursor:pointer}
+.tsel small{font-weight:600;opacity:.75;margin-left:2px}
+.tsel[aria-pressed="true"]{background:var(--night);color:#fff}
+.tsel[aria-pressed="true"]::before{content:"✓ "}
+@media (max-width:720px){.typesel{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}.tsel{flex:0 0 auto;font-size:14px;padding:6px 12px}}
 .dhero .tag.cat{background:#fff;color:var(--night)}
-.cats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:22px 0 4px}
+.cats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:22px 0 4px}
 .cat-link{display:flex;flex-direction:column;gap:2px;background:#fff;border:2px solid var(--night);border-radius:var(--r);padding:14px 16px;text-decoration:none;color:var(--ink);box-shadow:var(--shadow)}
 .cat-link .ci{font-size:26px}.cat-link b{font-family:var(--disp);font-size:22px;text-transform:uppercase}.cat-link span:last-child{font-size:14px;color:var(--muted)}
 .cat-link:hover{background:#f8fafc}
-@media (max-width:720px){.cats-row{grid-template-columns:1fr}}
+@media (max-width:900px){.cats-row{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:520px){.cats-row{grid-template-columns:1fr}}
 
 .b.members{border-style:double;border-width:3px}
 .b.series{border-style:dashed}
@@ -391,3 +400,13 @@ label.chk input{width:auto;min-height:auto}
 .lb img{display:block;max-width:100%;max-height:84vh;margin:0 auto}
 .lb p{margin:0;padding:10px 14px;font-size:15px}
 .lb-x{position:absolute;right:8px;top:8px;background:#fff;color:#09121e;border:0;border-radius:999px;width:40px;height:40px;font-size:18px;font-weight:800;cursor:pointer;min-height:auto}
+
+/* install bar: small, bottom, dismissible; page gets matching bottom padding so nothing is hidden behind it */
+#instBar{position:fixed;left:12px;right:12px;bottom:12px;margin:0 auto;z-index:30;display:flex;align-items:center;gap:8px;max-width:520px;background:var(--night);color:#fff;border:2px solid rgba(255,255,255,.2);border-radius:12px;padding:6px 6px 6px 12px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+#instBar span{flex:1 1 auto;line-height:1.25}
+#instBar button{font:inherit;font-weight:700;border-radius:8px;min-height:36px;cursor:pointer}
+#instBar .ib-go{background:var(--gold,#FFC629);color:var(--night);border:0;padding:4px 12px}
+#instBar .ib-x{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.35);width:36px}
+body.has-inst{padding-bottom:70px}
+body.has-inst #toast{bottom:80px}
+@media (max-width:720px){.phead.split .split-img{display:none}.phead.split .split-row{display:block}}

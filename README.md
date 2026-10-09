@@ -21,6 +21,19 @@ Worked out in `tools/build_data.py` from the data (field `org_status`), never ty
 
 Entry badges come from the same data: 🔒 Entries closed (close date passed), ◷ Entries open <date> (opening date in the future), ✍ Entries open · close <date> (status `flyer` with an entry link or close date). Icons and text are always shown together – never colour alone.
 
+## Club shoots vs competitions (event type)
+Every shoot has one type: **🏹 Competition**, **👥 Club shoot**, 🎓 Coaching, 🧒 Youth or 👋 Come & try. Find shoots and Calendars have a type selector (Competitions / Club shoots / Coaching / Youth / Come & try / All), and Club shoots get their own badge (👥 + the words "Club shoot", filled dark, never colour alone). The shoot page shows the reason, e.g. "Competition (ABA-registered shoot)".
+Rules (`tools/classify.py`, applied by `tools/build_data.py`; first match wins):
+1. Hand-reviewed overrides for borderline events (listed in `OVERRIDES`).
+2. **Club shoot**: club championships and members-only days (`members_only`, level "Club Championship", or "club champ" in the name).
+3. **Competition**: QRE / World Record Status (level or name).
+4. **Competition**: titles and championships at branch, state, national or world level (level says State / National / World / Titles / Championship, or the name says titles, championships, nationals, world…).
+5. **Club shoot**: club social words in the name: breakfast, social, fun shoot, monthly, Christmas, novelty, celebration, club challenge, members' day, AGM.
+6. **Competition**: Archery Australia registered tournaments, and every other ABA calendar shoot (ABA-registered; scores count for ABA classification).
+7. **Club shoot**: other club-run local shoots on the Archery WA calendar (level "Club" – memorial shoots, matchplay challenges, junior days, named club shoots such as Old Coot's).
+8. Anything else: Competition (open tournament).
+Coaching, youth and come & try events keep their own types. Search: "club" and "club shoot(s)" find club shoots.
+
 ## Optional user accounts (Supabase), off until configured
 - Built in: `app/sync.js` (sync engine), the Account page (`#/account`), `supabase/schema.sql` (tables + Row Level Security + sync functions), `docs/SUPABASE_SETUP.md` (setup steps).
 - Switched on only when `app/config.js` has `SUPABASE_URL` and the public `SUPABASE_ANON_KEY` (publishable/anon key). Empty = no sign-in UI and no extra code loaded.
