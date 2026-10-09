@@ -58,9 +58,11 @@ What it creates:
 
 ### B. Sign-in URLs
 **Authentication → URL Configuration**
-- **Site URL:** `https://nfstride1-ux.github.io/archery-calendar/`
+- **Site URL:** `https://archerycalendars.com/`
 - **Redirect URLs** → Add:
-  - `https://nfstride1-ux.github.io/archery-calendar/**`
+  - `https://archerycalendars.com/**`
+  - `https://www.archerycalendars.com/**` (www redirects to the main address, but harmless to allow)
+  - `https://nfstride1-ux.github.io/archery-calendar/**` (old address; keep it)
   - `http://localhost:8765/**` (local testing only; remove it later if you like)
 
 ### C. Email sign-in settings
@@ -98,10 +100,10 @@ Google sign-in (G) doesn't need email at all.
 1. **https://console.cloud.google.com** (signed in as nfshold@gmail.com) → create a project **Archery Calendar**.
 2. **APIs & Services → OAuth consent screen** (Google Auth Platform → Branding):
    app name *Archery Calendar*, support email nfshold@gmail.com, app logo optional,
-   **Authorised domains**: `supabase.co` and `nfstride1-ux.github.io` (for the home page and privacy links: `https://nfstride1-ux.github.io/archery-calendar/`, `…/#/privacy`).
+   **Authorised domains**: `supabase.co` and `archerycalendars.com` (home page `https://archerycalendars.com/`, privacy `https://archerycalendars.com/#/privacy`).
    Audience: **External**. Scopes: only `openid`, `email`, `profile` (no verification needed for these). Then **Publish app**; in "Testing" mode only listed test users can sign in.
 3. **Clients → Create client → Web application**:
-   - Authorised JavaScript origins: `https://nfstride1-ux.github.io`
+   - Authorised JavaScript origins: `https://archerycalendars.com`
    - Authorised redirect URIs: `https://<your-ref>.supabase.co/auth/v1/callback` (copy the exact one from Supabase → Authentication → Sign In / Providers → Google)
 4. Copy the **Client ID** and **Client secret** into **Supabase → Authentication → Sign In / Providers → Google** → enable → Save.
    The client secret only ever goes into that Supabase form.

@@ -76,7 +76,7 @@ async function boot(){
     navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadSW && !sessionStorage.getItem('swReloaded')) { sessionStorage.setItem('swReloaded', '1'); location.reload(); } });
     navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(r => r.update()).catch(() => {});
   }
-  route(); checkReminders(); setInterval(checkReminders, 60 * 60 * 1000);
+  importHandoff(); route(); checkReminders(); setInterval(checkReminders, 60 * 60 * 1000);
   initAuth().catch(e => console.warn('auth', e));
 }
 
@@ -684,12 +684,13 @@ function icsEsc(s){ return String(s || '').replace(/\\/g, '\\\\').replace(/;/g, 
 function fold(l){ const enc = new TextEncoder(), out = []; let cur = '', n = 0, lim = 75;
   for (const ch of l) { const b = enc.encode(ch).length; if (n + b > lim) { out.push(cur); cur = ''; n = 0; lim = 74; } cur += ch; n += b; }
   out.push(cur); return out.join('\r\n '); }
+const SITE_URL = () => (SITE.url || location.origin + location.pathname).replace(/[^/]*$/, '');   // https://archerycalendars.com/
 function downloadIcs(list, name){
   const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
   const L = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Archery Calendar//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:My archery shoots'];
   for (const x of list) {
     const e = S.entries[x.id], end = pd(x.end_date || x.start_date); end.setDate(end.getDate() + 1);
-    const st = ST(x.id), desc = [st === 'paid' ? `ENTERED + PAID${e.amount ? ' ' + (e.currency || 'AUD') + ' ' + e.amount : ''}${e.ref ? ' (#' + e.ref + ')' : ''}` : st === 'entered' ? 'ENTERED – NOT PAID YET' : 'NOT ENTERED YET', x.discipline, x.registration_url ? 'Entry: ' + x.registration_url : '', 'Source: ' + x.source_url].filter(Boolean).join('\n');
+    const st = ST(x.id), desc = [st === 'paid' ? `ENTERED + PAID${e.amount ? ' ' + (e.currency || 'AUD') + ' ' + e.amount : ''}${e.ref ? ' (#' + e.ref + ')' : ''}` : st === 'entered' ? 'ENTERED – NOT PAID YET' : 'NOT ENTERED YET', x.discipline, x.registration_url ? 'Entry: ' + x.registration_url : '', 'Source: ' + x.source_url, 'Archery Calendar: ' + SITE_URL() + '#/shoot/' + encodeURIComponent(x.id)].filter(Boolean).join('\n');
     L.push('BEGIN:VEVENT', `UID:${x.id}@archery-calendar`, `DTSTAMP:${stamp}`, `DTSTART;VALUE=DATE:${x.start_date.replace(/-/g, '')}`, `DTEND;VALUE=DATE:${iso(end).replace(/-/g, '')}`,
       fold(`SUMMARY:${icsEsc((st === 'paid' ? '✓$ ' : st === 'entered' ? '✓ ' : '') + x.name)}`), fold(`LOCATION:${icsEsc([x.location, x.country].filter(Boolean).join(', '))}`), fold(`DESCRIPTION:${icsEsc(desc)}`));
     if (x.registration_url || x.source_url) L.push(fold(`URL:${x.registration_url || x.source_url}`));
@@ -985,6 +986,22 @@ function bindFans(){
     fm.querySelector('[name=_subject]').value = `Fan photo: ${val('f_cap').slice(0, 80)} – ${val('f_name')}`;
     b.textContent = 'Sending…'; HTMLFormElement.prototype.submit.call(fm);
   };
+}
+/* Moving from the old address (nfstride1-ux.github.io/archery-calendar): its migration page sends this device's saved data here as
+   #/import/<base64url JSON>. We merge it (shoots and entries added; where both have an entry the newer change wins) and never delete. */
+function importHandoff(){
+  const m = (location.hash || '').match(/^#\/import\/([A-Za-z0-9_-]+)$/); if (!m) return false;
+  history.replaceState(null, '', location.pathname + '#/calendar');
+  try {
+    const b = m[1].replace(/-/g, '+').replace(/_/g, '/'), txt = new TextDecoder().decode(Uint8Array.from(atob(b + '='.repeat((4 - b.length % 4) % 4)), c => c.charCodeAt(0)));
+    const o = JSON.parse(txt); let n = 0;
+    for (const [id, v] of Object.entries(o.saved || {})) if (!S.saved[id]) { S.saved[id] = v; n++; }
+    for (const [id, e] of Object.entries(o.entries || {})) { const cur = S.entries[id]; if (!cur || (e.saved || '') > (cur.saved || '')) { S.entries[id] = e; n++; } }
+    for (const k of ['states', 'groups', 'remindDays', 'closeDays']) if (Array.isArray(o[k]) && !localStorage.getItem('archreg.moved')) S[k] = o[k];
+    Object.assign(S.notified, o.notified || {}); localStorage.setItem('archreg.moved', new Date().toISOString());
+    migrateSettings(); save(); setTimeout(() => toast(`✓ Moved to archerycalendars.com${n ? ` · ${n} saved shoot${n === 1 ? '' : 's'}/entries brought across` : ''}`), 600);
+  } catch { setTimeout(() => toast('Couldn’t bring your saved shoots across – use Settings → Export/Import backup'), 600); }
+  return true;
 }
 function route(){ render(); window.scrollTo(0, 0); }
 function render(){
