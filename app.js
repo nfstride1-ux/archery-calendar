@@ -592,7 +592,9 @@ function vShoot(id){
       <dt>Discipline</dt><dd>${esc(x.discipline || '—')}</dd>
       <dt>Level</dt><dd>${esc(x.level || '—')}</dd>
       <dt>Organiser</dt><dd>${isAba(x) ? abaLogo(32, 'org-logo') : ''}${esc(x.org || '—')}${x.aba_branch ? '<br><span class="note">ABA ' + esc(x.aba_branch) + '</span>' : ''}</dd>
-      ${x.rounds && x.rounds !== x.name && !x.name.includes(x.rounds) ? `<dt>Rounds</dt><dd>${esc(x.rounds)}</dd>` : ''}
+      ${x.rounds && x.rounds !== x.name && !x.name.includes(x.rounds) ? `<dt>Rounds</dt><dd>${esc(x.rounds)}${x.field_sources?.rounds ? ` <span class="src">from ${esc(x.field_sources.rounds)}</span>` : ''}</dd>` : ''}
+      ${x.start_times ? `<dt>Times</dt><dd>${esc(x.start_times)}${x.field_sources?.start_times ? ` <span class="src">from ${esc(x.field_sources.start_times)}</span>` : ''}</dd>` : ''}
+      ${x.divisions ? `<dt>Divisions</dt><dd>${esc(x.divisions)}${x.field_sources?.divisions ? ` <span class="src">from ${esc(x.field_sources.divisions)}</span>` : ''}</dd>` : ''}
       ${x.registration_opens ? `<dt>Entries open</dt><dd>${esc(x.registration_opens)}</dd>` : ''}
       ${closeTxt ? `<dt>Entries close</dt><dd>${esc(closeTxt)}${x.field_sources?.entry_close_date ? ` <span class="src">from ${esc(x.field_sources.entry_close_date)}</span>` : ''}</dd>` : ''}
       ${x.fee ? `<dt>Fee</dt><dd>${esc(x.fee)}${x.field_sources?.fee ? ` <span class="src">from ${esc(x.field_sources.fee)}</span>` : ''}</dd>` : ''}
@@ -1693,8 +1695,8 @@ const fixList = () => EV.filter(x => !x.start_date || daysTo(x.end_date || x.sta
 const fixDates = x => x ? [x.start_date, x.end_date && x.end_date !== x.start_date && x.end_date].filter(Boolean).join(' to ') : '';
 const fdate = d => d ? pd(d).toLocaleDateString('en-AU', {day: 'numeric', month: 'short', year: 'numeric'}) : '';
 const fixNow = x => { if (!x) return {}; const fe = x.flyer_extract || {};
-  return {dates: x.start_date ? range(x) : '', start: x.start_date || '', end: x.end_date || x.start_date || '', time: fe.start_time || fe.times || '', venue: x.location || '',
-    rounds: x.rounds || fe.rounds || '', divs: fe.divisions || fe.classes || '', close: x.entry_close_date || '', link: x.registration_url || fe.registration || '',
+  return {dates: x.start_date ? range(x) : '', start: x.start_date || '', end: x.end_date || x.start_date || '', time: x.start_times || fe.start_time || fe.times || '', venue: x.location || '',
+    rounds: x.rounds || fe.rounds || '', divs: x.divisions || fe.divisions || fe.classes || '', close: x.entry_close_date || '', link: x.registration_url || fe.registration || '',
     flyer: x.flyer_local || x.flyer_url ? (x.flyer_label || 'Flyer on file') : '', status: x.cancelled ? 'Cancelled' : 'Going ahead (as listed)'}; };
 // [key, label, kind]
 const FIX_ROWS = [['dates', 'Date(s)', 'dates'], ['time', 'Start time', 'time'], ['venue', 'Venue / address', 'venue'], ['rounds', 'Round(s) / distances', 'rounds'],
