@@ -69,3 +69,17 @@ Find shoots has a "Hide clashes with my shoots" toggle (your own shoots stay lis
 We count visits anonymously with GoatCounter (`https://archerycalendars.goatcounter.com/count`, script `gc.zgo.at/count.js`, async, `no_onload`). It sets no cookies.
 The app counts each hash route as a page view (`gcPage()` in `route()`). Find-shoots searches are counted as events at `search/<normalised-words>`; anything that looks like an email address or phone number is dropped.
 If GoatCounter is down or blocked, nothing is counted and nothing breaks. count.js ignores localhost. QA: `tools/qa_goatcounter.py`, which stubs the script so no real counts are sent.
+
+## International (USA only for now)
+- Home has an **🌐 International** panel with a country dropdown. Only the USA is selectable; Canada, Great Britain and New Zealand show "coming soon". Choosing USA opens `#/intl/USA`, a separate find-shoots page (search, US state, discipline, organisation chips: USA Archery / NFAA / ASA / IBO / TAC / Redding / Lancaster Classic / World events, Include finished).
+- Data: `app/data/intl.json` + `intl_countries.json`, written by `tools/build_data.py` step 7b. `INTL_COUNTRIES = ('USA',)` controls which countries are published; everything else stays in `data/` only. The Australian Find shoots, My shoots and Calendars never load `intl.json`.
+- Sources (checked 9 Oct 2026): World Archery calendar API (US events re-checked against the live API), USA Archery's 2027 events calendar (13 Aug 2026 announcement), NFAA event pages + 2027 indoor calendar news, thevegasshoot.com, lancasterarcheryclassic.com, totalarcherychallenge.com, iboarchery.com/schedule, asaarchery.com/events. Unknown venues/dates are left blank.
+- Cards show the organiser's logo (`img/clubs/us-*.webp`, sources in `data/club_logos.json`) or an initials badge – never photos of people. Club-run USA Archery-sanctioned shoots show the host's initials.
+- QA: `tools/qa_intl.py <url> <out>`.
+
+## Indoor Archery WA (venue)
+- Privately run 24/7 indoor range at 12 Alex Wood Dr, Forrestdale (indoorarcherywa.com.au, info@indoorarcherywa.com.au, 0447 741 974). Not an Archery WA / ABA club. Listed under its own name (alias "WA Indoor"); events have `org_group: 'venue'`, which always shows with Australian shoots (no association chip or label).
+- Listed: Indoor Archery WA League, 14 fortnightly Thursday nights 15 Oct 2026 – 29 Apr 2027, 7:30–8:30 pm (from its event page), and Come and Try (book any time, daily sessions). Logo: header logo from its website.
+
+## Service worker
+`img/credits.json` is data, so it is network-first like the rest of `data/` (it used to be cache-first because it lives under `img/`, which let an installed app keep a stale photo list). Install uses `cache: 'reload'`. A header photo that fails to load removes itself. QA: `tools/qa_images.py <url> <out>` (every route, desktop + mobile, no broken images).

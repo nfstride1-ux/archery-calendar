@@ -31,3 +31,18 @@ Licence notes:
 
 ## Event flyers
 Flyers belong to their organisers. The site shows a web preview of page 1 of each flyer (bank details removed) with a link to the organiser's original where one exists. Organisers who want a flyer removed or updated: email nfshold@gmail.com.
+
+## Fans page
+| File | Caption | Credit (Credits page only) |
+|---|---|---|
+| img/fans/silver-u21-men-2026-wafc.jpg | Silver for Australia: U21 men's team (Chris Jackson, Xavier Clark, Josh Turner), 2026 World Archery Field Championships | Archery Australia and club social media (supplied) |
+
+Community photos are added to `app/data/fans.json` only after review (consent ticked; under-18s only with parent/guardian consent). Removal requests: nfshold@gmail.com.
+
+ABA pages use their own photo set (bush course / 3D animal targets, CC0): never Archery Australia or World Archery team photos. ABA 3D shoots use the 3D longbow photo; all other ABA shoots use the owl photo.
+
+## Organisation logos
+- USA find-shoots page (`#/intl/USA`): cards show the organiser's own logo, downloaded 9 Oct 2026 from its official website – USA Archery, NFAA, ASA (ASA mark cropped from the site header), IBO, Lancaster Archery Classic, Straight Arrow Bowhunters (Redding) – plus World Archery. Others (TAC, IFAA, LA28, club-run shoots) show an initials badge. Sources in `app/data/club_logos.json`. The logos belong to their organisations.
+- Indoor Archery WA: the header logo from indoorarcherywa.com.au (9 Oct 2026). The logo belongs to Indoor Archery WA.
+- USA page header photo: "Archery range at Floyd Bennett Field" by Rhododendrites, Wikimedia Commons, CC BY-SA 4.0 (no people).
+- ABA logo (`img/logos/aba-logo-*.png|webp`): the Australian Bowhunters Association's logo, supplied by Nathe. We use it only to mark ABA shoots and the ABA calendar. The white background was made transparent. The logo belongs to the ABA.

@@ -271,6 +271,77 @@
    "source_type": "organisation's own website",
    "kind": "organiser",
    "retrieved": "2026-10-09"
+  },
+  "indoor-archery-wa": {
+   "name": "Indoor Archery WA",
+   "file": "img/clubs/indoor-archery-wa.webp",
+   "sm": "img/clubs/indoor-archery-wa-sm.webp",
+   "source_url": "https://cdn.revolutionise.com.au/logos/wqxh5papcsdgwom5.png",
+   "source_page": "https://www.indoorarcherywa.com.au/",
+   "source_type": "venue's own website (header logo)",
+   "kind": "venue",
+   "retrieved": "2026-10-09"
+  },
+  "us-usa-archery": {
+   "name": "USA Archery",
+   "file": "img/clubs/us-usa-archery.webp",
+   "sm": "img/clubs/us-usa-archery-sm.webp",
+   "source_url": "https://www.usarchery.org/images/logo-new.svg",
+   "source_page": "https://www.usarchery.org/",
+   "source_type": "organiser's own website",
+   "kind": "org",
+   "retrieved": "2026-10-09"
+  },
+  "us-nfaa": {
+   "name": "National Field Archery Association (NFAA)",
+   "file": "img/clubs/us-nfaa.webp",
+   "sm": "img/clubs/us-nfaa-sm.webp",
+   "source_url": "https://nfaausa.com/images/favicon2.png",
+   "source_page": "https://nfaausa.com/",
+   "source_type": "organiser's own website",
+   "kind": "org",
+   "retrieved": "2026-10-09"
+  },
+  "us-asa": {
+   "name": "Archery Shooters Association (ASA)",
+   "file": "img/clubs/us-asa.webp",
+   "sm": "img/clubs/us-asa-sm.webp",
+   "source_url": "https://bunny-wp-pullzone-emcyfkbcqt.b-cdn.net/wp-content/uploads/2022/11/asa_Logo_blk.png",
+   "source_page": "https://asaarchery.com/ (ASA mark cropped from the site header logo)",
+   "source_type": "organiser's own website",
+   "kind": "org",
+   "retrieved": "2026-10-09"
+  },
+  "us-ibo": {
+   "name": "International Bowhunting Organization (IBO)",
+   "file": "img/clubs/us-ibo.webp",
+   "sm": "img/clubs/us-ibo-sm.webp",
+   "source_url": "https://iboarchery.com/wp-content/uploads/2021/09/ibo_transparent.gif",
+   "source_page": "https://iboarchery.com/",
+   "source_type": "organiser's own website",
+   "kind": "org",
+   "retrieved": "2026-10-09"
+  },
+  "us-lancaster": {
+   "name": "Lancaster Archery Classic",
+   "file": "img/clubs/us-lancaster.webp",
+   "sm": "img/clubs/us-lancaster-sm.webp",
+   "source_url": "https://images.squarespace-cdn.com/content/v1/611a5e82c76a1053acc036fa/fd192456-88e9-4c89-b8ac-0ff622d672cb/2027-ClassicLogo-FullColor-White.png?format=1500w",
+   "source_page": "https://www.lancasterarcheryclassic.com/",
+   "source_type": "organiser's own website",
+   "kind": "org",
+   "bg": "#14213d",
+   "retrieved": "2026-10-09"
+  },
+  "us-sab": {
+   "name": "Straight Arrow Bowhunters",
+   "file": "img/clubs/us-sab.webp",
+   "sm": "img/clubs/us-sab-sm.webp",
+   "source_url": "https://straightarrowbowhunters.com/Assets/Logos/Straight-Arrow-Bow-Hunters-Shooting-Range.png",
+   "source_page": "https://straightarrowbowhunters.com/",
+   "source_type": "organiser's own website",
+   "kind": "org",
+   "retrieved": "2026-10-09"
   }
  }
 }

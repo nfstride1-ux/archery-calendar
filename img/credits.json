@@ -153,5 +153,19 @@
   "layout": "split",
   "pos": "center",
   "used_for": "Come & try category (banner + home tile)"
+ },
+ "us_field": {
+  "file": "img/us-field.jpg",
+  "sm": "img/us-field-sm.jpg",
+  "title": "Archery range at Floyd Bennett Field (40740p)",
+  "by": "Rhododendrites",
+  "source": "Wikimedia Commons",
+  "url": "https://commons.wikimedia.org/wiki/File:Archery_range_at_Floyd_Bennett_Field_(40740p).jpg",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "date": null,
+  "year": 2020,
+  "pos": "center 60%",
+  "used_for": "USA find-shoots page header – range photo, no people"
  }
 }

@@ -91,7 +91,7 @@ function toast(t){ const el = $('#toast'); el.textContent = t; el.classList.add(
 
 async function boot(){
   $('#todayLbl').textContent = today().toLocaleDateString('en-AU', {weekday:'short', day:'numeric', month:'short'});
-  const [e, o, ph, cl] = await Promise.all([fetch('data/events.json').then(r => r.json()), fetch('data/organisations.json').then(r => r.json()), fetch('img/credits.json', {cache: 'no-cache'}).then(r => r.json()).catch(() => ({})), fetch('data/clubs.json').then(r => r.json()).catch(() => ({clubs: []})), fetch('data/club_logos.json').then(r => r.json()).then(j => { LOGO = j.logos || {}; }).catch(() => {})]);
+  const [e, o, ph, cl] = await Promise.all([fetch('data/events.json').then(r => r.json()), fetch('data/organisations.json').then(r => r.json()), fetch('img/credits.json', {cache: 'no-cache'}).then(r => r.json()).catch(() => ({})), fetch('data/clubs.json').then(r => r.json()).catch(() => ({clubs: []})), fetch('data/club_logos.json').then(r => r.json()).then(j => { LOGO = j.logos || {}; }).catch(() => {}), fetch('data/intl_countries.json').then(r => r.json()).then(j => { ICTRY = j; }).catch(() => {})]);
   CLUBS = cl.clubs || []; CLUBS.forEach(c => CLUB[c.id] = c);
   PH = ph; SCOPE = e.scope || 'WORLD';
   migrateSettings();
@@ -124,7 +124,7 @@ function migrateSettings(){
 /* ---------- helpers ---------- */
 function visible(x, anyState){
   if (S.saved[x.id]) return true;
-  if (AUS()) return S.groups.includes(x.org_group) && (anyState || !S.states.length || !x.state_code || S.states.includes(x.state_code));
+  if (AUS()) return (S.groups.includes(x.org_group) || x.org_group === 'venue') && (anyState || !S.states.length || !x.state_code || S.states.includes(x.state_code));
   if (S.world && x.world_level) return true;
   if (S.orgs.includes(x.org_id)) return true;
   if (x.country_code && S.countries.includes(x.country_code) && !x.world_level) {
@@ -390,6 +390,7 @@ function vHome(){
     <div class="types">${['field','3d','target','indoor'].map(t => `<a class="type th-${t}" href="#/browse" data-th="${t}" style="--img:url('${esc(photo(t === 'field' ? 'aba_field' : t).sm)}');--pos:${esc(photo(t === 'field' ? 'aba_field' : t).pos || 'center')}"><span class="type-name">${THEMES[t][0]} ${THEMES[t][1]}</span><span class="type-sub">${{field:'Bush courses, marked & unmarked', '3d':'Foam animals in the bush', target:'Outdoor ranges, 18–90 m', indoor:'18 m halls, 3-spot & Vegas'}[t]}</span></a>`).join('')}</div>
     <div class="cats-row" aria-label="Club shoots, coaching, youth and come & try">${['club', 'coaching', 'youth', 'come_try'].map(c => `<a class="cat-link cat-${c}" href="#/browse" data-cat="${c}">${(c === 'youth' || c === 'come_try') && PH[c] ? `<span class="cat-img" aria-hidden="true" style="background-image:url('${esc(PH[c].sm)}');background-position:${esc(PH[c].pos || 'center')}"></span>` : ''}<span class="ci" aria-hidden="true">${CATS[c][0]}</span><b>${CATS[c][2]}</b><span>${EV.filter(x => catOf(x) === c && visible(x) && !isPast(x)).length} coming up</span></a>`).join('')}</div>
     ${homeClubs()}
+    ${intlMenu()}
     <div class="two">
       <section><h2 class="sec-h">Reminders</h2>
       ${rem.length ? rem.map(r => `<div class="panel rem" data-open="${esc(r.x.id)}" role="link" tabindex="0"><b><span aria-hidden="true">${REM_ICON[r.kind]}</span> ${esc(r.x.name)}</b><div>${esc(r.text)}</div><div class="badges">${r.kind === 'close' ? '<span class="b close">⏳ Enter now</span>' : r.kind === 'pay' ? '<span class="b ent">$ Pay now</span>' : REM_BADGE[r.st]}</div></div>`).join('')
@@ -508,6 +509,7 @@ function vBrowse(){
   <label style="display:flex;align-items:center;gap:8px;margin:0;flex:0 0 auto"><input type="checkbox" id="past" ${BF.past ? 'checked' : ''} style="width:22px;min-height:22px"> Show finished</label></div>
   ${myD.length ? `<label class="chk hide-clash" style="display:flex;align-items:center;gap:8px;margin:6px 0 0"><input type="checkbox" id="hideClash" ${BF.hideClash ? 'checked' : ''} style="width:22px;min-height:22px"> ⚠️ Hide clashes with my shoots${BF.hideClash ? '' : ` (${nClash})`}</label>` : ''}
   ${showPastNote ? `<p class="note" id="pastNote">◷ No upcoming shoots match – showing finished shoots.</p>` : ''}
+  ${BF.clubId && CLUB[BF.clubId] ? `<p class="club-filter"><button type="button" class="chip" id="clubChipX" aria-pressed="true" aria-label="Remove club filter ${esc(CLUB[BF.clubId].name)}">Club: ${esc(CLUB[BF.clubId].name)} ✕</button></p>` : ''}
   ${active.length && total ? `<p class="note" id="activeF">Filtered by: ${active.join(' · ')} <button class="linkbtn" id="clearF2">✕ Clear</button></p>` : ''}
   <p class="note" id="countNote">${total} shoot${total !== 1 ? 's' : ''}. Change ${AUS() ? 'states &amp; organisations' : 'countries &amp; bodies'} in <a href="#/settings">Settings</a>.</p></div><div class="results">`;
   let m = '', n = 0;
@@ -523,6 +525,7 @@ function bindBrowse(){
   bindClubNotice();
   const clr = () => { Object.assign(BF, {q:'', disc:'', cat:'', ost:'', state:'', club:'', clubId:'', mc:false, limit:60}); if (S.states.length) { S.states = []; save(); } render(); };
   ['#clearF', '#clearF2'].forEach(s => { const b = $(s); if (b) b.onclick = clr; });
+  const cx = $('#clubChipX'); if (cx) cx.onclick = () => { BF.clubId = ''; BF.limit = 60; render(); };
   $('#disc').onchange = e => { BF.disc = e.target.value; render(); };
   document.querySelectorAll('[data-tcat]').forEach(b => b.onclick = () => { BF.cat = b.dataset.tcat; BF.limit = 60; render(); });
   bindClubDrop(BF);
@@ -585,6 +588,7 @@ function vShoot(id){
     </dl>${x.notes ? `<p class="note">${esc(x.notes)}</p>` : ''}</section>
     ${CALS[x.org_group] ? `<p class="note"><a href="#/calendars/${x.org_group}">📅 See it in the full ${esc(CALS[x.org_group].name)} calendar</a></p>` : ''}
     <p class="note">Source: <a href="${esc(x.source_url)}" target="_blank" rel="noopener">${esc(x.source_url)}</a>${x.also_listed ? ` · also <a href="${esc(x.also_listed)}" target="_blank" rel="noopener">World Archery listing</a>` : ''}${x.branch_source ? `<br>Branch source: <a href="${esc(x.branch_source.url)}" target="_blank" rel="noopener" id="branchSrc">${esc(x.branch_source.name)}</a>` : ''}<br>Checked ${esc(x.last_checked)}. Always confirm details with the organiser.</p>
+    <p class="note fix-link"><a href="#/fix/${esc(encodeURIComponent(x.id))}" id="fixLink">✏️ Something wrong? Suggest a fix</a></p>
    </div>
    <aside class="side">
     <section class="panel act">${closeTxt && ST(id) === 'none' && daysTo(x.entry_close_date) >= 0 ? `<p class="closes">⏳ Entries close<br><b>${esc(closeTxt)}</b></p>` : ''}
@@ -939,8 +943,11 @@ function clubPop(id, from){
   d.onclick = e => { if (e.target === d) back(); };
   $('#cpX').onclick = back; $('#cpX').focus();
   d.querySelectorAll('[data-join],[data-watch]').forEach(b => b.onclick = () => { if (b.dataset.join) toggleClub('my', id); else toggleClub('watch', id); const y = scrollY; render(); scrollTo(0, y); clubPop(id, from); });
-  $('#cpShoots').onclick = () => { closeClubPop(); Object.assign(BF, {clubId: id, club: '', q: '', cat: '', disc: '', ost: '', state: '', past: false, limit: 60}); if (location.hash === '#/browse') render(); else location.hash = '#/browse'; };
+  $('#cpShoots').onclick = () => { closeClubPop(); showClubShoots(id); };
 }
+/* Show only one club's shoots in Find shoots (same set as the popover's "N upcoming": every event with that club_id). */
+function showClubShoots(id){ Object.assign(BF, {clubId: id, club: '', q: '', cat: '', disc: '', ost: '', state: '', scope: 'all', past: false, limit: 60}); if (location.hash === '#/browse') render(); else location.hash = '#/browse'; }
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-clubgo]'); if (b) { e.preventDefault(); showClubShoots(b.dataset.clubgo); } });
 function closeClubPop(){ const d = $('#clubPop'); if (d) d.remove(); }
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-clubpop]'); if (b) { e.preventDefault(); e.stopPropagation(); clubPop(b.dataset.clubpop, b); } }, true);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { if ($('#clubPop')) closeClubPop(); else if (MC.open && $('#mc')) { MC.open = false; render(); const b = $('#mcBtn'); b && b.focus(); } } });
@@ -988,7 +995,7 @@ function homeClubs(){
   if (!f.length) return `<section class="panel your-clubs empty-clubs"><h2 class="sec-h">Your clubs</h2><p>Follow your club to see its next shoots here, and get a “New” badge when it adds a shoot or a flyer.</p><a class="btn alt" href="#/settings/clubs">🏠 Pick your clubs</a></section>`;
   const next = EV.filter(x => f.includes(x.club_id) && !isPast(x) && x.start_date).sort((a, b) => a.start_date < b.start_date ? -1 : 1).slice(0, 4);
   return `<section class="your-clubs"><h2 class="sec-h">Your clubs</h2>${clubNotice()}
-    <p class="club-links">${f.map(id => `<button type="button" class="chip" data-clubpop="${esc(id)}" aria-haspopup="dialog">${isMine(id) ? '🏠 ' : '👁 '}${esc(CLUB[id].name)}${S.homeClub === id ? ' · home' : ''}</button>`).join('')}</p>
+    <p class="club-links">${f.map(id => `<span class="chip-pair"><button type="button" class="chip" data-clubgo="${esc(id)}" aria-label="Show ${esc(CLUB[id].name)} shoots">${isMine(id) ? '🏠 ' : '👁 '}${esc(CLUB[id].name)}${S.homeClub === id ? ' · home' : ''}</button><button type="button" class="chip chip-info" data-clubpop="${esc(id)}" aria-haspopup="dialog" aria-label="About ${esc(CLUB[id].name)}" title="Club info">ⓘ</button></span>`).join('')}</p>
     ${next.length ? `<div class="list">${next.map(evCard).join('')}</div>` : '<p class="note">No upcoming shoots listed for your clubs yet.</p>'}
     <p><a href="#/browse" id="ycAll" class="linkbtn">All shoots from my clubs →</a></p></section>`;
 }
@@ -999,7 +1006,7 @@ function clubSearch(q){
   return CLUBS.filter(c => { const k = ' ' + clubKey(c) + ' '; return w.every(t => k.includes(' ' + t) ); })
     .sort((a, b) => (b.n_events > 0) - (a.n_events > 0) || a.name.localeCompare(b.name)).slice(0, 15);
 }
-const clubLine = c => [c.suburb, c.state, (c.orgs || []).map(o => ({aa: 'Archery Australia', awa: 'Archery WA', aba: 'ABA'}[o])).filter(Boolean).join(' / ')].filter(Boolean).join(' · ');
+const clubLine = c => [c.suburb, c.state, c.venue && 'Indoor range', (c.orgs || []).map(o => ({aa: 'Archery Australia', awa: 'Archery WA', aba: 'ABA'}[o])).filter(Boolean).join(' / ')].filter(Boolean).join(' · ');
 function clubRow(c){
   const up = EV.filter(x => x.club_id === c.id && !isPast(x)).length;
   return `<li class="club-row" data-club="${esc(c.id)}"><button type="button" class="linkbtn club-name" data-clubpop="${esc(c.id)}" aria-haspopup="dialog"><b>${esc(c.name)}</b></button><span class="note">${esc(clubLine(c))}${up ? ` · ${up} upcoming shoot${up === 1 ? '' : 's'}` : ''}</span>
@@ -1069,7 +1076,8 @@ function vClub(id){
       <dl class="kv">${c.aliases && c.aliases.length ? `<dt>Also known as</dt><dd>${esc(c.aliases.join(', '))}</dd>` : ''}
         <dt>Where</dt><dd>${esc(c.address || [c.suburb, c.state].filter(Boolean).join(', ') || '—')}<br><a href="${esc(map)}" target="_blank" rel="noopener">📍 Open in Maps ↗</a></dd>
         ${c.website ? `<dt>Website</dt><dd><a href="${esc(c.website)}" target="_blank" rel="noopener">${esc(c.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '').slice(0, 50))} ↗</a></dd>` : ''}
-        <dt>Calendars</dt><dd>${esc((c.orgs || []).map(o => ({aa: 'Archery Australia', awa: 'Archery WA', aba: 'ABA'}[o])).filter(Boolean).join(', ') || '—')}</dd></dl></section>
+        ${c.email || c.phone ? `<dt>Contact</dt><dd>${c.email ? `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>` : ''}${c.email && c.phone ? '<br>' : ''}${c.phone ? `<a href="tel:${esc(c.phone.replace(/\s/g, ''))}">${esc(c.phone)}</a>` : ''}</dd>` : ''}
+        ${c.venue ? '' : `<dt>Calendars</dt><dd>${esc((c.orgs || []).map(o => ({aa: 'Archery Australia', awa: 'Archery WA', aba: 'ABA'}[o])).filter(Boolean).join(', ') || '—')}</dd>`}</dl></section>
     <h2 class="sec-h">Upcoming shoots (${up.length})</h2>${up.length ? `<div class="list">${up.map(evCard).join('')}</div>` : '<p class="note">No upcoming shoots listed yet. Watch the club to get a “New” badge when one is added.</p>'}
     ${past.length ? `<details class="past-shoots"><summary><h2 class="sec-h">Past shoots (${past.length})</h2></summary><div class="list">${past.map(evCard).join('')}</div></details>` : ''}
     <p class="note"><a href="#/clubs">← All clubs</a></p></div>`;
@@ -1368,6 +1376,132 @@ function gcSearch(q){
     gcSearch.last = n; gc({path: 'search/' + n.replace(/ /g, '-'), title: 'Search', event: true});
   }, 1500);
 }
+/* ---------- International: a SEPARATE find-shoots page per country (#/intl/USA). USA only for now.
+   Loaded on demand from data/intl.json and never mixed into the Australian Find shoots, My shoots or Calendars. ---------- */
+let ICTRY = {countries: []}, INTL = null, INTLP = null;
+let IF = {code: '', q: '', disc: '', org: '', st: '', past: false, limit: 60};
+const flag = iso => iso && /^[A-Z]{2}$/.test(iso) ? String.fromCodePoint(...[...iso].map(c => 0x1F1A5 + c.charCodeAt(0))) : '🌐';
+const loadIntl = () => INTL ? Promise.resolve(INTL) : (INTLP = INTLP || fetch('data/intl.json').then(r => r.json()).then(j => (INTL = j)));
+const US_ST = {AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',CO:'Colorado',CT:'Connecticut',DE:'Delaware',FL:'Florida',GA:'Georgia',HI:'Hawaii',ID:'Idaho',IL:'Illinois',
+  IN:'Indiana',IA:'Iowa',KS:'Kansas',KY:'Kentucky',LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',MT:'Montana',
+  NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',NY:'New York',NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',OR:'Oregon',PA:'Pennsylvania',
+  RI:'Rhode Island',SC:'South Carolina',SD:'South Dakota',TN:'Tennessee',TX:'Texas',UT:'Utah',VT:'Vermont',VA:'Virginia',WA:'Washington',WV:'West Virginia',WI:'Wisconsin',WY:'Wyoming',DC:'District of Columbia',PR:'Puerto Rico'};
+const US_ORGS = [['usa-archery', 'USA Archery'], ['nfaa', 'NFAA'], ['asa', 'ASA'], ['ibo', 'IBO'], ['tac', 'TAC'], ['redding', 'Redding'], ['lancaster', 'Lancaster Classic'], ['world', '🌐 World events']];
+const US_ORG_WORDS = {'usa-archery': 'usa archery joad usat', nfaa: 'nfaa national field archery association', asa: 'asa archery shooters association pro am proam', ibo: 'ibo international bowhunting organization triple crown',
+  tac: 'tac total archery challenge', redding: 'redding western classic straight arrow bowhunters marked 3d', lancaster: 'lancaster classic lac', world: 'world archery international ifaa olympic'};
+const TZ_NAME = {'America/New_York': 'Eastern Time', 'America/Chicago': 'Central Time', 'America/Denver': 'Mountain Time', 'America/Phoenix': 'Arizona Time',
+  'America/Los_Angeles': 'Pacific Time', 'America/Anchorage': 'Alaska Time', 'Pacific/Honolulu': 'Hawaii Time', 'America/Puerto_Rico': 'Atlantic Time'};
+const IDISC = [['Target', /target|clout|flight|para|outdoor/i], ['Indoor', /indoor/i], ['Field', /field/i], ['3D', /3d|bowhunt|trail/i]];
+const iPast = x => (x.end_date || x.start_date) && daysTo(x.end_date || x.start_date) < 0;
+const iName = code => (ICTRY.countries.find(c => c.code === code) || {}).name || code;
+const iIso = code => (ICTRY.countries.find(c => c.code === code) || {}).iso2;
+const SOON = [['CAN', 'Canada'], ['GBR', 'Great Britain'], ['NZL', 'New Zealand']];
+function intlOptions(cur){
+  const o = c => `<option value="${esc(c.code)}" ${cur === c.code ? 'selected' : ''}>${flag(c.iso2)} ${esc(c.name)}</option>`;
+  return ICTRY.countries.map(o).join('') + `<optgroup label="Coming soon">${SOON.map(([c, n]) => `<option value="${c}" disabled>${esc(n)} – coming soon</option>`).join('')}</optgroup>`;
+}
+function intlMenu(){
+  if (!ICTRY.countries.length) return '';
+  return `<section class="panel intl-menu" aria-labelledby="intlH"><h2 class="sec-h" id="intlH">🌐 International</h2>
+    <p class="note">Shoots outside Australia, each country on its own page. Find shoots stays Australia-only.</p>
+    <form id="intlForm" class="intl-form"><label for="intlSel">Country</label><select id="intlSel">${intlOptions('USA')}</select><button class="btn" type="submit">Show shoots →</button></form></section>`;
+}
+function bindIntlMenu(){ const f = $('#intlForm'); if (f) f.onsubmit = e => { e.preventDefault(); location.hash = '#/intl/' + $('#intlSel').value; }; }
+/* Card mark: the organising body's / host's own logo (img/clubs/us-*.webp, sources in data/club_logos.json), never a photo of people.
+   Club-run USA Archery-sanctioned shoots show the host's initials (we don't hold their logos). */
+const US_LOGO = {'usa-archery': 'us-usa-archery', nfaa: 'us-nfaa', asa: 'us-asa', ibo: 'us-ibo', tac: 'us-tac', lancaster: 'us-lancaster', redding: 'us-sab'};
+function iHost(x){
+  if (/vegas shoot/i.test(x.name) && LOGO['us-vegas']) return {id: 'us-vegas', name: 'The Vegas Shoot'};
+  if (x.org_id === 'world-archery') return {id: 'world-archery', name: 'World Archery'};
+  if (x.org_id === 'ifaa') return {id: 'us-ifaa', name: 'IFAA'};
+  if (x.org_id === 'ioc-la28') return {id: 'la28', name: 'LA28'};
+  if (x.us_org === 'usa-archery' && !/usa archery|\busat\b|joad|indoor nationals|target nationals|collegiate/i.test(x.name)) {
+    const h = (x.location || '').split(',')[0].trim(); return {id: '', name: h && !/^\d/.test(h) ? h : x.name}; }
+  return {id: US_LOGO[x.us_org] || '', name: x.org || 'Archery'};
+}
+function iMark(x){
+  const h = iHost(x), L = LOGO[h.id];
+  if (L) return `<span class="hm hm-logo"${L.bg ? ` style="background:${esc(L.bg)}"` : ''}><img src="${esc(L.sm || L.file)}" alt="${esc(h.name)} logo" loading="lazy" decoding="async"></span>`;
+  const i = h.id === 'la28' ? 'LA28' : initials(h.name);
+  return `<span class="hm hm-ini" data-n="${i.length}" role="img" aria-label="${esc(h.name)}"><b aria-hidden="true">${esc(i)}</b></span>`;
+}
+function iHay(x){
+  if (!x._h) { const st = x.us_state ? `${x.us_state} ${US_ST[x.us_state] || ''}` : '';
+    x._h = snorm([x.name, x.location, x.org, x.discipline, x.level, x.country_name, st, US_ORG_WORDS[x.us_org] || '', x.country_code === 'USA' ? 'usa us united states america' : '', x.world_level ? 'world international major' : ''].join(' ')); }
+  return x._h;
+}
+function iMatch(x, q){
+  let t = ' ' + snorm(q) + ' ';
+  const st = [];
+  for (const [c, n] of Object.entries(US_ST).sort((a, b) => b[1].length - a[1].length)) { const nn = ' ' + snorm(n) + ' '; if (t.includes(nn)) { st.push(c); t = t.replace(nn, ' '); } }
+  const words = t.split(/\s+/).filter(Boolean), H = ' ' + iHay(x) + ' ';
+  for (const w of words) { const c = w.toUpperCase();
+    if (w.length === 2 && US_ST[c] && x.country_code === 'USA') { if (x.us_state !== c && !H.includes(' ' + w + ' ')) return false; else continue; }
+    if (w.length <= 2 ? !H.includes(' ' + w + ' ') : !H.includes(' ' + w)) return false; }   // words match from the start of a word (asa ≠ Renasant)
+  return !st.length || st.includes(x.us_state);
+}
+function iStatus(x){
+  if (x.status === 'dates_tba' || !x.start_date) return `<span class="b tbc">? Dates not published yet</span>`;
+  if (iPast(x)) return `<span class="b past">◷ Finished</span>`;
+  if (x.entry_close_date && daysTo(x.entry_close_date) >= 0) return `<span class="b open">✍ Entries close ${esc(pd(x.entry_close_date).toLocaleDateString('en-AU', {day: 'numeric', month: 'short', year: 'numeric'}))}</span>`;
+  return `<span class="b open">✓ Scheduled</span>`;
+}
+function iCard(x){
+  const t = theme(x), here = [x.location || 'Venue not published yet', x.us_state && US_ST[x.us_state]].filter(Boolean).join(' · ');
+  return `<article class="ev iev th-${t}" data-iid="${esc(x.id)}" aria-label="${esc(x.name)}">
+    <div class="ev-img ev-host">${dateBox(x)}${iMark(x)}</div>
+    <div class="body"><div class="tags"><span class="tag ctry">${flag(x.iso2)} ${esc(x.country_name || 'International')}</span>${t !== 'mixed' ? tagHtml(t) : ''}</div>
+      <h3 class="name">${esc(x.name)}</h3>
+      <div class="meta">📅 ${esc(range(x))}${x.tz ? ` <small>(local: ${esc(TZ_NAME[x.tz] || x.tz)})</small>` : ''}</div>
+      <div class="meta">📍 ${esc(here)}</div>
+      <div class="meta">${esc([x.discipline || 'Discipline not listed', x.org].filter(Boolean).join(' · '))}</div>
+      <div class="badges">${iStatus(x)}${x.world_level && x.us_org === 'world' ? '<span class="b world">🌐 World event</span>' : ''}${x.registration_opens && !iPast(x) && !(x.registration_url && /^\d{4}-/.test(x.registration_opens) && daysTo(x.registration_opens) < 0) ? `<span class="b tbc">◷ Entries open ${esc(/^\d{4}-\d\d-\d\d$/.test(x.registration_opens) ? pd(x.registration_opens).toLocaleDateString('en-AU', {day: 'numeric', month: 'short', year: 'numeric'}) : x.registration_opens)}</span>` : ''}</div>
+      ${x.notes ? `<p class="note">${esc(x.notes)}</p>` : ''}
+      <p class="iacts">${x.registration_url ? `<a class="btn sm" href="${esc(x.registration_url)}" target="_blank" rel="noopener">✍ Entry / event page ↗</a>` : '<span class="note">No entry link published yet.</span>'}
+        <a href="${esc(x.source_url)}" target="_blank" rel="noopener">Source ↗</a>${x.also_listed ? ` · <a href="${esc(x.also_listed)}" target="_blank" rel="noopener">Also listed ↗</a>` : ''}</p></div>
+  </article>`;
+}
+function vIntl(arg){
+  let code = String(decodeURIComponent(arg || 'USA')).toUpperCase();
+  if (ICTRY.countries.length && !ICTRY.countries.some(c => c.code === code)) code = 'USA';
+  const usa = code === 'USA';
+  if (IF.code !== code) Object.assign(IF, {code, q: '', disc: '', org: '', st: '', past: false, limit: 60});
+  const nm = iName(code), head = pageHead(`${flag(iIso(code) || 'US')} ${esc(nm)}: find a shoot`, `Archery shoots in ${esc(nm)}${usa ? ' – USA Archery, NFAA, ASA, IBO, TAC, Redding, Lancaster and The Vegas Shoot' : ''}. Dates are local to each venue.`, 'us_field');
+  setTitle(`Archery shoots in ${nm}`);
+  if (!INTL) { loadIntl().then(() => { if ((location.hash || '').startsWith('#/intl')) { const y = scrollY; render(); scrollTo(0, y); } }).catch(() => {}); return `${head}<div class="wrap"><p class="note" id="icount">Loading shoots…</p></div>`; }
+  const all = INTL.events.filter(x => x.country_code === code);
+  let list = all.filter(x => IF.past || !iPast(x));
+  if (usa && IF.org) list = list.filter(x => x.us_org === IF.org);
+  if (usa && IF.st) list = list.filter(x => x.us_state === IF.st);
+  if (IF.disc) { const re = IDISC.find(d => d[0] === IF.disc)[1]; list = list.filter(x => re.test((x.discipline || '') + ' ' + x.name)); }
+  if (IF.q.trim()) list = list.filter(x => iMatch(x, IF.q));
+  list.sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : (a.start_date || '9') > (b.start_date || '9') ? 1 : a.name < b.name ? -1 : 1);
+  const sts = usa ? [...new Set(all.map(x => x.us_state).filter(Boolean))].sort((a, b) => US_ST[a] < US_ST[b] ? -1 : 1) : [];
+  const active = [IF.q && `search “${esc(IF.q)}”`, IF.org && US_ORGS.find(o => o[0] === IF.org)[1], IF.st && US_ST[IF.st], IF.disc].filter(Boolean);
+  return `${head}<div class="wrap intl-page">
+    <div class="intl-top"><label for="ictry">Country</label><select id="ictry">${intlOptions(code)}</select>
+      <a class="note" href="#/browse">🇦🇺 Australian shoots are in Find shoots</a></div>
+    <div class="browse"><div class="filters"><input type="search" id="iq" placeholder="${usa ? 'Search: vegas, nfaa, ibo, texas, CA…' : 'Search shoot, club, town…'}" value="${esc(IF.q)}" aria-label="Search shoots in ${esc(nm)}">
+      ${usa ? `<label for="ist" class="sr">State</label><select id="ist" aria-label="US state"><option value="">All states</option>${sts.map(c => `<option value="${c}" ${IF.st === c ? 'selected' : ''}>${esc(US_ST[c])} (${c})</option>`).join('')}</select>` : ''}
+      <label for="idisc" class="sr">Discipline</label><select id="idisc" aria-label="Discipline"><option value="">All disciplines</option>${IDISC.map(([d]) => `<option ${IF.disc === d ? 'selected' : ''}>${d}</option>`).join('')}</select>
+      <label class="chk"><input type="checkbox" id="ipast" ${IF.past ? 'checked' : ''}> Include finished</label></div>
+    ${usa ? `<div class="chips" role="group" aria-label="Organisation"><button class="chip" data-iorg="" aria-pressed="${!IF.org}">All USA</button>${US_ORGS.map(([k, l]) => `<button class="chip" data-iorg="${k}" aria-pressed="${IF.org === k}">${esc(l)} <small>${all.filter(x => x.us_org === k && (IF.past || !iPast(x))).length}</small></button>`).join('')}</div>` : ''}
+    <p class="note" id="icount">${list.length} shoot${list.length === 1 ? '' : 's'}${active.length ? ' · ' + active.join(' · ') + ' <button class="linkbtn" id="iclr">✕ Clear</button>' : ''}.</p></div>
+    <div class="results">${list.slice(0, IF.limit).map(iCard).join('') || `<div class="empty">No shoots match${active.length ? ': ' + active.join(' · ') : ''}.</div>`}</div>
+    ${list.length > IF.limit ? `<p class="center"><button class="btn alt" id="imore">Show more (${list.length - IF.limit})</button></p>` : ''}
+    <p class="note">Sources: USA Archery's 2027 calendar, the World Archery calendar, and each organiser's official site (NFAA, The Vegas Shoot, ASA, IBO, TAC, Straight Arrow Bowhunters, Lancaster Archery). Details not published yet are left blank, not guessed.</p></div>`;
+}
+function bindIntl(){
+  const rer = sel => { const y = scrollY; render(); scrollTo(0, y); const e = sel && $(sel); if (e) { e.focus({preventScroll: true}); if (e.type === 'search' || e.type === 'text') e.setSelectionRange(e.value.length, e.value.length); } };
+  const c = $('#ictry'); if (c) c.onchange = () => { location.hash = '#/intl/' + c.value; };
+  const q = $('#iq'); if (q) q.oninput = () => { IF.q = q.value; IF.limit = 60; clearTimeout(bindIntl.t); bindIntl.t = setTimeout(() => { rer('#iq'); gcSearch(IF.q); }, 250); };
+  const st = $('#ist'); if (st) st.onchange = () => { IF.st = st.value; rer('#ist'); };
+  const d = $('#idisc'); if (d) d.onchange = () => { IF.disc = d.value; rer('#idisc'); };
+  const p = $('#ipast'); if (p) p.onchange = () => { IF.past = p.checked; rer('#ipast'); };
+  document.querySelectorAll('[data-iorg]').forEach(b => b.onclick = () => { IF.org = b.dataset.iorg; IF.limit = 60; rer(); });
+  const cl = $('#iclr'); if (cl) cl.onclick = () => { Object.assign(IF, {q: '', disc: '', org: '', st: '', limit: 60}); rer('#iq'); };
+  const m = $('#imore'); if (m) m.onclick = () => { IF.limit += 60; rer(); };
+}
 function route(){ render(); window.scrollTo(0, 0); gcPage(); }
 function render(){
   const h = location.hash || '#/home', [, p, arg] = h.split('/'), v = $('#view');
@@ -1383,14 +1517,16 @@ function render(){
   else if (p === 'privacy') v.innerHTML = vPrivacy();
   else if (p === 'fans') { v.innerHTML = vFans(); bindFans(); }
   else if (p === 'account') { v.innerHTML = vAccount(); bindAccount(); }
+  else if (p === 'fix' || (p === 'submit' && arg === 'fix')) { v.innerHTML = vFix(decodeURIComponent(p === 'fix' ? (arg || '') : (h.split('/')[3] || ''))); bindFix(); }
   else if (p === 'submit') { v.innerHTML = vSubmit(); bindSubmit(); }
   else if (p === 'calendars') { v.innerHTML = vCals(arg); bindCals(); }
   else if (p === 'club') { const id = decodeURIComponent(arg || ''); v.innerHTML = vClub(id); bindClub(id); }
   else if (p === 'clubs') { v.innerHTML = vClubs(); bindClubPicker(); }
+  else if (p === 'intl') { v.innerHTML = vIntl(arg); bindIntl(arg); }
   else { v.innerHTML = vHome();
     v.querySelectorAll('[data-cat]').forEach(a => a.onclick = () => { BF.cat = a.dataset.cat; BF.disc = ''; BF.scope = 'all'; });
     v.querySelectorAll('[data-th]').forEach(a => a.onclick = () => { BF.cat = ''; BF.disc = {field:'Field','3d':'3D',target:'Target',indoor:'Indoor'}[a.dataset.th]; BF.scope = 'all'; });
-    bindClubNotice(); const ya = $('#ycAll'); if (ya) ya.onclick = () => { Object.assign(BF, {club: S.myClubs.length ? 'mine' : 'watch', q: '', cat: '', disc: '', state: '', limit: 60}); };
+    bindIntlMenu(); bindClubNotice(); const ya = $('#ycAll'); if (ya) ya.onclick = () => { Object.assign(BF, {club: S.myClubs.length ? 'mine' : 'watch', q: '', cat: '', disc: '', state: '', limit: 60}); };
     $('#heroSearch').onsubmit = e => { e.preventDefault(); BF.q = $('#hq').value; BF.scope = 'all'; location.hash = '#/browse'; }; }
   bindCards(v); updateNav();
 }
@@ -1413,7 +1549,7 @@ function vSubmit(){
     <div class="row"><a class="btn gold" href="#/submit">Submit another shoot</a><a class="btn alt" href="#/browse">Find shoots</a></div></section></div>`;
   const opt = (a, ph) => `<option value="">${ph}</option>` + a.map(x => `<option>${esc(x)}</option>`).join('');
   const f = (id, lab, inp, hint = '', req = true) => `<div class="fld" data-f="${id}"><label for="${id}">${lab}${req ? ' <span class="req" aria-hidden="true">*</span>' : ' <span class="opt">(optional)</span>'}</label>${inp}${hint ? `<p class="hint" id="${id}_h">${hint}</p>` : ''}<p class="err" id="${id}_e" role="alert"></p></div>`;
-  return `${head}<div class="wrap narrow sub">
+  return `${head}<div class="wrap narrow sub">${subTabs('new')}
   <section class="panel sub-intro"><ul class="ticks">
     <li>Every shoot is <b>reviewed before it goes live, usually within 48 hours</b>.</li>
     <li>No online entries? We'll list your shoot, set up an entry form and send you the entry list. Tick "yes" below.</li>
@@ -1523,6 +1659,124 @@ function bindSubmit(){
     const b = g('subBtn'); b.disabled = true; b.textContent = 'Sending…';
   };
   window.addEventListener('pageshow', () => { const b = $('#subBtn'); if (b) { b.disabled = false; b.textContent = 'Submit shoot for review'; g('s_file').disabled = false; } }, {once: true});
+}
+
+/* ---------- Corrections: #/fix and #/fix/<event id> (also reachable as #/submit/fix). Emails nfshold via FormSubmit only; nothing on the site changes automatically. ---------- */
+const subTabs = on => `<nav class="sub-tabs" aria-label="What would you like to send?"><a href="#/submit" class="sub-tab" ${on === 'new' ? 'aria-current="page"' : ''}>➕ New shoot</a><a href="#/fix" class="sub-tab" ${on === 'fix' ? 'aria-current="page"' : ''}>✏️ Fix an existing shoot</a></nav>`;
+const fixLabel = x => `${x.name} – ${x.start_date ? pd(x.start_date).toLocaleDateString('en-AU', {day: 'numeric', month: 'short', year: 'numeric'}) : 'date TBC'}${x.state_code || x.state ? ' – ' + (x.state_code || x.state) : ''}`;
+const fixList = () => EV.filter(x => !x.start_date || daysTo(x.end_date || x.start_date) >= -90).sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
+const fixDates = x => x ? [x.start_date, x.end_date && x.end_date !== x.start_date && x.end_date].filter(Boolean).join(' to ') : '';
+const fixNow = x => { if (!x) return {}; const fe = x.flyer_extract || {};
+  return {date: range(x), time: fe.start_time || fe.times || '', venue: x.location || '', rounds: x.rounds || fe.rounds || '', divs: fe.divisions || fe.classes || '',
+    close: x.entry_close_date ? pd(x.entry_close_date).toLocaleDateString('en-AU', {day: 'numeric', month: 'short', year: 'numeric'}) : '', link: x.registration_url || fe.registration || ''}; };
+const FIX_FIELDS = [['fx_start', 'new_start_date', 'New date(s)'], ['fx_end', 'new_end_date', ''], ['fx_time', 'start_time', 'Start time'], ['fx_venue', 'venue_address', 'Venue / address'],
+  ['fx_rounds', 'rounds_distances', 'Round(s) / distances'], ['fx_divs', 'divisions_bow_classes', 'Divisions / bow classes'], ['fx_close', 'entry_closing_date', 'Entry closing date'],
+  ['fx_link', 'entry_link_or_contact', 'Entry link / contact'], ['fx_cancel', 'cancelled_or_postponed', 'Cancelled / postponed'], ['fx_notes', 'other_notes', 'Other notes']];
+function vFix(id){
+  setTitle('Fix a shoot');
+  const sent = /(?:^|[?&])fixed=1/.test(location.search);
+  if (sent) history.replaceState(null, '', location.pathname + '#/fix');
+  const head = pageHead('Fix a shoot', 'Spotted something wrong or out of date on a listing? Change only what needs fixing and send it to us.', '3d');
+  if (sent) return `${head}<div class="wrap narrow">${subTabs('fix')}<section class="panel thanks" id="subThanks" tabindex="-1">
+    <span class="thanks-mark" aria-hidden="true">✓</span><h2 class="sec">Thanks, we'll review and update it shortly.</h2>
+    <p>If we need anything else we'll reply to the email you gave us.</p>
+    <div class="row"><a class="btn gold" href="#/fix">Fix another shoot</a><a class="btn alt" href="#/browse">Find shoots</a></div></section></div>`;
+  const x = BYID[id], now = fixNow(x);
+  const cur = k => `<span class="cur" data-cur="${k}">${now[k] ? 'Now listed: ' + esc(now[k]) : ''}</span>`;
+  const f = (fid, lab, inp, hint = '', req = false) => `<div class="fld" data-f="${fid}"><label for="${fid}">${lab}${req ? ' <span class="req" aria-hidden="true">*</span>' : ''}</label>${inp}${hint ? `<p class="hint" id="${fid}_h">${hint}</p>` : ''}<p class="err" id="${fid}_e" role="alert"></p></div>`;
+  return `${head}<div class="wrap narrow sub">${subTabs('fix')}
+  <form id="fixForm" class="panel sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate>
+    <input type="hidden" name="_subject" value="Correction:">
+    <input type="hidden" name="_template" value="table">
+    <input type="hidden" name="_next" value="">
+    <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <input type="hidden" name="form" value="Correction to an existing shoot (review before changing the site)">
+    <input type="hidden" name="event_id" id="fx_id" value="${esc(x ? x.id : '')}">
+    <input type="hidden" name="event_name" id="fx_name" value="${esc(x ? x.name : '')}">
+    <input type="hidden" name="event_date" id="fx_date" value="${esc(fixDates(x))}">
+    <input type="hidden" name="event_page" id="fx_page" value="${esc(x ? SITE_URL() + '#/shoot/' + encodeURIComponent(x.id) : '')}">
+    <input type="hidden" name="what_to_change" id="fx_what" value="">
+    <fieldset><legend>1. Which shoot?</legend>
+      ${f('fx_ev', 'Shoot', `<input id="fx_ev" type="search" list="fx_list" required autocomplete="off" placeholder="Type the shoot or club name" value="${esc(x ? fixLabel(x) : '')}"><datalist id="fx_list">${fixList().map(e => `<option value="${esc(fixLabel(e))}"></option>`).join('')}</datalist>`, 'Pick it from the list.', true)}
+      <p class="note" id="fx_picked">${x ? `Fixing: <a href="#/shoot/${esc(encodeURIComponent(x.id))}">${esc(x.name)}</a> · ${esc(range(x))}` : ''}</p>
+    </fieldset>
+    <fieldset><legend>2. What needs changing?</legend>
+      <p class="hint">Fill in only the boxes that are wrong. Leave the rest blank.</p>
+      <div class="fld" data-f="fx_start"><span class="lab">New date(s)</span><div class="grid2">
+        <label class="sub-lab" for="fx_start">Start date<input id="fx_start" name="new_start_date" type="date"></label>
+        <label class="sub-lab" for="fx_end">End date <span class="opt">(if more than one day)</span><input id="fx_end" name="new_end_date" type="date"></label></div>${cur('date')}<p class="err" id="fx_start_e" role="alert"></p></div>
+      ${f('fx_time', 'Start time', `<input id="fx_time" name="start_time" maxlength="120" placeholder="e.g. Assembly 8:00 am, shooting 8:30 am">${cur('time')}`)}
+      ${f('fx_venue', 'Venue / address', `<input id="fx_venue" name="venue_address" maxlength="200" placeholder="Range name and street address">${cur('venue')}`)}
+      ${f('fx_rounds', 'Round(s) / distances', `<textarea id="fx_rounds" name="rounds_distances" rows="3" maxlength="1500" placeholder="e.g. Recurve Open: WA 1440 (90/70/50/30 m)"></textarea>${cur('rounds')}`)}
+      ${f('fx_divs', 'Divisions / bow classes', `<textarea id="fx_divs" name="divisions_bow_classes" rows="3" maxlength="1500" placeholder="e.g. Recurve, Compound, Barebow, Longbow; age divisions"></textarea>${cur('divs')}`)}
+      ${f('fx_close', 'Entry closing date', `<input id="fx_close" name="entry_closing_date" type="date">${cur('close')}`)}
+      ${f('fx_link', 'Entry link / contact', `<input id="fx_link" name="entry_link_or_contact" maxlength="300" placeholder="https://… or an email / phone number">${cur('link')}`)}
+      ${f('fx_file', 'New flyer', `<input id="fx_file" name="attachment" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">`, `PDF, JPG or PNG, up to ${MAX_MB} MB.`)}
+      <div class="fld" data-f="fx_cancel"><label class="chk tick"><input type="checkbox" id="fx_cancel" name="cancelled_or_postponed" value="Yes – cancelled or postponed"><span>This shoot is <b>cancelled or postponed</b></span></label></div>
+      ${f('fx_notes', 'Other notes', `<textarea id="fx_notes" name="other_notes" rows="4" maxlength="2000" placeholder="Anything else that's wrong or missing"></textarea>`)}
+      <p class="err" id="fx_any_e" role="alert"></p>
+    </fieldset>
+    <fieldset><legend>3. About you</legend>
+      ${f('fx_who', 'Your name', `<input id="fx_who" name="contact_name" required maxlength="80" autocomplete="name">`, '', true)}
+      <div class="grid2">${f('fx_club', 'Club', `<input id="fx_club" name="club" required maxlength="120" autocomplete="organization" value="${esc(x && x.host ? x.host : '')}">`, '', true)}
+      ${f('fx_role', 'Your role', `<input id="fx_role" name="role" required maxlength="80" placeholder="e.g. President, Secretary, Tournament director">`, '', true)}</div>
+      ${f('fx_email', 'Email', `<input id="fx_email" name="email" type="email" required maxlength="120" autocomplete="email" inputmode="email">`, 'So we can check with you if anything is unclear.', true)}
+    </fieldset>
+    <p class="note priv">🔒 Nothing on the site changes straight away: your correction is emailed to us (${esc(SITE.contact)}, NFS Strategic Holdings) via FormSubmit, we check it, then update the listing.</p>
+    <p class="err sum" id="fixErr" role="alert"></p>
+    <div class="sub-actions"><button class="btn gold" type="submit" id="fixBtn">Send correction</button>
+      <a class="btn alt" id="fixMail" href="mailto:${esc(SITE.contact)}">Email it instead</a></div>
+  </form></div>`;
+}
+function bindFix(){
+  const fm = $('#fixForm');
+  if (!fm) { const t = $('#subThanks'); t && t.focus(); return; }
+  const g = id => $('#' + id), val = id => (g(id).type === 'checkbox' ? (g(id).checked ? g(id).value : '') : (g(id).value || '').trim()), list = fixList();
+  const setErr = (id, msg) => { const e = g(id + '_e'), w = fm.querySelector(`[data-f="${id}"]`), inp = g(id);
+    if (e) e.textContent = msg || ''; w && w.classList.toggle('bad', !!msg);
+    if (inp && inp.matches('input,select,textarea')) inp.setAttribute('aria-invalid', msg ? 'true' : 'false'); };
+  const pick = () => { const x = list.find(e => fixLabel(e) === val('fx_ev')), now = fixNow(x);
+    g('fx_id').value = x ? x.id : ''; g('fx_name').value = x ? x.name : ''; g('fx_date').value = fixDates(x);
+    g('fx_page').value = x ? SITE_URL() + '#/shoot/' + encodeURIComponent(x.id) : '';
+    g('fx_picked').innerHTML = x ? `Fixing: <a href="#/shoot/${esc(encodeURIComponent(x.id))}">${esc(x.name)}</a> · ${esc(range(x))}` : '';
+    fm.querySelectorAll('[data-cur]').forEach(s => s.textContent = now[s.dataset.cur] ? 'Now listed: ' + now[s.dataset.cur] : '');
+    if (x && x.host && !val('fx_club')) g('fx_club').value = x.host; return x; };
+  g('fx_ev').addEventListener('input', pick); g('fx_ev').addEventListener('change', pick);
+  const changed = () => FIX_FIELDS.filter(([id]) => val(id)).map(([id, , lab]) => lab || 'New date(s)').filter((v, i, a) => a.indexOf(v) === i).concat(g('fx_file').files.length ? ['New flyer'] : []);
+  function check(){
+    const errs = [], add = (id, m) => { setErr(id, m); if (m) errs.push(id); };
+    add('fx_ev', g('fx_id').value ? '' : val('fx_ev') ? 'Pick the shoot from the list.' : 'Choose the shoot.');
+    const st = val('fx_start'), en = val('fx_end');
+    add('fx_start', en && st && en < st ? 'The end date is before the start date.' : '');
+    const file = g('fx_file').files[0];
+    add('fx_file', !file ? '' : !/\.(pdf|jpe?g|png)$/i.test(file.name) ? 'Flyers must be a PDF, JPG or PNG.' : file.size > MAX_MB * 1048576 ? `That file is ${(file.size / 1048576).toFixed(1)} MB. The limit is ${MAX_MB} MB.` : '');
+    const any = changed().length; g('fx_any_e').textContent = any ? '' : 'Fill in at least one box above with what needs changing.'; if (!any) errs.push('fx_time');
+    add('fx_who', val('fx_who') ? '' : 'Enter your name.');
+    add('fx_club', val('fx_club') ? '' : 'Enter your club.');
+    add('fx_role', val('fx_role') ? '' : 'Enter your role, e.g. President.');
+    const em = val('fx_email'); add('fx_email', !em ? 'Enter your email.' : /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em) ? '' : 'That email doesn’t look right.');
+    return errs;
+  }
+  const subject = () => `Correction: ${val('fx_name') || 'shoot'} ${val('fx_date')}`.trim();
+  fm.addEventListener('change', () => { if (fm.dataset.tried) check(); });
+  g('fixMail').onclick = e => { const body = [['Shoot', val('fx_name')], ['Date', val('fx_date')], ['Event ID', val('fx_id')], ['Listing', val('fx_page')]]
+      .concat(FIX_FIELDS.map(([id, , lab]) => [lab || 'New end date', val(id)]).filter(r => r[1]))
+      .concat([['Name', val('fx_who')], ['Club', val('fx_club')], ['Role', val('fx_role')], ['Email', val('fx_email')]]).map(([k, v]) => `${k}: ${v}`).join('\n') + '\n\n(Attach a new flyer if you have one.)\n';
+    e.currentTarget.href = `mailto:${SITE.contact}?subject=${encodeURIComponent(subject())}&body=${encodeURIComponent(body)}`; };
+  fm.onsubmit = e => {
+    fm.dataset.tried = 1; pick();
+    const errs = check();
+    if (errs.length) { e.preventDefault(); $('#fixErr').textContent = `Please fix ${errs.length === 1 ? 'the highlighted field' : `the ${errs.length} highlighted fields`}.`;
+      const first = g(errs[0]); first && first.focus(); return; }
+    $('#fixErr').textContent = '';
+    if (!SITE.formEndpoint || !navigator.onLine) { e.preventDefault(); g('fixMail').click(); location.href = g('fixMail').href; toast('Opening your email app…'); return; }
+    g('fx_what').value = changed().join(', ');
+    fm.querySelector('[name=_next]').value = location.href.split('#')[0].split('?')[0] + '?fixed=1#/fix';
+    fm.querySelector('[name=_subject]').value = subject();
+    if (!g('fx_file').files.length) g('fx_file').disabled = true;
+    const b = g('fixBtn'); b.disabled = true; b.textContent = 'Sending…';
+  };
+  window.addEventListener('pageshow', () => { const b = $('#fixBtn'); if (b) { b.disabled = false; b.textContent = 'Send correction'; g('fx_file').disabled = false; } }, {once: true});
 }
 
 /* ---------- start ---------- */

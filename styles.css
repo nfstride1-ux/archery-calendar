@@ -499,3 +499,28 @@ details.panel summary{cursor:pointer;padding:4px 0}
 @media (max-width:480px){.ev-img.ev-host{flex-basis:96px;padding:10px 6px}.hm{width:70px;height:70px}.hm-ini b{font-size:26px}.hm-ini[data-n="3"] b{font-size:22px}.hm-ini[data-n="4"] b{font-size:18px}}
 .otp-in{font-size:24px;letter-spacing:.3em;text-align:center;font-variant-numeric:tabular-nums}
 #otpf label{font-weight:700}
+/* International menu (home) + separate country pages */
+.intl-menu{margin:18px 0}
+.intl-form{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.intl-form label,.intl-top label{font-weight:800}
+.intl-form select,.intl-top select{min-height:44px;font-size:16px;border:2px solid var(--night);border-radius:10px;padding:6px 10px;background:#fff;max-width:100%}
+.intl-top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0 4px}
+.intl-top .note{margin-left:auto}
+.iev{cursor:default}
+.iev .iacts{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:10px 0 0}
+.tag.ctry{background:#eef2ff;color:#1e293b}
+.chk{display:inline-flex;align-items:center;gap:6px;font-weight:600;min-height:44px}
+.chk input{width:20px;height:20px}
+/* Home 'Your clubs': chip shows that club's shoots; ⓘ opens the club info popover */
+.chip-pair{display:inline-flex;align-items:stretch}
+.chip-pair .chip{margin:0;border-radius:999px 0 0 999px}
+.chip-pair .chip-info{border-radius:0 999px 999px 0;border-left:0;min-width:44px;padding:0 12px;font-size:17px}
+.club-filter{margin:8px 0}
+/* Submit: New shoot / Fix an existing shoot switch */
+.sub-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 10px}
+.sub-tab{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border:2px solid var(--night);border-radius:999px;background:#fff;color:var(--night);font-weight:700;text-decoration:none}
+.sub-tab[aria-current="page"]{background:var(--night);color:#fff}
+.fix-link{margin-top:6px}
+.sub-form .sub-lab{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:.95rem}
+.sub-form .cur{display:block;font-size:.85rem;color:#475569;margin-top:4px}
+.sub-form .cur:empty{display:none}
