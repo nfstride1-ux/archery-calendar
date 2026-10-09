@@ -45,7 +45,7 @@ Coaching, youth and come & try events keep their own types. Search: "club" and "
 ## Optional user accounts (Supabase), off until configured
 - Built in: `app/sync.js` (sync engine), the Account page (`#/account`), `supabase/schema.sql` (tables + Row Level Security + sync functions), `docs/SUPABASE_SETUP.md` (setup steps).
 - Switched on only when `app/config.js` has `SUPABASE_URL` and the public `SUPABASE_ANON_KEY` (publishable/anon key). Empty = no sign-in UI and no extra code loaded.
-- Sign-in: magic link by email (PKCE) and optionally Google. Data region: Sydney (ap-southeast-2). Never commit the secret/service_role key; the build refuses one.
+- Sign-in: email with a 6-digit code (typed into the site, `verifyOtp` type `email`; the way to sign in inside the installed Home Screen app, whose storage is separate from the browser) plus the magic link (PKCE), and optionally Google. The code only appears in the email if the Supabase Magic Link / Confirm signup templates contain `{{ .Token }}` (docs/SUPABASE_SETUP.md, step D). In the installed app the sign-in page says to use the code. QA: `tools/qa_otp.py <url>`. Data region: Sydney (ap-southeast-2). Never commit the secret/service_role key; the build refuses one.
 - Tests: `node tests/test_sync.js`, `bash tests/test_schema.sh` (local PostgreSQL), `tools/qa_accounts.py <url>` (browser, mock Supabase).
 
 ## Date clashes

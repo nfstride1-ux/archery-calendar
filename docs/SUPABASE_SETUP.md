@@ -69,12 +69,14 @@ What it creates:
 **Authentication → Sign In / Providers → Email**: Email provider **on**; "Confirm email" **on** (the magic link is the confirmation).
 **Authentication → Settings / Sessions**: leave the defaults. The magic-link expiry is 1 hour.
 
-### D. Email templates
-**Authentication → Emails → Templates** (editing needs custom SMTP on new free projects, see E). Suggested text:
-- **Magic Link**: Subject `Your Archery Calendar sign-in link`.
-  Body: `<h2>Sign in to Archery Calendar</h2><p><a href="{{ .ConfirmationURL }}">Sign in</a></p><p>The link works once and expires in an hour. Open it in the same browser you asked from. If you didn't ask for this, ignore this email.</p><p>Archery Calendar · nfshold@gmail.com</p>`
-- **Confirm signup**: Subject `Welcome to Archery Calendar – confirm your email`, same body with "Confirm and sign in".
-Keep `{{ .ConfirmationURL }}`. The site uses the secure PKCE flow, and this link brings people back to the site with a one-time code.
+### D. Email templates (needed for the 6-digit code)
+**Authentication → Emails → Templates**. Free projects created after 3 June 2026 can only edit templates once custom SMTP is set up (see E).
+The site signs in with a **6-digit code** typed into the site (works in the installed Home Screen app) or the **link** (opens in the browser).
+Supabase only puts the code in the email if the template contains `{{ .Token }}`.
+- **Magic Link**: Subject `Your Archery Calendar sign-in code`.
+  Body: `<h2>Sign in to Archery Calendar</h2><p>Your sign-in code:</p><h1>{{ .Token }}</h1><p>Type it into Archery Calendar (also works in the app on your Home Screen).</p><p>Or <a href="{{ .ConfirmationURL }}">tap here to sign in</a> in this browser.</p><p>The code and link work once and expire in an hour. If you didn't ask for this, ignore this email.</p><p>Archery Calendar · nfshold@gmail.com</p>`
+- **Confirm signup** (first sign-in of a new email): Subject `Welcome to Archery Calendar – your sign-in code`, same body.
+Keep `{{ .ConfirmationURL }}` too. The site uses the secure PKCE flow for the link; the code is checked with `verifyOtp({email, token, type: 'email'})`.
 
 ### E. Email sender (IMPORTANT before real users sign up)
 Supabase's built-in email sender is **for testing only**. It only sends to members of the Supabase organisation's team (e.g. nfshold@gmail.com),

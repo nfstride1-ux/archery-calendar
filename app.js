@@ -1091,6 +1091,13 @@ AUTH.configured = AUTH.on; AUTH.auto = window.SUPABASE_ENABLED === 'auto'; if (w
 if (SB_URL && !AUTH.on) console.warn('Archery Calendar: Supabase config ignored – needs SUPABASE_URL (https://…supabase.co) and the PUBLIC anon/publishable key (never the service_role/secret key).');
 const loadScript = src => new Promise((ok, no) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => no(new Error('load ' + src)); document.head.appendChild(s); });
 const redirectUrl = () => location.origin + location.pathname;
+// Installed app (Home Screen): its storage is separate from the browser's, so an emailed link signs in the BROWSER, not the app.
+// The emailed one-time code (verifyOtp) signs in wherever it's typed. The 'code sent to' email is kept for an hour so it survives
+// the app being reloaded while you switch to your mail app.
+const isStandalone = () => { try { return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch { return false; } };
+const OTP_KEY = 'archcal.otpSent';
+function setSent(em){ AUTH.sent = em || ''; try { em ? localStorage.setItem(OTP_KEY, JSON.stringify({em, t: Date.now()})) : localStorage.removeItem(OTP_KEY); } catch {} }
+function loadSent(){ try { const o = JSON.parse(localStorage.getItem(OTP_KEY) || 'null'); if (o && o.em && Date.now() - o.t < 60 * 60 * 1000) AUTH.sent = o.em; else localStorage.removeItem(OTP_KEY); } catch {} }
 function softRender(){ const a = document.activeElement; if (a && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && a.closest('#view')) return; const y = scrollY; render(); scrollTo(0, y); }
 // pages whose content depends on sign-in; other pages aren't re-drawn when sign-in finishes loading (no jumps mid-click)
 function authRender(){ if (['account', 'privacy', 'settings'].includes(document.body.dataset.page)) softRender(); }
@@ -1123,6 +1130,7 @@ async function initAuth(){
   updateNav(); if (!AUTH.on) { authRender(); return; }
   try { if (!window.supabase) await loadScript('vendor/supabase-js-2.117.3.js'); }
   catch { AUTH.msg = 'Sign-in couldn’t load. Are you offline? Your shoots are still saved on this device.'; AUTH.ready = true; authRender(); return; }
+  loadSent();
   const qp = new URLSearchParams(location.search);
   if (qp.get('error_description') || qp.get('error')) AUTH.msg = 'Sign-in didn’t work: ' + (qp.get('error_description') || qp.get('error')) + '. Links expire after an hour and only work once – ask for a new one.';
   AUTH.client = window.supabase.createClient(SB_URL, SB_KEY, {auth: {flowType: 'pkce', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: 'archcal.auth'}});
@@ -1141,7 +1149,7 @@ async function initAuth(){
 async function onUser(u){
   const prev = AUTH.user && AUTH.user.id; AUTH.user = u;
   if (!u) { AUTH.sync.setUser(null); updateNav(); authRender(); return; }
-  AUTH.sent = '';
+  setSent('');
   if (prev === u.id && AUTH.sync.linked()) return;
   AUTH.sync.setUser(u);
   if (!AUTH.sync.linked()) {
@@ -1160,10 +1168,14 @@ function vAccount(){
   if (!AUTH.client) return `${head}<div class="wrap narrow">${msg}</div>`;
   if (!AUTH.user) return `${head}<div class="wrap narrow">${msg}
     <section class="panel"><h2 class="sec">Sign in or create an account</h2>
-    ${AUTH.sent ? `<div class="okbox" role="status">✉ <b>Check your email.</b> We sent a sign-in link to <b>${esc(AUTH.sent)}</b>. Open it <b>in this browser on this device</b>. It works once and expires in an hour. No email? Check junk, or <button type="button" class="linkbtn" id="again">send it again</button>.</div>`
-      : `<form id="signin" novalidate><label for="em">Email</label><input id="em" type="email" autocomplete="email" required placeholder="you@example.com">
-      <button class="btn gold block" type="submit">✉ Email me a sign-in link</button></form>
-      <p class="note">No password. New here? The same link creates your account.</p>`}
+    ${AUTH.sent ? `<div class="okbox" role="status">✉ <b>Check your email.</b> We sent a sign-in email to <b>${esc(AUTH.sent)}</b>.${isStandalone() ? ' <b>Use the code from the email to sign in here</b> – the link in the email opens in your browser, not in this app.' : ' Type the code from it below, or tap the link in it <b>in this browser on this device</b>.'} It works once and expires in an hour.</div>
+      <form id="otpf" novalidate><label for="otp">Enter the 6-digit code from the email</label>
+      <input id="otp" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="10" required placeholder="••••••" class="otp-in">
+      <button class="btn gold block" type="submit">✓ Sign in with code</button></form>
+      <p class="note">No email? Check junk, or <button type="button" class="linkbtn" id="again">send it again</button> (or use a different email).</p>`
+      : `${isStandalone() ? '<p class="okbox hint-app" role="note">📱 <b>Use the code from the email to sign in here.</b> The link in the email opens in your browser, not in this app.</p>' : ''}<form id="signin" novalidate><label for="em">Email</label><input id="em" type="email" autocomplete="email" required placeholder="you@example.com">
+      <button class="btn gold block" type="submit">✉ Email me a sign-in code</button></form>
+      <p class="note">No password. We email you a code (and a link). New here? The same email creates your account.</p>`}
     ${window.SUPABASE_GOOGLE ? `<div class="or"><span>or</span></div><button class="btn alt block" id="google" type="button"><b>G</b>&nbsp; Continue with Google</button>` : ''}
     </section>
     <section class="panel"><h2 class="sec">What an account does</h2><ul class="ticks">
@@ -1209,9 +1221,16 @@ function bindAccount(){
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { AUTH.msg = 'Please enter a valid email address.'; return softRenderForce(); }
     busy(b, 'Sending…'); AUTH.msg = '';
     const {error} = await AUTH.client.auth.signInWithOtp({email: em, options: {emailRedirectTo: redirectUrl(), shouldCreateUser: true}});
-    if (error) AUTH.msg = /rate|seconds/i.test(error.message) ? 'Too many sign-in emails – please wait a minute and try again.' : error.message; else AUTH.sent = em;
-    softRenderForce(); if (AUTH.sent) { toast('✉ Sign-in link sent – check your email'); const ok = $('.okbox'); if (ok) ok.scrollIntoView({block: 'center'}); } };
-  const ag = $('#again'); if (ag) ag.onclick = () => { AUTH.sent = ''; softRenderForce(); };
+    if (error) AUTH.msg = /rate|seconds/i.test(error.message) ? 'Too many sign-in emails – please wait a minute and try again.' : error.message; else setSent(em);
+    softRenderForce(); if (AUTH.sent) { toast('✉ Sign-in email sent – check your inbox'); const o = $('#otp'); if (o) { o.scrollIntoView({block: 'center'}); o.focus({preventScroll: true}); } } };
+  const of = $('#otpf');
+  if (of) of.onsubmit = async e => { e.preventDefault(); const tok = $('#otp').value.replace(/\D/g, ''), b = of.querySelector('button');
+    if (tok.length < 6) { AUTH.msg = 'Enter the 6-digit code from the email.'; return softRenderForce(); }
+    busy(b, 'Signing in…'); AUTH.msg = '';
+    const {error} = await AUTH.client.auth.verifyOtp({email: AUTH.sent, token: tok, type: 'email'});
+    if (error) { AUTH.msg = /expired|invalid/i.test(error.message) ? 'That code didn’t work – it may have expired or been used already. Check the newest email, or send a new one.' : /rate|seconds/i.test(error.message) ? 'Too many tries – please wait a minute and try again.' : error.message; return softRenderForce(); }
+    await AUTH.chain; setSent(''); toast('✓ Signed in'); location.hash = '#/account'; softRenderForce(); };
+  const ag = $('#again'); if (ag) ag.onclick = () => { setSent(''); AUTH.msg = ''; softRenderForce(); };
   const g = $('#google'); if (g) g.onclick = async () => { const {error} = await AUTH.client.auth.signInWithOAuth({provider: 'google', options: {redirectTo: redirectUrl()}}); if (error) { AUTH.msg = error.message; softRenderForce(); } };
   const my = $('#mergeYes'), mn = $('#mergeNo');
   if (my) my.onclick = async () => { busy(my, 'Adding…'); await AUTH.sync.link(AUTH.user, 'merge'); AUTH.ask = false; toast('✓ Added to your account'); softRenderForce(); };

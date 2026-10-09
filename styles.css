@@ -497,3 +497,5 @@ details.panel summary{cursor:pointer;padding:4px 0}
 .host-fig b{color:#fff}
 @media (max-width:720px){.host-row{flex-direction:column;align-items:flex-start;gap:14px}.host-fig{flex-direction:row;max-width:none;text-align:left;gap:12px}.hm.big{width:72px;height:72px;border-radius:12px;padding:5px}.hm-ini.big{border-radius:50%;border-width:3px}.hm-ini.big b{font-size:26px}.hm-ini.big[data-n="3"] b{font-size:22px}.hm-ini.big[data-n="4"] b{font-size:18px}}
 @media (max-width:480px){.ev-img.ev-host{flex-basis:96px;padding:10px 6px}.hm{width:70px;height:70px}.hm-ini b{font-size:26px}.hm-ini[data-n="3"] b{font-size:22px}.hm-ini[data-n="4"] b{font-size:18px}}
+.otp-in{font-size:24px;letter-spacing:.3em;text-align:center;font-variant-numeric:tabular-nums}
+#otpf label{font-weight:700}
