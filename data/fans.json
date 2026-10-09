@@ -1,5 +1,5 @@
 {
- "note": "Fans page photo wall. Add a photo only after review: consent ticked, under-18s only with parent/guardian consent. Newest first.",
+ "note": "Fans page photo wall. Add a photo only after review: consent ticked, under-18s only with parent/guardian consent. Newest first. 'credit' is shown under the photo (the sender's name); leave it empty for supplied photos, which are listed on the Credits page instead.",
  "photos": [
   {
    "id": "silver-u21-men-2026-wafc",
@@ -9,11 +9,11 @@
    "h": 1350,
    "caption": "Silver for Australia: U21 men's team (Chris Jackson, Xavier Clark, Josh Turner), 2026 World Archery Field Championships",
    "alt": "Archery Australia graphic: Silver Medal, 2026 World Archery Field Championships, Chris Jackson, Xavier Clark, Josh Turner, U21 Mens Teams, with the podium photo",
-   "credit": "Archery Australia",
+   "credit": "",
    "event": "2026 World Archery Field Championships, Yankton (USA)",
    "date": "2026",
-   "permission": "requested",
-   "added": "2026-10-09"
+   "added": "2026-10-09",
+   "credit_on_credits_page": "Archery Australia and club social media (supplied)"
   }
  ]
 }

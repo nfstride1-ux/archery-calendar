@@ -6,13 +6,13 @@ Photos were replaced on 9 Oct 2026 with the newest suitable free-licensed action
 | File | Used for | Taken | Photographer | Source | Licence |
 |---|---|---|---|---|---|
 | hero-paralympics-2024-aus.jpg | Home hero, general pages | 2024-09-02 | Daieuxetdailleurs | [Wikimedia Commons – Para Archery at the 2024 Summer Paralympics - Mixed Team Compound Open Elimination France vs Australia - 10](https://commons.wikimedia.org/wiki/File:Para_Archery_at_the_2024_Summer_Paralympics_-_Mixed_Team_Compound_Open_Elimination_France_vs_Australia_-_10.jpg) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0) |
-| field-aus-team-yankton-2026.jpg | Field shoots | 2026 | Archery Australia / club social media | Supplied by Nathe Stride – Australian team, 2026 World Archery Field Championships, Yankton SD (USA) | Used with permission requested (see research/photo_permissions.md) |
+| field-aus-team-yankton-2026.jpg | Field shoots | 2026 | Archery Australia and club social media (supplied) | Australian team, 2026 World Archery Field Championships, Yankton SD (USA) | – |
 | 3d-longbow-2026.jpg | 3D shoots | 2026-03-01 | TizVan | [Wikimedia Commons – Cecilia Santacroce arciera italiana longbow World Archery 3D Championships](https://commons.wikimedia.org/wiki/File:Cecilia_Santacroce_arciera_italiana_longbow_World_Archery_3D_Championships.jpeg) | [CC0](https://creativecommons.org/publicdomain/zero/1.0/) |
 | target-dresden-2025.jpg | Target shoots | 2025-08-02 | Sandro Halank | [Wikimedia Commons – 2025-08-02 Die Finals 2025 in Dresden – Bogensport, Compound, Frauen by Sandro Halank–007](https://commons.wikimedia.org/wiki/File:2025-08-02_Die_Finals_2025_in_Dresden_%E2%80%93_Bogensport,_Compound,_Frauen_by_Sandro_Halank%E2%80%93007.jpg) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
-| indoor-hall.jpg | Indoor shoots | 2026 | Club social media | Supplied by Nathe Stride – indoor range in a sports hall | Used with permission requested (see research/photo_permissions.md) |
+| indoor-hall.jpg | Indoor shoots | 2026 | Archery Australia and club social media (supplied) | Indoor range in a sports hall | – |
 | nathe-target-face.jpg | Advertise page | 2016 | Nathe Stride | Own photo (GoPro frame, 2016) | © Nathe Stride – used with permission |
 
-Year notes: Field (Yankton 2026), Indoor (2026) and 3D (1 Mar 2026) are 2026 photos. Field and Indoor were supplied by Nathe and are used with permission requested. The hero is Australia's para compound team at Paris 2024 and the target photo is from Die Finals 2025 (Dresden).
+Year notes: Field (Yankton 2026), Indoor (2026) and 3D (1 Mar 2026) are 2026 photos. Field and Indoor were supplied by Nathe (Archery Australia and club social media); no on-photo credit, listed here and on the Credits page. The hero is Australia's para compound team at Paris 2024 and the target photo is from Die Finals 2025 (Dresden).
 
 Licence notes:
 - CC BY and CC BY-SA both allow commercial use, including on an ad-supported site, as long as the work is attributed. The Credits page (linked from every footer) covers that. CC0 needs no attribution, but it is credited anyway.
