@@ -137,5 +137,21 @@
   "layout": "split",
   "alt": "A group of junior archers in club and state shirts on an archery field",
   "used_for": "Youth training (youth development) category – AA/AWA youth; never on ABA pages"
+ },
+ "come_try": {
+  "file": "img/come-and-try-poster.jpg",
+  "sm": "img/come-and-try-poster-sm.jpg",
+  "webp": "img/come-and-try-poster.webp",
+  "title": "'Come and Try Archery' poster (Archery Calendar design, using Nathe's target-face photo)",
+  "alt": "Come and try archery poster: beginners welcome, coached sessions at clubs near you, over a photo of arrows in a target face",
+  "by": "Archery Calendar (photo: Nathe Stride)",
+  "source": "Nathe's own photos",
+  "url": "",
+  "license": "© Nathe Stride – used with permission",
+  "license_url": "",
+  "year": 2026,
+  "layout": "split",
+  "pos": "center",
+  "used_for": "Come & try category (banner + home tile)"
  }
 }

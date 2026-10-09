@@ -149,9 +149,9 @@ let LOGO = {};
 const ORG_HOST = {aba: 'Australian Bowhunters Association', 'archery-wa': 'Archery WA', 'archery-australia': 'Archery Australia', 'wa-aus': 'Archery Australia', 'world-archery': 'World Archery'};
 const hslug = n => (n || '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 function hostOf(x){
-  const c = CLUB[x.club_id]; if (c) return {id: c.id, name: c.name};
+  const c = CLUB[x.club_id]; if (c) return {id: c.id, name: c.name, club: true};
   const h = (x.host || '').replace(/\s*\(.*\)/, '').trim(); if (h) return {id: hslug(h), name: h};
-  return {id: x.org_id, name: ORG_HOST[x.org_id] || x.org || 'Archery'};
+  return {id: x.org_id === 'wa-aus' ? 'archery-australia' : x.org_id, name: ORG_HOST[x.org_id] || x.org || 'Archery', org: true};
 }
 function initials(n){
   const w = (n || '').replace(/&/g, ' ').split(/[\s\-–]+/).filter(s => s && !/^(of|the|and|inc\.?|incorporated)$/i.test(s));
@@ -161,7 +161,7 @@ function initials(n){
 }
 function hostMark(x, big){
   const h = hostOf(x), L = LOGO[h.id];
-  if (L) return `<span class="hm hm-logo${big ? ' big' : ''}"><img src="${esc(big ? L.file : (L.sm || L.file))}" alt="${esc(h.name)} logo" loading="lazy" decoding="async"></span>`;
+  if (L) return `<span class="hm hm-logo${big ? ' big' : ''}"${L.bg ? ` style="background:${esc(L.bg)}"` : ''}><img src="${esc(big ? L.file : (L.sm || L.file))}" alt="${esc(h.name)} logo" loading="lazy" decoding="async"></span>`;
   if (isAba(x)) return `<span class="hm hm-logo hm-aba${big ? ' big' : ''}">${abaLogo(big ? 128 : 64, 'aba-pic')}</span>`;
   const i = initials(h.name);
   return `<span class="hm hm-ini${big ? ' big' : ''}" data-n="${i.length}" role="img" aria-label="${esc(h.name)}"><b aria-hidden="true">${esc(i)}</b></span>`;
@@ -275,7 +275,7 @@ function heroOpen(cls, p){
 }
 const heroClose = p => p.layout === 'split' ? `</div><figure class="split-img${p.shape === 'portrait' ? ' tall' : ''}">${p.webp ? `<picture><source type="image/webp" srcset="${esc(p.webp)}">` : ''}<img src="${esc(p.file)}" alt="${esc(p.alt || p.title || '')}" style="object-position:${esc(p.shape === 'portrait' ? 'center' : (p.pos || 'center'))}" width="${p.shape === 'portrait' ? 960 : 1600}" height="${p.shape === 'portrait' ? 1200 : 900}">${p.webp ? '</picture>' : ''}</figure></div></section>` : `</div></section>`;
 function pageHead(title, sub, t = 'mixed'){
-  const p = t === 'youth' ? Object.assign({keep: true}, PH.youth || photo('mixed')) : photo(t);
+  const p = (t === 'youth' || t === 'come_try') ? Object.assign({keep: true}, PH[t] || photo('mixed')) : photo(t);
   return `${heroOpen('phead', p)}<h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}${heroClose(p)}`;
 }
 function clubCta(compact){
@@ -388,7 +388,7 @@ function vHome(){
     ${adSlot('banner')}
     <h2 class="sec-h">Pick your discipline</h2>
     <div class="types">${['field','3d','target','indoor'].map(t => `<a class="type th-${t}" href="#/browse" data-th="${t}" style="--img:url('${esc(photo(t === 'field' ? 'aba_field' : t).sm)}');--pos:${esc(photo(t === 'field' ? 'aba_field' : t).pos || 'center')}"><span class="type-name">${THEMES[t][0]} ${THEMES[t][1]}</span><span class="type-sub">${{field:'Bush courses, marked & unmarked', '3d':'Foam animals in the bush', target:'Outdoor ranges, 18–90 m', indoor:'18 m halls, 3-spot & Vegas'}[t]}</span></a>`).join('')}</div>
-    <div class="cats-row" aria-label="Club shoots, coaching, youth and come & try">${['club', 'coaching', 'youth', 'come_try'].map(c => `<a class="cat-link cat-${c}" href="#/browse" data-cat="${c}">${c === 'youth' && PH.youth ? `<span class="cat-img" aria-hidden="true" style="background-image:url('${esc(PH.youth.sm)}');background-position:${esc(PH.youth.pos)}"></span>` : ''}<span class="ci" aria-hidden="true">${CATS[c][0]}</span><b>${CATS[c][2]}</b><span>${EV.filter(x => catOf(x) === c && visible(x) && !isPast(x)).length} coming up</span></a>`).join('')}</div>
+    <div class="cats-row" aria-label="Club shoots, coaching, youth and come & try">${['club', 'coaching', 'youth', 'come_try'].map(c => `<a class="cat-link cat-${c}" href="#/browse" data-cat="${c}">${(c === 'youth' || c === 'come_try') && PH[c] ? `<span class="cat-img" aria-hidden="true" style="background-image:url('${esc(PH[c].sm)}');background-position:${esc(PH[c].pos || 'center')}"></span>` : ''}<span class="ci" aria-hidden="true">${CATS[c][0]}</span><b>${CATS[c][2]}</b><span>${EV.filter(x => catOf(x) === c && visible(x) && !isPast(x)).length} coming up</span></a>`).join('')}</div>
     ${homeClubs()}
     <div class="two">
       <section><h2 class="sec-h">Reminders</h2>
@@ -500,7 +500,7 @@ function vBrowse(){
   const sk = x => x.book_anytime ? '9999-99' : x.start_date || '9999';
   list.sort((a, b) => sk(a) < sk(b) ? -1 : 1);
   const total = list.length; list = list.slice(0, BF.limit);
-  let html = `${pageHead('Find a shoot', 'Field, 3D, Target and Indoor shoots from the calendars you follow.', BF.cat === 'youth' && BF.scope !== 'g:aba' && PH.youth ? 'youth' : BF.scope === 'g:aba' ? abaKey(BF.disc === '3D' ? '3d' : 'field') : BF.disc === 'Field' && !['g:aa', 'g:awa'].includes(BF.scope) ? 'aba_field' : {Field:'field','3D':'3d',Target:'target',Indoor:'indoor'}[BF.disc] || 'mixed')}<div class="wrap">${clubNotice()}${typeSel(BF.cat, tc)}${BF.cat === 'club' ? clubDrop(BF, x => !isPast(x) || BF.past) : ''}</div><div class="wrap browse"><div class="filters"><input type="search" id="q" placeholder="Search shoot, club, town…" value="${esc(BF.q)}" aria-label="Search shoots">
+  let html = `${pageHead('Find a shoot', 'Field, 3D, Target and Indoor shoots from the calendars you follow.', BF.cat === 'youth' && BF.scope !== 'g:aba' && PH.youth ? 'youth' : BF.cat === 'come_try' && PH.come_try ? 'come_try' : BF.scope === 'g:aba' ? abaKey(BF.disc === '3D' ? '3d' : 'field') : BF.disc === 'Field' && !['g:aa', 'g:awa'].includes(BF.scope) ? 'aba_field' : {Field:'field','3D':'3d',Target:'target',Indoor:'indoor'}[BF.disc] || 'mixed')}<div class="wrap">${clubNotice()}${typeSel(BF.cat, tc)}${BF.cat === 'club' ? clubDrop(BF, x => !isPast(x) || BF.past) : ''}</div><div class="wrap browse"><div class="filters"><input type="search" id="q" placeholder="Search shoot, club, town…" value="${esc(BF.q)}" aria-label="Search shoots">
   <div class="chips" role="group" aria-label="Show">${scopes.map(([k, l]) => `<button class="chip" data-scope="${esc(k)}" aria-pressed="${BF.scope === k && !BF.club}">${k === 'g:aba' ? abaLogo(32, 'chip-logo') : ''}${esc(l)}</button>`).join('')}</div>
   ${AUS() ? `<label for="st" class="sr">State</label><select id="st" aria-label="State"><option value="">All states &amp; territories</option>${STATES.map(([c, n]) => `<option value="${c}" ${BF.state === c ? 'selected' : ''}>${n}</option>`).join('')}</select>` : ''}
   <label for="ost" class="sr">Organisation status</label><select id="ost" aria-label="Organisation status"><option value="">All – any status</option>${Object.entries(OST).map(([k, v]) => `<option value="${k}" ${BF.ost === k ? 'selected' : ''}>${v[0]} ${v[2]}</option>`).join('')}</select>
@@ -564,7 +564,7 @@ function vShoot(id){
     <a class="crumb" href="#/browse">← All shoots</a>
     <div class="tags">${catTag(x)}${isShoot(x) ? tagHtml(t) : ''}${x.level ? `<span class="tag lvl">${esc(x.level)}</span>` : ''}</div>
     <h1>${esc(x.name)}</h1><p class="sub">${esc(range(x))}${x.location ? ' · ' + esc(x.location) : ''}</p>${badges(x)}
-  </div><figure class="host-fig">${hostMark(x, true)}<figcaption>Hosted by<br><b>${esc(hostOf(x).name)}</b></figcaption></figure></div></section>
+  </div><figure class="host-fig">${hostMark(x, true)}<figcaption>${hostOf(x).org ? 'Listed by' : 'Hosted by'}<br><b>${esc(hostOf(x).name)}</b></figcaption></figure></div></section>
   <div class="wrap detail">
    <div class="main">
     ${x.date_note ? `<div class="warn date-note" id="dateNote">⚠ <b>Check the dates:</b> ${esc(x.date_note)}</div>` : ''}
@@ -810,7 +810,7 @@ function vCals(arg){
   const tc = typeCounts(list); if (CF.cat) list = list.filter(x => catOf(x) === CF.cat);
   if (CF.cat === 'club' && CF.mc) list = list.filter(x => followed().includes(x.club_id));
   const nPast = list.filter(isPast).length;
-  let html = `${pageHead('Calendars', 'Each organisation’s full calendar, in one place. Tap a shoot for details, entry and reminders.', CF.org === 'aba' ? 'aba_field' : CF.cat === 'youth' && PH.youth ? 'youth' : 'mixed')}<div class="wrap cals">
+  let html = `${pageHead('Calendars', 'Each organisation’s full calendar, in one place. Tap a shoot for details, entry and reminders.', CF.org === 'aba' ? 'aba_field' : CF.cat === 'youth' && PH.youth ? 'youth' : CF.cat === 'come_try' && PH.come_try ? 'come_try' : 'mixed')}<div class="wrap cals">
   <div class="tabs" role="tablist" aria-label="Organisation">${Object.entries(CALS).map(([k, o]) => `<a role="tab" class="tab" href="#/calendars/${k}" aria-selected="${k === CF.org}">${k === 'aba' ? abaLogo(32, 'chip-logo') : ''}${esc(o.name)}</a>`).join('')}</div>
   <div class="panel cal-head"><h2 class="sec${CF.org === 'aba' ? ' with-logo' : ''}">${CF.org === 'aba' ? abaLogo(64, 'head-logo') : ''}<span>${esc(c.full)} – ${years.join(' & ') || '2026'}</span></h2>
   ${typeSel(CF.cat, tc)}${CF.cat === 'club' ? clubDrop(CF, x => x.org_group === CF.org && (CF.past || !isPast(x))) : ''}

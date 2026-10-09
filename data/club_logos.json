@@ -1,1 +1,276 @@
-{"note":"Host club logos. Each entry records where the logo was downloaded from. Clubs not listed show an initials badge (ABA shoots: the ABA logo).","logos":{}}
+{
+ "note": "Host club logos, downloaded 9 Oct 2026 from each club's own website (or, for some WA clubs, the logo the club supplied to Archery WA's club directory). Clubs not listed show an initials badge; ABA shoots without a club logo show the ABA logo. Logos are never drawn or invented. Clubs can send a better logo to nfshold@gmail.com.",
+ "logos": {
+  "tuggeranong-archery-club": {
+   "name": "Tuggeranong Archery Club",
+   "file": "img/clubs/tuggeranong-archery-club.webp",
+   "sm": "img/clubs/tuggeranong-archery-club-sm.webp",
+   "source_url": "https://i0.wp.com/home.tuggeranongarchery.com/wp-content/uploads/2021/10/TAC_Logo_White_256-256.jpg?fit=256%2C256&ssl=1",
+   "source_page": "https://home.tuggeranongarchery.com/",
+   "source_type": "club's own website",
+   "kind": "club",
+   "retrieved": "2026-10-09"
+  },
+  "yokine-archery-club": {
+   "name": "Yokine Archery Club",
+   "file": "img/clubs/yokine-archery-club.webp",
+   "sm": "img/clubs/yokine-archery-club-sm.webp",
+   "source_url": "https://cdn.sanity.io/images/7k4w9ofy/production/e3ab3c1ab3f7e7f136520c5b3b7170446e168611-178x178.svg",
+   "source_page": "https://www.archerywa.com.au/clubs (Archery WA club directory)",
+   "source_type": "Archery WA club directory (club-supplied logo)",
+   "kind": "club",
+   "retrieved": "2026-10-09"
+  },
+  "gosnells-archers": {
+   "name": "Gosnells Archers",
+   "file": "img/clubs/gosnells-archers.webp",
+   "sm": "img/clubs/gosnells-archers-sm.webp",
+   "source_url": "https://cdn.sanity.io/images/7k4w9ofy/production/e825fb4f75e736f373f2d34e9c7576eda1714825-833x833.jpg",
+   "source_page": "https://www.archerywa.com.au/clubs (Archery WA club directory)",
+   "source_type": "Archery WA club directory (club-supplied logo)",
+   "kind": "club",
+   "retrieved": "2026-10-09"
+  },
+  "liverpool-city-archers": {
+   "name": "Liverpool City Archers",
+   "file": "img/clubs/liverpool-city-archers.webp",
+   "sm": "img/clubs/liverpool-city-archers-sm.webp",
+   "source_url": "https://liverpoolcityarchers.org.au/wp-content/uploads/2024/02/LCAlogo-e1709691855748-155x83.jpeg",
+   "source_page": "https://liverpoolcityarchers.org.au/",
+   "source_type": "club's own website",
+   "kind": "club",
+   "retrieved": "2026-10-09"
+  },
+  "paringa-archers": {
+   "name": "Paringa Archers",
+   "file": "img/clubs/paringa-archers.webp",
+   "sm": "img/clubs/paringa-archers-sm.webp",
+   "source_url": "https://www.paringaarchers.org.au/images/paringa-logo-3.png",
+   "source_page": "https://www.paringaarchers.org.au/",
+   "source_type": "club's own website",
+   "kind": "club",
+   "retrieved": "2026-10-09"
+  },
+  "warringah-archers": {
+   "name": "Warringah Archers",
+   "file": "img/clubs/warringah-archers.webp",
+   "sm": "img/clubs/warringah-archers-sm.webp",
+   "source_url": "https://warringaharchers.com.au/wp-content/uploads/2025/10/WA_transparent_medium_logo_only-99x99.png",
+   "source_page": "https://warringaharchers.com.au/",
+   "source_type": "club's own website",
+   "kind": "club",
+   "retrieved": "2026-10-09"
+  },
+  "bowmen-of-melville": {
+   "name": "Bowmen of Melville",
+   "file": "img/clubs/bowmen-of-melville.webp",
+   "sm": "img/clubs/bowmen-of-melville-sm.webp",
+   "source_url": "https://bom.org.au/wp-content/uploads/2025/01/150px_small_round_bomlogo.png",
+   "source_page": "https://bom.org.au",
+   "source_type": "club's own website",
+   "kind": "club",
+   "retrieved": "2026-10-09"
+  },
+  "illawarra-archers": {
+   "name": "Illawarra Archers",
+   "file": "img/clubs/illawarra-archers.webp",
+   "sm": "img/clubs/illawarra-archers-sm.webp",
+   "source_url": "https://lh7-us.googleusercontent.com/sitesv-images-rt/AMxu72sHu1GuJ7OMGrjRFiLEa209TUZiuuwLt7r_DX28MlDhg7q8e9Bfsz3VKkDE8DAuTaLPezw5E-kupmblII4JY_f44V-vlCHkzGbTkgb7SB2rmu755njpxLlhby2WAedowSlRQ5oG2I6kh-Q8cwXBxqo8ID22RjzEVIj6IUTyzRk0GHHbjwDXZ5z6EWymtAVCbw",
+   "source_page": "https://www.illawarraarchers.org/",
+   "source_type": "club's own website",
+   "kind": "club",
+   "retrieved": "2026-10-09"
+  },
+  "bunbury-archery-club": {
+   "name": "Bunbury Archery Club",
+   "file": "img/clubs/bunbury-archery-club.webp",
+   "sm": "img/clubs/bunbury-archery-club-sm.webp",
+   "source_url": "https://cdn.sanity.io/images/7k4w9ofy/production/a84326651936a40af5bc6e0aa5e28fb98a569a08-168x167.png",
+   "source_page": "https://www.archerywa.com.au/clubs (Archery WA club directory)",
+   "source_type": "Archery WA club directory (club-supplied logo)",
+   "kind": "club",
+   "retrieved": "2026-10-09"
+  },
+  "hobart-archers": {
+   "name": "Hobart Archers",
+   "file": "img/clubs/hobart-archers.webp",
+   "sm": "img/clubs/hobart-archers-sm.webp",
+   "source_url": "https://hobartarchers.org/wp-content/uploads/2014/01/cropped-header1-180x180.jpg",
+   "source_page": "https://hobartarchers.org/",
+   "source_type": "club's own website",
+   "kind": "club",
+   "retrieved": "2026-10-09"
+  },
+  "whiteman-park-archers": {
+   "name": "Whiteman Park Archers",
+   "file": "img/clubs/whiteman-park-archers.webp",
+   "sm": "img/clubs/whiteman-park-archers-sm.webp",
+   "source_url": "https://images.squarespace-cdn.com/content/v1/6729a328e538932281282ae2/82377adb-d703-424b-bec7-3937cf8bbe42/Whiteman+Park+Archers+-+Logo.png",
+   "source_page": "https://www.whitemanparkarchers.com/",
+   "source_type": "club's own website",
+   "kind": "club",
+   "retrieved": "2026-10-09"
+  },
+  "kgsa": {
+   "name": "Kalamunda Governor Stirling Archers",
+   "file": "img/clubs/kgsa.webp",
+   "sm": "img/clubs/kgsa-sm.webp",
+   "source_url": "https://www.kgsa.org.au/uploads/1/2/4/5/12450654/editor/final-kgsa-logo.jpg?1542715143",
+   "source_page": "https://www.kgsa.org.au/",
+   "source_type": "club's own website",
+   "kind": "club",
+   "retrieved": "2026-10-09"
+  },
+  "benara-bowmen": {
+   "name": "Benara Bowmen Archery Club",
+   "file": "img/clubs/benara-bowmen.webp",
+   "sm": "img/clubs/benara-bowmen-sm.webp",
+   "source_url": "https://cdn.sanity.io/images/7k4w9ofy/production/44f4296082d8cc9310ab31dc8080479cac5958a9-192x185.svg",
+   "source_page": "https://www.archerywa.com.au/clubs (Archery WA club directory)",
+   "source_type": "Archery WA club directory (club-supplied logo)",
+   "kind": "club",
+   "retrieved": "2026-10-09"
+  },
+  "eden-field-archers": {
+   "name": "Eden Field Archers",
+   "file": "img/clubs/eden-field-archers.webp",
+   "sm": "img/clubs/eden-field-archers-sm.webp",
+   "source_url": "https://edenfieldarchers.com/wp-content/uploads/2025/07/Logo-1.png",
+   "source_page": "https://edenfieldarchers.com",
+   "source_type": "club's own website",
+   "kind": "club",
+   "retrieved": "2026-10-09"
+  },
+  "hills-archery-club": {
+   "name": "Hills Archery Club",
+   "file": "img/clubs/hills-archery-club.webp",
+   "sm": "img/clubs/hills-archery-club-sm.webp",
+   "source_url": "https://hillsarchers.org.au/wp-content/uploads/2022/05/hills_archers_logo_colour_200x177-94x83.png",
+   "source_page": "https://www.hillsarchers.org.au",
+   "source_type": "club's own website",
+   "kind": "club",
+   "retrieved": "2026-10-09"
+  },
+  "cressy-archers": {
+   "name": "Cressy Archers",
+   "file": "img/clubs/cressy-archers.webp",
+   "sm": "img/clubs/cressy-archers-sm.webp",
+   "source_url": "https://cressyarchers.com/wp-content/uploads/2024/10/cropped-cressy-logo-final-v2.png?w=190",
+   "source_page": "https://cressyarchers.com",
+   "source_type": "club's own website",
+   "kind": "club",
+   "retrieved": "2026-10-09"
+  },
+  "tableland-company-of-archers": {
+   "name": "Tableland Company of Archers",
+   "file": "img/clubs/tableland-company-of-archers.webp",
+   "sm": "img/clubs/tableland-company-of-archers-sm.webp",
+   "source_url": "https://static.wixstatic.com/media/ef14df_8a9637ad3d6f293b78f2bf65996d163a.jpg/v1/fit/w_2500,h_1330,al_c/ef14df_8a9637ad3d6f293b78f2bf65996d163a.jpg",
+   "source_page": "https://tablelandarchers.wixsite.com/tcofa",
+   "source_type": "club's own website",
+   "kind": "club",
+   "retrieved": "2026-10-09"
+  },
+  "penrith-city-archers": {
+   "name": "Penrith City Archers",
+   "file": "img/clubs/penrith-city-archers.webp",
+   "sm": "img/clubs/penrith-city-archers-sm.webp",
+   "source_url": "https://images.squarespace-cdn.com/content/v1/5fe851a901a85956e58c1e8f/1613421770402-VP0K1V6WPKCQN9C3WF7P/PCA+logo+for+documents.jpg?format=1500w",
+   "source_page": "https://www.penrithcityarchers.com.au/",
+   "source_type": "club's own website",
+   "kind": "club",
+   "retrieved": "2026-10-09"
+  },
+  "baldivis-archery-club": {
+   "name": "Baldivis Archery Club",
+   "file": "img/clubs/baldivis-archery-club.webp",
+   "sm": "img/clubs/baldivis-archery-club-sm.webp",
+   "source_url": "https://static.wixstatic.com/media/56ee90_53b9d6b8ccde46dcbf0c9eda57ba2fa4.gif/v1/fill/w_180%2Ch_180%2Clg_1%2Cusm_0.66_1.00_0.01/56ee90_53b9d6b8ccde46dcbf0c9eda57ba2fa4.gif",
+   "source_page": "https://www.baldivisarchery.com",
+   "source_type": "club's own website",
+   "kind": "club",
+   "retrieved": "2026-10-09"
+  },
+  "coast-archers-peats-ridge": {
+   "name": "Coast Archers Peats Ridge",
+   "file": "img/clubs/coast-archers-peats-ridge.webp",
+   "sm": "img/clubs/coast-archers-peats-ridge-sm.webp",
+   "source_url": "https://static.wixstatic.com/media/a9da45_db8e75302c5c400f9adb7b2b3dc4609f~mv2.png/v1/fill/w_780,h_399,al_c,lg_1,q_85,enc_avif,quality_auto/Coast-archers-white_blur2.png",
+   "source_page": "https://www.coastarchers.com.au/",
+   "source_type": "club's own website",
+   "kind": "club",
+   "bg": "#0d1b2a",
+   "retrieved": "2026-10-09"
+  },
+  "canberra-archery-club": {
+   "name": "Canberra Archery Club",
+   "file": "img/clubs/canberra-archery-club.webp",
+   "sm": "img/clubs/canberra-archery-club-sm.webp",
+   "source_url": "https://static.wixstatic.com/media/302697_0a56ef445a4d439197b57e23dfff1c22~mv2.png",
+   "source_page": "https://www.canberraarchery.club/",
+   "source_type": "club's own website",
+   "kind": "club",
+   "retrieved": "2026-10-09"
+  },
+  "geelong-archers": {
+   "name": "Geelong Archers",
+   "file": "img/clubs/geelong-archers.webp",
+   "sm": "img/clubs/geelong-archers-sm.webp",
+   "source_url": "https://static.wixstatic.com/media/0b879b_6048d3a70e3b41cf820ffc677ddfdd90~mv2.jpg",
+   "source_page": "https://www.geelongarchers.com.au/",
+   "source_type": "club's own website",
+   "kind": "club",
+   "retrieved": "2026-10-09"
+  },
+  "townsville-target-archers": {
+   "name": "Townsville Target Archers",
+   "file": "img/clubs/townsville-target-archers.webp",
+   "sm": "img/clubs/townsville-target-archers-sm.webp",
+   "source_url": "https://townsvilletargetarchers.com.au/images/tta-logo.png",
+   "source_page": "https://townsvilletargetarchers.com.au/",
+   "source_type": "club's own website",
+   "kind": "club",
+   "retrieved": "2026-10-09"
+  },
+  "archery-australia": {
+   "name": "Archery Australia",
+   "file": "img/clubs/archery-australia.webp",
+   "sm": "img/clubs/archery-australia-sm.webp",
+   "source_url": "https://archery.org.au/wp-content/uploads/2025/08/Archery-Australia-Logo-1.png",
+   "source_page": "https://archery.org.au/",
+   "source_type": "organisation's own website",
+   "kind": "organiser",
+   "retrieved": "2026-10-09"
+  },
+  "archery-wa": {
+   "name": "Archery WA",
+   "file": "img/clubs/archery-wa.webp",
+   "sm": "img/clubs/archery-wa-sm.webp",
+   "source_url": "https://cdn.sanity.io/images/7k4w9ofy/production/e4a1cd1ccd1dea8a435dd7ce2f11c1cdb29b8726-177x177.svg",
+   "source_page": "https://www.archerywa.com.au/",
+   "source_type": "organisation's own website",
+   "kind": "organiser",
+   "retrieved": "2026-10-09"
+  },
+  "archery-sa": {
+   "name": "Archery SA",
+   "file": "img/clubs/archery-sa.webp",
+   "sm": "img/clubs/archery-sa-sm.webp",
+   "source_url": "https://archerysa.org.au/wp-content/uploads/2020/04/logo_sa_header130H.png",
+   "source_page": "https://www.archerysa.org.au/",
+   "source_type": "organisation's own website",
+   "kind": "organiser",
+   "retrieved": "2026-10-09"
+  },
+  "world-archery": {
+   "name": "World Archery",
+   "file": "img/clubs/world-archery.webp",
+   "sm": "img/clubs/world-archery-sm.webp",
+   "source_url": "https://www.worldarchery.sport/themes/custom/wa_radix/logo.svg",
+   "source_page": "https://www.worldarchery.sport/",
+   "source_type": "organisation's own website",
+   "kind": "organiser",
+   "retrieved": "2026-10-09"
+  }
+ }
+}
