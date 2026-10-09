@@ -47,7 +47,7 @@ main{outline:none;min-height:60vh;padding-bottom:40px}
 .next-card .big{font-family:var(--disp);font-size:56px;font-weight:800;line-height:1}
 .next-card .nm{font-weight:700;font-size:18px;margin-top:4px}
 .next-card .st{margin-top:8px;font-weight:700;display:inline-block}
-.credit{position:absolute;right:10px;bottom:8px;font-size:11px;color:#e5e7eb;background:rgba(0,0,0,.55);padding:2px 8px;border-radius:6px}
+.credit{display:none!important;position:absolute;right:10px;bottom:8px;font-size:11px;color:#e5e7eb;background:rgba(0,0,0,.55);padding:2px 8px;border-radius:6px}
 .credit a{color:#fff}
 .phead{padding:44px 0 36px}
 .phead h1{font-size:clamp(36px,5vw,56px);font-weight:800;text-transform:uppercase;margin:0}
@@ -292,3 +292,21 @@ dl.kv.fx dd{font-weight:500}
 @media (max-width:720px){.stats.four{grid-template-columns:repeat(2,1fr);margin-top:-20px}.et{font-size:14px;padding:6px 10px}}
 .b.closed{background:var(--grey-bg);color:#1f2937;border:1.5px solid #1f2937}
 .act .closed-note{background:var(--grey-bg);border:2px solid #1f2937;color:#1f2937;border-radius:12px;padding:10px 12px;margin:0 0 10px;font-size:14px}.act .closed-note b{font-size:17px}
+/* event categories: icon + text + border style, never colour alone */
+.tag.cat{background:#fff;color:var(--night);border:2px solid var(--night)}
+.tag.cat-coaching{border-style:double;border-width:3px}
+.tag.cat-youth{border-style:dashed}
+.tag.cat-come_try{border-style:dotted;border-width:3px}
+.dhero .tag.cat{background:#fff;color:var(--night)}
+.cats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:22px 0 4px}
+.cat-link{display:flex;flex-direction:column;gap:2px;background:#fff;border:2px solid var(--night);border-radius:var(--r);padding:14px 16px;text-decoration:none;color:var(--ink);box-shadow:var(--shadow)}
+.cat-link .ci{font-size:26px}.cat-link b{font-family:var(--disp);font-size:22px;text-transform:uppercase}.cat-link span:last-child{font-size:14px;color:var(--muted)}
+.cat-link:hover{background:#f8fafc}
+@media (max-width:720px){.cats-row{grid-template-columns:1fr}}
+
+.b.members{border-style:double;border-width:3px}
+.b.series{border-style:dashed}
+.date.any{font-size:.78rem}
+.linkbtn{background:none;border:0;padding:0 4px;color:inherit;text-decoration:underline;font:inherit;cursor:pointer;min-height:auto}
+.empty .btn{margin-left:8px}
+.b.titles{border-width:2px;font-weight:700}

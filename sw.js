@@ -1,4 +1,4 @@
-const C='archcal-d9b6c3a0d6';
+const C='archcal-0bbb549c52';
 const CORE=['./','./index.html','./styles.css','./config.js','./app.js','./manifest.webmanifest','./data/events.json','./data/organisations.json','./icons/icon-192.png',
  './img/credits.json','./fonts/Inter-var.woff2','./fonts/BarlowCondensed-SemiBold.woff2','./fonts/BarlowCondensed-Bold.woff2','./fonts/BarlowCondensed-ExtraBold.woff2',
  './img/hero-galston-gorge.jpg','./img/hero-galston-gorge-sm.jpg','./img/field-aus-nationals.jpg','./img/field-aus-nationals-sm.jpg','./img/3d-badger.jpg','./img/3d-badger-sm.jpg',

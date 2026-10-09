@@ -65,7 +65,7 @@ async function boot(){
   $('#todayLbl').textContent = today().toLocaleDateString('en-AU', {weekday:'short', day:'numeric', month:'short'});
   const [e, o, ph] = await Promise.all([fetch('data/events.json').then(r => r.json()), fetch('data/organisations.json').then(r => r.json()), fetch('img/credits.json').then(r => r.json()).catch(() => ({}))]);
   PH = ph; SCOPE = e.scope || 'WORLD';
-  if (!Array.isArray(S.states)) S.states = []; if (!Array.isArray(S.groups)) S.groups = DEFAULT.groups.slice();
+  migrateSettings();
   EV = e.events.filter(x => !x.info_only || true); ORGS = o.organisations;
   EV.forEach(x => BYID[x.id] = x);
   ORGS.filter(x => x.country_code).forEach(x => { CMAP[x.country_code] = CMAP[x.country_code] || x.country; });
@@ -79,10 +79,22 @@ async function boot(){
   route(); checkReminders(); setInterval(checkReminders, 60 * 60 * 1000);
 }
 
+/* ---------- settings migration: never let stale/odd saved settings hide everything ---------- */
+function migrateSettings(){
+  const codes = STATES.map(s => s[0]), gk = GROUPS.map(g => g[0]);
+  const st = Array.isArray(S.states) ? S.states : typeof S.states === 'string' ? S.states.split(',') : [];
+  S.states = [...new Set(st.map(v => String(v).trim().toUpperCase()).map(v => (STATES.find(s => s[1].toUpperCase() === v) || [v])[0]).filter(v => codes.includes(v)))];
+  if (S.states.length === codes.length) S.states = [];
+  const gr = Array.isArray(S.groups) ? S.groups.map(v => String(v).trim().toLowerCase()).filter(v => gk.includes(v)) : [];
+  S.groups = gr.length ? [...new Set(gr)] : DEFAULT.groups.slice();
+  for (const k of ['countries', 'orgs']) if (!Array.isArray(S[k])) S[k] = DEFAULT[k].slice();
+  for (const k of ['saved', 'entries', 'notified']) if (!S[k] || typeof S[k] !== 'object' || Array.isArray(S[k])) S[k] = {};
+  S.v = 2; try { save(); } catch {}
+}
 /* ---------- helpers ---------- */
-function visible(x){
+function visible(x, anyState){
   if (S.saved[x.id]) return true;
-  if (AUS()) return S.groups.includes(x.org_group) && (!S.states.length || !x.state_code || S.states.includes(x.state_code));
+  if (AUS()) return S.groups.includes(x.org_group) && (anyState || !S.states.length || !x.state_code || S.states.includes(x.state_code));
   if (S.world && x.world_level) return true;
   if (S.orgs.includes(x.org_id)) return true;
   if (x.country_code && S.countries.includes(x.country_code) && !x.world_level) {
@@ -94,7 +106,7 @@ function visible(x){
 }
 const THEMES = {field:['🌲','Field'], '3d':['🦌','3D'], target:['🎯','Target'], indoor:['🏠','Indoor'], mixed:['🏹','Archery']};
 const photo = t => PH[t === 'mixed' ? 'hero' : t] || PH.hero || {};
-const credit = (t, cls = '') => { const p = photo(t); return p.by ? `<span class="credit ${cls}">Photo: ${p.url ? `<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.by)}</a>` : esc(p.by)} · ${esc(p.license)}</span>` : ''; };
+const credit = () => '';   // photo credits live on the Credits page only (linked from every footer), not on the photos
 function theme(x){
   const d = (x.discipline || '') + ' ' + (x.name || '') + ' ' + (x.rounds || '');
   if (/indoor|vegas|18 ?m/i.test(d)) return 'indoor';
@@ -103,21 +115,31 @@ function theme(x){
   if (/target|clout|para|matchplay|qre|1440|720|900|canberra|olympic|world cup|championships/i.test(d)) return 'target';
   return 'mixed';
 }
+const CATS = {competition:['🏹','Competition','Competitions'], coaching:['🎓','Coaching course','Coaching courses'], youth:['🧒','Youth training','Youth training'], come_try:['👋','Come & try','Come & try / have-a-go']};
+const catOf = x => CATS[x.category] ? x.category : 'competition';
+const catTag = x => catOf(x) === 'competition' ? '' : `<span class="tag cat cat-${catOf(x)}">${CATS[catOf(x)][0]} ${CATS[catOf(x)][1]}</span>`;
 const tagHtml = t => `<span class="tag">${THEMES[t][0]} ${THEMES[t][1]}</span>`;
 const isPast = x => x.end_date && daysTo(x.end_date) < 0;
 function dateBox(x){
+  if (x.book_anytime) return `<div class="date tbc any" aria-label="Book any time">Book<br>any time</div>`;
   if (!x.start_date) return `<div class="date tbc" aria-label="Dates to be confirmed">Dates<br>TBC</div>`;
   const d = pd(x.start_date);
   return `<div class="date" aria-label="${d.toDateString()}"><div class="d">${d.getDate()}</div><div class="m">${MON[d.getMonth()]}</div></div>`;
 }
 function range(x){
+  if (x.book_anytime) return 'Book any time – no fixed date';
   if (!x.start_date) return 'Dates to be confirmed';
   const a = pd(x.start_date), b = pd(x.end_date || x.start_date), o = {day:'numeric', month:'short', year:'numeric'};
   return x.start_date === x.end_date || !x.end_date ? a.toLocaleDateString('en-AU', {weekday:'short', ...o}) : `${a.toLocaleDateString('en-AU',{day:'numeric',month:'short'})} – ${b.toLocaleDateString('en-AU', o)}`;
 }
 function badges(x, onCard){
   const b = [], en = S.entries[x.id];
-  if (x.info_only) b.push(`<span class="b tbc">ℹ Info only</span>`);
+  if (x.book_anytime) b.push(`<span class="b tbc">📞 Book any time</span>`);
+  else if (x.info_only) b.push(`<span class="b tbc">${catOf(x) === 'competition' ? 'ℹ Info only' : '↻ Ongoing program'}</span>`);
+  if (x.titles) b.push(`<span class="b titles">🏅 ${x.titles === 'state' ? 'State Titles' : 'Branch Titles'}</span>`);
+  else if (/state champ/i.test(x.level || '')) b.push(`<span class="b titles">🏅 State Championship</span>`);
+  if (x.members_only) b.push(`<span class="b members">👥 Club members only</span>`);
+  if (x.series_part) b.push(`<span class="b series">${esc(x.series_part)}</span>`);
   if (isPast(x)) b.push(`<span class="b past">◷ Finished</span>`);
   const st = ST(x.id);
   if (!onCard) {
@@ -135,7 +157,7 @@ function evCard(x){
   const on = !!S.saved[x.id], t = theme(x), p = photo(t);
   return `<article class="ev th-${t}" role="link" tabindex="0" data-open="${esc(x.id)}" aria-label="${esc(x.name)}">
     <div class="ev-img" style="background-image:url('${esc(p.sm)}')">${dateBox(x)}</div>
-    <div class="body"><div class="tags">${t !== 'mixed' ? tagHtml(t) : ''}${x.flyer_local ? `<span class="tag fl">📄 ${x.flyer_is_current ? x.flyer_year + ' flyer' : 'Last year’s flyer'}</span>` : ''}</div>
+    <div class="body"><div class="tags">${catTag(x)}${t !== 'mixed' && catOf(x) === 'competition' ? tagHtml(t) : ''}${x.flyer_local ? `<span class="tag fl">📄 ${x.flyer_is_current ? x.flyer_year + ' flyer' : 'Last year’s flyer'}</span>` : ''}</div>
       <h3 class="name">${esc(x.name)}</h3>
       <div class="meta">${esc([x.location, x.country_code && x.country_code !== 'AUS' ? x.country : x.state].filter(Boolean).join(' · '))}</div>
       <div class="meta">${esc([x.discipline, x.org, x.aba_branch && x.aba_branch.split(' – ')[0]].filter(Boolean).join(' · '))}</div>${badges(x, true)}
@@ -259,6 +281,7 @@ function vHome(){
     ${adSlot('banner')}
     <h2 class="sec-h">Pick your discipline</h2>
     <div class="types">${['field','3d','target','indoor'].map(t => `<a class="type th-${t}" href="#/browse" data-th="${t}" style="--img:url('${esc(photo(t).sm)}')"><span class="type-name">${THEMES[t][0]} ${THEMES[t][1]}</span><span class="type-sub">${{field:'Bush courses, marked & unmarked', '3d':'Foam animals in the bush', target:'Outdoor ranges, 18–90 m', indoor:'18 m halls, 3-spot & Vegas'}[t]}</span></a>`).join('')}</div>
+    <div class="cats-row" aria-label="More than competitions">${['coaching', 'youth', 'come_try'].map(c => `<a class="cat-link cat-${c}" href="#/browse" data-cat="${c}"><span class="ci" aria-hidden="true">${CATS[c][0]}</span><b>${CATS[c][2]}</b><span>${EV.filter(x => catOf(x) === c && visible(x) && !isPast(x)).length} coming up</span></a>`).join('')}</div>
     <div class="two">
       <section><h2 class="sec-h">Reminders</h2>
       ${rem.length ? rem.map(r => `<div class="panel rem" data-open="${esc(r.x.id)}" role="link" tabindex="0"><b><span aria-hidden="true">${REM_ICON[r.kind]}</span> ${esc(r.x.name)}</b><div>${esc(r.text)}</div><div class="badges">${r.kind === 'close' ? '<span class="b close">⏳ Enter now</span>' : r.kind === 'pay' ? '<span class="b ent">$ Pay now</span>' : REM_BADGE[r.st]}</div></div>`).join('')
@@ -270,37 +293,50 @@ function vHome(){
     ${suggest.length ? `<h2 class="sec-h">Next shoots in your areas</h2><div class="list grid2">${suggest.map(evCard).join('')}</div><p class="center"><a class="btn" href="#/browse">See all shoots →</a></p>` : ''}
   </div>`;
 }
-let BF = {q:'', disc:'', scope:'all', state:'', past:false, limit:60};
+let BF = {q:'', disc:'', cat:'', scope:'all', state:'', past:false, limit:60};
 function vBrowse(){
   setTitle('Find shoots');
-  const vis = EV.filter(visible);
-  const scopes = AUS() ? [['all','All Australia'], ...GROUPS.filter(g => S.groups.includes(g[0])).map(g => ['g:' + g[0], {aa:'Archery Australia', aba:'ABA', awa:'Archery WA'}[g[0]]])] : [['all','All'], ['world','🌐 World'], ...S.countries.map(c => [c, CMAP[c] || c]), ...S.orgs.map(o => [o, (ORGS.find(x => x.id === o) || {}).name?.replace(/\s*\(.*\)/,'') || o])];
+  const grp = AUS() && BF.scope.startsWith('g:') ? BF.scope.slice(2) : null;
+  if (AUS() && grp && !GROUPS.some(g => g[0] === grp)) BF.scope = 'all';
+  // A chip always wins over Settings: ABA chip = every ABA shoot (only the page's own state filter applies).
+  // Picking a state on this page overrides 'My states' from Settings.
+  const vis = grp ? EV.filter(x => x.org_group === grp) : EV.filter(x => visible(x, !!BF.state));
+  const scopes = AUS() ? [['all','All Australia'], ...GROUPS.map(g => ['g:' + g[0], {aa:'Archery Australia', aba:'ABA', awa:'Archery WA'}[g[0]]])] : [['all','All'], ['world','🌐 World'], ...S.countries.map(c => [c, CMAP[c] || c]), ...S.orgs.map(o => [o, (ORGS.find(x => x.id === o) || {}).name?.replace(/\s*\(.*\)/,'') || o])];
   const discs = [...new Set(vis.filter(x => BF.past || !isPast(x)).map(x => (x.discipline || '').split(/[ (/]/)[0]).filter(Boolean))].sort();   // only disciplines with shoots to show
+  if (BF.disc && !discs.includes(BF.disc)) discs.push(BF.disc);   // never hide an active filter behind 'All disciplines'
   let list = vis.filter(x => BF.past || !isPast(x));
   if (BF.scope.startsWith('g:')) list = list.filter(x => x.org_group === BF.scope.slice(2));
   else if (BF.scope === 'world') list = list.filter(x => x.world_level);
   else if (BF.scope !== 'all') list = list.filter(x => x.country_code === BF.scope && !x.world_level && !['aba','archery-wa'].includes(x.org_id) || x.org_id === BF.scope);
   if (BF.state) list = list.filter(x => x.state_code === BF.state);
+  const active = [BF.q && `search “${esc(BF.q)}”`, BF.state && (STATES.find(s => s[0] === BF.state) || [, BF.state])[1], BF.disc && `discipline ${esc(BF.disc)}`, BF.cat && CATS[BF.cat] && CATS[BF.cat][2], !grp && !BF.state && S.states.length && AUS() && `your states in Settings (${S.states.join(', ')})`].filter(Boolean);
   if (BF.disc) list = list.filter(x => (x.discipline || '').startsWith(BF.disc));
-  if (BF.q) { const q = BF.q.toLowerCase(); list = list.filter(x => [x.name, x.location, x.org, x.country, x.state].join(' ').toLowerCase().includes(q)); }
-  list.sort((a, b) => (a.start_date || '9999') < (b.start_date || '9999') ? -1 : 1);
+  if (BF.cat) list = list.filter(x => catOf(x) === BF.cat);
+  if (BF.q) { const q = BF.q.toLowerCase(); list = list.filter(x => [x.name, x.location, x.host, x.org, x.country, x.state, (STATES.find(s => s[0] === x.state_code) || [])[1], x.discipline, CATS[catOf(x)][2]].join(' ').toLowerCase().includes(q)); }
+  const sk = x => x.book_anytime ? '9999-99' : x.start_date || '9999';
+  list.sort((a, b) => sk(a) < sk(b) ? -1 : 1);
   const total = list.length; list = list.slice(0, BF.limit);
   let html = `${pageHead('Find a shoot', 'Field, 3D, Target and Indoor shoots from the calendars you follow.', {Field:'field','3D':'3d',Target:'target',Indoor:'indoor'}[BF.disc] || 'mixed')}<div class="wrap browse"><div class="filters"><input type="search" id="q" placeholder="Search shoot, club, town…" value="${esc(BF.q)}" aria-label="Search shoots">
   <div class="chips" role="group" aria-label="Show">${scopes.map(([k, l]) => `<button class="chip" data-scope="${esc(k)}" aria-pressed="${BF.scope === k}">${esc(l)}</button>`).join('')}</div>
-  ${AUS() ? `<label for="st" class="sr">State</label><select id="st" aria-label="State"><option value="">All states &amp; territories</option>${STATES.filter(([c]) => !S.states.length || S.states.includes(c)).map(([c, n]) => `<option value="${c}" ${BF.state === c ? 'selected' : ''}>${n}</option>`).join('')}</select>` : ''}
+  ${AUS() ? `<label for="st" class="sr">State</label><select id="st" aria-label="State"><option value="">All states &amp; territories</option>${STATES.map(([c, n]) => `<option value="${c}" ${BF.state === c ? 'selected' : ''}>${n}</option>`).join('')}</select>` : ''}
+  <label for="cat" class="sr">Event type</label><select id="cat" aria-label="Event type"><option value="">All event types</option>${Object.entries(CATS).map(([k, v]) => `<option value="${k}" ${BF.cat === k ? 'selected' : ''}>${v[0]} ${v[2]}</option>`).join('')}</select>
   <div class="row"><select id="disc" aria-label="Discipline"><option value="">All disciplines</option>${discs.map(d => `<option ${BF.disc === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select>
   <label style="display:flex;align-items:center;gap:8px;margin:0;flex:0 0 auto"><input type="checkbox" id="past" ${BF.past ? 'checked' : ''} style="width:22px;min-height:22px"> Show finished</label></div>
+  ${active.length && total ? `<p class="note" id="activeF">Filtered by: ${active.join(' · ')} <button class="linkbtn" id="clearF2">✕ Clear</button></p>` : ''}
   <p class="note">${total} shoot${total !== 1 ? 's' : ''}. Change ${AUS() ? 'states &amp; organisations' : 'countries &amp; bodies'} in <a href="#/settings">Settings</a>.</p></div><div class="results">`;
   let m = '', n = 0;
-  for (const x of list) { const k = x.start_date ? x.start_date.slice(0, 7) : 'TBC'; if (k !== m) { m = k; html += `<div class="month">${k === 'TBC' ? 'Dates to be confirmed' : MONL[+k.slice(5) - 1] + ' ' + k.slice(0, 4)}</div>`; } html += evCard(x); if (++n % 10 === 0 && n < list.length) html += adSlot('feed'); }
-  if (!total) html += `<div class="empty">No shoots match. Try another filter${AUS() ? '' : ' or add countries in Settings'}.</div>`;
+  for (const x of list) { const k = x.book_anytime ? 'ANY' : x.start_date ? x.start_date.slice(0, 7) : 'TBC'; if (k !== m) { m = k; html += `<div class="month">${k === 'ANY' ? '📞 Book any time' : k === 'TBC' ? 'Dates to be confirmed' : MONL[+k.slice(5) - 1] + ' ' + k.slice(0, 4)}</div>`; } html += evCard(x); if (++n % 10 === 0 && n < list.length) html += adSlot('feed'); }
+  if (!total) html += `<div class="empty">No shoots match${active.length ? ': ' + active.join(' · ') : ''}. ${active.length ? '<button class="btn alt" id="clearF">✕ Clear filters</button>' : `Try another filter${AUS() ? '' : ' or add countries in Settings'}.`}</div>`;
   if (total > BF.limit) html += `<button class="btn alt more" id="more">Show more (${total - BF.limit} left)</button>`;
   return html + '</div></div>';
 }
 function bindBrowse(){
   const q = $('#q'); q.oninput = () => { BF.q = q.value; BF.limit = 60; clearTimeout(bindBrowse.t); bindBrowse.t = setTimeout(() => { render(); const n = $('#q'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }, 250); };
-  document.querySelectorAll('[data-scope]').forEach(b => b.onclick = () => { BF.scope = b.dataset.scope; BF.limit = 60; render(); });
+  document.querySelectorAll('[data-scope]').forEach(b => b.onclick = () => { BF.scope = b.dataset.scope; BF.disc = ''; BF.limit = 60; render(); });
+  const clr = () => { Object.assign(BF, {q:'', disc:'', cat:'', state:'', limit:60}); if (S.states.length) { S.states = []; save(); } render(); };
+  ['#clearF', '#clearF2'].forEach(s => { const b = $(s); if (b) b.onclick = clr; });
   $('#disc').onchange = e => { BF.disc = e.target.value; render(); };
+  $('#cat').onchange = e => { BF.cat = e.target.value; BF.limit = 60; render(); };
   const st = $('#st'); if (st) st.onchange = e => { BF.state = e.target.value; BF.limit = 60; render(); };
   $('#past').onchange = e => { BF.past = e.target.checked; render(); };
   const mo = $('#more'); if (mo) mo.onclick = () => { BF.limit += 60; render(); };
@@ -324,9 +360,10 @@ function vShoot(id){
   setTitle(x.name);
   const on = !!S.saved[id], en = S.entries[id];
   const kind = {how_to_guide:'How to enter (guide)', event_page:'Event page & entry', entry_page:'Register / enter', entry_system:'Enter via Archers Diary (search the event)', email:'✉ Email your nomination'}[x.registration_url_kind] || 'Register / enter';
+  const kindLbl = catOf(x) === 'come_try' && x.registration_url ? 'Book a place' : catOf(x) !== 'competition' && x.registration_url ? 'Register / book' : null;
   const t = theme(x), p = photo(t), isMail = x.registration_url_kind === 'email';
   const closedNow = !!x.entry_close_date && daysTo(x.entry_close_date) < 0;
-  const regBtn = x.info_only ? '' : x.registration_url ? `<a class="btn ${closedNow ? 'alt' : 'gold'} block big-btn" id="regBtn" href="${esc(x.registration_url)}" ${isMail ? '' : 'target="_blank" rel="noopener"'}>${isMail ? '' : '↗ '}${closedNow ? kind.replace(/^Register \/ enter$/, 'Entry page') + ' (entries closed)' : kind}</a>
+  const regBtn = x.info_only && !x.book_anytime ? '' : x.registration_url ? `<a class="btn ${closedNow ? 'alt' : 'gold'} block big-btn" id="regBtn" href="${esc(x.registration_url)}" ${isMail ? '' : 'target="_blank" rel="noopener"'}>${isMail ? '' : '↗ '}${kindLbl && !closedNow ? kindLbl : closedNow ? kind.replace(/^Register \/ enter$/, 'Entry page') + ' (entries closed)' : kind}</a>
       ${x.registration_email ? `<p class="note">Opens your email app addressed to <b>${esc(x.registration_email.to)}</b>${x.registration_email.cc ? `, cc ${esc(x.registration_email.cc)}` : ''}, with ${esc(x.registration_email.fields.join(', '))} ready to fill in.</p>` : ''}
       ${x.registration_url_source ? `<p class="note">Entry details from ${esc(x.registration_url_source)}.</p>` : ''}`
     : `<div class="warn">⚠ No online entry link found yet. ${x.org_id === 'aba' ? 'ABA shoots are entered through the host club.' : 'Check the source page below.'}</div>`;
@@ -334,7 +371,7 @@ function vShoot(id){
   const closeTxt = x.entry_close_date ? pd(x.entry_close_date).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'long',year:'numeric'}) + (x.entry_close_time ? ', ' + x.entry_close_time : '') : '';
   return `<section class="dhero" style="--img:url('${esc(p.file)}')"><div class="wrap">
     <a class="crumb" href="#/browse">← All shoots</a>
-    <div class="tags">${tagHtml(t)}${x.level ? `<span class="tag lvl">${esc(x.level)}</span>` : ''}</div>
+    <div class="tags">${catTag(x)}${catOf(x) === 'competition' ? tagHtml(t) : ''}${x.level ? `<span class="tag lvl">${esc(x.level)}</span>` : ''}</div>
     <h1>${esc(x.name)}</h1><p class="sub">${esc(range(x))}${x.location ? ' · ' + esc(x.location) : ''}</p>${badges(x)}
   </div>${credit(t)}</section>
   <div class="wrap detail">
@@ -343,6 +380,7 @@ function vShoot(id){
     <section class="panel"><h2 class="sec">Shoot details</h2><dl class="kv">
       <dt>When</dt><dd>${esc(range(x))}</dd>
       <dt>Where</dt><dd>${esc(x.location || '—')}${x.host ? `<br><span class="note">Host club: ${esc(x.host)}${x.venue_is_host_only ? ' – check the organiser for the exact range' : ''}</span>` : ''}${x.state && !(x.location || '').includes(' ' + x.state) ? ' · ' + esc(x.state) : ''}${x.country ? '<br><span class="note">' + esc(x.country) + '</span>' : ''}</dd>
+      <dt>Type</dt><dd>${CATS[catOf(x)][0]} ${CATS[catOf(x)][1]}</dd>
       <dt>Discipline</dt><dd>${esc(x.discipline || '—')}</dd>
       <dt>Level</dt><dd>${esc(x.level || '—')}</dd>
       <dt>Organiser</dt><dd>${esc(x.org || '—')}${x.aba_branch ? '<br><span class="note">ABA ' + esc(x.aba_branch) + '</span>' : ''}</dd>
@@ -483,7 +521,7 @@ function vAdvertise(){
   setTitle('Advertise with us');
   const n = photo('nathe');
   return `<section class="phead tall" style="--img:url('${esc(n.file)}')"><div class="wrap"><p class="kicker">For archery shops, ranges, coaches &amp; brands</p><h1>Advertise to archers</h1>
-    <p>Put your shop in front of archers while they plan their next shoot and the gear they need for it.</p><a class="btn gold" href="${AD_MAIL}">Email us about advertising</a></div><span class="credit">Photo: ${esc(n.by)} (own photo)</span></section>
+    <p>Put your shop in front of archers while they plan their next shoot and the gear they need for it.</p><a class="btn gold" href="${AD_MAIL}">Email us about advertising</a></div></section>
   <div class="wrap narrow adv">
     <section class="panel"><h2 class="sec">Who sees your ad</h2>
       <ul class="ticks"><li>Archers looking for Field, 3D, Target and Indoor shoots. Australia-wide: Archery Australia, ABA and Archery WA shoots in every state and territory.</li>
@@ -526,7 +564,10 @@ function vCredits(){
 
 /* ---------- .ics export ---------- */
 function icsEsc(s){ return String(s || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n'); }
-function fold(l){ let o = ''; while (l.length > 73) { o += l.slice(0, 73) + '\r\n '; l = l.slice(73); } return o + l; }
+// RFC 5545: lines max 75 OCTETS (UTF-8), continuation lines start with a space; never split a character.
+function fold(l){ const enc = new TextEncoder(), out = []; let cur = '', n = 0, lim = 75;
+  for (const ch of l) { const b = enc.encode(ch).length; if (n + b > lim) { out.push(cur); cur = ''; n = 0; lim = 74; } cur += ch; n += b; }
+  out.push(cur); return out.join('\r\n '); }
 function downloadIcs(list, name){
   const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
   const L = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Archery Calendar//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:My archery shoots'];
@@ -560,7 +601,8 @@ function render(){
   else if (p === 'privacy') v.innerHTML = vPrivacy();
   else if (p === 'submit') { v.innerHTML = vSubmit(); bindSubmit(); }
   else { v.innerHTML = vHome();
-    v.querySelectorAll('[data-th]').forEach(a => a.onclick = () => { BF.disc = {field:'Field','3d':'3D',target:'Target',indoor:'Indoor'}[a.dataset.th]; BF.scope = 'all'; });
+    v.querySelectorAll('[data-cat]').forEach(a => a.onclick = () => { BF.cat = a.dataset.cat; BF.disc = ''; BF.scope = 'all'; });
+    v.querySelectorAll('[data-th]').forEach(a => a.onclick = () => { BF.cat = ''; BF.disc = {field:'Field','3d':'3D',target:'Target',indoor:'Indoor'}[a.dataset.th]; BF.scope = 'all'; });
     $('#heroSearch').onsubmit = e => { e.preventDefault(); BF.q = $('#hq').value; BF.scope = 'all'; location.hash = '#/browse'; }; }
   bindCards(v);
 }
