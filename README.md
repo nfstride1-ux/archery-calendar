@@ -9,4 +9,4 @@ your saved shoots and entries stay in your browser (localStorage).
 - Clubs: send us your flyer – nfshold@gmail.com (NFS Strategic Holdings). No online entries? We'll list your shoot, set up a free entry form and send you the entry list. Free until 31 Dec 2026.
 - Photo and font credits: [CREDITS.md](CREDITS.md) and the Credits page on the site.
 
-Event flyers are not hosted here; the site links to each organiser's original.
+Event flyers: page-1 previews only (bank details removed); organisers can ask for removal or updates at nfshold@gmail.com.

@@ -27,4 +27,4 @@ Licence notes:
 - Both are self-hosted, Latin subset, WOFF2.
 
 ## Event flyers
-Flyers belong to their organisers. This site does not host copies; it links to each flyer at the organiser's own page or file.
+Flyers belong to their organisers. The site shows a web preview of page 1 of each flyer (bank details removed) with a link to the organiser's original where one exists. Organisers who want a flyer removed or updated: email nfshold@gmail.com.

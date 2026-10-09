@@ -310,3 +310,33 @@ dl.kv.fx dd{font-weight:500}
 .linkbtn{background:none;border:0;padding:0 4px;color:inherit;text-decoration:underline;font:inherit;cursor:pointer;min-height:auto}
 .empty .btn{margin-left:8px}
 .b.titles{border-width:2px;font-weight:700}
+.flyer-big{display:block;position:relative;margin:10px 0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;max-width:640px}
+.flyer-big img{display:block;width:100%;height:auto}
+.flyer-big .zoom{position:absolute;right:8px;bottom:8px;background:rgba(9,18,30,.85);color:#fff;font-size:13px;font-weight:700;padding:4px 10px;border-radius:999px}
+.flyer-big.old{border:3px dashed #6b7280}
+.fl-cap{font-size:14px;margin:6px 0}
+/* org calendars */
+.tabs{display:flex;gap:6px;margin:0 0 12px;flex-wrap:wrap}
+.tab{padding:9px 16px;border-radius:999px;border:2px solid var(--night);color:var(--night);text-decoration:none;font-weight:700;background:#fff}
+.tab[aria-selected="true"]{background:var(--night);color:#fff}
+.tab[aria-selected="true"]::before{content:"✓ "}
+.cal-filters{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.cal-filters label{display:flex;flex-direction:column;font-size:13px;font-weight:600;gap:4px;margin:0}
+.cal-filters label.chk{flex-direction:row;align-items:center;gap:8px;min-height:44px}
+.cal-filters select{min-width:200px}
+.cal-list{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;margin-top:12px}
+.cal-row{display:grid;grid-template-columns:150px 1.6fr 1.2fr 160px 120px;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);color:inherit;text-decoration:none;align-items:center}
+a.cal-row:hover{background:#f6f3e6}
+.cal-th{background:var(--night);color:#fff;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+.cal-month{background:#efe7c8;color:var(--night);font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:18px;padding:6px 14px;border-left:6px solid var(--gold)}
+.cal-row .c-date{font-weight:700}
+.cal-row .c-name b{display:block}
+.cal-row .c-name .b,.cal-row .c-name .tag{display:inline-block;margin:4px 6px 0 0}
+.cal-row.past{color:#6b7280;background:#f4f4f5}
+.cal-row.past .c-name b{font-weight:600}
+@media (max-width:760px){
+ .cal-th{display:none}
+ .cal-row{grid-template-columns:1fr;gap:2px;padding:12px 14px}
+ .cal-row .c-club::before{content:"📍 "} .cal-row .c-where::before{content:"🗺 "} .cal-row .c-disc::before{content:"🏹 "}
+ .cal-filters select{min-width:0;width:100%} .cal-filters label{flex:1 1 140px}
+}
