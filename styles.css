@@ -524,3 +524,20 @@ details.panel summary{cursor:pointer;padding:4px 0}
 .sub-form .sub-lab{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:.95rem}
 .sub-form .cur{display:block;font-size:.85rem;color:#475569;margin-top:4px}
 .sub-form .cur:empty{display:none}
+/* #/fix: current details with ✏️ edit per row */
+.fx-list{list-style:none;margin:0 0 12px;padding:0;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden}
+.fx-row{padding:12px 14px;border-top:1px solid #e2e8f0;background:#fff}
+.fx-row:first-child{border-top:0}
+.fx-row.editing{background:#fffbea}
+.fx-row.bad{outline:2px solid #b91c1c;outline-offset:-2px}
+.fx-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.fx-lab{font-weight:700;font-size:.92rem;color:#334155}
+.fx-cur{margin-top:2px;overflow-wrap:anywhere}
+.fx-cur .muted{color:#64748b;font-style:italic}
+.fx-pen{min-height:40px;min-width:44px;padding:0 12px;border:1.5px solid #94a3b8;border-radius:999px;background:#fff;font:inherit;font-size:.9rem;cursor:pointer;white-space:nowrap}
+.fx-row.editing .fx-pen{border-color:var(--night)}
+.fx-edit{margin-top:8px}
+.fx-edit input,.fx-edit textarea{width:100%}
+.fx-dates{align-items:end}
+.fx-dates .sub-lab{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:.95rem}
+.fx-row[data-k=status] .chk{margin-top:8px}

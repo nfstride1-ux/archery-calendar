@@ -587,7 +587,7 @@ function vShoot(id){
       ${x.fee ? `<dt>Fee</dt><dd>${esc(x.fee)}${x.field_sources?.fee ? ` <span class="src">from ${esc(x.field_sources.fee)}</span>` : ''}</dd>` : ''}
     </dl>${x.notes ? `<p class="note">${esc(x.notes)}</p>` : ''}</section>
     ${CALS[x.org_group] ? `<p class="note"><a href="#/calendars/${x.org_group}">📅 See it in the full ${esc(CALS[x.org_group].name)} calendar</a></p>` : ''}
-    <p class="note">Source: <a href="${esc(x.source_url)}" target="_blank" rel="noopener">${esc(x.source_url)}</a>${x.also_listed ? ` · also <a href="${esc(x.also_listed)}" target="_blank" rel="noopener">World Archery listing</a>` : ''}${x.branch_source ? `<br>Branch source: <a href="${esc(x.branch_source.url)}" target="_blank" rel="noopener" id="branchSrc">${esc(x.branch_source.name)}</a>` : ''}<br>Checked ${esc(x.last_checked)}. Always confirm details with the organiser.</p>
+    <p class="note" id="srcLine">Source: <a href="${esc(x.source_url)}" target="_blank" rel="noopener">${esc(x.source_name || x.source_url)}</a>${x.source_extra ? ` · <a href="${esc(x.source_extra)}" target="_blank" rel="noopener">host club's event page</a>` : ''}${x.also_listed ? ` · also <a href="${esc(x.also_listed)}" target="_blank" rel="noopener">${/worldarchery/.test(x.also_listed) ? 'World Archery listing' : 'listed here'}</a>` : ''}${x.source_note ? `<br>${esc(x.source_note)}` : ''}${x.branch_source ? `<br>Branch source: <a href="${esc(x.branch_source.url)}" target="_blank" rel="noopener" id="branchSrc">${esc(x.branch_source.name)}</a>` : ''}<br>Checked ${esc(x.last_checked)}. Always confirm details with the organiser.</p>
     <p class="note fix-link"><a href="#/fix/${esc(encodeURIComponent(x.id))}" id="fixLink">✏️ Something wrong? Suggest a fix</a></p>
    </div>
    <aside class="side">
@@ -1666,24 +1666,42 @@ const subTabs = on => `<nav class="sub-tabs" aria-label="What would you like to 
 const fixLabel = x => `${x.name} – ${x.start_date ? pd(x.start_date).toLocaleDateString('en-AU', {day: 'numeric', month: 'short', year: 'numeric'}) : 'date TBC'}${x.state_code || x.state ? ' – ' + (x.state_code || x.state) : ''}`;
 const fixList = () => EV.filter(x => !x.start_date || daysTo(x.end_date || x.start_date) >= -90).sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
 const fixDates = x => x ? [x.start_date, x.end_date && x.end_date !== x.start_date && x.end_date].filter(Boolean).join(' to ') : '';
+const fdate = d => d ? pd(d).toLocaleDateString('en-AU', {day: 'numeric', month: 'short', year: 'numeric'}) : '';
 const fixNow = x => { if (!x) return {}; const fe = x.flyer_extract || {};
-  return {date: range(x), time: fe.start_time || fe.times || '', venue: x.location || '', rounds: x.rounds || fe.rounds || '', divs: fe.divisions || fe.classes || '',
-    close: x.entry_close_date ? pd(x.entry_close_date).toLocaleDateString('en-AU', {day: 'numeric', month: 'short', year: 'numeric'}) : '', link: x.registration_url || fe.registration || ''}; };
-const FIX_FIELDS = [['fx_start', 'new_start_date', 'New date(s)'], ['fx_end', 'new_end_date', ''], ['fx_time', 'start_time', 'Start time'], ['fx_venue', 'venue_address', 'Venue / address'],
-  ['fx_rounds', 'rounds_distances', 'Round(s) / distances'], ['fx_divs', 'divisions_bow_classes', 'Divisions / bow classes'], ['fx_close', 'entry_closing_date', 'Entry closing date'],
-  ['fx_link', 'entry_link_or_contact', 'Entry link / contact'], ['fx_cancel', 'cancelled_or_postponed', 'Cancelled / postponed'], ['fx_notes', 'other_notes', 'Other notes']];
+  return {dates: x.start_date ? range(x) : '', start: x.start_date || '', end: x.end_date || x.start_date || '', time: fe.start_time || fe.times || '', venue: x.location || '',
+    rounds: x.rounds || fe.rounds || '', divs: fe.divisions || fe.classes || '', close: x.entry_close_date || '', link: x.registration_url || fe.registration || '',
+    flyer: x.flyer_local || x.flyer_url ? (x.flyer_label || 'Flyer on file') : '', status: x.cancelled ? 'Cancelled' : 'Going ahead (as listed)'}; };
+// [key, label, kind]
+const FIX_ROWS = [['dates', 'Date(s)', 'dates'], ['time', 'Start time', 'text'], ['venue', 'Venue / address', 'text'], ['rounds', 'Round(s) / distances', 'area'],
+  ['divs', 'Divisions / bow classes', 'area'], ['close', 'Entry closing date', 'date'], ['link', 'Entry link / contact', 'text'], ['flyer', 'Flyer', 'file']];
+function fixRows(x){
+  if (!x) return `<p class="note" id="fx_none">Pick a shoot above to see what we have listed.</p>`;
+  const n = fixNow(x);
+  const show = k => k === 'close' ? fdate(n.close) : n[k];
+  const inp = (k, kind) => kind === 'dates' ? `<div class="grid2 fx-dates"><label class="sub-lab" for="fx_start">Start date<input id="fx_start" type="date" value="${esc(n.start)}"></label>
+        <label class="sub-lab" for="fx_end">End date<input id="fx_end" type="date" value="${esc(n.end)}"></label></div><p class="hint">For a one-day shoot, make the end date the same as the start.</p>`
+    : kind === 'area' ? `<textarea id="fx_${k}" rows="3" maxlength="1500">${esc(n[k])}</textarea>`
+    : kind === 'date' ? `<input id="fx_${k}" type="date" value="${esc(n[k])}">`
+    : kind === 'file' ? `<input id="fx_file" name="attachment" type="file" disabled accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"><p class="hint">PDF, JPG or PNG, up to ${MAX_MB} MB.</p>`
+    : `<input id="fx_${k}" maxlength="300" value="${esc(n[k])}">`;
+  return `<ul class="fx-list" id="fx_rows">${FIX_ROWS.map(([k, lab, kind]) => `<li class="fx-row" data-k="${k}" data-kind="${kind}">
+      <div class="fx-head"><span class="fx-lab">${esc(lab)}</span><button type="button" class="fx-pen" data-pen="${k}" aria-expanded="false" aria-label="Edit ${esc(lab.toLowerCase())}">✏️ <span>Edit</span></button></div>
+      <div class="fx-cur">${show(k) ? esc(show(k)) : '<span class="muted">Not listed</span>'}</div>
+      <div class="fx-edit" hidden>${inp(k, kind)}</div></li>`).join('')}
+    <li class="fx-row" data-k="status"><div class="fx-head"><span class="fx-lab">Status</span></div><div class="fx-cur">${esc(n.status)}</div>
+      <label class="chk tick"><input type="checkbox" id="fx_cancel"><span>This shoot is <b>cancelled or postponed</b></span></label></li></ul>`;
+}
 function vFix(id){
   setTitle('Fix a shoot');
   const sent = /(?:^|[?&])fixed=1/.test(location.search);
   if (sent) history.replaceState(null, '', location.pathname + '#/fix');
-  const head = pageHead('Fix a shoot', 'Spotted something wrong or out of date on a listing? Change only what needs fixing and send it to us.', '3d');
+  const head = pageHead('Fix a shoot', 'Spotted something wrong or out of date? Tap ✏️ next to anything that needs changing.', '3d');
   if (sent) return `${head}<div class="wrap narrow">${subTabs('fix')}<section class="panel thanks" id="subThanks" tabindex="-1">
     <span class="thanks-mark" aria-hidden="true">✓</span><h2 class="sec">Thanks, we'll review and update it shortly.</h2>
     <p>If we need anything else we'll reply to the email you gave us.</p>
     <div class="row"><a class="btn gold" href="#/fix">Fix another shoot</a><a class="btn alt" href="#/browse">Find shoots</a></div></section></div>`;
-  const x = BYID[id], now = fixNow(x);
-  const cur = k => `<span class="cur" data-cur="${k}">${now[k] ? 'Now listed: ' + esc(now[k]) : ''}</span>`;
-  const f = (fid, lab, inp, hint = '', req = false) => `<div class="fld" data-f="${fid}"><label for="${fid}">${lab}${req ? ' <span class="req" aria-hidden="true">*</span>' : ''}</label>${inp}${hint ? `<p class="hint" id="${fid}_h">${hint}</p>` : ''}<p class="err" id="${fid}_e" role="alert"></p></div>`;
+  const x = BYID[id];
+  const f = (fid, lab, inp, hint = '', req = false) => `<div class="fld" data-f="${fid}"><label for="${fid}">${lab}${req ? ' <span class="req" aria-hidden="true">*</span>' : ' <span class="opt">(optional)</span>'}</label>${inp}${hint ? `<p class="hint" id="${fid}_h">${hint}</p>` : ''}<p class="err" id="${fid}_e" role="alert"></p></div>`;
   return `${head}<div class="wrap narrow sub">${subTabs('fix')}
   <form id="fixForm" class="panel sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate>
     <input type="hidden" name="_subject" value="Correction:">
@@ -1695,31 +1713,21 @@ function vFix(id){
     <input type="hidden" name="event_name" id="fx_name" value="${esc(x ? x.name : '')}">
     <input type="hidden" name="event_date" id="fx_date" value="${esc(fixDates(x))}">
     <input type="hidden" name="event_page" id="fx_page" value="${esc(x ? SITE_URL() + '#/shoot/' + encodeURIComponent(x.id) : '')}">
-    <input type="hidden" name="what_to_change" id="fx_what" value="">
+    <input type="hidden" name="changes" id="fx_changes" value="">
+    <div id="fx_gen"></div>
     <fieldset><legend>1. Which shoot?</legend>
       ${f('fx_ev', 'Shoot', `<input id="fx_ev" type="search" list="fx_list" required autocomplete="off" placeholder="Type the shoot or club name" value="${esc(x ? fixLabel(x) : '')}"><datalist id="fx_list">${fixList().map(e => `<option value="${esc(fixLabel(e))}"></option>`).join('')}</datalist>`, 'Pick it from the list.', true)}
-      <p class="note" id="fx_picked">${x ? `Fixing: <a href="#/shoot/${esc(encodeURIComponent(x.id))}">${esc(x.name)}</a> · ${esc(range(x))}` : ''}</p>
     </fieldset>
-    <fieldset><legend>2. What needs changing?</legend>
-      <p class="hint">Fill in only the boxes that are wrong. Leave the rest blank.</p>
-      <div class="fld" data-f="fx_start"><span class="lab">New date(s)</span><div class="grid2">
-        <label class="sub-lab" for="fx_start">Start date<input id="fx_start" name="new_start_date" type="date"></label>
-        <label class="sub-lab" for="fx_end">End date <span class="opt">(if more than one day)</span><input id="fx_end" name="new_end_date" type="date"></label></div>${cur('date')}<p class="err" id="fx_start_e" role="alert"></p></div>
-      ${f('fx_time', 'Start time', `<input id="fx_time" name="start_time" maxlength="120" placeholder="e.g. Assembly 8:00 am, shooting 8:30 am">${cur('time')}`)}
-      ${f('fx_venue', 'Venue / address', `<input id="fx_venue" name="venue_address" maxlength="200" placeholder="Range name and street address">${cur('venue')}`)}
-      ${f('fx_rounds', 'Round(s) / distances', `<textarea id="fx_rounds" name="rounds_distances" rows="3" maxlength="1500" placeholder="e.g. Recurve Open: WA 1440 (90/70/50/30 m)"></textarea>${cur('rounds')}`)}
-      ${f('fx_divs', 'Divisions / bow classes', `<textarea id="fx_divs" name="divisions_bow_classes" rows="3" maxlength="1500" placeholder="e.g. Recurve, Compound, Barebow, Longbow; age divisions"></textarea>${cur('divs')}`)}
-      ${f('fx_close', 'Entry closing date', `<input id="fx_close" name="entry_closing_date" type="date">${cur('close')}`)}
-      ${f('fx_link', 'Entry link / contact', `<input id="fx_link" name="entry_link_or_contact" maxlength="300" placeholder="https://… or an email / phone number">${cur('link')}`)}
-      ${f('fx_file', 'New flyer', `<input id="fx_file" name="attachment" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">`, `PDF, JPG or PNG, up to ${MAX_MB} MB.`)}
-      <div class="fld" data-f="fx_cancel"><label class="chk tick"><input type="checkbox" id="fx_cancel" name="cancelled_or_postponed" value="Yes – cancelled or postponed"><span>This shoot is <b>cancelled or postponed</b></span></label></div>
-      ${f('fx_notes', 'Other notes', `<textarea id="fx_notes" name="other_notes" rows="4" maxlength="2000" placeholder="Anything else that's wrong or missing"></textarea>`)}
+    <fieldset><legend>2. What we have listed</legend>
+      <p class="hint">Tap ✏️ next to anything that's wrong. Only what you change is sent.</p>
+      <div id="fx_body">${fixRows(x)}</div>
       <p class="err" id="fx_any_e" role="alert"></p>
+      ${f('fx_notes', 'Other notes', `<textarea id="fx_notes" name="other_notes" rows="3" maxlength="2000" placeholder="Anything else we should know"></textarea>`)}
     </fieldset>
     <fieldset><legend>3. About you</legend>
       ${f('fx_who', 'Your name', `<input id="fx_who" name="contact_name" required maxlength="80" autocomplete="name">`, '', true)}
       <div class="grid2">${f('fx_club', 'Club', `<input id="fx_club" name="club" required maxlength="120" autocomplete="organization" value="${esc(x && x.host ? x.host : '')}">`, '', true)}
-      ${f('fx_role', 'Your role', `<input id="fx_role" name="role" required maxlength="80" placeholder="e.g. President, Secretary, Tournament director">`, '', true)}</div>
+      ${f('fx_role', 'Your role', `<input id="fx_role" name="role" required maxlength="80" placeholder="e.g. President, Secretary">`, '', true)}</div>
       ${f('fx_email', 'Email', `<input id="fx_email" name="email" type="email" required maxlength="120" autocomplete="email" inputmode="email">`, 'So we can check with you if anything is unclear.', true)}
     </fieldset>
     <p class="note priv">🔒 Nothing on the site changes straight away: your correction is emailed to us (${esc(SITE.contact)}, NFS Strategic Holdings) via FormSubmit, we check it, then update the listing.</p>
@@ -1731,26 +1739,47 @@ function vFix(id){
 function bindFix(){
   const fm = $('#fixForm');
   if (!fm) { const t = $('#subThanks'); t && t.focus(); return; }
-  const g = id => $('#' + id), val = id => (g(id).type === 'checkbox' ? (g(id).checked ? g(id).value : '') : (g(id).value || '').trim()), list = fixList();
+  const g = id => $('#' + id), val = id => ((g(id) || {}).value || '').trim(), list = fixList();
+  let cur = BYID[val('fx_id')] || null;
   const setErr = (id, msg) => { const e = g(id + '_e'), w = fm.querySelector(`[data-f="${id}"]`), inp = g(id);
     if (e) e.textContent = msg || ''; w && w.classList.toggle('bad', !!msg);
     if (inp && inp.matches('input,select,textarea')) inp.setAttribute('aria-invalid', msg ? 'true' : 'false'); };
-  const pick = () => { const x = list.find(e => fixLabel(e) === val('fx_ev')), now = fixNow(x);
+  const bindRows = () => fm.querySelectorAll('[data-pen]').forEach(b => b.onclick = () => {
+    const row = b.closest('.fx-row'), ed = row.querySelector('.fx-edit'), on = ed.hidden;
+    ed.hidden = !on; row.classList.toggle('editing', on); b.setAttribute('aria-expanded', on);
+    b.innerHTML = on ? '↩ <span>Keep as is</span>' : '✏️ <span>Edit</span>';
+    const fi = g('fx_file'); if (row.dataset.k === 'flyer' && fi) { fi.disabled = !on; if (!on) fi.value = ''; }
+    if (!on) { const n = fixNow(cur); row.querySelectorAll('input:not([type=file]),textarea').forEach(i => { i.value = i.id === 'fx_start' ? n.start : i.id === 'fx_end' ? n.end : n[i.id.slice(3)] || ''; }); }
+    else { const i = ed.querySelector('input,textarea'); i && i.focus(); }
+    if (fm.dataset.tried) check(); });
+  const pick = () => { const x = list.find(e => fixLabel(e) === val('fx_ev')) || null;
+    if (x === cur) return x; cur = x;
     g('fx_id').value = x ? x.id : ''; g('fx_name').value = x ? x.name : ''; g('fx_date').value = fixDates(x);
     g('fx_page').value = x ? SITE_URL() + '#/shoot/' + encodeURIComponent(x.id) : '';
-    g('fx_picked').innerHTML = x ? `Fixing: <a href="#/shoot/${esc(encodeURIComponent(x.id))}">${esc(x.name)}</a> · ${esc(range(x))}` : '';
-    fm.querySelectorAll('[data-cur]').forEach(s => s.textContent = now[s.dataset.cur] ? 'Now listed: ' + now[s.dataset.cur] : '');
+    g('fx_body').innerHTML = fixRows(x); bindRows();
     if (x && x.host && !val('fx_club')) g('fx_club').value = x.host; return x; };
-  g('fx_ev').addEventListener('input', pick); g('fx_ev').addEventListener('change', pick);
-  const changed = () => FIX_FIELDS.filter(([id]) => val(id)).map(([id, , lab]) => lab || 'New date(s)').filter((v, i, a) => a.indexOf(v) === i).concat(g('fx_file').files.length ? ['New flyer'] : []);
+  g('fx_ev').addEventListener('input', pick); g('fx_ev').addEventListener('change', pick); bindRows();
+  // only rows that are open AND differ from what's listed
+  const changes = () => { if (!cur) return []; const n = fixNow(cur), out = [];
+    fm.querySelectorAll('.fx-row.editing').forEach(row => { const k = row.dataset.k, lab = FIX_ROWS.find(r => r[0] === k)[1];
+      if (k === 'dates') { const s = val('fx_start'), e = val('fx_end') || s; if (s && (s !== n.start || e !== n.end)) out.push([lab, n.dates || 'Not listed', s === e ? fdate(s) : `${fdate(s)} to ${fdate(e)}`]); }
+      else if (k === 'flyer') { const fl = g('fx_file').files[0]; if (fl) out.push([lab, n.flyer || 'Not listed', 'New flyer attached: ' + fl.name]); }
+      else { const v = val('fx_' + k); if (v !== (n[k] || '').trim()) out.push([lab, (k === 'close' ? fdate(n.close) : n[k]) || 'Not listed', (k === 'close' ? fdate(v) : v) || '(remove)']); } });
+    if (g('fx_cancel') && g('fx_cancel').checked) out.push(['Status', n.status, 'Cancelled or postponed']);
+    return out; };
   function check(){
     const errs = [], add = (id, m) => { setErr(id, m); if (m) errs.push(id); };
-    add('fx_ev', g('fx_id').value ? '' : val('fx_ev') ? 'Pick the shoot from the list.' : 'Choose the shoot.');
-    const st = val('fx_start'), en = val('fx_end');
-    add('fx_start', en && st && en < st ? 'The end date is before the start date.' : '');
-    const file = g('fx_file').files[0];
-    add('fx_file', !file ? '' : !/\.(pdf|jpe?g|png)$/i.test(file.name) ? 'Flyers must be a PDF, JPG or PNG.' : file.size > MAX_MB * 1048576 ? `That file is ${(file.size / 1048576).toFixed(1)} MB. The limit is ${MAX_MB} MB.` : '');
-    const any = changed().length; g('fx_any_e').textContent = any ? '' : 'Fill in at least one box above with what needs changing.'; if (!any) errs.push('fx_time');
+    add('fx_ev', cur ? '' : val('fx_ev') ? 'Pick the shoot from the list.' : 'Choose the shoot.');
+    if (cur) {
+      const s = val('fx_start'), e = val('fx_end'), de = fm.querySelector('[data-k=dates]');
+      const dm = de && de.classList.contains('editing') ? (!s ? 'Choose the start date.' : e && e < s ? 'The end date is before the start date.' : '') : '';
+      de && de.classList.toggle('bad', !!dm); if (dm) errs.push('fx_start');
+      const file = g('fx_file') && g('fx_file').files[0];
+      const fm_ = !file ? '' : !/\.(pdf|jpe?g|png)$/i.test(file.name) ? 'Flyers must be a PDF, JPG or PNG.' : file.size > MAX_MB * 1048576 ? `That file is ${(file.size / 1048576).toFixed(1)} MB. The limit is ${MAX_MB} MB.` : '';
+      const fr = fm.querySelector('[data-k=flyer]'); fr && fr.classList.toggle('bad', !!fm_); if (fm_) errs.push('fx_file');
+      const any = changes().length; g('fx_any_e').textContent = dm || fm_ || (any ? '' : 'Tap ✏️ and change at least one thing (or tick cancelled).');
+      if (!any) errs.push('fx_any');
+    }
     add('fx_who', val('fx_who') ? '' : 'Enter your name.');
     add('fx_club', val('fx_club') ? '' : 'Enter your club.');
     add('fx_role', val('fx_role') ? '' : 'Enter your role, e.g. President.');
@@ -1758,25 +1787,28 @@ function bindFix(){
     return errs;
   }
   const subject = () => `Correction: ${val('fx_name') || 'shoot'} ${val('fx_date')}`.trim();
+  const changeText = () => changes().map(([l, o, n]) => `${l}: ${o} → ${n}`).join('\n');
   fm.addEventListener('change', () => { if (fm.dataset.tried) check(); });
-  g('fixMail').onclick = e => { const body = [['Shoot', val('fx_name')], ['Date', val('fx_date')], ['Event ID', val('fx_id')], ['Listing', val('fx_page')]]
-      .concat(FIX_FIELDS.map(([id, , lab]) => [lab || 'New end date', val(id)]).filter(r => r[1]))
-      .concat([['Name', val('fx_who')], ['Club', val('fx_club')], ['Role', val('fx_role')], ['Email', val('fx_email')]]).map(([k, v]) => `${k}: ${v}`).join('\n') + '\n\n(Attach a new flyer if you have one.)\n';
+  fm.addEventListener('input', () => { if (fm.dataset.tried) check(); });
+  g('fixMail').onclick = e => { const body = [['Shoot', val('fx_name')], ['Date', val('fx_date')], ['Event ID', val('fx_id')], ['Listing', val('fx_page')]].map(([k, v]) => `${k}: ${v}`).join('\n')
+      + '\n\nChanges (old → new):\n' + changeText() + (val('fx_notes') ? '\n\nOther notes: ' + val('fx_notes') : '')
+      + '\n\n' + [['Name', val('fx_who')], ['Club', val('fx_club')], ['Role', val('fx_role')], ['Email', val('fx_email')]].map(([k, v]) => `${k}: ${v}`).join('\n') + '\n\n(Attach a new flyer if you have one.)\n';
     e.currentTarget.href = `mailto:${SITE.contact}?subject=${encodeURIComponent(subject())}&body=${encodeURIComponent(body)}`; };
   fm.onsubmit = e => {
     fm.dataset.tried = 1; pick();
     const errs = check();
-    if (errs.length) { e.preventDefault(); $('#fixErr').textContent = `Please fix ${errs.length === 1 ? 'the highlighted field' : `the ${errs.length} highlighted fields`}.`;
-      const first = g(errs[0]); first && first.focus(); return; }
+    if (errs.length) { e.preventDefault(); $('#fixErr').textContent = `Please fix ${errs.length === 1 ? 'the highlighted part' : `the ${errs.length} highlighted parts`}.`;
+      const first = errs[0] === 'fx_any' ? fm.querySelector('[data-pen]') : errs[0] === 'fx_start' ? g('fx_start') : errs[0] === 'fx_file' ? g('fx_file') : g(errs[0]); first && first.focus(); return; }
     $('#fixErr').textContent = '';
     if (!SITE.formEndpoint || !navigator.onLine) { e.preventDefault(); g('fixMail').click(); location.href = g('fixMail').href; toast('Opening your email app…'); return; }
-    g('fx_what').value = changed().join(', ');
+    g('fx_changes').value = changeText();
+    g('fx_gen').innerHTML = changes().map(([l, o, n]) => `<input type="hidden" name="${esc(l)}" value="${esc(o + ' → ' + n)}">`).join('');
     fm.querySelector('[name=_next]').value = location.href.split('#')[0].split('?')[0] + '?fixed=1#/fix';
     fm.querySelector('[name=_subject]').value = subject();
-    if (!g('fx_file').files.length) g('fx_file').disabled = true;
+    const fi = g('fx_file'); if (fi && !fi.files.length) fi.disabled = true;
     const b = g('fixBtn'); b.disabled = true; b.textContent = 'Sending…';
   };
-  window.addEventListener('pageshow', () => { const b = $('#fixBtn'); if (b) { b.disabled = false; b.textContent = 'Send correction'; g('fx_file').disabled = false; } }, {once: true});
+  window.addEventListener('pageshow', () => { const b = $('#fixBtn'); if (b) { b.disabled = false; b.textContent = 'Send correction'; } }, {once: true});
 }
 
 /* ---------- start ---------- */
