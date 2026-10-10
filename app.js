@@ -982,6 +982,47 @@ function closeClubPop(){ const d = $('#clubPop'); if (d) d.remove(); }
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-clubpop]'); if (b) { e.preventDefault(); e.stopPropagation(); clubPop(b.dataset.clubpop, b); } }, true);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { if ($('#clubPop')) closeClubPop(); else if (MC.open && $('#mc')) { MC.open = false; render(); const b = $('#mcBtn'); b && b.focus(); } } });
 window.addEventListener('hashchange', () => { closeClubPop(); MC.open = false; });
+/* ---------- in-app image viewer (flyers, source calendars) ----------
+   An installed iPhone app (standalone, no browser chrome) has no back button, so opening a flyer image as its own page
+   (same window or target=_blank inside the app's scope) strands the user. Every same-site image link opens here instead:
+   big ✕, tap outside, Escape, and the back gesture / back button all close it; pinch or double-tap to zoom. */
+const LB_RE = /\.(jpe?g|png|webp|gif)$/i;
+function lbOpen(href, label){
+  lbClose(true);
+  const w = document.createElement('div'); w.id = 'flb'; w.className = 'flb'; w.setAttribute('role', 'dialog'); w.setAttribute('aria-modal', 'true'); w.setAttribute('aria-label', label || 'Flyer');
+  const full = isStandalone() ? '' : `<a class="flb-full" href="${esc(href)}" target="_blank" rel="noopener">Open full size ↗</a>`;
+  w.innerHTML = `<div class="flb-bar"><span class="flb-t">${esc(label || '')}</span>${full}<button type="button" class="flb-x" aria-label="Close">✕</button></div>
+    <div class="flb-sc"><img class="flb-img" src="${esc(href)}" alt="${esc(label || 'Flyer')}"></div><p class="flb-hint">Pinch or double-tap to zoom · tap ✕ or swipe back to close</p>`;
+  document.body.appendChild(w); document.documentElement.classList.add('flb-on');
+  const sc = w.querySelector('.flb-sc'), img = w.querySelector('.flb-img'); let z = 1;
+  const setZ = (nz, cx, cy) => { nz = Math.max(1, Math.min(5, nz)); cx = cx ?? sc.clientWidth / 2; cy = cy ?? sc.clientHeight / 2; const ox = (sc.scrollLeft + cx) / z, oy = (sc.scrollTop + cy) / z;
+    z = nz; img.style.width = z === 1 ? '' : (z * sc.clientWidth) + 'px'; img.style.maxHeight = z === 1 ? '' : 'none'; w.classList.toggle('zoomed', z > 1);
+    sc.scrollLeft = ox * z - cx; sc.scrollTop = oy * z - cy; };
+  let lastTap = 0, pinch = null;
+  sc.addEventListener('touchstart', e => { if (e.touches.length === 2) { const [a, b] = e.touches; pinch = {d: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY), z}; } }, {passive: true});
+  sc.addEventListener('touchmove', e => { if (pinch && e.touches.length === 2) { e.preventDefault(); const [a, b] = e.touches, r = sc.getBoundingClientRect();
+    setZ(pinch.z * Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) / pinch.d, (a.clientX + b.clientX) / 2 - r.left, (a.clientY + b.clientY) / 2 - r.top); } }, {passive: false});
+  sc.addEventListener('touchend', e => { if (e.touches.length < 2) pinch = null; });
+  img.addEventListener('click', e => { e.stopPropagation(); const now = Date.now(), r = sc.getBoundingClientRect();
+    if (now - lastTap < 350 || e.detail === 2 || !('ontouchstart' in window)) setZ(z > 1 ? 1 : 2.5, e.clientX - r.left, e.clientY - r.top); lastTap = now; });
+  w.addEventListener('click', e => { if (e.target === w || e.target === sc || e.target.classList.contains('flb-hint') || e.target.classList.contains('flb-bar')) lbClose(); });
+  w.querySelector('.flb-x').onclick = () => lbClose(); w.querySelector('.flb-x').focus();
+  try { history.pushState({lb: 1}, '', location.href); } catch (e) {}
+}
+function lbClose(silent){
+  const w = $('#flb'); if (!w) return; w.remove(); document.documentElement.classList.remove('flb-on');
+  if (!silent && history.state && history.state.lb) history.back();
+}
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('a[href]'); if (!a || a.closest('#flb') || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey) return;
+  let u; try { u = new URL(a.getAttribute('href'), location.href); } catch (er) { return; }
+  if (u.origin !== location.origin || !LB_RE.test(u.pathname)) return;
+  e.preventDefault(); e.stopPropagation();
+  const img = a.querySelector('img'); lbOpen(u.href, (img && img.alt) || a.getAttribute('aria-label') || 'Flyer');
+}, true);
+window.addEventListener('popstate', () => { if ($('#flb')) lbClose(true); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#flb')) { e.stopImmediatePropagation(); lbClose(); } }, true);
+window.addEventListener('hashchange', () => { if ($('#flb')) lbClose(true); });
 function clubChips(cur, past, extra){
   const f = followed(); if (!f.length) return `<p class="note club-hint">🏠 <a href="#/settings/clubs">Pick your clubs</a> to see their shoots here.</p>`;
   const n = k => EV.filter(x => clubFilter(k)(x) && (!extra || extra(x)) && (past || !isPast(x))).length, nn = Object.keys(S.clubNew).filter(id => BYID[id]).length;

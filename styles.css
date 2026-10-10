@@ -578,3 +578,17 @@ details.panel summary{cursor:pointer;padding:4px 0}
 .intl-add span{font-size:14px;opacity:.9}
 .date-prev{margin:-4px 0 10px;font-weight:600}
 .date-prev:empty{display:none}
+
+/* in-app image viewer (flyers) – works in the installed iPhone app, which has no back button */
+html.flb-on,html.flb-on body{overflow:hidden}
+.flb{position:fixed;inset:0;z-index:10000;background:rgba(5,10,20,.97);display:flex;flex-direction:column;color:#fff;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.flb-bar{display:flex;align-items:center;gap:10px;padding:8px 8px 8px 14px;flex:none}
+.flb-t{flex:1;min-width:0;font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.9}
+.flb-full{color:#fff;font-size:14px;font-weight:600;white-space:nowrap;text-decoration:underline}
+.flb-x{flex:none;width:52px;height:52px;border-radius:50%;border:2px solid rgba(255,255,255,.85);background:rgba(255,255,255,.14);color:#fff;font-size:26px;line-height:1;cursor:pointer;display:grid;place-items:center}
+.flb-x:hover,.flb-x:focus-visible{background:rgba(255,255,255,.3);outline:3px solid var(--gold,#f5b700);outline-offset:2px}
+.flb-sc{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;display:flex;align-items:center;justify-content:center;padding:0 8px;touch-action:pan-x pan-y}
+.flb.zoomed .flb-sc{display:block}
+.flb-img{max-width:100%;max-height:100%;object-fit:contain;cursor:zoom-in;background:#fff;user-select:none;-webkit-user-select:none}
+.flb.zoomed .flb-img{max-width:none;cursor:zoom-out}
+.flb-hint{flex:none;margin:6px 0 8px;text-align:center;font-size:12px;opacity:.7}
