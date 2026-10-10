@@ -107,6 +107,7 @@ h2.sec{font-size:22px;font-weight:700;text-transform:uppercase;letter-spacing:.0
 .b.close{background:var(--purple-bg);color:var(--purple);border-color:var(--purple)}
 .b.world{color:var(--night);border-color:var(--night)}
 .b.past{background:var(--grey-bg);color:#374151}
+.b.cancelled{background:#7f1d1d;color:#fff;border-color:#7f1d1d}
 .b.tbc{color:#374151;border-color:#6b7280;border-style:dotted}
 /* buttons & forms */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:10px 20px;border-radius:12px;border:2px solid var(--night);background:var(--night);color:#fff;font:700 16px/1.2 var(--body);text-decoration:none;cursor:pointer;white-space:nowrap}
@@ -569,3 +570,8 @@ details.panel summary{cursor:pointer;padding:4px 0}
 .fx-times{align-items:end}
 .fx-times .sub-lab{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:.95rem}
 .kv dd .src{white-space:normal;display:inline-block;max-width:100%;overflow-wrap:anywhere}
+/* International page: 'Add your club's shoot' + submit form date preview */
+.intl-add{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:12px}
+.intl-add span{font-size:14px;opacity:.9}
+.date-prev{margin:-4px 0 10px;font-weight:600}
+.date-prev:empty{display:none}

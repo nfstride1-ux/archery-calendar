@@ -1,0 +1,10 @@
+{
+ "v": 1,
+ "note": "Salted SHA-256 hashes of verified clubs' emails / own email domains. Used only to label submissions for review; nothing is published automatically.",
+ "emails": [
+  "c449dc85a1559b734ffe677274eab053b608b1607f7e8969cedaeb03edb42b3e"
+ ],
+ "domains": [
+  "070ea70895c32be752fad747d8199670d47873dcb897b6aebba3f26b62583042"
+ ]
+}

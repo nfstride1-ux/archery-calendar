@@ -224,7 +224,7 @@ function entryBadge(x){
   return '';
 }
 function badges(x, onCard){
-  const b = [clubBadge(x), clashBadge(x), orgBadge(x), entryBadge(x)].filter(Boolean), en = S.entries[x.id];
+  const b = (x.cancelled ? ['<span class="b cancelled">✕ Cancelled</span>', clubBadge(x)] : [clubBadge(x), clashBadge(x), orgBadge(x), entryBadge(x)]).filter(Boolean), en = S.entries[x.id];
   if (x.book_anytime) b.push(`<span class="b tbc">📞 Book any time</span>`);
   else if (x.info_only) b.push(`<span class="b tbc">${isShoot(x) ? 'ℹ Info only' : '↻ Ongoing program'}</span>`);
   if (x.titles) b.push(`<span class="b titles">🏅 ${x.titles === 'state' ? 'State Titles' : 'Branch Titles'}</span>`);
@@ -402,7 +402,7 @@ function vHome(){
     ${adSlot('banner')}
     <h2 class="sec-h">Pick your discipline</h2>
     <div class="types">${['field','3d','target','indoor'].map(t => `<a class="type th-${t}" href="#/browse" data-th="${t}" style="--img:url('${esc(photo(t === 'field' ? 'aba_field' : t).sm)}');--pos:${esc(photo(t === 'field' ? 'aba_field' : t).pos || 'center')}"><span class="type-name">${THEMES[t][0]} ${THEMES[t][1]}</span><span class="type-sub">${{field:'Bush courses, marked & unmarked', '3d':'Foam animals in the bush', target:'Outdoor ranges, 18–90 m', indoor:'18 m halls, 3-spot & Vegas'}[t]}</span></a>`).join('')}</div>
-    <div class="cats-row" aria-label="Club shoots, coaching, youth and come & try">${['club', 'coaching', 'youth', 'come_try'].map(c => `<a class="cat-link cat-${c}" href="#/browse" data-cat="${c}">${(c === 'youth' || c === 'come_try') && PH[c] ? `<span class="cat-img" aria-hidden="true" style="background-image:url('${esc(PH[c].sm)}');background-position:${esc(PH[c].pos || 'center')}"></span>` : ''}<span class="ci" aria-hidden="true">${CATS[c][0]}</span><b>${CATS[c][2]}</b><span>${EV.filter(x => catOf(x) === c && visible(x) && !isPast(x)).length} coming up</span></a>`).join('')}</div>
+    <div class="cats-row" aria-label="Club shoots, coaching, youth and come & try">${['club', 'coaching', 'youth', 'come_try'].map(c => `<a class="cat-link cat-${c}" href="#/browse" data-cat="${c}">${(k => PH[k] ? `<span class="cat-img" aria-hidden="true" style="background-image:url('${esc(PH[k].sm)}');background-position:${esc(PH[k].pos || 'center')}"></span>` : '')({club: 'us_field', coaching: 'aba_field', youth: 'youth', come_try: 'come_try'}[c])}<span class="ci" aria-hidden="true">${CATS[c][0]}</span><b>${CATS[c][2]}</b><span>${EV.filter(x => catOf(x) === c && visible(x) && !isPast(x)).length} coming up</span></a>`).join('')}</div>
     ${homeClubs()}
     <div class="two">
       <section><h2 class="sec-h">Reminders</h2>
@@ -479,7 +479,13 @@ function wordHit1(w, H){
   if (w.length >= 5 && H.w.some(h => h.length >= 4 && lev1(w, h.slice(0, Math.max(w.length, Math.min(h.length, w.length + 1)))))) return true;
   return false;
 }
-const matchQ = (x, Q) => (!Q.states.length || Q.states.includes(x.state_code)) && Q.words.every(w => wordHit(w, hay(x)));
+const DISC_Q = {indoor: /indoor|18 ?m\b|vegas/i, field: /field|ifaa|arrowhead/i, target: /target|qre|1440|720|900|matchplay/i, clout: /clout/i, '3d': /\b3d\b|3-d|bowhunt/i};
+const discTxt = x => [x.discipline, x.name, x.rounds].filter(Boolean).join(' ');
+const NOT_FITA = /field|\b3d\b|clout|ifaa|bowhunt|arrowhead/i;
+const matchQ = (x, Q) => (!Q.states.length || Q.states.includes(x.state_code)) && Q.words.every(w =>
+  w === 'fita' ? !NOT_FITA.test(discTxt(x)) && wordHit(w, hay(x))
+  : DISC_Q[w] && x.discipline ? DISC_Q[w].test(discTxt(x))
+  : wordHit(w, hay(x)));
 let BF = {q:'', disc:'', cat:'', ost:'', scope:'all', state:'', club:'', clubId:'', mc:false, past:false, hideClash:false, limit:60};
 function vBrowse(){
   setTitle('Find shoots');
@@ -491,7 +497,7 @@ function vBrowse(){
   // A state named in the search (e.g. 'target sa') also overrides 'My states' from Settings.
   const vis = grp ? EV.filter(x => x.org_group === grp) : EV.filter(x => visible(x, !!BF.state || qState));
   const scopes = AUS() ? [['all','All Australia'], ...GROUPS.map(g => ['g:' + g[0], {aa:'Archery Australia', aba:'ABA', awa:'Archery WA'}[g[0]]])] : [['all','All'], ['world','🌐 World'], ...S.countries.map(c => [c, CMAP[c] || c]), ...S.orgs.map(o => [o, (ORGS.find(x => x.id === o) || {}).name?.replace(/\s*\(.*\)/,'') || o])];
-  const discs = [...new Set(vis.filter(x => BF.past || !isPast(x)).map(x => (x.discipline || '').split(/[ (/]/)[0]).filter(Boolean))].sort();   // only disciplines with shoots to show
+  const discs = [...new Set(vis.filter(x => (BF.past || !isPast(x)) && isShoot(x) && !/^(meeting|judging|coaching)/i.test(x.discipline || '')).map(x => (x.discipline || '').split(/[ (/]/)[0]).filter(Boolean))].sort();   // only disciplines with shoots to show
   if (BF.disc && !discs.includes(BF.disc)) discs.push(BF.disc);   // never hide an active filter behind 'All disciplines'
   let list = vis.slice();
   if (BF.scope.startsWith('g:')) list = list.filter(x => x.org_group === BF.scope.slice(2));
@@ -532,7 +538,7 @@ function vBrowse(){
   return html + '</div></div>';
 }
 function bindBrowse(){
-  const q = $('#q'); q.oninput = () => { BF.q = q.value; gcSearch(q.value); BF.limit = 60; clearTimeout(bindBrowse.t); bindBrowse.t = setTimeout(() => { render(); const n = $('#q'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }, 250); };
+  const q = $('#q'); q.oninput = () => { BF.q = q.value; gcSearch(q.value); BF.limit = 60; clearTimeout(bindBrowse.t); bindBrowse.t = setTimeout(() => { if (!(location.hash || '').startsWith('#/browse')) return; render(); const n = $('#q'); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }, 250); };
   document.querySelectorAll('[data-scope]').forEach(b => b.onclick = () => { BF.scope = b.dataset.scope; BF.club = ''; BF.clubId = ''; BF.disc = ''; BF.limit = 60; render(); });
   document.querySelectorAll('[data-clubf]').forEach(b => b.onclick = () => { BF.club = BF.club === b.dataset.clubf ? '' : b.dataset.clubf; BF.limit = 60; render(); });
   bindClubNotice();
@@ -828,7 +834,7 @@ function vCals(arg){
   const all = EV.filter(x => x.org_group === CF.org && x.start_date && x.start_date >= '2026-01-01').sort((a, b) => a.start_date < b.start_date ? -1 : a.start_date > b.start_date ? 1 : a.name < b.name ? -1 : 1);
   const years = [...new Set(all.map(x => x.start_date.slice(0, 4)))];
   const wheres = [...new Set(all.map(calWhere).filter(Boolean))].sort();
-  const discs = [...new Set(all.map(x => (x.discipline || '').split(/[ (/]/)[0]).filter(Boolean))].sort();
+  const discs = [...new Set(all.filter(x => isShoot(x) && !/^(meeting|judging|coaching)/i.test(x.discipline || '')).map(x => (x.discipline || '').split(/[ (/]/)[0]).filter(Boolean))].sort();
   if (CF.where && !wheres.includes(CF.where)) CF.where = ''; if (CF.disc && !discs.includes(CF.disc)) CF.disc = '';
   let list = all.filter(x => (!CF.where || calWhere(x) === CF.where) && (!CF.disc || (x.discipline || '').startsWith(CF.disc)) && (CF.past || !isPast(x)));
   if (CF.club) list = list.filter(clubFilter(CF.club));
@@ -1499,10 +1505,11 @@ function vIntl(arg){
   if (ICTRY.countries.length && code !== 'WORLD' && code !== 'USA' && !iWorldCtrs().some(c => c.code === code)) code = ICTRY.countries.some(c => c.code === code) ? 'WORLD' : 'USA';
   const usa = code === 'USA', world = code === 'WORLD';
   if (IF.code !== code) Object.assign(IF, {code, q: '', disc: '', org: '', st: '', ctry: '', past: false, limit: 60});
-  const nm = iName(code), head = pageHead(world ? '🌐 World events: find a shoot' : `${flag(iIso(code) || 'US')} ${esc(nm)}: find a shoot`,
+  let nm = iName(code), head = pageHead(world ? '🌐 World events: find a shoot' : `${flag(iIso(code) || 'US')} ${esc(nm)}: find a shoot`,
     world ? '3D and bowhunter shoots plus IFAA and continental championships outside the USA. Dates are local to each venue.'
       : `Archery shoots in ${esc(nm)}${usa ? ' – USA Archery, NFAA, ASA, IBO, TAC, Redding, Lancaster and The Vegas Shoot' : ' – 3D shoots and majors'}. Dates are local to each venue.`, usa ? 'us_field' : '3d');
   setTitle(`Archery shoots in ${nm}`);
+  head = head.replace(/(<\/h1>(?:<p>[\s\S]*?<\/p>)?)/, `$1<p class="intl-add"><a class="btn gold sm" id="iAdd" href="#/submit?country=${usa ? 'US' : 'OTHER'}">➕ Add your club's shoot</a> <span>Clubs add their own shoots – we check every shoot before it goes live.</span></p>`);
   if (!INTL) { loadIntl().then(() => { if ((location.hash || '').startsWith('#/intl')) { const y = scrollY; render(); scrollTo(0, y); } }).catch(() => {}); return `${head}<div class="wrap"><p class="note" id="icount">Loading shoots…</p></div>`; }
   const all = INTL.events.filter(x => world ? x.country_code !== 'USA' : x.country_code === code);
   let list = all.filter(x => IF.past || !iPast(x));
@@ -1547,7 +1554,7 @@ function route(){
   render();
   window.scrollTo(0, h.startsWith('#/intl') && last && last.startsWith('#/shoot/') && IBACK[h] ? IBACK[h] : 0); gcPage(); }
 function render(){
-  const h = location.hash || '#/home', [, p, arg] = h.split('/'), v = $('#view');
+  const h0 = location.hash || '#/home', h = h0.split('?')[0], HQ = new URLSearchParams(h0.split('?')[1] || ''), [, p, arg] = h.split('/'), v = $('#view');
   document.querySelectorAll('.nav a').forEach(a => { const on = a.dataset.tab === (p || 'home') || (p === 'shoot' && a.dataset.tab === ((BYID[decodeURIComponent(arg || '')] || {})._intl ? 'intl' : 'browse')); a.classList.toggle('on', on); on ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'); });
   document.body.dataset.page = p || 'home';
   if (p === 'browse') { v.innerHTML = vBrowse(); bindBrowse(); }
@@ -1563,7 +1570,7 @@ function render(){
   else if (p === 'fans') { v.innerHTML = vFans(); bindFans(); }
   else if (p === 'account') { v.innerHTML = vAccount(); bindAccount(); }
   else if (p === 'fix' || (p === 'submit' && arg === 'fix')) { v.innerHTML = vFix(decodeURIComponent(p === 'fix' ? (arg || '') : (h.split('/')[3] || ''))); bindFix(); }
-  else if (p === 'submit') { v.innerHTML = vSubmit(); bindSubmit(); }
+  else if (p === 'submit') { v.innerHTML = vSubmit(HQ.get('country')); bindSubmit(); }
   else if (p === 'calendars') { v.innerHTML = vCals(arg); bindCals(); }
   else if (p === 'club') { const id = decodeURIComponent(arg || ''); v.innerHTML = vClub(id); bindClub(id); }
   else if (p === 'clubs') { v.innerHTML = vClubs(); bindClubPicker(); }
@@ -1575,15 +1582,85 @@ function render(){
     $('#heroSearch').onsubmit = e => { e.preventDefault(); BF.q = $('#hq').value; BF.scope = 'all'; location.hash = '#/browse'; }; }
   bindCards(v); updateNav();
 }
+/* ---------- known clubs: label submissions for review (never auto-publishes) ----------
+   data/known_clubs.json holds salted SHA-256 hashes of verified clubs' emails and own email domains (built by tools/build_known_clubs.py
+   from the private research/known_clubs.json). A match puts '[KNOWN CLUB] ' in front of the email subject and known_club=yes; otherwise
+   '[NEW SUBMITTER] ' and known_club=no. */
+const KC = {p: null, memo: {}};
+const KC_SALT = 'archerycalendar-known-club:v1:';
+const kcNorm = e => { e = String(e || '').trim().toLowerCase(); const i = e.lastIndexOf('@'); return i < 1 ? e : e.slice(0, i).split('+')[0] + e.slice(i); };
+const kcHash = async s => { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(KC_SALT + s)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join(''); };
+const kcLoad = () => KC.p = KC.p || fetch('data/known_clubs.json', {cache: 'no-cache'}).then(r => r.ok ? r.json() : {}).catch(() => ({}));
+async function kcCheck(email){
+  const n = kcNorm(email); if (n in KC.memo) return KC.memo[n];
+  let known = false;
+  try { if (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(n) && window.crypto && crypto.subtle) { const j = await kcLoad();
+    known = (j.emails || []).includes(await kcHash(n)) || (j.domains || []).includes(await kcHash(n.slice(n.lastIndexOf('@')))); } } catch { known = false; }
+  return (KC.memo[n] = known);
+}
+const kcTag = known => known ? '[KNOWN CLUB] ' : '[NEW SUBMITTER] ';
+/* Sets known_club + subject prefix, then lets the browser post. If the check for this email hasn't finished yet, wait for it, then post. */
+function kcSubmit(e, fm, email, setSubject){
+  const n = kcNorm(email), apply = k => { fm.querySelector('[name=known_club]').value = k ? 'yes' : 'no'; setSubject(kcTag(k)); };
+  if (n in KC.memo) { apply(KC.memo[n]); return; }
+  e.preventDefault();
+  Promise.race([kcCheck(email), new Promise(r => setTimeout(() => r(false), 4000))]).then(k => { apply(k); HTMLFormElement.prototype.submit.call(fm); });
+}
 /* ---------- submit a shoot (clubs) ----------
    Static site, no backend: the form POSTs (multipart, with the flyer file) to SITE.formEndpoint (FormSubmit), which emails
    SITE.contact. If no endpoint is configured, or the browser is offline, "Email it instead" builds a pre-filled email. */
 const ORG_TYPES = ['Archery Australia club', 'Archery WA', 'Other state association', 'ABA club or branch', 'Other'];
 const SUB_DISC = [['Target','Target'],['Field','Field'],['3D','3D'],['Indoor','Indoor'],['Clout','Clout'],['Come and try','Come-and-try'],['Clinic','Clinic'],['League','League']];
 const ENTRY_METHODS = ['Assemble', 'Archers Diary', 'Email', 'Phone', 'None yet'];
+/* Overseas clubs (#/submit?country=US): country decides the organisation list, state list (or free-text region), time zones,
+   entry methods, venue suggestions and the date preview format. Australia stays the default and works exactly as before. */
+const SUB_CTRY = {
+  AU: {name: 'Australia', tag: '', loc: 'en-AU', orgs: ORG_TYPES, methods: ENTRY_METHODS, town: 'Suburb or town', state: 'State',
+       linkHint: 'Your Assemble or Archers Diary page, or the email or phone number archers should use.', phone: 'e.g. 0412 345 678'},
+  US: {name: 'United States', tag: 'USA', loc: 'en-US', orgs: ['USA Archery club / JOAD', 'NFAA club', 'ASA (Archery Shooters Association)', 'IBO (International Bowhunting Organization)', 'Independent club or range', 'Other'],
+       methods: ['Online entry page', 'Email', 'Phone', 'Walk-up on the day', 'None yet'], town: 'City or town', state: 'State',
+       linkHint: 'Your online entry page (e.g. USA Archery, NFAA, ASA, IBO or club site), or the email or phone number archers should use.', phone: 'e.g. (555) 123-4567'},
+  OTHER: {name: 'Other country', tag: '', loc: 'en-GB', orgs: ['National federation / World Archery member club', 'IFAA club', '3D / bowhunting club', 'Independent club or range', 'Other'],
+       methods: ['Online entry page', 'Email', 'Phone', 'Walk-up on the day', 'None yet'], town: 'City or town', state: 'Region / province',
+       linkHint: 'Your online entry page, or the email or phone number archers should use.', phone: 'include the country code, e.g. +44 20 7946 0000'}};
+const AU_TZ = {WA: 'Australia/Perth', SA: 'Australia/Adelaide', NT: 'Australia/Darwin', QLD: 'Australia/Brisbane', NSW: 'Australia/Sydney', ACT: 'Australia/Sydney', VIC: 'Australia/Melbourne', TAS: 'Australia/Hobart'};
+const AU_TZ_NAME = {'Australia/Perth': 'Western (Perth)', 'Australia/Darwin': 'Central (Darwin, no daylight saving)', 'Australia/Adelaide': 'Central (Adelaide)', 'Australia/Brisbane': 'Eastern (Brisbane, no daylight saving)',
+  'Australia/Sydney': 'Eastern (Sydney / Canberra)', 'Australia/Melbourne': 'Eastern (Melbourne)', 'Australia/Hobart': 'Eastern (Hobart)'};
+/* Main time zone per US state (split states use the zone most of the state is in; the club can change it). */
+const US_TZ = {AL:'America/Chicago',AK:'America/Anchorage',AZ:'America/Phoenix',AR:'America/Chicago',CA:'America/Los_Angeles',CO:'America/Denver',CT:'America/New_York',DE:'America/New_York',FL:'America/New_York',
+  GA:'America/New_York',HI:'Pacific/Honolulu',ID:'America/Denver',IL:'America/Chicago',IN:'America/New_York',IA:'America/Chicago',KS:'America/Chicago',KY:'America/New_York',LA:'America/Chicago',ME:'America/New_York',
+  MD:'America/New_York',MA:'America/New_York',MI:'America/New_York',MN:'America/Chicago',MS:'America/Chicago',MO:'America/Chicago',MT:'America/Denver',NE:'America/Chicago',NV:'America/Los_Angeles',NH:'America/New_York',
+  NJ:'America/New_York',NM:'America/Denver',NY:'America/New_York',NC:'America/New_York',ND:'America/Chicago',OH:'America/New_York',OK:'America/Chicago',OR:'America/Los_Angeles',PA:'America/New_York',RI:'America/New_York',
+  SC:'America/New_York',SD:'America/Chicago',TN:'America/Chicago',TX:'America/Chicago',UT:'America/Denver',VT:'America/New_York',VA:'America/New_York',WA:'America/Los_Angeles',WV:'America/New_York',WI:'America/Chicago',
+  WY:'America/Denver',DC:'America/New_York',PR:'America/Puerto_Rico'};
+const US_TZ_SPLIT = {TN: 'East Tennessee is on Eastern Time.', KY: 'West Kentucky is on Central Time.', IN: 'NW and SW Indiana are on Central Time.', MI: 'Four Upper Peninsula counties are on Central Time.',
+  FL: 'The Panhandle west of the Apalachicola River is on Central Time.', TX: 'El Paso and Hudspeth counties are on Mountain Time.', OR: 'Most of Malheur County is on Mountain Time.', ID: 'North Idaho is on Pacific Time.',
+  NE: 'West Nebraska is on Mountain Time.', KS: 'Four western counties are on Mountain Time.', SD: 'West South Dakota is on Mountain Time.', ND: 'SW North Dakota is on Mountain Time.'};
+const subCtry = v => { v = String(v || '').toUpperCase(); return v === 'US' || v === 'USA' ? 'US' : v === 'OTHER' ? 'OTHER' : 'AU'; };
+function subTzOptions(c){
+  const z = c === 'AU' ? Object.entries(AU_TZ_NAME) : c === 'US' ? Object.entries(TZ_NAME)
+    : (() => { let all = []; try { all = Intl.supportedValuesOf('timeZone'); } catch {} return (all.length ? all : ['Europe/London', 'Europe/Paris', 'Europe/Berlin', 'America/Toronto', 'America/Vancouver', 'Pacific/Auckland', 'Asia/Tokyo', 'Africa/Johannesburg']).map(t => [t, t.replace(/_/g, ' ')]); })();
+  return `<option value="">Choose…</option>` + z.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join('');
+}
+function subStateField(c){
+  if (c === 'OTHER') return `<input id="s_state" name="region" required maxlength="80" placeholder="e.g. Ontario, Bavaria, Canterbury" autocomplete="address-level1">`;
+  const list = c === 'US' ? Object.entries(US_ST).sort((a, b) => a[1] < b[1] ? -1 : 1) : STATES;
+  return `<select id="s_state" name="state" required><option value="">Choose…</option>${list.map(([k, n]) => `<option value="${k}">${esc(n)}${c === 'US' ? ` (${k})` : ''}</option>`).join('')}</select>`;
+}
+/* Venue suggestions from the chosen country only: Australian clubs + venues, or USA / other-country venues from the International data. */
+function subVenueItems(c){
+  if (c === 'AU') return venueItems(null).map(it => ({...it, group: 'Australian clubs and ranges'}));
+  if (!INTL) return [];
+  const seen = new Set();
+  return INTL.events.filter(x => (c === 'US' ? x.country_code === 'USA' : x.country_code !== 'USA') && x.location && !/^t\.?b\.?[ac]/i.test(x.location))
+    .map(x => { const l = x.location.replace(/[,\s]+$/, ''), [h, ...r] = l.split(','); return {label: h.trim(), sub: [r.join(',').trim(), c === 'OTHER' ? x.country_name : ''].filter(Boolean).join(' · '), value: l, state: x.us_state, tz: x.tz, ctry: x.country_name}; })
+    .filter(it => { const k = it.value.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; })
+    .sort((a, b) => a.label.localeCompare(b.label)).map(it => ({...it, group: c === 'US' ? 'Known US ranges' : 'Known ranges outside the USA'}));
+}
 const MAX_MB = 5;
-function vSubmit(){
+function vSubmit(country){
   setTitle('Submit a shoot');
+  const C = subCtry(country), K = SUB_CTRY[C];
   const sent = /(?:^|[?&])sent=1/.test(location.search);
   if (sent) history.replaceState(null, '', location.pathname + '#/submit');
   const head = pageHead('Submit a shoot', "Clubs and organisers: tell us about your shoot and we'll put it on the calendar.", '3d');
@@ -1600,32 +1677,37 @@ function vSubmit(){
     <li>No online entries? We'll list your shoot, set up an entry form and send you the entry list. Tick "yes" below.</li>
     <li>Fields marked <span class="req">*</span> are required.</li></ul></section>
   <form id="subForm" class="panel sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate>
-    <input type="hidden" name="_subject" value="New shoot submission – Archery Calendar">
+    <input type="hidden" name="_subject" value="New shoot submission – Archery Calendar"><input type="hidden" name="known_club" value="">
     <input type="hidden" name="_template" value="table">
     <input type="hidden" name="_next" value="">
     <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true"><input type="hidden" name="_captcha" value="false">
     <input type="hidden" name="discipline" id="s_disc_val">
+    <input type="hidden" name="time_zone_name" id="s_tz_name"><input type="hidden" name="dates_display" id="s_dates_disp">
     <fieldset><legend>Your club</legend>
-      ${f('s_orgtype', 'Organisation type', `<select id="s_orgtype" name="organisation_type" required>${opt(ORG_TYPES, 'Choose…')}</select>`)}
+      ${f('s_country', 'Country', `<select id="s_country" name="country" required>${Object.entries(SUB_CTRY).map(([k, v]) => `<option value="${k}" ${k === C ? 'selected' : ''}>${k === 'US' ? '🇺🇸 ' : k === 'AU' ? '🇦🇺 ' : '🌐 '}${esc(v.name)}</option>`).join('')}</select>`)}
+      <div class="grid2 hide-au" id="s_ctryname_w" ${C === 'OTHER' ? '' : 'hidden'}>${f('s_ctryname', 'Which country?', `<input id="s_ctryname" name="country_name" maxlength="60" autocomplete="country-name" placeholder="e.g. Canada">`)}</div>
+      ${f('s_orgtype', 'Organisation type', `<select id="s_orgtype" name="organisation_type" required>${opt(K.orgs, 'Choose…')}</select>`)}
       ${f('s_club', 'Club or organisation name', `<input id="s_club" name="club_name" required maxlength="120" autocomplete="organization">`)}
       <div class="grid2">${f('s_name', 'Contact name', `<input id="s_name" name="contact_name" required maxlength="80" autocomplete="name">`)}
       ${f('s_email', 'Contact email', `<input id="s_email" name="email" type="email" required maxlength="120" autocomplete="email" inputmode="email">`)}</div>
-      ${f('s_phone', 'Phone', `<input id="s_phone" name="phone" type="tel" maxlength="20" autocomplete="tel" inputmode="tel">`, '', false)}
+      ${f('s_phone', 'Phone', `<input id="s_phone" name="phone" type="tel" maxlength="20" autocomplete="tel" inputmode="tel" placeholder="${esc(K.phone)}">`, '', false)}
     </fieldset>
     <fieldset><legend>The shoot</legend>
       ${f('s_shoot', 'Shoot name', `<input id="s_shoot" name="shoot_name" required maxlength="140" placeholder="e.g. Autumn 3D Classic">`)}
       <div class="fld" data-f="s_disc"><span class="lab" id="s_disc_l">Discipline <span class="req" aria-hidden="true">*</span> <span class="opt">(tick all that apply)</span></span>
         <div class="chips-check" role="group" aria-labelledby="s_disc_l" id="s_disc">${SUB_DISC.map(([v, l]) => `<label class="chk"><input type="checkbox" value="${esc(v)}"><span>${esc(l)}</span></label>`).join('')}</div><p class="err" id="s_disc_e" role="alert"></p></div>
-      <div class="grid2">${f('s_start', 'Start date', `<input id="s_start" name="start_date" type="date" required>`)}
-      ${f('s_end', 'End date', `<input id="s_end" name="end_date" type="date">`, 'Leave blank for a one-day shoot.', false)}</div>
-      ${f('s_venue', 'Venue', `<input id="s_venue" name="venue" required maxlength="140" placeholder="e.g. club range name or address">`)}
-      <div class="grid2">${f('s_suburb', 'Suburb or town', `<input id="s_suburb" name="suburb" required maxlength="80">`)}
-      ${f('s_state', 'State', `<select id="s_state" name="state" required><option value="">Choose…</option>${STATES.map(([c, n]) => `<option value="${c}">${esc(n)}</option>`).join('')}</select>`)}</div>
+      <div class="grid2">${f('s_start', 'Start date', `<input id="s_start" name="start_date" type="date" required lang="${K.loc}">`)}
+      ${f('s_end', 'End date', `<input id="s_end" name="end_date" type="date" lang="${K.loc}">`, 'Leave blank for a one-day shoot.', false)}</div>
+      <p class="note date-prev" id="s_dprev" aria-live="polite"></p>
+      ${f('s_venue', 'Venue', `<div class="cb" data-cb="s_venue"><input id="s_venue" name="venue" required maxlength="140" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="s_venue_lb" autocomplete="off" placeholder="Start typing the range or club name, or the address"><ul class="cb-lb" id="s_venue_lb" role="listbox" hidden></ul></div>`, `<span id="s_venue_hint">${C === 'AU' ? 'Suggestions are Australian clubs and ranges.' : C === 'US' ? 'Suggestions are US ranges we already list. Not there? Type the full address.' : 'Suggestions are ranges outside the USA we already list. Not there? Type the full address.'}</span>`)}
+      <div class="grid2">${f('s_suburb', K.town, `<input id="s_suburb" name="suburb" required maxlength="80" autocomplete="address-level2">`)}
+      <div id="s_state_w">${f('s_state', K.state, subStateField(C))}</div></div>
+      ${f('s_tz', 'Time zone', `<select id="s_tz" name="time_zone">${subTzOptions(C)}</select>`, `<span id="s_tz_hint">${C === 'OTHER' ? 'The time zone at the venue.' : 'Filled in from the state – change it if your range is in a different zone.'}</span>`, C !== 'AU')}
     </fieldset>
     <fieldset><legend>Entries</legend>
       <div class="grid2">${f('s_close', 'Entries close', `<input id="s_close" name="entry_close_date" type="date">`, '', false)}
-      ${f('s_method', 'How do archers enter now?', `<select id="s_method" name="entry_method" required>${opt(ENTRY_METHODS, 'Choose…')}</select>`)}</div>
-      ${f('s_link', 'Entry link', `<input id="s_link" name="entry_link" type="text" maxlength="300" placeholder="https://" inputmode="url">`, 'Your Assemble or Archers Diary page, or the email or phone number archers should use.', false)}
+      ${f('s_method', 'How do archers enter now?', `<select id="s_method" name="entry_method" required>${opt(K.methods, 'Choose…')}</select>`)}</div>
+      ${f('s_link', 'Entry link', `<input id="s_link" name="entry_link" type="text" maxlength="300" placeholder="https://" inputmode="url">`, `<span id="s_link_hint">${esc(K.linkHint)}</span>`, false)}
       <div class="fld" data-f="s_want"><span class="lab" id="s_want_l">Want us to set up an entry form? <span class="req" aria-hidden="true">*</span></span>
         <div class="seg" role="radiogroup" aria-labelledby="s_want_l" id="s_want"><label class="chk"><input type="radio" name="want_entry_form" value="Yes" required><span>Yes please</span></label><label class="chk"><input type="radio" name="want_entry_form" value="No"><span>No thanks</span></label></div><p class="err" id="s_want_e" role="alert"></p></div>
     </fieldset>
@@ -1651,13 +1733,50 @@ function bindSubmit(){
     if (e) e.textContent = msg || ''; w && w.classList.toggle('bad', !!msg);
     if (inp && inp.matches('input,select,textarea')) { inp.setAttribute('aria-invalid', msg ? 'true' : 'false'); msg ? inp.setAttribute('aria-describedby', id + '_e') : inp.removeAttribute('aria-describedby'); } };
   const isUrl = s => { try { const u = new URL(s); return /^https?:$/.test(u.protocol); } catch { return false; } };
+  const ctry = () => subCtry(val('s_country')), K = () => SUB_CTRY[ctry()];
+  const tzAuto = {v: ''};   // last value we filled in automatically (a manual choice is never overwritten)
+  const suggestTz = () => { const c = ctry(), st = val('s_state'), z = c === 'US' ? US_TZ[st] : c === 'AU' ? AU_TZ[st] : '', sel = g('s_tz');
+    if (z && (!sel.value || sel.value === tzAuto.v)) { sel.value = z; tzAuto.v = z; }
+    g('s_tz_hint').textContent = c === 'OTHER' ? 'The time zone at the venue.' : (c === 'US' && US_TZ_SPLIT[st] ? 'Filled in from the state. ' + US_TZ_SPLIT[st] + ' Change it if that’s you.' : 'Filled in from the state – change it if your range is in a different zone.'); };
+  const fmtD = d => d ? pd(d).toLocaleDateString(K().loc, {weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'}) : '';
+  const datePrev = () => { const a = val('s_start'), b = val('s_end'), t = a ? fmtD(a) + (b && b !== a ? ' – ' + fmtD(b) : '') : '';
+    g('s_dprev').textContent = t ? '📅 ' + t + (val('s_tz') ? ` (${(SUB_CTRY.US && TZ_NAME[val('s_tz')]) || AU_TZ_NAME[val('s_tz')] || val('s_tz').replace(/_/g, ' ')})` : '') : ''; g('s_dates_disp').value = t; };
+  const venueCombo = () => { const c = ctry(), bind = () => { if (!$('#s_venue') || ctry() !== c) return;
+      const i = g('s_venue'), n = i.cloneNode(true); n.value = i.value; i.replaceWith(n);   // fresh input: no listeners left over from the previous country
+      bindCombo('s_venue', subVenueItems(c), false); };
+    delete CB.s_venue; if (c !== 'AU' && !INTL) loadIntl().then(bind).catch(() => {}); else bind(); };
+  function applyCountry(){
+    const c = ctry(), k = SUB_CTRY[c], keep = (id, html) => { const el = g(id), v = el.value; el.outerHTML = html; const n = g(id); if ([...(n.options || [])].some(o => o.value === v || o.text === v)) n.value = v; };
+    keep('s_orgtype', `<select id="s_orgtype" name="organisation_type" required><option value="">Choose…</option>${k.orgs.map(o => `<option>${esc(o)}</option>`).join('')}</select>`);
+    keep('s_method', `<select id="s_method" name="entry_method" required><option value="">Choose…</option>${k.methods.map(o => `<option>${esc(o)}</option>`).join('')}</select>`);
+    g('s_state').outerHTML = subStateField(c); g('s_tz').innerHTML = subTzOptions(c); tzAuto.v = '';
+    fm.querySelector('label[for=s_state]').firstChild.textContent = k.state + ' '; fm.querySelector('label[for=s_suburb]').firstChild.textContent = k.town + ' ';
+    const tzl = fm.querySelector('label[for=s_tz]'); tzl.innerHTML = 'Time zone' + (c === 'AU' ? ' <span class="opt">(optional)</span>' : ' <span class="req" aria-hidden="true">*</span>');
+    g('s_ctryname_w').hidden = c !== 'OTHER'; g('s_phone').placeholder = k.phone; g('s_link_hint').textContent = k.linkHint;
+    g('s_venue_hint').textContent = c === 'AU' ? 'Suggestions are Australian clubs and ranges.' : c === 'US' ? 'Suggestions are US ranges we already list. Not there? Type the full address.' : 'Suggestions are ranges outside the USA we already list. Not there? Type the full address.';
+    ['s_start', 's_end'].forEach(id => g(id).setAttribute('lang', k.loc));
+    if (c === 'OTHER') { try { const z = Intl.DateTimeFormat().resolvedOptions().timeZone; if (z && !/^Australia\//.test(z) && [...g('s_tz').options].some(o => o.value === z)) { g('s_tz').value = z; tzAuto.v = z; } } catch {} }
+    venueCombo(); suggestTz(); datePrev(); if (fm.dataset.tried) check();
+  }
+  g('s_country').onchange = () => { applyCountry(); history.replaceState(null, '', location.pathname + location.search + (ctry() === 'AU' ? '#/submit' : '#/submit?country=' + ctry())); };
+  fm.addEventListener('change', e => { const id = e.target.id;
+    if (id === 's_state') { suggestTz(); datePrev(); }
+    if (id === 's_tz') { tzAuto.v = ''; datePrev(); }
+    if (id === 's_start' || id === 's_end') datePrev();
+    if (id === 's_venue') { const it = (CB.s_venue && CB.s_venue.items || []).find(i => i.value === g('s_venue').value);
+      if (it) { if (it.state && !val('s_state') && [...(g('s_state').options || [])].some(o => o.value === it.state)) { g('s_state').value = it.state; suggestTz(); }
+        if (it.tz && (!val('s_tz') || val('s_tz') === tzAuto.v) && [...g('s_tz').options].some(o => o.value === it.tz)) { g('s_tz').value = it.tz; tzAuto.v = it.tz; }
+        const town = ctry() === 'US' ? (it.value.match(/,\s*([^,]+?)\s+[A-Z]{2}\b(?:\s+\d{5})?\s*$/) || [])[1] : '';
+        if (town && !val('s_suburb')) g('s_suburb').value = town;
+        if (it.ctry && ctry() === 'OTHER' && !val('s_ctryname')) g('s_ctryname').value = it.ctry; datePrev(); } } });
+  venueCombo(); if (ctry() === 'OTHER') applyCountry();
   function check(){
     const errs = [], add = (id, m) => { setErr(id, m); if (m) errs.push(id); };
     add('s_orgtype', val('s_orgtype') ? '' : 'Choose an organisation type.');
     add('s_club', val('s_club') ? '' : 'Enter the club or organisation name.');
     add('s_name', val('s_name') ? '' : 'Enter a contact name.');
     const em = val('s_email'); add('s_email', !em ? 'Enter a contact email.' : /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em) ? '' : 'That email doesn’t look right.');
-    const ph = val('s_phone'); add('s_phone', !ph || /^[+()\d\s-]{8,20}$/.test(ph) ? '' : 'Use digits only, e.g. 0412 345 678.');
+    const ph = val('s_phone'); add('s_phone', !ph || /^[+()\d\s.-]{7,20}$/.test(ph) ? '' : `Use digits only, ${K().phone}.`);
     add('s_shoot', val('s_shoot') ? '' : 'Enter the shoot name.');
     add('s_disc', discs().length ? '' : 'Tick at least one discipline.');
     const st = val('s_start'), en = val('s_end'), cl = val('s_close'), t0 = iso(today());
@@ -1665,11 +1784,13 @@ function bindSubmit(){
     add('s_end', en && st && en < st ? 'The end date is before the start date.' : '');
     add('s_close', cl && st && cl > (en || st) ? 'Entries should close on or before the shoot.' : '');
     add('s_venue', val('s_venue') ? '' : 'Enter the venue.');
-    add('s_suburb', val('s_suburb') ? '' : 'Enter the suburb or town.');
-    add('s_state', val('s_state') ? '' : 'Choose the state.');
+    add('s_suburb', val('s_suburb') ? '' : ctry() === 'AU' ? 'Enter the suburb or town.' : 'Enter the city or town.');
+    add('s_state', val('s_state') ? '' : ctry() === 'OTHER' ? 'Enter the region or province.' : 'Choose the state.');
+    if (ctry() === 'OTHER') add('s_ctryname', val('s_ctryname') ? '' : 'Enter the country.');
+    if (ctry() !== 'AU') add('s_tz', val('s_tz') ? '' : 'Choose the time zone at the venue.');
     const me = val('s_method'), ln = val('s_link');
     add('s_method', me ? '' : 'Choose how archers enter now.');
-    add('s_link', (me === 'Assemble' || me === 'Archers Diary') && !ln ? `Add your ${me} link.` : ln && /^(https?:|www\.)/i.test(ln) && !isUrl(ln.replace(/^www\./i, 'https://www.')) ? 'That link doesn’t look right.' : '');
+    add('s_link', (me === 'Assemble' || me === 'Archers Diary' || me === 'Online entry page') && !ln ? `Add your ${me === 'Online entry page' ? 'entry page' : me} link.` : ln && /^(https?:|www\.)/i.test(ln) && !isUrl(ln.replace(/^www\./i, 'https://www.')) ? 'That link doesn’t look right.' : '');
     add('s_want', fm.querySelector('[name=want_entry_form]:checked') ? '' : 'Choose yes or no.');
     const file = g('s_file').files[0];
     add('s_file', !file ? '' : !/\.(pdf|jpe?g)$/i.test(file.name) ? 'Flyers must be a PDF or JPG.' : file.size > MAX_MB * 1048576 ? `That file is ${(file.size / 1048576).toFixed(1)} MB. The limit is ${MAX_MB} MB; try a link instead.` : '');
@@ -1680,14 +1801,18 @@ function bindSubmit(){
   fm.addEventListener('change', e => { if (fm.dataset.tried) check(); });
   fm.addEventListener('input', e => { if (fm.dataset.tried) { const w = e.target.closest('[data-f]'); if (w && w.classList.contains('bad')) check(); } });
   function mailBody(){
-    const L = [['Organisation type', val('s_orgtype')], ['Club', val('s_club')], ['Contact name', val('s_name')], ['Contact email', val('s_email')], ['Phone', val('s_phone')],
-      ['Shoot', val('s_shoot')], ['Discipline', discs().join(', ')], ['Start', val('s_start')], ['End', val('s_end')], ['Venue', val('s_venue')], ['Suburb', val('s_suburb')], ['State', val('s_state')],
+    const L = [['Country', ctry() === 'OTHER' ? val('s_ctryname') : K().name], ['Organisation type', val('s_orgtype')], ['Club', val('s_club')], ['Contact name', val('s_name')], ['Contact email', val('s_email')], ['Phone', val('s_phone')],
+      ['Shoot', val('s_shoot')], ['Discipline', discs().join(', ')], ['Start', val('s_start')], ['End', val('s_end')], ['Dates (as shown to archers)', g('s_dates_disp').value], ['Venue', val('s_venue')], [K().town, val('s_suburb')], [K().state, val('s_state')], ['Time zone', val('s_tz')],
       ['Entries close', val('s_close')], ['Entry method', val('s_method')], ['Entry link', val('s_link')],
       ['Entry form wanted', (fm.querySelector('[name=want_entry_form]:checked') || {}).value || ''], ['Flyer link', val('s_flink')], ['Notes', val('s_notes')],
       ['Permission to publish', g('s_ok').checked ? 'Yes' : 'Not ticked']];
     return L.map(([k, v]) => `${k}: ${v}`).join('\n') + '\n\n>>> Please attach the flyer (PDF or JPG) to this email before sending. <<<\n';
   }
-  g('subMail').onclick = e => { const sub = `Shoot submission: ${val('s_shoot') || 'new shoot'}${val('s_club') ? ' – ' + val('s_club') : ''}`;
+  const ctag = () => ctry() === 'US' ? 'USA' : ctry() === 'OTHER' ? (val('s_ctryname') || 'Overseas') : '';
+  const subject = () => ctry() === 'AU' ? `New shoot: ${val('s_shoot')} – ${val('s_club')} (${val('s_state')})` : `New shoot (${ctag()}): ${val('s_shoot')} – ${val('s_club')} (${[val('s_suburb'), val('s_state')].filter(Boolean).join(', ')})`;
+  kcLoad(); g('s_email').addEventListener('change', () => kcCheck(val('s_email')));
+  const kcNow = id => KC.memo[kcNorm(val(id))];
+  g('subMail').onclick = e => { const sub = kcTag(kcNow('s_email')) + (ctry() === 'AU' ? `Shoot submission: ${val('s_shoot') || 'new shoot'}${val('s_club') ? ' – ' + val('s_club') : ''}` : subject());
     e.currentTarget.href = `mailto:${SITE.contact}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(mailBody())}`; };
   fm.onsubmit = e => {
     fm.dataset.tried = 1;
@@ -1699,11 +1824,14 @@ function bindSubmit(){
       toast(navigator.onLine ? 'Opening your email app…' : 'You’re offline: opening your email app instead'); return; }
     g('s_disc_val').value = discs().join(', ');
     fm.querySelector('[name=_next]').value = location.href.split('#')[0].split('?')[0] + '?sent=1#/submit';
-    fm.querySelector('[name=_subject]').value = `New shoot: ${val('s_shoot')} – ${val('s_club')} (${val('s_state')})`;
+    fm.querySelector('[name=_subject]').value = subject(); datePrev();
+    g('s_tz_name').value = val('s_tz') ? (TZ_NAME[val('s_tz')] || AU_TZ_NAME[val('s_tz')] || val('s_tz')) : '';
+    if (ctry() === 'AU' && !val('s_tz')) g('s_tz').disabled = true;   // Australian time zone is optional: don't send an empty field
     if (!g('s_file').files.length) g('s_file').disabled = true;   // don't send an empty file part
     const b = g('subBtn'); b.disabled = true; b.textContent = 'Sending…';
+    kcSubmit(e, fm, val('s_email'), tag => { fm.querySelector('[name=_subject]').value = tag + subject(); });
   };
-  window.addEventListener('pageshow', () => { const b = $('#subBtn'); if (b) { b.disabled = false; b.textContent = 'Submit shoot for review'; g('s_file').disabled = false; } }, {once: true});
+  window.addEventListener('pageshow', () => { const b = $('#subBtn'); if (b) { b.disabled = false; b.textContent = 'Submit shoot for review'; g('s_file').disabled = false; const z = $('#s_tz'); if (z) z.disabled = false; } }, {once: true});
 }
 
 /* ---------- Corrections: #/fix and #/fix/<event id> (also reachable as #/submit/fix). Emails nfshold via FormSubmit only; nothing on the site changes automatically. ---------- */
@@ -1812,7 +1940,7 @@ function vFix(id){
   const f = (fid, lab, inp, hint = '', req = false) => `<div class="fld" data-f="${fid}"><label for="${fid}">${lab}${req ? ' <span class="req" aria-hidden="true">*</span>' : ' <span class="opt">(optional)</span>'}</label>${inp}${hint ? `<p class="hint" id="${fid}_h">${hint}</p>` : ''}<p class="err" id="${fid}_e" role="alert"></p></div>`;
   return `${head}<div class="wrap narrow sub">${subTabs('fix')}
   <form id="fixForm" class="panel sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate>
-    <input type="hidden" name="_subject" value="Correction:">
+    <input type="hidden" name="_subject" value="Correction:"><input type="hidden" name="known_club" value="">
     <input type="hidden" name="_template" value="table">
     <input type="hidden" name="_next" value="">
     <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true"><input type="hidden" name="_captcha" value="false">
@@ -1906,10 +2034,11 @@ function bindFix(){
   const changeText = () => changes().map(([l, o, n]) => `${l}: ${o} → ${n}`).join('\n');
   fm.addEventListener('change', () => { if (fm.dataset.tried) check(); });
   fm.addEventListener('input', () => { if (fm.dataset.tried) check(); });
+  kcLoad(); g('fx_email').addEventListener('change', () => kcCheck(val('fx_email')));
   g('fixMail').onclick = e => { const body = [['Shoot', val('fx_name')], ['Date', val('fx_date')], ['Event ID', val('fx_id')], ['Listing', val('fx_page')]].map(([k, v]) => `${k}: ${v}`).join('\n')
       + '\n\nChanges (old → new):\n' + changeText() + (val('fx_notes') ? '\n\nOther notes: ' + val('fx_notes') : '')
       + '\n\n' + [['Name', val('fx_who')], ['Club', val('fx_club')], ['Role', val('fx_role')], ['Email', val('fx_email')]].map(([k, v]) => `${k}: ${v}`).join('\n') + '\n\n(Attach a new flyer if you have one.)\n';
-    e.currentTarget.href = `mailto:${SITE.contact}?subject=${encodeURIComponent(subject())}&body=${encodeURIComponent(body)}`; };
+    e.currentTarget.href = `mailto:${SITE.contact}?subject=${encodeURIComponent(kcTag(KC.memo[kcNorm(val('fx_email'))]) + subject())}&body=${encodeURIComponent(body)}`; };
   fm.onsubmit = e => {
     fm.dataset.tried = 1; pick();
     const errs = check();
@@ -1923,6 +2052,7 @@ function bindFix(){
     fm.querySelector('[name=_subject]').value = subject();
     const fi = g('fx_file'); if (fi && !fi.files.length) fi.disabled = true;
     const b = g('fixBtn'); b.disabled = true; b.textContent = 'Sending…';
+    kcSubmit(e, fm, val('fx_email'), tag => { fm.querySelector('[name=_subject]').value = tag + subject(); });
   };
   window.addEventListener('pageshow', () => { const b = $('#fixBtn'); if (b) { b.disabled = false; b.textContent = 'Send correction'; } }, {once: true});
 }
