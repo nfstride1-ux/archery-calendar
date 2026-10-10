@@ -1412,7 +1412,7 @@ const loadIntl = () => INTL ? Promise.resolve(INTL) : (INTLP = INTLP || fetch('d
   j.events.forEach(x => { x._intl = true; if (!BYID[x.id]) BYID[x.id] = x; }); return (INTL = j); }));
 /* Back from an international shoot page returns to the same country page, filters (IF) and scroll position. */
 const IBACK = {};
-const iBackHash = x => '#/intl/' + (IF.code && (IF.code === 'WORLD' ? x.country_code !== 'USA' || x.world_major : IF.code === x.country_code) ? IF.code : x.country_code === 'USA' ? 'USA' : 'WORLD');
+const iBackHash = x => '#/intl/' + (IF.code && (IF.code === 'WORLD' ? x.country_code !== 'USA' || x.world_major : IF.code === x.country_code) ? IF.code : x.country_code === 'USA' ? 'USA' : x.world_page === false ? x.country_code : 'WORLD');
 const US_ST = {AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',CO:'Colorado',CT:'Connecticut',DE:'Delaware',FL:'Florida',GA:'Georgia',HI:'Hawaii',ID:'Idaho',IL:'Illinois',
   IN:'Indiana',IA:'Iowa',KS:'Kansas',KY:'Kentucky',LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',MT:'Montana',
   NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',NY:'New York',NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',OR:'Oregon',PA:'Pennsylvania',
@@ -1421,19 +1421,21 @@ const US_ORGS = [['usa-archery', 'USA Archery'], ['nfaa', 'NFAA'], ['asa', 'ASA'
 const US_ORG_WORDS = {'usa-archery': 'usa archery joad usat', nfaa: 'nfaa national field archery association', asa: 'asa archery shooters association pro am proam', ibo: 'ibo international bowhunting organization triple crown',
   tac: 'tac total archery challenge', redding: 'redding western classic straight arrow bowhunters marked 3d', lancaster: 'lancaster classic lac', world: 'world archery international ifaa olympic'};
 const TZ_NAME = {'America/New_York': 'Eastern Time', 'America/Chicago': 'Central Time', 'America/Denver': 'Mountain Time', 'America/Phoenix': 'Arizona Time',
-  'America/Los_Angeles': 'Pacific Time', 'America/Anchorage': 'Alaska Time', 'Pacific/Honolulu': 'Hawaii Time', 'America/Puerto_Rico': 'Atlantic Time'};
+  'America/Los_Angeles': 'Pacific Time', 'America/Anchorage': 'Alaska Time', 'Pacific/Honolulu': 'Hawaii Time', 'America/Puerto_Rico': 'Atlantic Time', 'Europe/Copenhagen': 'Danish time'};
 const IDISC = [['Target', /target|clout|flight|para|outdoor/i], ['Indoor', /indoor/i], ['Field', /field/i], ['3D', /3d|bowhunt|trail/i]];
 const iPast = x => (x.end_date || x.start_date) && daysTo(x.end_date || x.start_date) < 0;
 const iEv = code => (INTL && INTL.events.find(x => x.country_code === code)) || {};
 const iName = code => code === 'WORLD' ? 'World events' : (ICTRY.countries.find(c => c.code === code) || {}).name || iEv(code).country_name || code;
 const iIso = code => (ICTRY.countries.find(c => c.code === code) || {}).iso2 || iEv(code).iso2;
 const SOON = [['CAN', 'Canada'], ['NZL', 'New Zealand']];
+/* Countries with every shoot listed (their national body's calendar), shown at the top of the country dropdown. Denmark: Bueskydning Danmark (owner, 10 Oct 2026). */
+const I_FULL = ['USA', 'DEN'];
 /* Outside the USA we list 3D / bowhunter shoots and IFAA / continental majors only (owner, 9 Oct 2026).
    'WORLD' = every country except the USA; single countries only appear once they have an upcoming shoot. */
 const iWorldCtrs = () => ICTRY.countries.filter(c => c.code !== 'USA' && c.upcoming > 0);
 function intlOptions(cur){
   const o = c => `<option value="${esc(c.code)}" ${cur === c.code ? 'selected' : ''}>${flag(c.iso2)} ${esc(c.name)}</option>`;
-  const usa = ICTRY.countries.filter(c => c.code === 'USA'), wc = iWorldCtrs(), soon = SOON.filter(([c]) => !wc.some(x => x.code === c));
+  const usa = I_FULL.map(k => ICTRY.countries.find(c => c.code === k)).filter(Boolean), wc = iWorldCtrs().filter(c => !I_FULL.includes(c.code)), soon = SOON.filter(([c]) => !wc.some(x => x.code === c));
   return usa.map(o).join('') + (ICTRY.countries.length > 1 ? `<option value="WORLD" ${cur === 'WORLD' ? 'selected' : ''}>🌐 World events (World Cup, Worlds, Olympics, 3D &amp; majors)</option>` : '')
     + (wc.length ? `<optgroup label="By country (3D &amp; majors)">${wc.map(o).join('')}</optgroup>` : '')
     + (soon.length ? `<optgroup label="Coming soon">${soon.map(([c, n]) => `<option value="${c}" disabled>${esc(n)} – coming soon</option>`).join('')}</optgroup>` : '');
@@ -1455,6 +1457,7 @@ function iHost(x){
   if (x.org_id === 'wa-europe') return {id: 'intl-wae', name: 'World Archery Europe'};
   if (x.org_id === 'wa-sui') return {id: 'intl-swiss-archery', name: 'Swiss Archery'};
   if (x.org_id === 'ioc-la28') return {id: 'la28', name: 'LA28'};
+  if (x.org_id === 'bueskydning-dk') return !x.host || x.host === 'Bueskydning Danmark' ? {id: 'intl-bueskydning-dk', name: 'Bueskydning Danmark'} : {id: '', name: x.host};
   if (x.us_org === 'usa-archery' && !/usa archery|\busat\b|joad|indoor nationals|target nationals|collegiate/i.test(x.name)) {
     const h = (x.location || '').split(',')[0].trim(); return {id: '', name: h && !/^\d/.test(h) ? h : x.name}; }
   return {id: US_LOGO[x.us_org] || '', name: x.org || 'Archery'};
@@ -1467,7 +1470,7 @@ function iMark(x){
 }
 function iHay(x){
   if (!x._h) { const st = x.us_state ? `${x.us_state} ${US_ST[x.us_state] || ''}` : '';
-    x._h = snorm([x.name, x.location, x.org, x.discipline, x.level, x.country_name, st, US_ORG_WORDS[x.us_org] || '', x.country_code === 'USA' ? 'usa us united states america' : '', x.world_level ? 'world international major' : ''].join(' ')); }
+    x._h = snorm([x.name, x.location, x.org, x.discipline, x.level, x.country_name, st, US_ORG_WORDS[x.us_org] || '', x.country_code === 'USA' ? 'usa us united states america' : x.country_code === 'DEN' ? 'denmark danmark danish dk bueskydning' : '', x.world_level ? 'world international major' : ''].join(' ')); }
   return x._h;
 }
 function iMatch(x, q){
@@ -1498,7 +1501,7 @@ function iCard(x){
       <div class="badges">${iStatus(x)}${x.dates_confirmed === false && x.start_date && !iPast(x) ? '<span class="b tbc">? Dates TBC</span>' : ''}${x.world_major ? '<span class="b world">🏆 World major</span>' : x.world_level && x.us_org === 'world' ? '<span class="b world">🌐 World event</span>' : ''}${x.registration_opens && !iPast(x) && !(x.registration_url && /^\d{4}-/.test(x.registration_opens) && daysTo(x.registration_opens) < 0) ? `<span class="b tbc">◷ Entries open ${esc(/^\d{4}-\d\d-\d\d$/.test(x.registration_opens) ? pd(x.registration_opens).toLocaleDateString('en-AU', {day: 'numeric', month: 'short', year: 'numeric'}) : x.registration_opens)}</span>` : ''}</div>
       ${x.notes ? `<p class="note">${esc(x.notes)}</p>` : ''}
       <p class="iacts">${x.registration_url ? `<a class="btn sm" href="${esc(x.registration_url)}" target="_blank" rel="noopener">✍ Entry / event page ↗</a>` : '<span class="note">No entry link published yet.</span>'}
-        <a href="${esc(x.source_url)}" target="_blank" rel="noopener">Source ↗</a>${x.also_listed ? ` · <a href="${esc(x.also_listed)}" target="_blank" rel="noopener">Also listed ↗</a>` : ''}</p></div>
+        <a href="${esc(x.source_url)}" target="_blank" rel="noopener">Source${x.source_name ? ': ' + esc(x.source_name) : ''} ↗</a>${x.also_listed ? ` · <a href="${esc(x.also_listed)}" target="_blank" rel="noopener">Also listed ↗</a>` : ''}</p></div>
   </article>`;
 }
 function vIntl(arg){
@@ -1508,11 +1511,11 @@ function vIntl(arg){
   if (IF.code !== code) Object.assign(IF, {code, q: '', disc: '', org: '', st: '', ctry: '', major: false, past: false, limit: 60});
   let nm = iName(code), head = pageHead(world ? '🌐 World events: find a shoot' : `${flag(iIso(code) || 'US')} ${esc(nm)}: find a shoot`,
     world ? 'World majors – Hyundai Archery World Cup, World Championships, World Masters Games, LA28 Olympics and Paralympics – plus 3D and bowhunter shoots and IFAA and continental championships. Dates are local to each venue.'
-      : `Archery shoots in ${esc(nm)}${usa ? ' – USA Archery, NFAA, ASA, IBO, TAC, Redding, Lancaster and The Vegas Shoot' : ' – 3D shoots and majors'}. Dates are local to each venue.`, usa ? 'us_field' : '3d');
+      : `Archery shoots in ${esc(nm)}${usa ? ' – USA Archery, NFAA, ASA, IBO, TAC, Redding, Lancaster and The Vegas Shoot' : code === 'DEN' ? " – every shoot on Bueskydning Danmark's calendar: indoor, target, field and 3D, including the Danish championships (DM)" : ' – 3D shoots and majors'}. Dates are local to each venue.`, usa ? 'us_field' : '3d');
   setTitle(`Archery shoots in ${nm}`);
   head = head.replace(/(<\/h1>(?:<p>[\s\S]*?<\/p>)?)/, `$1<p class="intl-add"><a class="btn gold sm" id="iAdd" href="#/submit?country=${usa ? 'US' : 'OTHER'}">➕ Add your club's shoot</a> <span>Clubs add their own shoots – we check every shoot before it goes live.</span></p>`);
   if (!INTL) { loadIntl().then(() => { if ((location.hash || '').startsWith('#/intl')) { const y = scrollY; render(); scrollTo(0, y); } }).catch(() => {}); return `${head}<div class="wrap"><p class="note" id="icount">Loading shoots…</p></div>`; }
-  const all = INTL.events.filter(x => world ? x.country_code !== 'USA' || x.world_major : x.country_code === code);
+  const all = INTL.events.filter(x => world ? (x.country_code !== 'USA' && x.world_page !== false) || x.world_major : x.country_code === code);
   let list = all.filter(x => IF.past || !iPast(x));
   if (world && IF.ctry) list = list.filter(x => x.country_code === IF.ctry);
   if (world && IF.major) list = list.filter(x => x.world_major);
@@ -1527,7 +1530,7 @@ function vIntl(arg){
   return `${head}<div class="wrap intl-page">
     <div class="intl-top"><label for="ictry">Country</label><select id="ictry">${intlOptions(code)}</select>
       <a class="note" href="#/browse">🇦🇺 Australian shoots are in Find shoots</a></div>
-    <div class="browse"><div class="filters"><input type="search" id="iq" placeholder="${usa ? 'Search: vegas, nfaa, ibo, texas, CA…' : 'Search shoot, club, town…'}" value="${esc(IF.q)}" aria-label="Search shoots in ${esc(nm)}">
+    <div class="browse"><div class="filters"><input type="search" id="iq" placeholder="${usa ? 'Search: vegas, nfaa, ibo, texas, CA…' : code === 'DEN' ? 'Search: DM, indoor, 3D, Aarhus, Taastrup…' : 'Search shoot, club, town…'}" value="${esc(IF.q)}" aria-label="Search shoots in ${esc(nm)}">
       ${world ? `<label for="ictr2" class="sr">Country</label><select id="ictr2" aria-label="Country"><option value="">All countries</option>${wctr.map(c => `<option value="${c}" ${IF.ctry === c ? 'selected' : ''}>${flag(iIso(c))} ${esc(iName(c))}</option>`).join('')}</select>` : ''}
       ${usa ? `<label for="ist" class="sr">State</label><select id="ist" aria-label="US state"><option value="">All states</option>${sts.map(c => `<option value="${c}" ${IF.st === c ? 'selected' : ''}>${esc(US_ST[c])} (${c})</option>`).join('')}</select>` : ''}
       <label for="idisc" class="sr">Discipline</label><select id="idisc" aria-label="Discipline"><option value="">All disciplines</option>${IDISC.map(([d]) => `<option ${IF.disc === d ? 'selected' : ''}>${d}</option>`).join('')}</select>
@@ -1537,7 +1540,8 @@ function vIntl(arg){
     <p class="note" id="icount">${list.length} shoot${list.length === 1 ? '' : 's'}${active.length ? ' · ' + active.join(' · ') + ' <button class="linkbtn" id="iclr">✕ Clear</button>' : ''}.</p></div>
     <div class="results">${list.slice(0, IF.limit).map(iCard).join('') || `<div class="empty">No shoots match${active.length ? ': ' + active.join(' · ') : ''}.</div>`}</div>
     ${list.length > IF.limit ? `<p class="center"><button class="btn alt" id="imore">Show more (${list.length - IF.limit})</button></p>` : ''}
-    <p class="note">${!usa ? "Sources: the World Archery calendar (World Cup, World Championships and 3D events registered by each national federation), LA28 (Olympic and Paralympic schedules), World Masters Games 2027 Kansai, World Archery Europe's 2027 events and the IFAA tournament calendar. Outside the USA we list world majors, 3D shoots and IFAA / continental championships. Details not published yet are left blank or marked TBC, not guessed. Archery is not on the Glasgow 2026 Commonwealth Games programme and is not yet confirmed for 2030." : "Sources: USA Archery's 2027 calendar, the World Archery calendar, and each organiser's official site (NFAA, The Vegas Shoot, ASA, IBO, TAC, Straight Arrow Bowhunters, Lancaster Archery). Details not published yet are left blank, not guessed."}</p></div>`;
+    ${code === 'DEN' ? `<p class="note bd-src">${LOGO['intl-bueskydning-dk'] ? `<img src="${esc(LOGO['intl-bueskydning-dk'].sm)}" alt="Bueskydning Danmark logo" width="32" height="32" style="vertical-align:middle;margin-right:.4em">` : ''}Source: <a href="https://bueskydningdanmark.dk/kalender/" target="_blank" rel="noopener">Bueskydning Danmark's calendar ↗</a> (the national body for archery in Denmark), checked 10 Oct 2026. Event names are as published in Danish; the discipline is given in English. Venues not published yet are marked “to be confirmed”.</p>` : ''}
+    <p class="note">${code === 'DEN' ? "Entry details are on each shoot's Bueskydning Danmark page. Where World Archery's calendar shows different dates, the shoot page says so – check with the organiser." : !usa ? "Sources: the World Archery calendar (World Cup, World Championships and 3D events registered by each national federation), LA28 (Olympic and Paralympic schedules), World Masters Games 2027 Kansai, World Archery Europe's 2027 events and the IFAA tournament calendar. Outside the USA we list world majors, 3D shoots and IFAA / continental championships. Details not published yet are left blank or marked TBC, not guessed. Archery is not on the Glasgow 2026 Commonwealth Games programme and is not yet confirmed for 2030." : "Sources: USA Archery's 2027 calendar, the World Archery calendar, and each organiser's official site (NFAA, The Vegas Shoot, ASA, IBO, TAC, Straight Arrow Bowhunters, Lancaster Archery). Details not published yet are left blank, not guessed."}</p></div>`;
 }
 function bindIntl(){
   const rer = sel => { const y = scrollY; render(); scrollTo(0, y); const e = sel && $(sel); if (e) { e.focus({preventScroll: true}); if (e.type === 'search' || e.type === 'text') e.setSelectionRange(e.value.length, e.value.length); } };

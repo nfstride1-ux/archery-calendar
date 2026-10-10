@@ -372,6 +372,16 @@
    "source_type": "organisation's own website",
    "kind": "org",
    "retrieved": "2026-10-09"
+  },
+  "intl-bueskydning-dk": {
+   "name": "Bueskydning Danmark",
+   "file": "img/clubs/intl-bueskydning-dk.webp",
+   "sm": "img/clubs/intl-bueskydning-dk-sm.webp",
+   "source_url": "https://bueskydningdanmark.dk/wp-content/uploads/2022/09/cropped-512x512-1-270x270.png",
+   "source_page": "https://bueskydningdanmark.dk/",
+   "source_type": "organisation's own website",
+   "kind": "org",
+   "retrieved": "2026-10-10"
   }
  }
 }
