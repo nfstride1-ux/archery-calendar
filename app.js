@@ -111,7 +111,7 @@ async function boot(){
     navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(r => { r.update();
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') r.update().catch(() => {}); }); }).catch(() => {});
   }
-  importHandoff(); clubUpdates(); route();
+  importHandoff(); clubUpdates(); route(); cardsLoad().catch(() => {});
   if (Object.keys(S.saved).concat(Object.keys(S.entries)).some(id => !BYID[id])) loadIntl().then(() => { const y = scrollY; render(); scrollTo(0, y); }).catch(() => {}); checkReminders(); setInterval(checkReminders, 60 * 60 * 1000);
   initAuth().catch(e => console.warn('auth', e));
 }
@@ -661,7 +661,7 @@ function vCalendar(){
     g += `<div class="c ${ev.length ? 'has' : ''} ${t ? 't' : ''}" ${ev.length ? `data-open="${esc(ev[0].id)}" role="link" tabindex="0" aria-label="${d} ${MONL[m]}: ${esc(ev.map(x => x.name + ' – ' + ST_TXT[ST(x.id)].replace(/[☐✓$·]/g, '').replace(/\s+/g, ' ').trim()).join(', '))}"` : ''}>${d}${mk ? `<span class="mk" aria-hidden="true">${mk}</span>` : ''}${ev.length ? `<span class="dot">${ev.length > 1 ? ev.length + ' shoots' : '●'}</span>` : ''}</div>`; }
   const inMonth = mine.filter(x => x.start_date && (x.start_date.slice(0, 7) === iso(first).slice(0, 7) || (x.end_date || '').slice(0, 7) === iso(first).slice(0, 7)));
   const up = mine.filter(x => !isPast(x)), past = mine.filter(isPast);
-  return `${pageHead('My shoots', 'Your saved shoots, month by month.', 'target')}<div class="wrap narrow"><div class="calnav"><button id="pm" aria-label="Previous month">‹</button><b>${MONL[m]} ${y}</b><button id="nm" aria-label="Next month">›</button></div>
+  return `${pageHead('My shoots', 'Your saved shoots, month by month.', 'target')}<div class="wrap narrow"><a class="btn gold block mcc-quick" href="#/cards">🪪 My membership cards${MCD.list.length ? ` (${MCD.list.length})` : ''}</a><div class="calnav"><button id="pm" aria-label="Previous month">‹</button><b>${MONL[m]} ${y}</b><button id="nm" aria-label="Next month">›</button></div>
   <div class="grid">${g}</div>
   ${clashPairsHtml()}
   <div class="legend"><span class="b lg-day">■ shoot day</span><span class="b lg-day">✓ entered</span><span class="b lg-day">✓$ entered + paid</span><span class="b lg-today">□ today</span></div>
@@ -783,6 +783,7 @@ function vPrivacy(){
     <li>"Register / enter" and email links go straight to the organiser. Anything you send them is between you and the organiser.</li>
     <li><b>Submit a shoot form:</b> what a club sends us (contact name, email, phone, shoot details and flyer) is emailed to us at ${esc(SITE.contact)} via the form service FormSubmit (formsubmit.co). We use it only to check and list the shoot and, if you ask, to set up your entry form. Contact details aren't published unless they're on your flyer. Ask us any time to correct or delete them.</li>
     <li><b>Fans photos:</b> if you send us a photo, your name, email, the photo and its details are emailed to us via FormSubmit. We publish only approved photos with the caption and your name as credit – never your email. In a photo and want it removed? Email ${esc(SITE.contact)}.</li>
+    <li><b>Membership cards:</b> photos of your membership cards, card names, member numbers and links you add in <a href="#/cards">My membership cards</a> are stored only in this browser on this device. They’re never uploaded, published or sent to us${window.SUPABASE_CARD_SYNC ? ', unless you turn on the private backup to your account (private storage only you can open)' : ''}. Photos are shrunk and saved without their hidden location data. Delete them any time on that page.</li>
     <li>The site is hosted on GitHub Pages, which keeps standard server logs (e.g. IP address) – see GitHub's privacy statement.</li></ul>
     <p class="note">Questions: <a href="mailto:${SITE.contact}">${SITE.contact}</a> (NFS Strategic Holdings).</p></section>
     ${AUTH.on ? `<section class="panel" id="privAcct"><h2 class="sec">If you create an account (optional)</h2><ul class="ticks">
@@ -987,12 +988,12 @@ window.addEventListener('hashchange', () => { closeClubPop(); MC.open = false; }
    (same window or target=_blank inside the app's scope) strands the user. Every same-site image link opens here instead:
    big ✕, tap outside, Escape, and the back gesture / back button all close it; pinch or double-tap to zoom. */
 const LB_RE = /\.(jpe?g|png|webp|gif)$/i;
-function lbOpen(href, label){
+function lbOpen(href, label, o = {}){
   lbClose(true);
-  const w = document.createElement('div'); w.id = 'flb'; w.className = 'flb'; w.setAttribute('role', 'dialog'); w.setAttribute('aria-modal', 'true'); w.setAttribute('aria-label', label || 'Flyer');
-  const full = isStandalone() ? '' : `<a class="flb-full" href="${esc(href)}" target="_blank" rel="noopener">Open full size ↗</a>`;
+  const w = document.createElement('div'); w.id = 'flb'; w.className = 'flb' + (o.light ? ' flb-light' : ''); w.setAttribute('role', 'dialog'); w.setAttribute('aria-modal', 'true'); w.setAttribute('aria-label', label || 'Flyer');
+  const full = isStandalone() || o.noFull ? '' : `<a class="flb-full" href="${esc(href)}" target="_blank" rel="noopener">Open full size ↗</a>`;
   w.innerHTML = `<div class="flb-bar"><span class="flb-t">${esc(label || '')}</span>${full}<button type="button" class="flb-x" aria-label="Close">✕</button></div>
-    <div class="flb-sc"><img class="flb-img" src="${esc(href)}" alt="${esc(label || 'Flyer')}"></div><p class="flb-hint">Pinch or double-tap to zoom · tap ✕ or swipe back to close</p>`;
+    <div class="flb-sc"><img class="flb-img" src="${esc(href)}" alt="${esc(label || 'Flyer')}"></div>${o.cap ? `<p class="flb-cap">${esc(o.cap)}</p>` : ''}<p class="flb-hint">${esc(o.hint || 'Pinch or double-tap to zoom · tap ✕ or swipe back to close')}</p>`;
   document.body.appendChild(w); document.documentElement.classList.add('flb-on');
   const sc = w.querySelector('.flb-sc'), img = w.querySelector('.flb-img'); let z = 1;
   const setZ = (nz, cx, cy) => { nz = Math.max(1, Math.min(5, nz)); cx = cx ?? sc.clientWidth / 2; cy = cy ?? sc.clientHeight / 2; const ox = (sc.scrollLeft + cx) / z, oy = (sc.scrollTop + cy) / z;
@@ -1293,6 +1294,11 @@ function vAccount(){
     <label class="chk"><input type="checkbox" id="delLocal" checked> Also remove my shoots from this device</label>
     <button class="btn danger block" type="submit">🗑 Delete my account and data</button></form></section></div>`;
 }
+function cardsAcctPanel(){
+  const n = MCD.list.length;
+  return `<section class="panel mcc-acct"><h2 class="sec">🪪 My membership cards</h2><p>${n ? `${n} card${n === 1 ? '' : 's'} saved on this device.` : 'Keep your Archery Australia, ABA, state, club or other membership cards on your phone to show at the shoot.'} They work offline${window.SUPABASE_CARD_SYNC ? '' : ' and stay on this device'}.</p>
+    <a class="btn gold block" href="#/cards">${n ? 'Show my cards' : '＋ Add a card'}</a></section>`;
+}
 function bindAccount(){
   const busy = (b, t) => { if (b) { b.disabled = true; b.dataset.t = b.textContent; b.textContent = t; } };
   const f = $('#signin');
@@ -1322,12 +1328,234 @@ function bindAccount(){
   const del = $('#del'); if (del) del.onsubmit = async e => { e.preventDefault();
     if ($('#delc').value.trim().toUpperCase() !== 'DELETE') { toast('Type DELETE to confirm'); return; }
     const b = del.querySelector('button'), clearLocal = $('#delLocal').checked; busy(b, 'Deleting…');
+    if (window.SUPABASE_CARD_SYNC) await cardSyncWipe(AUTH.client, AUTH.user.id).catch(() => {});
     const {error} = await AUTH.client.rpc('delete_my_account');
     if (error) { AUTH.msg = 'Couldn’t delete: ' + error.message + '. Nothing was deleted – try again, or email ' + SITE.contact + '.'; return softRenderForce(); }
     await AUTH.client.auth.signOut({scope: 'local'}).catch(() => {}); AUTH.sync.unlink(clearLocal); AUTH.user = null;
     AUTH.msg = ''; toast('Your account and its data were deleted'); softRenderForce(); };
 }
 function softRenderForce(){ const y = scrollY; render(); scrollTo(0, y); }
+/* ---------- My membership cards ----------
+   Archers keep photos of (or links to) their membership cards to show at the shoot. Stored ON THIS DEVICE in IndexedDB
+   ('archcal-cards'), so they open offline at ranges with no signal. Photos are re-encoded in the browser (max 1600 px JPEG,
+   which also drops EXIF/location data) and are never uploaded, logged or made public. Optional private backup to the
+   user's account (Supabase Storage, private bucket + RLS) only when window.SUPABASE_CARD_SYNC is switched on – see supabase/membership_cards.sql. */
+const CARD_BODIES = [['aa', 'Archery Australia'], ['aba', 'ABA (Australian Bowhunters Association)'], ['state', 'State body (e.g. Archery WA)'], ['ifaa', 'IFAA'],
+  ['club', 'Club'], ['usa', 'USA Archery'], ['nfaa', 'NFAA'], ['other', 'Other']];
+const CARD_BODY = Object.fromEntries(CARD_BODIES), CARD_MAX = 1600, CARD_BUCKET = 'membership-cards', CARD_DEL_KEY = 'archcal.cardDel', CARD_SYNC_KEY = 'archcal.cardSync';
+const MCD = {db: null, list: [], loaded: false, loading: null, edit: null, err: '', urls: [], kind: 'photo', draft: {}};
+function cardDb(){
+  return MCD.db || (MCD.db = new Promise((res, rej) => {
+    if (!window.indexedDB) return rej(new Error('This browser can’t store cards on the device.'));
+    const r = indexedDB.open('archcal-cards', 1);
+    r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains('cards')) r.result.createObjectStore('cards', {keyPath: 'id'}); };
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error || new Error('Couldn’t open card storage'));
+    r.onblocked = () => rej(new Error('Card storage is busy – close other tabs of this site and try again.')); }));
+}
+async function cardTx(mode, fn){
+  const db = await cardDb();
+  return new Promise((res, rej) => { const t = db.transaction('cards', mode), req = fn(t.objectStore('cards'));
+    t.oncomplete = () => res(req && 'result' in req ? req.result : undefined); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error || new Error('Not saved')); });
+}
+const cardClean = c => { const o = {}; for (const k in c) if (k[0] !== '_') o[k] = c[k]; return o; };
+const cardPut = c => cardTx('readwrite', s => s.put(cardClean(c)));
+const cardDel = id => cardTx('readwrite', s => s.delete(id));
+function cardUrl(img){ if (!img || !img.buf) return ''; const u = URL.createObjectURL(new Blob([img.buf], {type: img.type || 'image/jpeg'})); MCD.urls.push(u); return u; }
+async function cardsLoad(force){
+  if (MCD.loading && !force) return MCD.loading;
+  return MCD.loading = (async () => {
+    try { const all = await cardTx('readonly', s => s.getAll()); MCD.urls.forEach(u => URL.revokeObjectURL(u)); MCD.urls = [];
+      MCD.list = (all || []).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)); MCD.list.forEach(c => { c._f = cardUrl(c.front); c._b = cardUrl(c.back); }); MCD.err = ''; }
+    catch (e) { MCD.err = (e && e.message) || 'Couldn’t open card storage'; MCD.list = []; }
+    MCD.loaded = true; updateCardsNav(); return MCD.list; })();
+}
+function updateCardsNav(){ const a = $('#navCards'); if (!a) return; a.hidden = false; a.classList.toggle('on', (location.hash || '').startsWith('#/cards')); }
+async function cardImg(file){   // File -> {type, buf, w, h}: JPEG, longest side <= 1600 px, metadata (EXIF/GPS) dropped by re-encoding
+  if (!file) return null;
+  if (file.size > 40 * 1024 * 1024) throw new Error('That photo is too big. Try a smaller one or a screenshot.');
+  let src, w, h, url;
+  try { src = await createImageBitmap(file); w = src.width; h = src.height; }
+  catch { url = URL.createObjectURL(file); src = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('Couldn’t read that photo. Try a JPG or PNG, or take a screenshot of the card.')); i.src = url; }); w = src.naturalWidth; h = src.naturalHeight; }
+  try { const k = Math.min(1, CARD_MAX / Math.max(w, h)), c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k));
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(src, 0, 0, c.width, c.height);
+    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.85)); if (!blob) throw new Error('Couldn’t process that photo.');
+    return {type: 'image/jpeg', buf: await blob.arrayBuffer(), w: c.width, h: c.height}; }
+  finally { if (url) URL.revokeObjectURL(url); if (src && src.close) src.close(); }
+}
+const cardLinkOk = u => { try { const x = new URL(u); return x.protocol === 'https:' && !!x.hostname; } catch { return false; } };
+const cardSyncAvail = () => !!(window.SUPABASE_CARD_SYNC && AUTH.on && AUTH.client && AUTH.user);
+const cardSyncOn = () => cardSyncAvail() && localStorage.getItem(CARD_SYNC_KEY) === '1';
+function cardShow(id, side){
+  const c = MCD.list.find(x => x.id === id); if (!c) return; const u = side === 'back' ? c._b : c._f; if (!u) return;
+  lbOpen(u, `${c.label}${side === 'back' ? ' (back)' : ''}`, {light: true, noFull: true, cap: c.number ? `No. ${c.number}` : '',
+    hint: 'Turn your screen brightness up · pinch to zoom · tap ✕ or swipe back to close'});
+}
+function vCards(){
+  setTitle('My membership cards');
+  if (!MCD.loaded) { cardsLoad().then(() => { if (document.body.dataset.page === 'cards') softRender(); }); }
+  const head = pageHead('My membership cards', 'Show your membership card at the shoot. Saved on this device – works with no signal.', 'target');
+  const sync = cardSyncAvail() ? `<section class="panel"><h2 class="sec">Back up to my account</h2><label class="chk"><input type="checkbox" id="mcSync" ${cardSyncOn() ? 'checked' : ''}> Keep a private copy of my cards in my account, so they’re on my other devices</label>
+    <p class="note">Only you can open them (private storage locked to your account). Off by default.</p>${MCD.syncMsg ? `<p class="note">${esc(MCD.syncMsg)}</p>` : ''}</section>` : '';
+  const list = !MCD.loaded ? '<p class="loading">Loading your cards…</p>' : MCD.list.length ? MCD.list.map((c, i) => `<article class="mcc" data-mc="${esc(c.id)}">
+      <div class="mcc-top"><span class="mcc-body mcc-${esc(c.body)}">${esc(CARD_BODY[c.body] || 'Other')}</span><h2 class="mcc-name">${esc(c.label)}</h2>
+      ${c.number ? `<p class="mcc-num"><span>Member no.</span> <b>${esc(c.number)}</b></p>` : ''}</div>
+      ${c.kind === 'link' ? `<a class="btn gold block mcc-link" href="${esc(c.link)}" target="_blank" rel="noopener noreferrer">🪪 Open my card on the official site ↗</a><p class="note">${esc((() => { try { return new URL(c.link).hostname; } catch { return ''; } })())} · needs signal</p>`
+        : `<div class="mcc-imgs"><button type="button" class="mcc-img" data-mcshow="${esc(c.id)}" data-side="front" aria-label="Show ${esc(c.label)} full screen">${c._f ? `<img src="${esc(c._f)}" alt="${esc(c.label)} – front">` : '<span>No photo</span>'}</button>
+          ${c._b ? `<button type="button" class="mcc-img mcc-back" data-mcshow="${esc(c.id)}" data-side="back" aria-label="Show the back of ${esc(c.label)}"><img src="${esc(c._b)}" alt="${esc(c.label)} – back"><span>Back</span></button>` : ''}</div>
+          <button type="button" class="btn gold block" data-mcshow="${esc(c.id)}" data-side="front">🔆 Show full screen</button>`}
+      <div class="mcc-ctl"><button type="button" class="btn alt sm" data-mcup="${i}" ${i ? '' : 'disabled'} aria-label="Move ${esc(c.label)} up">↑</button><button type="button" class="btn alt sm" data-mcdn="${i}" ${i < MCD.list.length - 1 ? '' : 'disabled'} aria-label="Move ${esc(c.label)} down">↓</button>
+        <button type="button" class="btn alt sm" data-mcedit="${esc(c.id)}">✎ Edit</button><button type="button" class="btn alt sm danger-t" data-mcdel="${esc(c.id)}">🗑 Delete</button></div></article>`).join('')
+    : `<div class="empty">No cards yet. Add a photo of your Archery Australia, ABA, state, club or other membership card, or a link to your digital card.</div>`;
+  return `${head}<div class="wrap narrow cards-page">${MCD.err ? `<div class="warn" role="alert">⚠ ${esc(MCD.err)}</div>` : ''}
+    ${MCD.edit !== null ? cardForm() : `<button type="button" class="btn gold block mcc-addbig" id="mcAdd">＋ Add card</button>`}
+    <div class="mcc-list">${list}</div>${sync}
+    <section class="panel"><h2 class="sec">🔒 Private to you</h2><ul class="ticks">
+      <li>Card photos stay on this device. They’re not uploaded or shown on the site${window.SUPABASE_CARD_SYNC ? ' unless you turn on the private backup above' : ''}.</li>
+      <li>Photos are shrunk and saved without their hidden location data.</li>
+      <li>Anyone who can open this app on your phone can see them – lock your phone.</li>
+      <li>Add the site to your home screen so your cards are one tap away at the range.</li></ul>
+      ${MCD.list.length ? `<button type="button" class="linkbtn" id="mcWipe">Delete all cards from this device</button>` : ''}</section></div>`;
+}
+/* Add-card flow: 1) pick the organisation (logos)  2) Take photo / Choose from photos / Paste link  3) name + number, save.
+   Member-login links verified 11 Oct 2026 against each body's own site; bodies without a verified link get none. */
+const CARD_LOGO = {aa: 'img/clubs/archery-australia-sm.webp', aba: 'img/logos/aba-logo-64.png', state: 'img/clubs/archery-wa-sm.webp', ifaa: 'img/clubs/intl-ifaa-sm.webp',
+  usa: 'img/clubs/us-usa-archery-sm.webp', nfaa: 'img/clubs/us-nfaa-sm.webp'};
+const CARD_ICON = {club: '🏠', other: '🪪'};
+const ASSEMBLE = {url: 'https://account.archery.assemblesports.io/login', name: 'Assemble Sports member login',
+  tip: 'Archery Australia memberships (and state bodies such as Archery WA) are held in Assemble Sports. Log in → your profile → Registration History → ⋯ on your membership to see your card or add it to your phone wallet. A screenshot of the card works with no signal.'};
+const CARD_PORTAL = {
+  aa: ASSEMBLE, state: ASSEMBLE,
+  aba: {url: 'https://members.bowhunters.org.au/', name: 'ABA members area', tip: 'Log in to the ABA members area (ABA’s own member site). A photo of your ABA card works with no signal.'},
+  usa: {url: 'https://www.usarchery.org/dashboard/login', name: 'USA Archery member dashboard', tip: 'Log in to your USA Archery member dashboard to find your membership.'},
+  nfaa: {url: 'https://nfaausa.sport80.com/', name: 'NFAA membership login (Sport:80)', tip: 'NFAA emails your digital card as a PDF when you join – a screenshot of it works with no signal.'}};
+const cardLogo = (k, n = 40) => CARD_LOGO[k] ? `<img src="${CARD_LOGO[k]}" alt="" width="${n}" height="${n}" loading="lazy">` : `<span class="mcc-ico" aria-hidden="true">${CARD_ICON[k] || '🪪'}</span>`;
+function cardForm(){
+  const old = MCD.edit && MCD.edit !== 'new' ? MCD.list.find(x => x.id === MCD.edit) || null : null, d = MCD.draft;
+  const step = d.step || (old ? 'details' : 'body'), body = d.body || (old && old.body) || '', kind = d.kind || (old && old.kind) || 'photo';
+  const cancel = `<button class="btn alt" type="button" id="mcCancel">Cancel</button>`;
+  if (step === 'body') return `<section class="panel mcc-form" id="mcForm"><h2 class="sec">Add a card · 1 of 3</h2><p class="mcc-q">Which organisation is the card from?</p>
+    <div class="mcc-pick">${CARD_BODIES.map(([k, n]) => `<button type="button" class="mcc-opt" data-mcbody="${k}">${cardLogo(k)}<span>${esc(n)}</span></button>`).join('')}</div>
+    <div class="mcc-ctl">${cancel}</div></section>`;
+  const bn = esc(CARD_BODY[body] || 'Other'), portal = CARD_PORTAL[body];
+  if (step === 'method') return `<section class="panel mcc-form" id="mcForm"><h2 class="sec">Add a card · 2 of 3</h2><p class="mcc-chosen">${cardLogo(body, 32)} <b>${bn}</b> <button type="button" class="linkbtn" data-mcstep="body">change</button></p>
+    <p class="mcc-q">How do you want to add it?</p>
+    <div class="mcc-pick mcc-ways"><label class="mcc-opt" for="mcCam"><span class="mcc-ico">📷</span><span>Take photo</span></label><input id="mcCam" class="mcc-file" type="file" accept="image/*" capture="environment">
+      <label class="mcc-opt" for="mcLib"><span class="mcc-ico">🖼</span><span>Choose from photos</span></label><input id="mcLib" class="mcc-file" type="file" accept="image/*">
+      <button type="button" class="mcc-opt" data-mckind="link"><span class="mcc-ico">🔗</span><span>Paste link</span></button></div>
+    <p class="note">A photo or screenshot works with no signal. A link needs signal.</p><p class="err sum" id="mcErr" role="alert"></p>
+    <div class="mcc-ctl">${cancel}</div></section>`;
+  const v = k => esc(d[k] ?? (old && old[k]) ?? '');
+  const front = 'front' in d ? d.front : old && old.front, back = d.noBack ? null : 'back' in d ? d.back : old && old.back;
+  const fu = front ? cardUrl(front) : '', bu = back ? cardUrl(back) : '';
+  const label = d.label ?? (old ? old.label : ({aa: 'Archery Australia', aba: 'ABA', ifaa: 'IFAA', usa: 'USA Archery', nfaa: 'NFAA'}[body] || ''));
+  return `<form class="panel mcc-form" id="mcForm" novalidate><h2 class="sec">${old ? 'Edit card' : 'Add a card · 3 of 3'}</h2>
+    <p class="mcc-chosen">${cardLogo(body, 32)} <b>${bn}</b> <button type="button" class="linkbtn" data-mcstep="body">change</button></p>
+    ${kind === 'photo' ? `<div class="mcc-shots"><figure>${fu ? `<img class="mcc-prev" src="${esc(fu)}" alt="Front of the card">` : '<span class="mcc-none">No photo yet</span>'}<figcaption>Front</figcaption>
+        <label class="btn alt sm" for="mcFrontCam">📷 ${fu ? 'Retake' : 'Take photo'}</label><input id="mcFrontCam" class="mcc-file" type="file" accept="image/*" capture="environment">
+        <label class="btn alt sm" for="mcFrontLib">🖼 ${fu ? 'Change' : 'Choose'}</label><input id="mcFrontLib" class="mcc-file" type="file" accept="image/*"></figure>
+      <figure>${bu ? `<img class="mcc-prev" src="${esc(bu)}" alt="Back of the card">` : '<span class="mcc-none">Optional</span>'}<figcaption>Back</figcaption>
+        <label class="btn alt sm" for="mcBackCam">📷 ${bu ? 'Retake' : 'Take'}</label><input id="mcBackCam" class="mcc-file" type="file" accept="image/*" capture="environment">
+        <label class="btn alt sm" for="mcBackLib">🖼 ${bu ? 'Change' : 'Choose'}</label><input id="mcBackLib" class="mcc-file" type="file" accept="image/*">
+        ${bu ? `<button type="button" class="btn alt sm danger-t" id="mcNoBack">Remove</button>` : ''}</figure></div>
+      <button type="button" class="linkbtn" data-mckind="link">Use a link instead</button>`
+    : `<div class="mcc-linkbox">${portal ? `<p class="mcc-q">1. Open your member site and find your card:</p><a class="btn gold block" href="${esc(portal.url)}" target="_blank" rel="noopener noreferrer">${cardLogo(body, 24)} ${esc(portal.name)} ↗</a><p class="note">${esc(portal.tip)}</p><p class="mcc-q">2. Copy the link to your card and paste it here:</p>`
+        : `<p class="mcc-q">Paste the link to your digital card or member page from your organisation’s own site:</p>`}
+      <label for="mcLink">Card link</label><div class="mcc-paste"><input id="mcLink" type="url" inputmode="url" maxlength="500" placeholder="https://…" value="${v('link')}">${navigator.clipboard && navigator.clipboard.readText ? `<button type="button" class="btn alt sm" id="mcPasteBtn">📋 Paste</button>` : ''}</div>
+      <button type="button" class="linkbtn" data-mckind="photo">Use a photo instead</button></div>`}
+    <label for="mcLabel">Card name</label><input id="mcLabel" maxlength="80" required placeholder="e.g. Archery WA 2026 or My club card" value="${esc(label)}">
+    <label for="mcNum">Member number <small>(optional)</small></label><input id="mcNum" maxlength="40" autocomplete="off" value="${v('number')}">
+    <p class="err sum" id="mcErr" role="alert"></p>
+    <div class="mcc-ctl"><button class="btn gold" type="submit" id="mcSave">✓ Save card</button>${cancel}</div></form>`;
+}
+function bindMCards(){
+  const r = () => softRenderForce(), d = () => MCD.draft;
+  const add = $('#mcAdd'); if (add) add.onclick = () => { MCD.edit = 'new'; MCD.draft = {step: 'body'}; r(); const f = $('#mcForm'); if (f) f.scrollIntoView({block: 'start'}); };
+  document.querySelectorAll('[data-mcshow]').forEach(b => b.onclick = () => cardShow(b.dataset.mcshow, b.dataset.side));
+  document.querySelectorAll('[data-mcedit]').forEach(b => b.onclick = () => { MCD.edit = b.dataset.mcedit; MCD.draft = {}; r(); scrollTo(0, 0); });
+  document.querySelectorAll('[data-mcdel]').forEach(b => b.onclick = async () => { const c = MCD.list.find(x => x.id === b.dataset.mcdel); if (!c || !confirm(`Delete “${c.label}” from this device?`)) return;
+    await cardDel(c.id); cardQueueDel(c.id); await cardsLoad(true); toast('Card deleted'); r(); cardSyncSoon(); });
+  const move = async (i, j) => { const a = MCD.list[i], b = MCD.list[j]; if (!a || !b) return; const now = Date.now();
+    MCD.list.forEach((c, k) => c.order = k); [a.order, b.order] = [j, i]; a.updated = b.updated = now; for (const c of MCD.list) await cardPut(c); await cardsLoad(true); r(); cardSyncSoon(); };
+  document.querySelectorAll('[data-mcup]').forEach(b => b.onclick = () => move(+b.dataset.mcup, +b.dataset.mcup - 1));
+  document.querySelectorAll('[data-mcdn]').forEach(b => b.onclick = () => move(+b.dataset.mcdn, +b.dataset.mcdn + 1));
+  const wipe = $('#mcWipe'); if (wipe) wipe.onclick = async () => { if (!confirm('Delete all your membership cards from this device?')) return; for (const c of MCD.list) { await cardDel(c.id); cardQueueDel(c.id); } await cardsLoad(true); toast('Cards deleted from this device'); r(); cardSyncSoon(); };
+  const sy = $('#mcSync'); if (sy) sy.onchange = () => { localStorage.setItem(CARD_SYNC_KEY, sy.checked ? '1' : '0'); MCD.syncMsg = ''; if (sy.checked) cardSyncSoon(10); else r(); };
+  const f = $('#mcForm'); if (!f) return;
+  const keep = () => { const g = id => { const e = $('#' + id); return e ? e.value : undefined; }; for (const [k, id] of [['label', 'mcLabel'], ['number', 'mcNum'], ['link', 'mcLink']]) { const x = g(id); if (x !== undefined) d()[k] = x; } };
+  const err = m => { const e = $('#mcErr'); if (e) e.textContent = m; };
+  const go = o => { keep(); Object.assign(MCD.draft, o); r(); const nf = $('#mcForm'); if (nf && nf.getBoundingClientRect().top < 0) nf.scrollIntoView({block: 'start'}); };
+  $('#mcCancel').onclick = () => { MCD.edit = null; MCD.draft = {}; r(); };
+  f.querySelectorAll('[data-mcbody]').forEach(b => b.onclick = () => go({body: b.dataset.mcbody, step: MCD.edit === 'new' ? 'method' : 'details'}));
+  f.querySelectorAll('[data-mcstep]').forEach(b => b.onclick = () => go({step: b.dataset.mcstep}));
+  f.querySelectorAll('[data-mckind]').forEach(b => b.onclick = () => go({kind: b.dataset.mckind, step: 'details'}));
+  const photo = (id, side, extra) => { const i = $('#' + id); if (!i) return; i.onchange = async () => { const file = i.files[0]; if (!file) return; keep(); err('Processing photo…');
+    try { const img = await cardImg(file); go(Object.assign({[side]: img, kind: 'photo', step: 'details'}, side === 'back' ? {noBack: false} : {}, extra)); } catch (x) { err((x && x.message) || 'Couldn’t read that photo.'); } }; };
+  photo('mcCam', 'front'); photo('mcLib', 'front'); photo('mcFrontCam', 'front'); photo('mcFrontLib', 'front'); photo('mcBackCam', 'back'); photo('mcBackLib', 'back');
+  const nb = $('#mcNoBack'); if (nb) nb.onclick = () => go({noBack: true, back: null});
+  const pb = $('#mcPasteBtn'); if (pb) pb.onclick = async () => { try { const t = (await navigator.clipboard.readText() || '').trim(); if (t) { $('#mcLink').value = t; err(cardLinkOk(t) ? '' : 'That doesn’t look like a full https:// link.'); } else err('Nothing to paste – copy the card link first.'); } catch { err('Couldn’t paste – long-press in the box and choose Paste.'); } };
+  if (f.tagName !== 'FORM') return;
+  f.onsubmit = async e => { e.preventDefault(); keep(); const dd = d(), btn = $('#mcSave'), old = MCD.edit !== 'new' ? MCD.list.find(x => x.id === MCD.edit) : null;
+    const kind = dd.kind || (old && old.kind) || 'photo', body = dd.body || (old && old.body) || 'other';
+    const label = (dd.label ?? '').trim(), number = (dd.number ?? '').trim(), link = (dd.link ?? '').trim();
+    const front = 'front' in dd ? dd.front : old && old.front, back = dd.noBack ? null : 'back' in dd ? dd.back : old && old.back;
+    if (!label) return err('Give the card a name, e.g. “Archery WA 2026”.');
+    if (kind === 'link' && !cardLinkOk(link)) return err('Paste the full link to your card, starting with https://');
+    if (kind === 'photo' && !front) return err('Add a photo of the front of the card.');
+    btn.disabled = true; btn.textContent = 'Saving…'; err('');
+    try {
+      const c = {id: old ? old.id : 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), body, label, number, kind,
+        link: kind === 'link' ? link : '', front: kind === 'photo' ? front : null, back: kind === 'photo' ? back || null : null,
+        order: old ? old.order : (MCD.list.length ? Math.max(...MCD.list.map(x => x.order ?? 0)) + 1 : 0), created: old ? old.created : Date.now(), updated: Date.now()};
+      await cardPut(c); if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+      MCD.edit = null; MCD.draft = {}; await cardsLoad(true); toast('✓ Card saved on this device'); r(); cardSyncSoon();
+    } catch (x) { btn.disabled = false; btn.textContent = '✓ Save card'; err((x && x.message) || 'Couldn’t save the card.'); }
+  };
+}
+/* ----- optional private backup (behind window.SUPABASE_CARD_SYNC; needs supabase/membership_cards.sql run first) ----- */
+function cardQueueDel(id){ if (!window.SUPABASE_CARD_SYNC) return; const q = new Set(JSON.parse(localStorage.getItem(CARD_DEL_KEY) || '[]')); q.add(id); localStorage.setItem(CARD_DEL_KEY, JSON.stringify([...q])); }
+function cardSyncSoon(ms = 1500){ if (!cardSyncOn()) return; clearTimeout(cardSyncSoon.t); cardSyncSoon.t = setTimeout(async () => {
+  const r = await cardSync(AUTH.client, AUTH.user.id).catch(e => ({error: e && e.message}));
+  MCD.syncMsg = r.error ? `⚠ Backup not done yet (${r.error}). We’ll try again.` : `✓ Backed up${r.pulled ? ` · ${r.pulled} card${r.pulled === 1 ? '' : 's'} added from your account` : ''}`;
+  if (r.pulled) await cardsLoad(true); if (document.body.dataset.page === 'cards') softRender(); }, ms); }
+async function cardSync(client, uid, opts = {}){   // two-way, last change wins; images go to the PRIVATE bucket under <uid>/<card id>/
+  if (!navigator.onLine && !opts.force) return {skipped: 'offline'};
+  const B = client.storage.from(CARD_BUCKET), T = () => client.from('membership_cards'), path = (id, s) => `${uid}/${id}/${s}.jpg`;
+  const local = await cardTx('readonly', s => s.getAll()) || [], byId = Object.fromEntries(local.map(c => [c.id, c]));
+  const dels = JSON.parse(localStorage.getItem(CARD_DEL_KEY) || '[]');
+  for (const id of dels) {
+    await B.remove([path(id, 'front'), path(id, 'back')]);
+    const {error} = await T().upsert({user_id: uid, card_id: id, deleted: true, body: null, label: null, number: null, link: null, has_front: false, has_back: false, updated_at: new Date().toISOString()}, {onConflict: 'user_id,card_id'});
+    if (error) throw new Error(error.message);
+  }
+  localStorage.setItem(CARD_DEL_KEY, '[]');
+  const {data: rows, error} = await T().select('*'); if (error) throw new Error(error.message);
+  const rem = Object.fromEntries((rows || []).map(x => [x.card_id, x])); let pushed = 0, pulled = 0, removed = 0;
+  for (const c of local) {
+    const x = rem[c.id], t = x ? Date.parse(x.updated_at) : 0;
+    if (x && t >= (c.updated || 0)) continue;
+    for (const s of ['front', 'back']) {
+      if (c[s] && c[s].buf) { const {error: e} = await B.upload(path(c.id, s), new Blob([c[s].buf], {type: 'image/jpeg'}), {upsert: true, contentType: 'image/jpeg', cacheControl: '0'}); if (e) throw new Error(e.message); }
+      else if (x && x['has_' + s]) await B.remove([path(c.id, s)]);
+    }
+    const {error: e} = await T().upsert({user_id: uid, card_id: c.id, deleted: false, body: c.body, label: c.label, number: c.number || null, link: c.link || null, kind: c.kind,
+      sort: c.order ?? 0, has_front: !!(c.front && c.front.buf), has_back: !!(c.back && c.back.buf), updated_at: new Date(c.updated || Date.now()).toISOString()}, {onConflict: 'user_id,card_id'});
+    if (e) throw new Error(e.message); pushed++;
+  }
+  for (const x of rows || []) {
+    const c = byId[x.card_id], t = Date.parse(x.updated_at);
+    if (c && (c.updated || 0) >= t) continue;
+    if (x.deleted) { if (c) { await cardDel(c.id); removed++; } continue; }
+    const img = async s => { if (!x['has_' + s]) return null; const {data, error: e} = await B.download(path(x.card_id, s)); if (e || !data) throw new Error((e && e.message) || 'download failed'); return {type: 'image/jpeg', buf: await data.arrayBuffer()}; };
+    await cardPut({id: x.card_id, body: x.body || 'other', label: x.label || 'Card', number: x.number || '', kind: x.kind || (x.link ? 'link' : 'photo'), link: x.link || '',
+      front: await img('front'), back: await img('back'), order: x.sort ?? 0, created: t, updated: t}); pulled++;
+  }
+  return {pushed, pulled, removed};
+}
+async function cardSyncWipe(client, uid){   // before "Delete account": remove this user's card files from the private bucket
+  const {data: rows} = await client.from('membership_cards').select('card_id'); const paths = [];
+  (rows || []).forEach(x => paths.push(`${uid}/${x.card_id}/front.jpg`, `${uid}/${x.card_id}/back.jpg`));
+  if (paths.length) await client.storage.from(CARD_BUCKET).remove(paths);
+}
 /* ---------- Fans: community photo wall ----------
    Photos come from data/fans.json (added by hand after review). "Send us your photo" posts to FormSubmit like the shoot form;
    big or non-JPEG photos are shrunk in the browser first (max 2400 px JPEG) so they fit the email. */
@@ -1635,7 +1863,9 @@ function render(){
   else if (p === 'credits') v.innerHTML = vCredits();
   else if (p === 'privacy') v.innerHTML = vPrivacy();
   else if (p === 'fans') { v.innerHTML = vFans(); bindFans(); }
-  else if (p === 'account') { v.innerHTML = vAccount(); bindAccount(); }
+  else if (p === 'account') { v.innerHTML = vAccount(); const aw = v.querySelector('.wrap.narrow'), ap = aw && AUTH.user ? aw.querySelector('section.panel') : null;
+    if (aw) aw.insertAdjacentHTML('afterbegin', cardsAcctPanel()); bindAccount(); }
+  else if (p === 'cards') { v.innerHTML = vCards(); bindMCards(); }
   else if (p === 'fix' || (p === 'submit' && arg === 'fix')) { v.innerHTML = vFix(decodeURIComponent(p === 'fix' ? (arg || '') : (h.split('/')[3] || ''))); bindFix(); }
   else if (p === 'submit') { v.innerHTML = vSubmit(HQ.get('country')); bindSubmit(); }
   else if (p === 'calendars') { v.innerHTML = vCals(arg); bindCals(); }
@@ -1647,7 +1877,7 @@ function render(){
     v.querySelectorAll('[data-th]').forEach(a => a.onclick = () => { BF.cat = ''; BF.disc = {field:'Field','3d':'3D',target:'Target',indoor:'Indoor'}[a.dataset.th]; BF.scope = 'all'; });
     bindIntlMenu(); bindClubNotice(); const ya = $('#ycAll'); if (ya) ya.onclick = () => { Object.assign(BF, {club: S.myClubs.length ? 'mine' : 'watch', q: '', cat: '', disc: '', state: '', limit: 60}); };
     $('#heroSearch').onsubmit = e => { e.preventDefault(); BF.q = $('#hq').value; BF.scope = 'all'; location.hash = '#/browse'; }; }
-  bindCards(v); updateNav();
+  bindCards(v); updateNav(); updateCardsNav();
 }
 /* ---------- known clubs: label submissions for review (never auto-publishes) ----------
    data/known_clubs.json holds salted SHA-256 hashes of verified clubs' emails and own email domains (built by tools/build_known_clubs.py

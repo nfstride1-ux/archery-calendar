@@ -5,3 +5,4 @@ window.SUPABASE_URL = 'https://sllsqpfqwckwtljzjxli.supabase.co';   // project a
 window.SUPABASE_ANON_KEY = 'sb_publishable_t2g3KYdoGeTtcXTO-URK9g_Nf69SEFq';   // PUBLIC publishable key (safe in the browser; RLS protects data)
 window.SUPABASE_ENABLED = true;  // master switch: true only after Auth > URL Configuration is saved (Site URL + redirect URLs)
 window.SUPABASE_GOOGLE = false;  // true once Google sign-in is set up in Supabase (docs/SUPABASE_SETUP.md, step G)
+window.SUPABASE_CARD_SYNC = false;  // membership-card backup to the account: true only after supabase/membership_cards.sql is run (docs/SUPABASE_SETUP.md, step M)

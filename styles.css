@@ -552,9 +552,9 @@ details.panel summary{cursor:pointer;padding:4px 0}
 .upd-bar .btn{min-height:40px}
 .upd-x{background:none;border:0;color:#cbd5e1;font-size:18px;min-width:40px;min-height:40px;cursor:pointer}
 .see-all{margin:22px 0 8px}
-@media (max-width:1480px){header .today,.today{display:none}}
+@media (max-width:1760px){header .today,.today{display:none}}
 /* tablets / small laptops: put the nav on its own scrollable row so nothing runs off the edge */
-@media (max-width:1240px) and (min-width:721px){
+@media (max-width:1480px) and (min-width:721px){
  .head-row{flex-wrap:wrap;row-gap:0}
  .nav{order:3;flex-basis:100%;overflow-x:auto;scrollbar-width:none;padding:2px 0 10px}
  .nav::-webkit-scrollbar{display:none}
@@ -592,3 +592,52 @@ html.flb-on,html.flb-on body{overflow:hidden}
 .flb-img{max-width:100%;max-height:100%;object-fit:contain;cursor:zoom-in;background:#fff;user-select:none;-webkit-user-select:none}
 .flb.zoomed .flb-img{max-width:none;cursor:zoom-out}
 .flb-hint{flex:none;margin:6px 0 8px;text-align:center;font-size:12px;opacity:.7}
+
+/* My membership cards (#/cards) – big, high-contrast, readable in sun */
+.cards-btn{background:#fff;color:var(--night)}
+@media (max-width:760px){.cards-btn{padding:6px 10px}.cards-btn+.acct-btn{margin-left:6px}}
+.mcc-quick{margin:14px 0 4px}
+.cards-page>.btn.block{margin:16px 0}
+.mcc-list{display:grid;gap:16px;margin:8px 0 20px}
+.mcc{background:#fff;color:#0b1320;border:2px solid #0b1320;border-radius:16px;padding:14px;box-shadow:var(--shadow)}
+.mcc-top{margin-bottom:10px}
+.mcc-body{display:inline-block;font-family:var(--disp);font-weight:700;font-size:14px;letter-spacing:.04em;text-transform:uppercase;background:var(--night);color:#fff;border-radius:6px;padding:2px 9px}
+.mcc-body.mcc-aba{background:#14532d}.mcc-body.mcc-aa{background:#0b3d91}.mcc-body.mcc-state{background:#1e3a8a}.mcc-body.mcc-club{background:#7c2d12}.mcc-body.mcc-usa,.mcc-body.mcc-nfaa{background:#7f1d1d}.mcc-body.mcc-ifaa{background:#4c1d95}
+.mcc-name{font-size:26px;font-weight:800;margin:6px 0 2px;line-height:1.15;word-break:break-word}
+.mcc-num{margin:0;font-size:15px}.mcc-num b{font-size:28px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.06em;word-break:break-all}
+.mcc-imgs{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px}
+.mcc-img{flex:1;min-width:0;padding:0;border:1px solid #cbd5e1;border-radius:12px;background:#fff;cursor:zoom-in;overflow:hidden;position:relative}
+.mcc-img img{display:block;width:100%;height:auto;max-height:60vh;object-fit:contain}
+.mcc-img>span{display:block;padding:30px;color:#64748b}
+.mcc-back{flex:0 0 30%}.mcc-back span{position:absolute;left:6px;bottom:6px;padding:1px 7px;background:rgba(11,19,32,.8);color:#fff;border-radius:5px;font-size:12px}
+.mcc-ctl{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.mcc-ctl .btn.sm{padding:8px 12px;min-height:44px;min-width:44px}
+.mcc-ctl .danger-t{color:#b91c1c}
+.mcc-form label{display:block;font-weight:600;margin:12px 0 4px}
+.mcc-form input:not([type=checkbox]):not([type=radio]),.mcc-form select{width:100%;box-sizing:border-box}
+.mcc-form .chk{font-weight:400}
+.mcc-kind{border:0;padding:0;margin:12px 0 0}.mcc-kind legend{font-weight:600;padding:0}
+.mcc-prev{display:block;max-width:160px;border:1px solid #cbd5e1;border-radius:8px;margin:4px 0 6px}
+.flb-light{background:#fff;color:#0b1320}
+.flb-light .flb-x{border-color:#0b1320;background:#f1f5f9;color:#0b1320}
+.flb-light .flb-img{box-shadow:0 0 0 1px #cbd5e1}
+.flb-cap{flex:none;margin:8px 12px 0;text-align:center;font-size:24px;font-weight:800;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.04em;word-break:break-word}
+.mcc-addbig{min-height:64px;font-size:20px}
+.mcc-q{font-weight:700;margin:6px 0 10px}
+.mcc-pick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.mcc-ways{grid-template-columns:1fr}
+.mcc-opt{display:flex;align-items:center;gap:12px;min-height:64px;padding:10px 12px;border:2px solid var(--night);border-radius:12px;background:#fff;color:var(--night);font:inherit;font-weight:700;text-align:left;cursor:pointer;line-height:1.2}
+.mcc-opt:hover,.mcc-opt:focus-visible{background:#fff8e1;outline:3px solid var(--gold);outline-offset:1px}
+.mcc-opt img{flex:none;width:40px;height:40px;object-fit:contain}
+.mcc-ways .mcc-opt{font-size:18px;min-height:60px}
+.mcc-ico{flex:none;width:40px;text-align:center;font-size:28px;line-height:1}
+.mcc-file{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0 0 0 0)}
+.mcc-chosen{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 8px}.mcc-chosen img{width:32px;height:32px;object-fit:contain}.mcc-chosen .mcc-ico{width:auto;font-size:22px}
+.mcc-shots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:8px 0}
+.mcc-shots figure{margin:0;display:flex;flex-direction:column;gap:6px}
+.mcc-shots figcaption{font-weight:700;font-size:14px}
+.mcc-shots .mcc-prev{max-width:100%;margin:0}
+.mcc-none{display:grid;place-items:center;aspect-ratio:1.586;border:2px dashed #94a3b8;border-radius:8px;color:#64748b;font-size:14px}
+.mcc-paste{display:flex;gap:8px}.mcc-paste input{flex:1;min-width:0}
+.mcc-linkbox .btn img{width:24px;height:24px;object-fit:contain;background:#fff;border-radius:4px}
+@media (max-width:360px){.mcc-pick{grid-template-columns:1fr}}
