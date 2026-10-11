@@ -506,6 +506,8 @@ function vBrowse(){
   if (BF.clubId) list = EV.filter(x => x.club_id === BF.clubId);
   else if (BF.club) list = (BF.state ? EV.filter(x => x.state_code === BF.state) : EV).filter(clubFilter(BF.club));
   else if (BF.state) list = list.filter(x => x.state_code === BF.state);
+  const nHiddenClub = (BF.clubId || BF.club) ? 0 : list.filter(x => !clubOk(x, Q) && (BF.past || !isPast(x))).length;
+  if (!BF.clubId && !BF.club) list = list.filter(x => clubOk(x, Q));
   const active = [BF.q && `search “${esc(BF.q)}”`, BF.state && (STATES.find(s => s[0] === BF.state) || [, BF.state])[1], BF.disc && `discipline ${esc(BF.disc)}`, BF.cat && CATS[BF.cat] && CATS[BF.cat][2], BF.ost && OST[BF.ost] && OST[BF.ost][2], BF.club && CLUBF[BF.club], BF.clubId && CLUB[BF.clubId] && `club: ${esc(CLUB[BF.clubId].name)}`, BF.cat === 'club' && BF.mc && 'only my clubs', qState && `state from your search: ${Q.states.join(', ')}${!grp && !BF.state && S.states.length ? ' (overrides your Settings states)' : ''}`, !grp && !BF.state && !qState && S.states.length && AUS() && `your states in Settings (${S.states.join(', ')})`].filter(Boolean);
   if (BF.disc) list = list.filter(x => (x.discipline || '').startsWith(BF.disc));
   const tc = typeCounts(list.filter(x => BF.past || !isPast(x)));
@@ -530,7 +532,7 @@ function vBrowse(){
   ${showPastNote ? `<p class="note" id="pastNote">◷ No upcoming shoots match – showing finished shoots.</p>` : ''}
   ${BF.clubId && CLUB[BF.clubId] ? `<p class="club-filter"><button type="button" class="chip" id="clubChipX" aria-pressed="true" aria-label="Remove club filter ${esc(CLUB[BF.clubId].name)}">Club: ${esc(CLUB[BF.clubId].name)} ✕</button></p>` : ''}
   ${active.length && total ? `<p class="note" id="activeF">Filtered by: ${active.join(' · ')} <button class="linkbtn" id="clearF2">✕ Clear</button></p>` : ''}
-  <p class="note" id="countNote">${total} shoot${total !== 1 ? 's' : ''}. Change ${AUS() ? 'states &amp; organisations' : 'countries &amp; bodies'} in <a href="#/settings">Settings</a>.</p></div><div class="results">`;
+  <p class="note" id="countNote">${total} shoot${total !== 1 ? 's' : ''}. Change ${AUS() ? 'states &amp; organisations' : 'countries &amp; bodies'} in <a href="#/settings">Settings</a>.${nHiddenClub ? ` <span id="clubOnlyNote">${nHiddenClub} club-only shoot${nHiddenClub !== 1 ? 's' : ''} (club championships, members only) hidden – add your club in <a href="#/clubs">My clubs</a> to see them.</span>` : ''}</p></div><div class="results">`;
   let m = '', n = 0;
   for (const x of list) { const k = x.book_anytime ? 'ANY' : x.start_date ? x.start_date.slice(0, 7) : 'TBC'; if (k !== m) { m = k; html += `<div class="month">${k === 'ANY' ? '📞 Book any time' : k === 'TBC' ? 'Dates to be confirmed' : MONL[+k.slice(5) - 1] + ' ' + k.slice(0, 4)}</div>`; } html += evCard(x); if (++n % 10 === 0 && n < list.length) html += adSlot('feed'); }
   if (!total) html += `<div class="empty">No shoots match${active.length ? ': ' + active.join(' · ') : ''}. ${active.length ? '<button class="btn alt" id="clearF">✕ Clear filters</button>' : `Try another filter${AUS() ? '' : ' or add countries in Settings'}.`}</div>`;
@@ -841,6 +843,7 @@ function vCals(arg){
   if (CF.where && !wheres.includes(CF.where)) CF.where = ''; if (CF.disc && !discs.includes(CF.disc)) CF.disc = '';
   let list = all.filter(x => (!CF.where || calWhere(x) === CF.where) && (!CF.disc || (x.discipline || '').startsWith(CF.disc)) && (CF.past || !isPast(x)));
   if (CF.club) list = list.filter(clubFilter(CF.club));
+  else list = list.filter(x => clubOk(x));
   const tc = typeCounts(list); if (CF.cat) list = list.filter(x => catOf(x) === CF.cat);
   if (CF.cat === 'club' && CF.mc) list = list.filter(x => followed().includes(x.club_id));
   const nPast = list.filter(isPast).length;
@@ -887,6 +890,17 @@ function bindCals(){
 const CLUBF = {mine: '🏠 My clubs', watch: '👁 Watching', new: '✦ New from your clubs'};
 const isMine = id => S.myClubs.includes(id), isWatch = id => S.watchClubs.includes(id);
 const followed = () => [...new Set([...S.myClubs, ...S.watchClubs])].filter(id => CLUB[id]);
+/* Club-only shoots (members-only listings and club championships): shown in general lists (Find shoots, Calendars) only to
+   people who have that club in My clubs / Clubs I watch, who saved or entered the shoot, who pick that club, or who search its name.
+   Open special events stay visible to everyone. My shoots is unaffected. */
+const clubOnly = x => !!(x.members_only || /club champ/i.test((x.level || '') + ' ' + (x.name || '')));
+const CLUB_GENERIC = new Set(['archers', 'archery', 'archer', 'club', 'bowmen', 'bowhunters', 'field', 'target', 'inc', 'incorporated', 'the', 'and', 'of', 'city', 'park', 'centre', 'association', 'championships', 'championship']);
+function clubNamed(x, Q){
+  if (!Q || !Q.words.length) return false;
+  const c = CLUB[x.club_id], nm = snorm([c && c.name, ...(c && c.aliases || []), x.host].filter(Boolean).join(' ')).split(' ');
+  return Q.words.some(w => w.length >= 3 && !CLUB_GENERIC.has(w) && nm.some(h => !CLUB_GENERIC.has(h) && h.startsWith(w)));
+}
+const clubOk = (x, Q) => !clubOnly(x) || !!S.saved[x.id] || !!S.entries[x.id] || (!!x.club_id && (S.myClubs.includes(x.club_id) || S.watchClubs.includes(x.club_id))) || clubNamed(x, Q);
 const clubFilter = k => k === 'mine' ? x => isMine(x.club_id) : k === 'watch' ? x => isWatch(x.club_id) : k === 'new' ? x => !!S.clubNew[x.id] : () => true;
 /* ---------- date clashes: overlap (every day of multi-day shoots) with shoots I've saved / entered / paid ---------- */
 const evEnd = x => x.end_date && x.end_date >= x.start_date ? x.end_date : x.start_date;
