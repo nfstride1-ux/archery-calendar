@@ -1443,6 +1443,16 @@ const CARD_PORTAL = {
   usa: {url: 'https://www.usarchery.org/dashboard/login', name: 'USA Archery member dashboard', tip: 'Log in to your USA Archery member dashboard to find your membership.'},
   nfaa: {url: 'https://nfaausa.sport80.com/', name: 'NFAA membership login (Sport:80)', tip: 'NFAA emails your digital card as a PDF when you join – a screenshot of it works with no signal.'}};
 const cardLogo = (k, n = 40) => CARD_LOGO[k] ? `<img src="${CARD_LOGO[k]}" alt="" width="${n}" height="${n}" loading="lazy">` : `<span class="mcc-ico" aria-hidden="true">${CARD_ICON[k] || '🪪'}</span>`;
+/* Archery Australia / state bodies: Assemble Sports puts the membership card in the phone wallet (AA guide 'Assemble Sports Membership Card – Digital',
+   Apr 2026: Registration History → ⋯ → Add to Apple Wallet; Assemble Sports, Jul 2026: Apple and Google Wallet, Member → Details → Add to Wallet,
+   availability depends on the device). Lead with that; a photo/link copy here is the second option. */
+const WALLET_BODIES = ['aa', 'state'];
+const walletPanel = body => `<div class="mcc-wallet" id="mcWallet"><h3>📲 Add your ${body === 'aa' ? 'AA' : 'membership'} card to Apple Wallet</h3>
+  <p>Archery Australia memberships${body === 'state' ? ' (and state bodies such as Archery WA)' : ''} live in Assemble Sports, and Assemble can put your card straight into your phone’s wallet.</p>
+  <ol><li>Log in to Assemble Sports on your phone.</li><li>Open your profile → <b>Registration History</b> and find your current membership.</li>
+    <li>Tap the <b>⋯</b> (three dots) on it → <b>Add to Apple Wallet</b>.</li></ol>
+  <p class="note">On Android, Assemble also offers <b>Google Wallet</b> (it depends on your phone). Renewed? Remove the old card from your wallet and add it again.</p>
+  <a class="btn gold block" href="${esc(ASSEMBLE.url)}" target="_blank" rel="noopener noreferrer">${cardLogo('aa', 24)} Log in to Assemble Sports ↗</a></div>`;
 function cardForm(){
   const old = MCD.edit && MCD.edit !== 'new' ? MCD.list.find(x => x.id === MCD.edit) || null : null, d = MCD.draft;
   const step = d.step || (old ? 'details' : 'body'), body = d.body || (old && old.body) || '', kind = d.kind || (old && old.kind) || 'photo';
@@ -1452,7 +1462,8 @@ function cardForm(){
     <div class="mcc-ctl">${cancel}</div></section>`;
   const bn = esc(CARD_BODY[body] || 'Other'), portal = CARD_PORTAL[body];
   if (step === 'method') return `<section class="panel mcc-form" id="mcForm"><h2 class="sec">Add a card · 2 of 3</h2><p class="mcc-chosen">${cardLogo(body, 32)} <b>${bn}</b> <button type="button" class="linkbtn" data-mcstep="body">change</button></p>
-    <p class="mcc-q">How do you want to add it?</p>
+    ${WALLET_BODIES.includes(body) ? walletPanel(body) : ''}
+    <p class="mcc-q">${WALLET_BODIES.includes(body) ? 'Or save a copy here' : 'How do you want to add it?'}</p>
     <div class="mcc-pick mcc-ways"><label class="mcc-opt" for="mcCam"><span class="mcc-ico">📷</span><span>Take photo</span></label><input id="mcCam" class="mcc-file" type="file" accept="image/*" capture="environment">
       <label class="mcc-opt" for="mcLib"><span class="mcc-ico">🖼</span><span>Choose from photos</span></label><input id="mcLib" class="mcc-file" type="file" accept="image/*">
       <button type="button" class="mcc-opt" data-mckind="link"><span class="mcc-ico">🔗</span><span>Paste link</span></button></div>

@@ -597,6 +597,7 @@ html.flb-on,html.flb-on body{overflow:hidden}
 .cards-btn{background:#fff;color:var(--night)}
 @media (max-width:760px){.cards-btn{padding:6px 10px}.cards-btn+.acct-btn{margin-left:6px}}
 .mcc-quick{margin:14px 0 4px}
+.mcc-wallet{border:2px solid #0b3d91;background:#eff6ff;border-radius:14px;padding:14px 16px;margin:10px 0 18px}.mcc-wallet h3{margin:0 0 6px;font-size:20px;line-height:1.2}.mcc-wallet ol{margin:8px 0;padding-left:22px}.mcc-wallet li{margin:4px 0}.mcc-wallet .btn{margin-top:8px}
 .cards-page>.btn.block{margin:16px 0}
 .mcc-list{display:grid;gap:16px;margin:8px 0 20px}
 .mcc{background:#fff;color:#0b1320;border:2px solid #0b1320;border-radius:16px;padding:14px;box-shadow:var(--shadow)}
