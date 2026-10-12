@@ -238,6 +238,12 @@ dl.kv.fx dd{font-weight:500}
 .filters select{margin-bottom:8px}
 .foot-co{font-size:13px;color:#94a3b8}
 .foot-tag{margin-top:6px;font-size:14px;color:var(--gold);letter-spacing:.01em}
+.foot-social{margin-top:14px}
+.foot-social-label{margin:0 0 8px;font-family:var(--disp);font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff}
+.foot-social-row{display:flex;flex-wrap:wrap;gap:10px}
+.site-foot a.foot-social-link,.panel.dark a.foot-social-link{display:inline-flex;align-items:center;gap:8px;margin:0;padding:8px 12px;border:1.5px solid rgba(255,198,41,.55);border-radius:999px;color:var(--gold);font-size:14px;font-weight:600;text-decoration:none;line-height:1}
+.site-foot a.foot-social-link:hover,.panel.dark a.foot-social-link:hover{background:var(--gold);color:var(--night);border-color:var(--gold)}
+.foot-social-link svg{display:block;flex:none}
 .cta{background:var(--night) linear-gradient(120deg,#0d1b2a 0%,#16283b 100%);color:#fff;border-radius:var(--r);padding:22px 24px;margin:28px 0;display:grid;grid-template-columns:1fr auto;gap:6px 20px;align-items:center;box-shadow:var(--shadow)}
 .cta .kicker{grid-column:1/-1;margin:0}.cta-h{font-family:var(--disp);font-size:30px;font-weight:800;text-transform:uppercase;line-height:1}
 .cta p{margin:0;color:#e2e8f0;grid-column:1}.cta .btn{grid-column:2;grid-row:2/4}
