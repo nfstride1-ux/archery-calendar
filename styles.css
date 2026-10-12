@@ -659,3 +659,14 @@ html.flb-on,html.flb-on body{overflow:hidden}
 .dp-sub{font-size:14px;margin:10px 0 4px;color:var(--muted)}
 .dp-list{list-style:none;padding:0;margin:0}.dp-row{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
 .dp-main{flex:1;min-width:0}.dp-row .star.dp-star{position:static;flex:0 0 auto}
+
+.pay-box{border-left:4px solid var(--gold,#c9a227)}
+.pay-rows{margin:0}
+.pay-row{display:grid;grid-template-columns:8.5em 1fr;gap:6px 10px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.08)}
+.pay-row:last-child{border-bottom:0}
+.pay-row dt{font-weight:600;opacity:.8;margin:0}
+.pay-row dd{margin:0;display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0}
+.pay-val{font-size:1.1em;font-weight:700;letter-spacing:.03em;word-break:break-all;user-select:all;-webkit-user-select:all}
+.pay-copy{flex:0 0 auto;min-width:72px;min-height:40px;padding:6px 12px}
+.pay-warn{font-weight:600}
+@media (max-width:420px){.pay-row{grid-template-columns:1fr}.pay-row dt{font-size:.85em}}

@@ -347,6 +347,27 @@ function flyerCard(x){
     ${rows.length ? `<h2 class="sec">${cur ? 'From the flyer' : 'From last year’s flyer – may change this year'}</h2><dl class="kv fx">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${ly}${esc(v)}</dd>`).join('')}</dl>
     ${!cur && ex.registration_url ? `<p class="note">Last year's entry link: <a href="${esc(ex.registration_url)}" target="_blank" rel="noopener">${esc(ex.registration_url.slice(0,60))}…</a> (may not work this year)</p>` : ''}` : ''}</section>`;
 }
+/* ---------- payment details pulled from the club's flyer ---------- */
+function payBox(x){
+  const rows = [['Account name', x.bank_account_name], ['BSB', x.bank_bsb], ['Account number', x.bank_account], ['Reference', x.bank_reference]].filter(r => r[1]);
+  if (!rows.some(r => r[0] === 'BSB' || r[0] === 'Account number')) return '';
+  const cv = (k, v) => k === 'BSB' || k === 'Account number' ? String(v).replace(/[\s-]/g, '') : String(v);
+  return `<section class="panel pay-box" id="payBox"><h2 class="sec">💳 Payment details (from the flyer)</h2>
+    <dl class="pay-rows">${rows.map(([k, v]) => `<div class="pay-row"><dt>${k}</dt><dd><span class="pay-val">${esc(v)}</span><button type="button" class="btn alt pay-copy" data-copy="${esc(cv(k, v))}" data-copylbl="${esc(k)}" aria-label="Copy ${esc(k)}">Copy</button></dd></div>`).join('')}</dl>
+    ${x.bank_reference ? '<p class="note">Put your own name in the reference where the flyer says Name or Surname.</p>' : ''}
+    <p class="note pay-warn">Details taken from the club's flyer, so check against the flyer before paying.</p></section>`;
+}
+async function copyText(t){
+  try { if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(t); return true; } } catch (e) {}
+  try { const ta = document.createElement('textarea'); ta.value = t; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;font-size:16px';
+    document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, t.length); const ok = document.execCommand('copy'); ta.remove(); return ok; } catch (e) { return false; }
+}
+document.addEventListener('click', async ev => {
+  const b = ev.target.closest && ev.target.closest('.pay-copy'); if (!b) return;
+  const ok = await copyText(b.dataset.copy);
+  toast(ok ? `✓ Copied ${b.dataset.copylbl}` : 'Couldn’t copy – press and hold the number to copy it');
+  if (ok) { b.textContent = 'Copied'; clearTimeout(b._t); b._t = setTimeout(() => { b.textContent = 'Copy'; }, 1800); }
+});
 /* ---------- reminders ---------- */
 function reminders(){
   const out = [], pl = n => `${n} day${n !== 1 ? 's' : ''}`;
@@ -600,6 +621,7 @@ function vShoot(id){
     ${x.date_note ? `<div class="warn date-note" id="dateNote">⚠ <b>Check the dates:</b> ${esc(x.date_note)}</div>` : ''}
     ${clashBox(x)}
     ${flyerCard(x)}
+    ${payBox(x)}
     <section class="panel"><h2 class="sec">Shoot details</h2><dl class="kv">
       <dt>When</dt><dd>${esc(range(x))}${I ? `<br><span class="note">Dates are local to the venue${tzTxt ? ' (' + esc(tzTxt) + ')' : ''}.</span>` : ''}${x.date_note ? '<br><span class="note">⚠ Dates differ between sources – see the note above.</span>' : ''}</dd>
       ${I ? `<dt>Where</dt><dd>${esc(where || 'Venue not published yet')}${mapUrl ? `<br><a href="${esc(mapUrl)}" target="_blank" rel="noopener" id="mapLink">📍 Map ↗</a>` : ''}</dd>` : `<dt>Where</dt><dd>${esc(x.location || '—')}${x.host ? `<br><span class="note">Host club: ${esc(x.host)}${x.venue_is_host_only ? ' – check the organiser for the exact range' : ''}</span>` : ''}${x.state && !(x.location || '').includes(' ' + x.state) ? ' · ' + esc(x.state) : ''}${x.country ? '<br><span class="note">' + esc(x.country) + '</span>' : ''}</dd>`}
