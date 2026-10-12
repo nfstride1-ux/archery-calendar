@@ -1325,7 +1325,7 @@ function vAccount(){
   if (!AUTH.user) return `${head}<div class="wrap narrow">${msg}
     <section class="panel"><h2 class="sec">Sign in or create an account</h2>
     ${AUTH.sent ? `<div class="okbox" role="status">✉ <b>Check your email.</b> We sent a sign-in email to <b>${esc(AUTH.sent)}</b>.${isStandalone() ? ' <b>Use the code from the email to sign in here</b> – the link in the email opens in your browser, not in this app.' : ' Type the code from it below, or tap the link in it <b>in this browser on this device</b>.'} It works once and expires in an hour.</div>
-      <form id="otpf" novalidate><label for="otp">Enter the 6-digit code from the email</label>
+      <form id="otpf" novalidate><label for="otp">Enter the code from the email</label>
       <input id="otp" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="10" required placeholder="••••••" class="otp-in">
       <button class="btn gold block" type="submit">✓ Sign in with code</button></form>
       <p class="note">No email? Check junk, or <button type="button" class="linkbtn" id="again">send it again</button> (or use a different email).</p>`
@@ -1386,7 +1386,7 @@ function bindAccount(){
     softRenderForce(); if (AUTH.sent) { toast('✉ Sign-in email sent – check your inbox'); const o = $('#otp'); if (o) { o.scrollIntoView({block: 'center'}); o.focus({preventScroll: true}); } } };
   const of = $('#otpf');
   if (of) of.onsubmit = async e => { e.preventDefault(); const tok = $('#otp').value.replace(/\D/g, ''), b = of.querySelector('button');
-    if (tok.length < 6) { AUTH.msg = 'Enter the 6-digit code from the email.'; return softRenderForce(); }
+    if (tok.length < 6) { AUTH.msg = 'Enter the code from the email.'; return softRenderForce(); }
     busy(b, 'Signing in…'); AUTH.msg = '';
     const {error} = await AUTH.client.auth.verifyOtp({email: AUTH.sent, token: tok, type: 'email'});
     if (error) { AUTH.msg = /expired|invalid/i.test(error.message) ? 'That code didn’t work – it may have expired or been used already. Check the newest email, or send a new one.' : /rate|seconds/i.test(error.message) ? 'Too many tries – please wait a minute and try again.' : error.message; return softRenderForce(); }
