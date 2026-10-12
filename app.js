@@ -2003,17 +2003,17 @@ const roleErr = p => { const v = ($('#' + p + '_role') || {}).value; return !v ?
 const personErr = (name, club) => { const n = (name || '').trim(), c = (club || '').trim().toLowerCase();
   return !n ? 'Enter your name.' : n.length < 2 || !/[a-z]/i.test(n) ? 'Enter your full name.' : (c && n.toLowerCase() === c) || /\b(club|archers|archery|bowmen|bowhunters|association|assoc|inc|committee|admin)\b/i.test(n) ? 'Enter your own name (a real person), not the club’s name.' : ''; };
 const SUB_DISC = [['Target','Target'],['Field','Field'],['3D','3D'],['Indoor','Indoor'],['Clout','Clout'],['Come and try','Come-and-try'],['Clinic','Clinic'],['League','League']];
-const ENTRY_METHODS = ['Assemble', 'Archers Diary', 'Email', 'Phone', 'None yet'];
+const ENTRY_METHODS = ['Assemble', 'Archers Diary', 'iScored', 'Email', 'Phone', 'Cash or tap on the day', 'None yet'];
 /* Overseas clubs (#/submit?country=US): country decides the organisation list, state list (or free-text region), time zones,
    entry methods, venue suggestions and the date preview format. Australia stays the default and works exactly as before. */
 const SUB_CTRY = {
   AU: {name: 'Australia', tag: '', loc: 'en-AU', orgs: ORG_TYPES, methods: ENTRY_METHODS, town: 'Suburb or town', state: 'State',
        linkHint: 'Your Assemble or Archers Diary page, or the email or phone number archers should use.', phone: 'e.g. 0412 345 678'},
   US: {name: 'United States', tag: 'USA', loc: 'en-US', orgs: ['USA Archery club / JOAD', 'NFAA club', 'ASA (Archery Shooters Association)', 'IBO (International Bowhunting Organization)', 'Independent club or range', 'Other'],
-       methods: ['Online entry page', 'Email', 'Phone', 'Walk-up on the day', 'None yet'], town: 'City or town', state: 'State',
+       methods: ['Online entry page', 'iScored', 'Email', 'Phone', 'Cash or tap on the day', 'None yet'], town: 'City or town', state: 'State',
        linkHint: 'Your online entry page (e.g. USA Archery, NFAA, ASA, IBO or club site), or the email or phone number archers should use.', phone: 'e.g. (555) 123-4567'},
   OTHER: {name: 'Other country', tag: '', loc: 'en-GB', orgs: ['National federation / World Archery member club', 'IFAA club', '3D / bowhunting club', 'Independent club or range', 'Other'],
-       methods: ['Online entry page', 'Email', 'Phone', 'Walk-up on the day', 'None yet'], town: 'City or town', state: 'Region / province',
+       methods: ['Online entry page', 'iScored', 'Email', 'Phone', 'Cash or tap on the day', 'None yet'], town: 'City or town', state: 'Region / province',
        linkHint: 'Your online entry page, or the email or phone number archers should use.', phone: 'include the country code, e.g. +44 20 7946 0000'}};
 const AU_TZ = {WA: 'Australia/Perth', SA: 'Australia/Adelaide', NT: 'Australia/Darwin', QLD: 'Australia/Brisbane', NSW: 'Australia/Sydney', ACT: 'Australia/Sydney', VIC: 'Australia/Melbourne', TAS: 'Australia/Hobart'};
 const AU_TZ_NAME = {'Australia/Perth': 'Western (Perth)', 'Australia/Darwin': 'Central (Darwin, no daylight saving)', 'Australia/Adelaide': 'Central (Adelaide)', 'Australia/Brisbane': 'Eastern (Brisbane, no daylight saving)',
@@ -2250,7 +2250,7 @@ function bindSubmit(){
   fm.addEventListener('shrunk', () => { if (fm.dataset.tried) check(); });
   /* Entry link: never required; auto-filled from the entry method (club's own platform link from past shoots if it isn't a one-off event page); hidden for email/phone/walk-up/none. */
   (function linkFill(){ let manual = false;
-    const PLAT = {'Assemble': [ASSEMBLE.url, /assemblesports\.io/], 'Archers Diary': ['https://archersdiary.com/', /archersdiary\.com/]};
+    const PLAT = {'Assemble': [ASSEMBLE.url, /assemblesports\.io/], 'Archers Diary': ['https://archersdiary.com/', /archersdiary\.com/], 'iScored': ['https://iscored.today/', /iscored\.today/]};
     const show = card => { g('s_lcard').hidden = !card; g('s_lfields').hidden = card; };
     const fill = () => { const me = val('s_method'), online = !!PLAT[me] || me === 'Online entry page';
       g('s_link_w').hidden = !online; if (!online) { if (!manual) g('s_link').value = ''; return; }
