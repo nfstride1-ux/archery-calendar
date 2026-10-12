@@ -47,7 +47,8 @@
     box.querySelector('.hb-f').onsubmit = e => { e.preventDefault(); const i = box.querySelector('#hbQ'), v = i.value.trim(); if (!v) return; i.value = ''; ask(v); };
     log.addEventListener('click', e => { const q = e.target.closest('[data-q]'); if (q) ask(QA[+q.dataset.q].q, QA[+q.dataset.q]); if (e.target.closest('a[href^="#"]') && phone()) toggle(false); });
   }
-  const say = (who, html) => { const d = document.createElement('div'); d.className = 'hb-m ' + who; d.innerHTML = html; log.append(d); d.scrollIntoView({block: 'start', behavior: 'smooth'}); };
+  const say = (who, html) => { if (html.includes('hb-qs')) log.querySelectorAll('.hb-qs, .hb-more').forEach(e => e.remove());   // only one question list, always the latest
+    const d = document.createElement('div'); d.className = 'hb-m ' + who; d.innerHTML = html; log.append(d); d.scrollIntoView({block: 'start', behavior: 'smooth'}); };
   const menu = () => '<div class="hb-qs">' + QA.map((o, i) => `<button type="button" data-q="${i}">${o.q}</button>`).join('') + '</div>';
   function ask(text, o){ say('me', text.replace(/</g, '&lt;')); o = o || find(text);
     say('bot', o ? o.a() + `<p class="hb-more">Anything else?</p>` + menu() : `<p>Sorry, I don't have an answer for that.</p>${fallback}${menu()}`); }
