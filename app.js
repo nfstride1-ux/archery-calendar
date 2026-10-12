@@ -2035,6 +2035,7 @@ function vSubmit(country){
       <div class="grid2">${f('s_start', 'Start date', `<input id="s_start" name="start_date" type="date" required lang="${K.loc}">`)}
       ${f('s_end', 'End date', `<input id="s_end" name="end_date" type="date" lang="${K.loc}">`, 'Leave blank for a one-day shoot.', false)}</div>
       <p class="note date-prev" id="s_dprev" aria-live="polite"></p>
+      <div id="s_clash" aria-live="polite"></div><input type="hidden" name="date_clashes" id="s_clash_val">
       ${f('s_venue', 'Venue', `<div class="cb" data-cb="s_venue"><input id="s_venue" name="venue" required maxlength="140" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="s_venue_lb" autocomplete="off" placeholder="Start typing the range or club name, or the address"><ul class="cb-lb" id="s_venue_lb" role="listbox" hidden></ul></div>`, `<span id="s_venue_hint">${C === 'AU' ? 'Suggestions are Australian clubs and ranges.' : C === 'US' ? 'Suggestions are US ranges we already list. Not there? Type the full address.' : 'Suggestions are ranges outside the USA we already list. Not there? Type the full address.'}</span>`)}
       <div class="grid2">${f('s_suburb', K.town, `<input id="s_suburb" name="suburb" required maxlength="80" autocomplete="address-level2">`)}
       <div id="s_state_w">${f('s_state', K.state, subStateField(C))}</div></div>
@@ -2077,6 +2078,31 @@ function bindSubmit(){
   const fmtD = d => d ? pd(d).toLocaleDateString(K().loc, {weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'}) : '';
   const datePrev = () => { const a = val('s_start'), b = val('s_end'), t = a ? fmtD(a) + (b && b !== a ? ' – ' + fmtD(b) : '') : '';
     g('s_dprev').textContent = t ? '📅 ' + t + (val('s_tz') ? ` (${(SUB_CTRY.US && TZ_NAME[val('s_tz')]) || AU_TZ_NAME[val('s_tz')] || val('s_tz').replace(/_/g, ' ')})` : '') : ''; g('s_dates_disp').value = t; };
+  /* Live date-clash heads-up (same logic/styling as event pages): shoots on any of these dates in the same country (same state first),
+     plus shoots from My clubs / Clubs I watch anywhere. Never blocks submitting. */
+  const clashCheck = () => { const box = g('s_clash'), a = val('s_start'), b = val('s_end'); if (!box) return;
+    const c = ctry(), st = val('s_state'), cn = (val('s_ctryname') || '').trim().toLowerCase();
+    const me = {id: '_new', start_date: a, end_date: b && b >= a ? b : a}, fol = followed();
+    const stOf = x => x.state || (x._intl && x.country_code === 'USA' ? ((/,\s*([A-Z]{2})\b[^,]*$/.exec(x.location || '') || [])[1] || '') : '');
+    const sameC = x => c === 'AU' ? !x._intl || x.country_code === 'AUS' : c === 'US' ? x.country_code === 'USA' : !!cn && x._intl && [x.country, x.country_name].some(n => (n || '').toLowerCase() === cn);
+    const isFol = x => [x.club_id, ...(x.intl_clubs || [])].some(id => id && fol.includes(id));
+    if (!a) { box.innerHTML = ''; g('s_clash_val').value = ''; return; }
+    if (c !== 'AU' && !INTL) loadIntl().then(clashCheck).catch(() => {});
+    const pool = EV.concat(INTL ? INTL.events.filter(x => !BYID[x.id] || BYID[x.id] === x).filter(x => !EV.includes(x)) : []);
+    const hits = pool.filter(x => datable(x) && !x.cancelled && !isPast(x) && overlaps(me, x)), seen = new Set(), sf = st && stOf, by = (p, q) => p.start_date < q.start_date ? -1 : p.start_date > q.start_date ? 1 : 0;
+    const local = hits.filter(x => sameC(x) && clubOk(x)).sort((p, q) => ((st && stOf(q) === st) - (st && stOf(p) === st)) || by(p, q));
+    local.forEach(x => seen.add(x.id));
+    const mine = hits.filter(x => isFol(x) && !seen.has(x.id)).sort(by);
+    const clubNm = x => (CLUB[x.club_id] || {}).name || x.host || ((x.intl_clubs || []).map(id => (CLUB[id] || {}).name).filter(Boolean)[0]) || x.org || '';
+    const where = x => stOf(x) || (x._intl ? x.country_name || x.country || '' : '');
+    const li = x => `<li><a href="#/shoot/${encodeURIComponent(x.id)}" target="_blank" rel="noopener">${esc(x.name)}</a>${clubNm(x) ? ' · ' + esc(clubNm(x)) : ''} · ${esc(range(x))}${where(x) ? ' · ' + esc(where(x)) : ''}${isFol(x) ? (fol.length && S.myClubs.some(id => [x.club_id, ...(x.intl_clubs || [])].includes(id)) ? ' <span class="b myclub">🏠 My club</span>' : ' <span class="b watching">👁 Watching</span>') : ''}</li>`;
+    if (!local.length && !mine.length) { box.innerHTML = ''; g('s_clash_val').value = ''; return; }
+    const cname = c === 'AU' ? 'Australia' : c === 'US' ? 'the USA' : val('s_ctryname') || 'that country';
+    box.innerHTML = `<section class="panel clash-box sub-clash" id="subClash"><h2 class="sec">⚠️ Heads-up: other shoots on ${b && b > a ? 'these dates' : 'this date'}</h2>
+      ${local.length ? `<p class="note">${local.length === 1 ? 'There is 1 shoot' : `There are ${local.length} shoots`} in ${esc(cname)}${st && local.some(x => stOf(x) === st) ? ` (${esc(st)} shoots first)` : ''}:</p><ul>${local.map(li).join('')}</ul>` : ''}
+      ${mine.length ? `<p class="note">From clubs you follow:</p><ul>${mine.map(li).join('')}</ul>` : ''}
+      <p class="note"><b>This is only a heads-up.</b> It's OK to submit anyway – clashes don't stop your shoot being listed.</p></section>`;
+    g('s_clash_val').value = local.concat(mine).map(x => `${x.name} – ${clubNm(x) || '?'} – ${range(x)}${where(x) ? ' – ' + where(x) : ''} – ${location.origin}/#/shoot/${x.id}`).join('\n'); };
   const venueCombo = () => { const c = ctry(), bind = () => { if (!$('#s_venue') || ctry() !== c) return;
       const i = g('s_venue'), n = i.cloneNode(true); n.value = i.value; i.replaceWith(n);   // fresh input: no listeners left over from the previous country
       bindCombo('s_venue', subVenueItems(c), false); };
@@ -2092,13 +2118,13 @@ function bindSubmit(){
     g('s_venue_hint').textContent = c === 'AU' ? 'Suggestions are Australian clubs and ranges.' : c === 'US' ? 'Suggestions are US ranges we already list. Not there? Type the full address.' : 'Suggestions are ranges outside the USA we already list. Not there? Type the full address.';
     ['s_start', 's_end'].forEach(id => g(id).setAttribute('lang', k.loc));
     if (c === 'OTHER') { try { const z = Intl.DateTimeFormat().resolvedOptions().timeZone; if (z && !/^Australia\//.test(z) && [...g('s_tz').options].some(o => o.value === z)) { g('s_tz').value = z; tzAuto.v = z; } } catch {} }
-    venueCombo(); suggestTz(); datePrev(); if (fm.dataset.tried) check();
+    venueCombo(); suggestTz(); datePrev(); clashCheck(); if (fm.dataset.tried) check();
   }
   g('s_country').onchange = () => { applyCountry(); history.replaceState(null, '', location.pathname + location.search + (ctry() === 'AU' ? '#/submit' : '#/submit?country=' + ctry())); };
   fm.addEventListener('change', e => { const id = e.target.id;
-    if (id === 's_state') { suggestTz(); datePrev(); }
+    if (id === 's_state' || id === 's_ctryname') { suggestTz(); datePrev(); clashCheck(); }
     if (id === 's_tz') { tzAuto.v = ''; datePrev(); }
-    if (id === 's_start' || id === 's_end') datePrev();
+    if (id === 's_start' || id === 's_end') { datePrev(); clashCheck(); }
     if (id === 's_venue') { const it = (CB.s_venue && CB.s_venue.items || []).find(i => i.value === g('s_venue').value);
       if (it) { if (it.state && !val('s_state') && [...(g('s_state').options || [])].some(o => o.value === it.state)) { g('s_state').value = it.state; suggestTz(); }
         if (it.tz && (!val('s_tz') || val('s_tz') === tzAuto.v) && [...g('s_tz').options].some(o => o.value === it.tz)) { g('s_tz').value = it.tz; tzAuto.v = it.tz; }
@@ -2142,12 +2168,12 @@ function bindSubmit(){
       ['Shoot', val('s_shoot')], ['Discipline', discs().join(', ')], ['Start', val('s_start')], ['End', val('s_end')], ['Dates (as shown to archers)', g('s_dates_disp').value], ['Venue', val('s_venue')], [K().town, val('s_suburb')], [K().state, val('s_state')], ['Time zone', val('s_tz')],
       ['Entries close', val('s_close')], ['Entry method', val('s_method')], ['Entry link', val('s_link')],
       ['Entry form wanted', (fm.querySelector('[name=want_entry_form]:checked') || {}).value || ''], ['Flyer link', val('s_flink')], ['Notes', val('s_notes')],
-      ['Permission to publish', g('s_ok').checked ? 'Yes' : 'Not ticked']];
+      ['Permission to publish', g('s_ok').checked ? 'Yes' : 'Not ticked'], ['Date clashes', (clashCheck(), g('s_clash_val').value) || 'None']];
     return L.map(([k, v]) => `${k}: ${v}`).join('\n') + '\n\n>>> Please attach the flyer (PDF or JPG) to this email before sending. <<<\n';
   }
   const ctag = () => ctry() === 'US' ? 'USA' : ctry() === 'OTHER' ? (val('s_ctryname') || 'Overseas') : '';
   const subject = () => ctry() === 'AU' ? `New shoot: ${val('s_shoot')} – ${val('s_club')} (${val('s_state')})` : `New shoot (${ctag()}): ${val('s_shoot')} – ${val('s_club')} (${[val('s_suburb'), val('s_state')].filter(Boolean).join(', ')})`;
-  roleBind('s'); kcLoad(); g('s_email').addEventListener('change', () => kcCheck(val('s_email')));
+  clashCheck(); roleBind('s'); kcLoad(); g('s_email').addEventListener('change', () => kcCheck(val('s_email')));
   const kcNow = id => KC.memo[kcNorm(val(id))];
   g('subMail').onclick = e => { const sub = kcTag(kcNow('s_email')) + (ctry() === 'AU' ? `Shoot submission: ${val('s_shoot') || 'new shoot'}${val('s_club') ? ' – ' + val('s_club') : ''}` : subject());
     e.currentTarget.href = `mailto:${SITE.contact}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(mailBody())}`; };
@@ -2161,7 +2187,7 @@ function bindSubmit(){
       toast(navigator.onLine ? 'Opening your email app…' : 'You’re offline: opening your email app instead'); return; }
     g('s_disc_val').value = discs().join(', '); g('s_role_val').value = roleVal('s');
     fm.querySelector('[name=_next]').value = location.href.split('#')[0].split('?')[0] + '?sent=1#/submit';
-    fm.querySelector('[name=_subject]').value = subject(); datePrev();
+    fm.querySelector('[name=_subject]').value = subject(); datePrev(); clashCheck(); if (!g('s_clash_val').value) g('s_clash_val').value = 'None';
     g('s_tz_name').value = val('s_tz') ? (TZ_NAME[val('s_tz')] || AU_TZ_NAME[val('s_tz')] || val('s_tz')) : '';
     if (ctry() === 'AU' && !val('s_tz')) g('s_tz').disabled = true;   // Australian time zone is optional: don't send an empty field
     if (!g('s_file').files.length) g('s_file').disabled = true;   // don't send an empty file part

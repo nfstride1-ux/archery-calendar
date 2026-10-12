@@ -649,3 +649,4 @@ html.flb-on,html.flb-on body{overflow:hidden}
 .mcc-linkbox .btn img{width:24px;height:24px;object-fit:contain;background:#fff;border-radius:4px}
 @media (max-width:360px){.mcc-pick{grid-template-columns:1fr}}
 .sub-form [id$=_role_other]{margin-top:8px}.sub-form .note.verify{margin:4px 0 10px;color:var(--ink,#1f2937)}
+.sub-clash{margin:10px 0 4px;padding:12px 14px}.sub-clash h2.sec{font-size:1.05rem;margin:0 0 4px}.sub-clash li{overflow-wrap:anywhere}
