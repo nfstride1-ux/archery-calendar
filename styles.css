@@ -678,3 +678,8 @@ html.flb-on,html.flb-on body{overflow:hidden}
 .flyer-svc .fs-opts{display:flex;flex-direction:column;gap:.35rem}
 .flyer-svc .fs-opts .chk{align-items:flex-start}
 .flyer-svc .fs-proof{font-weight:600}
+
+.foot-support{margin-top:16px}.foot-support p{margin:0 0 8px;font-size:14px}
+.site-foot a.support-btn{display:inline-block;margin:0;padding:8px 14px;border-radius:999px;background:var(--gold);color:var(--night);font-weight:700;font-size:14px;text-decoration:none}
+.site-foot a.support-btn:hover{filter:brightness(1.08);color:var(--night)}
+a.support-head{border-color:var(--gold)!important;color:var(--gold)!important;white-space:nowrap}
