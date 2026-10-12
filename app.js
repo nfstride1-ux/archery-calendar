@@ -2118,7 +2118,8 @@ function vSubmit(country){
     <fieldset><legend>Entries</legend>
       <div class="grid2">${f('s_close', 'Entries close', `<input id="s_close" name="entry_close_date" type="date">`, '', false)}
       ${f('s_method', 'How do archers enter now?', `<select id="s_method" name="entry_method" required>${opt(K.methods, 'Choose…')}</select>`)}</div>
-      ${f('s_link', 'Entry link', `<input id="s_link" name="entry_link" type="text" maxlength="300" placeholder="https://" inputmode="url">`, `<span id="s_link_hint">${esc(K.linkHint)}</span>`, false)}
+      <div id="s_link_w" hidden><div class="vcard" id="s_lcard" hidden><div><b>Entry link</b><span id="s_lcard_txt"></span><small>We've filled this in. Change it only if your shoot has its own link.</small></div><button type="button" class="btn sm" id="s_ledit" aria-label="Edit entry link">✏️ Edit</button></div>
+      <div id="s_lfields">      ${f('s_link', 'Entry link', `<input id="s_link" name="entry_link" type="text" maxlength="300" placeholder="https://" inputmode="url">`, `<span id="s_link_hint">${esc(K.linkHint)}</span>`, false)}</div></div>
     </fieldset>
     <fieldset><legend>Flyer</legend>
       ${f('s_file', 'Upload the flyer', `<input id="s_file" name="attachment" type="file" accept=".pdf,application/pdf,image/*">`, `PDF (up to ${MAX_MB} MB) or any photo – big photos are shrunk automatically. <span id="s_file_n" class="note"></span>`, false)}
@@ -2247,6 +2248,22 @@ function bindSubmit(){
   })();
   ['s_file', 's_fphoto'].forEach(id => g(id).addEventListener('change', () => shrinkImg(g(id), g(id + '_n'))));
   fm.addEventListener('shrunk', () => { if (fm.dataset.tried) check(); });
+  /* Entry link: never required; auto-filled from the entry method (club's own platform link from past shoots if it isn't a one-off event page); hidden for email/phone/walk-up/none. */
+  (function linkFill(){ let manual = false;
+    const PLAT = {'Assemble': [ASSEMBLE.url, /assemblesports\.io/], 'Archers Diary': ['https://archersdiary.com/', /archersdiary\.com/]};
+    const show = card => { g('s_lcard').hidden = !card; g('s_lfields').hidden = card; };
+    const fill = () => { const me = val('s_method'), online = !!PLAT[me] || me === 'Online entry page';
+      g('s_link_w').hidden = !online; if (!online) { if (!manual) g('s_link').value = ''; return; }
+      if (manual) { show(false); return; }
+      const P = PLAT[me]; if (!P) { g('s_link').value = ''; show(false); return; }
+      const n = val('s_club').toLowerCase(), k = n && CLUBS.find(c => c.name.toLowerCase() === n || (c.aliases || []).some(a => a.toLowerCase() === n));
+      const own = k && EV.filter(x => x.club_id === k.id && x.registration_url && P[1].test(x.registration_url) && x.registration_url_kind !== 'entry_page').map(x => x.registration_url)[0];
+      g('s_link').value = own || P[0]; g('s_lcard_txt').textContent = g('s_link').value; show(true); };
+    g('s_ledit').onclick = () => { manual = true; show(false); g('s_link').focus(); };
+    g('s_link').addEventListener('input', () => { manual = true; });
+    fm.addEventListener('change', e => { if (['s_method', 's_club', 's_country'].includes(e.target.id)) fill(); });
+    fill();
+  })();
   venueCombo(); if (ctry() === 'OTHER') applyCountry();
   function check(){
     const errs = [], add = (id, m) => { setErr(id, m); if (m) errs.push(id); };
@@ -2269,7 +2286,7 @@ function bindSubmit(){
     if (ctry() !== 'AU') add('s_tz', val('s_tz') ? '' : 'Choose the time zone at the venue.');
     const me = val('s_method'), ln = val('s_link');
     add('s_method', me ? '' : 'Choose how archers enter now.');
-    add('s_link', (me === 'Assemble' || me === 'Archers Diary' || me === 'Online entry page') && !ln ? `Add your ${me === 'Online entry page' ? 'entry page' : me} link.` : ln && /^(https?:|www\.)/i.test(ln) && !isUrl(ln.replace(/^www\./i, 'https://www.')) ? 'That link doesn’t look right.' : '');
+    add('s_link', ln && /^(https?:|www\.)/i.test(ln) && !isUrl(ln.replace(/^www\./i, 'https://www.')) ? 'That link doesn’t look right.' : '');
     const file = g('s_file').files[0];
     const isPdf = file && /\.pdf$/i.test(file.name);
     add('s_file', !file ? '' : g('s_file').dataset.busy ? 'Still shrinking the photo – one moment.' : !isPdf && !/^image\//.test(file.type) && !/\.(jpe?g|png|webp|heic|heif)$/i.test(file.name) ? 'Flyers must be a PDF or a photo.'
