@@ -1691,12 +1691,30 @@ async function shrinkPhoto(file){   // -> File (JPEG, max 2400 px) or the origin
     return blob ? new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', {type: 'image/jpeg'}) : file;
   } catch { return file; }
 }
+/* "Sending as" card for Fans + Fix forms: prefill from remembered submit details (S.subMe) and the signed-in email,
+   hide those fields behind a card with ✏️ Change. Hidden fields still submit and validate (errors re-open them). */
+function sendAsCard(fm, map, roleP){
+  const m = S.subMe || {}, acct = (typeof AUTH !== 'undefined' && AUTH.user && AUTH.user.email) || '';
+  const src = {name: m.s_name || '', email: m.s_email || acct, club: m.s_club || '', role: m.s_role || '', role_other: m.s_role_other || ''};
+  Object.entries(map).forEach(([k, id]) => { const el = $('#' + id); if (el && !el.value && src[k]) el.value = src[k]; });
+  if (roleP && src.role) { const r = $('#' + roleP + '_role'); if (r && !r.value) { r.value = src.role; const o = $('#' + roleP + '_role_other'); if (o) o.value = src.role_other; r.dispatchEvent(new Event('change', {bubbles: true})); } }
+  const ids = Object.values(map).concat(roleP ? [roleP + '_role'] : []), wraps = [...new Set(ids.map(id => { const el = $('#' + id); return el && (el.closest('.grid2') || el.closest('.fld')); }).filter(Boolean))];
+  if (!ids.every(id => { const el = $('#' + id); return el && el.value.trim(); })) return;
+  const card = document.createElement('div'); card.className = 'vcard me-card';
+  const who = $('#' + map.name).value, em = $('#' + map.email).value, cl = map.club ? $('#' + map.club).value : '', rl = roleP ? roleVal(roleP) : '';
+  card.innerHTML = `<div><span>Sending as <b>${esc(who)}</b>${rl ? ', ' + esc(rl) : ''}${cl ? ' – ' + esc(cl) : ''} · ${esc(em)}</span></div><div class="me-btns"><button type="button" class="btn sm">✏️ Change</button></div>`;
+  wraps[0].before(card); const show = on => { card.hidden = !on; wraps.forEach(w => w.hidden = on); };
+  card.querySelector('button').onclick = () => show(false); show(true);
+  fm.addEventListener('submit', () => setTimeout(() => { if (wraps.some(w => w.querySelector('.bad, [aria-invalid=true]'))) show(false); }), true);
+}
+const rememberMe = o => { S.subMe = Object.assign({}, S.subMe || {}, Object.fromEntries(Object.entries(o).filter(([, v]) => v))); save(); };
 function bindFans(){
   document.querySelectorAll('[data-zoom]').forEach(b => b.onclick = () => { const f = FANS[+b.dataset.zoom], d = $('#lb');
     $('#lbImg').src = f.file; $('#lbImg').alt = f.alt || f.caption; $('#lbCap').textContent = f.caption + (f.credit ? ' · 📷 ' + f.credit : ''); d.showModal ? d.showModal() : d.setAttribute('open', ''); });
   const lb = $('#lb'); if (lb) lb.onclick = e => { if (e.target === lb) lb.close(); };
   const t = $('#fanThanks'); if (t) t.focus();
   const fm = $('#fanForm'); if (!fm) return;
+  sendAsCard(fm, {name: 'f_name', email: 'f_email'});
   const g = id => $('#' + id), val = id => (g(id).value || '').trim();
   const setErr = (id, m) => { g(id + '_e').textContent = m || ''; const w = fm.querySelector(`[data-f="${id}"]`); w && w.classList.toggle('bad', !!m); const i = g(id); i && i.setAttribute('aria-invalid', m ? 'true' : 'false'); };
   function check(){
@@ -1723,7 +1741,7 @@ function bindFans(){
       const s = await shrinkPhoto(f);
       if (s !== f && typeof DataTransfer === 'function') { try { const dt = new DataTransfer(); dt.items.add(s); g('f_file').files = dt.files; } catch {} }
     }
-    fm.querySelector('[name=_next]').value = location.href.split('#')[0].split('?')[0] + '?fsent=1#/fans';
+    fm.querySelector('[name=_next]').value = location.href.split('#')[0].split('?')[0] + '?fsent=1#/fans'; rememberMe({s_name: val('f_name'), s_email: val('f_email')});
     fm.querySelector('[name=_subject]').value = `Fan photo: ${val('f_cap').slice(0, 80)} – ${val('f_name')}`;
     b.textContent = 'Sending…'; HTMLFormElement.prototype.submit.call(fm);
   };
@@ -2127,7 +2145,7 @@ function bindSubmit(){
   /* Remembered club details (S.subMe: this device, plus the signed-in profile's settings via sync). */
   const ME = ['s_ctryname', 's_state', 's_orgtype', 's_club', 's_name', 's_role', 's_role_other', 's_email', 's_phone'];
   const meShow = card => { g('s_mecard').hidden = !card; g('s_mefields').hidden = card; };
-  (function meLoad(){ const m = S.subMe; if (!m || !m.s_email) return;
+  (function meLoad(){ const m = S.subMe; if (!m || !m.s_email || !m.s_club) { const a = typeof AUTH !== 'undefined' && AUTH.user && AUTH.user.email; if (a && !val('s_email')) g('s_email').value = a; if (m) ME.forEach(id => { if (g(id) && m[id] && !g(id).value) g(id).value = m[id]; }); return; }
     if (m.country && m.country !== val('s_country')) { g('s_country').value = m.country; applyCountry(); }
     ME.forEach(id => { if (g(id) && m[id] != null) g(id).value = m[id]; });
     g('s_role').dispatchEvent(new Event('change', {bubbles: true}));
@@ -2330,6 +2348,7 @@ function bindFix(){
   if (!fm) { const t = $('#subThanks'); t && t.focus(); return; }
   const g = id => $('#' + id), val = id => ((g(id) || {}).value || '').trim(), list = fixList();
   let cur = BYID[val('fx_id')] || null;
+  sendAsCard(fm, {name: 'fx_who', email: 'fx_email', club: 'fx_club'}, 'fx');
   const setErr = (id, msg) => { const e = g(id + '_e'), w = fm.querySelector(`[data-f="${id}"]`), inp = g(id);
     if (e) e.textContent = msg || ''; w && w.classList.toggle('bad', !!msg);
     if (inp && inp.matches('input,select,textarea')) inp.setAttribute('aria-invalid', msg ? 'true' : 'false'); };
@@ -2403,7 +2422,7 @@ function bindFix(){
       const first = errs[0] === 'fx_any' ? fm.querySelector('[data-pen]') : errs[0] === 'fx_start' ? g('fx_start') : errs[0] === 'fx_file' ? g('fx_file') : g(errs[0]); first && first.focus(); return; }
     $('#fixErr').textContent = '';
     if (!SITE.formEndpoint || !navigator.onLine) { e.preventDefault(); g('fixMail').click(); location.href = g('fixMail').href; toast('Opening your email app…'); return; }
-    g('fx_changes').value = changeText(); g('fx_role_val').value = roleVal('fx');
+    g('fx_changes').value = changeText(); g('fx_role_val').value = roleVal('fx'); rememberMe({s_name: val('fx_who'), s_email: val('fx_email'), s_club: val('fx_club'), s_role: g('fx_role').value, s_role_other: (g('fx_role_other') || {}).value});
     g('fx_gen').innerHTML = changes().map(([l, o, n]) => `<input type="hidden" name="${esc(l)}" value="${esc(o + ' → ' + n)}">`).join('');
     fm.querySelector('[name=_next]').value = location.href.split('#')[0].split('?')[0] + '?fixed=1#/fix';
     fm.querySelector('[name=_subject]').value = subject();
