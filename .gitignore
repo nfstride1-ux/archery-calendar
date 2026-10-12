@@ -1,3 +1,5 @@
 incoming/
 *.pdf
 .DS_Store
+
+!guides/*.pdf
