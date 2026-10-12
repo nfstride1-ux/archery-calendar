@@ -486,7 +486,7 @@ const matchQ = (x, Q) => (!Q.states.length || Q.states.includes(x.state_code)) &
   w === 'fita' ? !NOT_FITA.test(discTxt(x)) && wordHit(w, hay(x))
   : DISC_Q[w] && x.discipline ? DISC_Q[w].test(discTxt(x))
   : wordHit(w, hay(x)));
-let BF = {q:'', disc:'', cat:'', ost:'', scope:'all', state:'', club:'', clubId:'', mc:false, past:false, hideClash:false, limit:60};
+let BF = {day:'', q:'', disc:'', cat:'', ost:'', scope:'all', state:'', club:'', clubId:'', mc:false, past:false, hideClash:false, limit:60};
 function vBrowse(){
   setTitle('Find shoots');
   const grp = AUS() && BF.scope.startsWith('g:') ? BF.scope.slice(2) : null;
@@ -508,7 +508,8 @@ function vBrowse(){
   else if (BF.state) list = list.filter(x => x.state_code === BF.state);
   const nHiddenClub = (BF.clubId || BF.club) ? 0 : list.filter(x => !clubOk(x, Q) && (BF.past || !isPast(x))).length;
   if (!BF.clubId && !BF.club) list = list.filter(x => clubOk(x, Q));
-  const active = [BF.q && `search “${esc(BF.q)}”`, BF.state && (STATES.find(s => s[0] === BF.state) || [, BF.state])[1], BF.disc && `discipline ${esc(BF.disc)}`, BF.cat && CATS[BF.cat] && CATS[BF.cat][2], BF.ost && OST[BF.ost] && OST[BF.ost][2], BF.club && CLUBF[BF.club], BF.clubId && CLUB[BF.clubId] && `club: ${esc(CLUB[BF.clubId].name)}`, BF.cat === 'club' && BF.mc && 'only my clubs', qState && `state from your search: ${Q.states.join(', ')}${!grp && !BF.state && S.states.length ? ' (overrides your Settings states)' : ''}`, !grp && !BF.state && !qState && S.states.length && AUS() && `your states in Settings (${S.states.join(', ')})`].filter(Boolean);
+  const active = [BF.day && `on ${esc(pd(BF.day).toLocaleDateString('en-AU', {weekday:'short', day:'numeric', month:'short', year:'numeric'}))}`, BF.q && `search “${esc(BF.q)}”`, BF.state && (STATES.find(s => s[0] === BF.state) || [, BF.state])[1], BF.disc && `discipline ${esc(BF.disc)}`, BF.cat && CATS[BF.cat] && CATS[BF.cat][2], BF.ost && OST[BF.ost] && OST[BF.ost][2], BF.club && CLUBF[BF.club], BF.clubId && CLUB[BF.clubId] && `club: ${esc(CLUB[BF.clubId].name)}`, BF.cat === 'club' && BF.mc && 'only my clubs', qState && `state from your search: ${Q.states.join(', ')}${!grp && !BF.state && S.states.length ? ' (overrides your Settings states)' : ''}`, !grp && !BF.state && !qState && S.states.length && AUS() && `your states in Settings (${S.states.join(', ')})`].filter(Boolean);
+  if (BF.day) list = list.filter(x => datable(x) && x.start_date <= BF.day && evEnd(x) >= BF.day);
   if (BF.disc) list = list.filter(x => (x.discipline || '').startsWith(BF.disc));
   const tc = typeCounts(list.filter(x => BF.past || !isPast(x)));
   if (BF.cat) list = list.filter(x => catOf(x) === BF.cat);
@@ -544,7 +545,7 @@ function bindBrowse(){
   document.querySelectorAll('[data-scope]').forEach(b => b.onclick = () => { BF.scope = b.dataset.scope; BF.club = ''; BF.clubId = ''; BF.disc = ''; BF.limit = 60; render(); });
   document.querySelectorAll('[data-clubf]').forEach(b => b.onclick = () => { BF.club = BF.club === b.dataset.clubf ? '' : b.dataset.clubf; BF.limit = 60; render(); });
   bindClubNotice();
-  const clr = () => { Object.assign(BF, {q:'', disc:'', cat:'', ost:'', state:'', club:'', clubId:'', mc:false, limit:60}); if (S.states.length) { S.states = []; save(); } render(); };
+  const clr = () => { Object.assign(BF, {day:'', q:'', disc:'', cat:'', ost:'', state:'', club:'', clubId:'', mc:false, limit:60}); if (S.states.length) { S.states = []; save(); } render(); };
   ['#clearF', '#clearF2'].forEach(s => { const b = $(s); if (b) b.onclick = clr; });
   const cx = $('#clubChipX'); if (cx) cx.onclick = () => { BF.clubId = ''; BF.limit = 60; render(); };
   $('#disc').onchange = e => { BF.disc = e.target.value; render(); };
@@ -647,7 +648,36 @@ function bindShoot(id){
   const ic = $('#icsOne'); if (ic) ic.onclick = () => downloadIcs([BYID[id]], 'shoot');
 }
 
-let CM = null;
+let CM = null, CD = '';
+const folIds = x => [x.club_id, ...(x.intl_clubs || [])].filter(Boolean);
+function folOnDay(k){
+  const fol = followed(); if (!fol.length) return [];
+  const pool = EV.concat(typeof INTL !== 'undefined' && INTL ? INTL.events.filter(x => !EV.includes(x) && BYID[x.id] === x) : []);
+  return pool.filter(x => datable(x) && !x.cancelled && x.start_date <= k && evEnd(x) >= k && folIds(x).some(id => fol.includes(id)))
+    .sort((a, b) => (a.start_times || '') < (b.start_times || '') ? -1 : 1);
+}
+function dayPanel(k, mineDay){
+  const d = pd(k), lbl = d.toLocaleDateString('en-AU', {weekday:'long', day:'numeric', month:'long', year:'numeric'}), fol = followed();
+  const clubNm = x => (CLUB[x.club_id] || {}).name || folIds(x).map(id => (CLUB[id] || {}).name).filter(Boolean)[0] || x.host || x.org || '';
+  const where = x => x.state || (x._intl ? x.country_name || x.country || '' : '');
+  const row = x => { const on = !!S.saved[x.id]; return `<li class="dp-row"><div class="dp-main"><a href="#/shoot/${encodeURIComponent(x.id)}"><b>${esc(x.name)}</b></a><div class="meta">${esc([clubNm(x), x.start_times || (x.end_date && x.end_date !== x.start_date ? range(x) : ''), where(x)].filter(Boolean).join(' · '))}</div>${S.myClubs.some(id => folIds(x).includes(id)) ? '<span class="b myclub">🏠 My club</span>' : '<span class="b watching">👁 Watching</span>'}${clubOnly(x) ? ' <span class="b members">👥 Members only</span>' : ''}</div>${x.info_only ? '' : `<button class="star dp-star" aria-pressed="${on}" aria-label="${on ? 'Remove from' : 'Add to'} my shoots" data-star="${esc(x.id)}">${on ? '★' : '☆'}</button>`}</li>`; };
+  const fs = folOnDay(k).filter(x => !mineDay.some(y => y.id === x.id));
+  const homeSt = (CLUB[S.homeClub] || CLUB[fol[0]] || {}).state || (S.states.length === 1 ? S.states[0] : '');
+  const stCode = homeSt && (STATES.find(s => s[0] === homeSt || s[1] === homeSt) || [])[0] || '';
+  const find = `<a href="#/browse" class="btn alt block" id="dpFind" data-day="${k}" data-st="${esc(stCode)}">🔎 Find shoots on this day${stCode ? ' in ' + esc(stCode) : AUS() ? ' in Australia' : ''}</a>`;
+  let h = `<section class="panel day-panel" id="dayPanel" aria-live="polite"><div class="dp-head"><h2 class="sec">${esc(lbl)}</h2><button class="linkbtn" id="dpX" aria-label="Close">✕</button></div>`;
+  if (mineDay.length) h += `<h3 class="dp-sub">★ My shoots</h3><ul class="dp-list">${mineDay.map(row).join('').replace(/<span class="b (myclub|watching)">[^<]*<\/span>/g, '')}</ul>`;
+  const isW = x => folIds(x).some(id => S.watchClubs.includes(id)), fw = fs.filter(isW), fm = fs.filter(x => !isW(x));
+  const watchBtn = `<a href="#/clubs" class="btn gold block" id="dpClubs">👁 Add clubs to watch</a>`;
+  if (!fol.length) h += `<p class="note">Watch some clubs to see their shoots on any day here, including members-only club shoots.</p>${watchBtn}`;
+  else {
+    if (fw.length) h += `<h3 class="dp-sub">👁 Clubs I watch</h3><ul class="dp-list">${fw.map(row).join('')}</ul>`;
+    if (fm.length) h += `<h3 class="dp-sub">🏠 My clubs</h3><ul class="dp-list">${fm.map(row).join('')}</ul>`;
+    if (!fs.length) h += `<p class="note">None of the clubs you watch have a shoot on this day.</p>${find}`;
+    if (!S.watchClubs.some(id => CLUB[id])) h += `<p class="note">You're not watching any clubs yet.</p>${watchBtn}`;
+  }
+  return h + '</section>';
+}
 function vCalendar(){
   setTitle('My shoots');
   const mine = Object.keys(S.saved).map(id => BYID[id]).filter(Boolean).sort((a, b) => (a.start_date || '9999') < (b.start_date || '9999') ? -1 : 1);
@@ -658,15 +688,17 @@ function vCalendar(){
   let g = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => `<div class="h">${d}</div>`).join('');
   for (let i = 0; i < start; i++) g += `<div class="c o"></div>`;
   for (let d = 1; d <= dim; d++) { const k = iso(new Date(y, m, d)), ev = byDay[k] || [], t = k === iso(today());
+    const fd = followed().length ? folOnDay(k).filter(x => !ev.some(y => y.id === x.id)).length : 0;
     const allPaid = ev.length && ev.every(x => ST(x.id) === 'paid'), allEnt = ev.length && ev.every(x => ST(x.id) !== 'none');
     const mk = allPaid ? '✓$' : allEnt ? '✓' : '';
-    g += `<div class="c ${ev.length ? 'has' : ''} ${t ? 't' : ''}" ${ev.length ? `data-open="${esc(ev[0].id)}" role="link" tabindex="0" aria-label="${d} ${MONL[m]}: ${esc(ev.map(x => x.name + ' – ' + ST_TXT[ST(x.id)].replace(/[☐✓$·]/g, '').replace(/\s+/g, ' ').trim()).join(', '))}"` : ''}>${d}${mk ? `<span class="mk" aria-hidden="true">${mk}</span>` : ''}${ev.length ? `<span class="dot">${ev.length > 1 ? ev.length + ' shoots' : '●'}</span>` : ''}</div>`; }
+    g += `<div class="c ${ev.length ? 'has' : ''} ${t ? 't' : ''} ${CD === k ? 'sel' : ''}" data-day="${k}" role="button" tabindex="0" aria-label="${d} ${MONL[m]}${ev.length ? ': ' + esc(ev.map(x => x.name + ' – ' + ST_TXT[ST(x.id)].replace(/[☐✓$·]/g, '').replace(/\s+/g, ' ').trim()).join(', ')) : ''}${fd ? ` – ${fd} from your clubs` : ''}">${d}${fd ? '<span class="fdot" aria-hidden="true"></span>' : ''}${mk ? `<span class="mk" aria-hidden="true">${mk}</span>` : ''}${ev.length ? `<span class="dot">${ev.length > 1 ? ev.length + ' shoots' : '●'}</span>` : ''}</div>`; }
   const inMonth = mine.filter(x => x.start_date && (x.start_date.slice(0, 7) === iso(first).slice(0, 7) || (x.end_date || '').slice(0, 7) === iso(first).slice(0, 7)));
   const up = mine.filter(x => !isPast(x)), past = mine.filter(isPast);
   return `${pageHead('My shoots', 'Your saved shoots, month by month.', 'target')}<div class="wrap narrow"><a class="btn gold block mcc-quick" href="#/cards">🪪 My membership cards${MCD.list.length ? ` (${MCD.list.length})` : ''}</a><div class="calnav"><button id="pm" aria-label="Previous month">‹</button><b>${MONL[m]} ${y}</b><button id="nm" aria-label="Next month">›</button></div>
   <div class="grid">${g}</div>
+  ${CD && CD.slice(0, 7) === iso(first).slice(0, 7) ? dayPanel(CD, byDay[CD] || []) : ''}
   ${clashPairsHtml()}
-  <div class="legend"><span class="b lg-day">■ shoot day</span><span class="b lg-day">✓ entered</span><span class="b lg-day">✓$ entered + paid</span><span class="b lg-today">□ today</span></div>
+  <div class="legend"><span class="b lg-day">■ shoot day</span><span class="b lg-day">✓ entered</span><span class="b lg-day">✓$ entered + paid</span><span class="b lg-today">□ today</span>${followed().length ? '<span class="b lg-day"><span class="fdot lg" aria-hidden="true"></span> your clubs</span>' : ''}</div><p class="note">Tap any day to see shoots from your clubs.</p>
   ${inMonth.length ? `<h2>In ${MONL[m]}</h2>${inMonth.map(evCard).join('')}` : ''}
   <h2>All my upcoming shoots (${up.length})</h2>
   ${up.length ? up.map(evCard).join('') : `<div class="empty">Nothing saved yet. Tap ☆ on shoots in <a href="#/browse">Browse</a>.</div>`}
@@ -674,6 +706,10 @@ function vCalendar(){
   ${past.length ? `<h2>Finished (${past.length})</h2>${past.map(evCard).join('')}` : ''}</div>`;
 }
 function bindCalendar(){
+  document.querySelectorAll('.grid [data-day]').forEach(c => { c.onclick = () => { CD = CD === c.dataset.day ? '' : c.dataset.day; render(); const p = $('#dayPanel'); if (p) p.scrollIntoView({block: 'nearest', behavior: 'smooth'}); };
+    c.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); c.click(); } }; });
+  const dx = $('#dpX'); if (dx) dx.onclick = () => { CD = ''; render(); };
+  const df = $('#dpFind'); if (df) df.onclick = () => { Object.assign(BF, {day: df.dataset.day, state: df.dataset.st || '', q: '', disc: '', cat: '', ost: '', club: '', clubId: '', mc: false, scope: 'all', past: false, limit: 60}); };
   $('#pm').onclick = () => { CM = CM[1] ? [CM[0], CM[1] - 1] : [CM[0] - 1, 11]; render(); };
   $('#nm').onclick = () => { CM = CM[1] < 11 ? [CM[0], CM[1] + 1] : [CM[0] + 1, 0]; render(); };
   const a = $('#icsAll'); if (a) a.onclick = () => downloadIcs(Object.keys(S.saved).map(i => BYID[i]).filter(x => x && x.start_date && !isPast(x)), 'my-archery-shoots');
