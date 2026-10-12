@@ -708,3 +708,5 @@ a.support-head{background:transparent!important;border:1.5px solid var(--gold)!i
 .hb-btn{display:inline-block;background:#f5b400;color:#0f1b2d;font-weight:800;padding:10px 14px;border-radius:10px;text-decoration:none}
 body.hb-open #hbBtn{display:none}
 #hbBtn.hb-hide{display:none}
+@media (max-width:759px){#hbBtn{bottom:calc(14px + env(safe-area-inset-bottom));right:10px;width:52px;height:52px;padding:0;justify-content:center;font-size:0;gap:0}#hbBtn span{width:40px;height:40px;font-size:22px}
+ body:has(#instBar) #hbBtn,body:has(.upd-bar) #hbBtn{bottom:calc(84px + env(safe-area-inset-bottom))}}
