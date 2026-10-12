@@ -2080,7 +2080,7 @@ function vSubmit(country){
       <div id="s_ctryname_w" ${C === 'OTHER' ? '' : 'hidden'}>${f('s_ctryname', 'Which country?', `<input id="s_ctryname" name="country_name" maxlength="60" autocomplete="country-name" placeholder="e.g. Canada" ${C === 'OTHER' ? 'required' : 'disabled'}>`)}</div>
       <div id="s_state_w">${f('s_state', K.state, subStateField(C))}</div></div>
       ${f('s_orgtype', 'Organisation type', `<select id="s_orgtype" name="organisation_type" required>${opt(K.orgs, 'Choose…')}</select>`)}
-      ${f('s_club', 'Club or organisation name', `<input id="s_club" name="club_name" required maxlength="120" autocomplete="organization">`)}
+      ${f('s_club', 'Club or organisation name', `<div class="cb"><input id="s_club" name="club_name" required maxlength="120" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="s_club_lb" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="Start typing your club's name"><ul class="cb-lb" id="s_club_lb" role="listbox" hidden></ul></div>`, 'Pick from the list, or type a new club.')}
       <div class="grid2">${f('s_name', 'Your name', `<input id="s_name" name="contact_name" required maxlength="80" autocomplete="name">`, 'A real person, not just the club name.')}
       ${roleFld('s', f)}</div>
       ${f('s_email', 'Contact email', `<input id="s_email" name="email" type="email" required maxlength="120" autocomplete="email" inputmode="email">`)}
@@ -2182,7 +2182,7 @@ function bindSubmit(){
     keep('s_orgtype', `<select id="s_orgtype" name="organisation_type" required><option value="">Choose…</option>${k.orgs.map(o => `<option>${esc(o)}</option>`).join('')}</select>`);
     keep('s_method', `<select id="s_method" name="entry_method" required><option value="">Choose…</option>${k.methods.map(o => `<option>${esc(o)}</option>`).join('')}</select>`);
     g('s_state').outerHTML = subStateField(c); g('s_tz').innerHTML = subTzOptions(c); tzAuto.v = '';
-    fm.querySelector('label[for=s_state]').firstChild.textContent = k.state + ' '; fm.querySelector('label[for=s_suburb]').firstChild.textContent = k.town + ' ';
+    fm.querySelector('label[for=s_state]').innerHTML = esc(k.state) + (c === 'OTHER' ? ' <span class="opt">(optional)</span>' : ' <span class="req" aria-hidden="true">*</span>'); fm.querySelector('label[for=s_suburb]').firstChild.textContent = k.town + ' ';
     const tzl = fm.querySelector('label[for=s_tz]'); tzl.innerHTML = 'Time zone' + (c === 'AU' ? ' <span class="opt">(optional)</span>' : ' <span class="req" aria-hidden="true">*</span>');
     g('s_ctryname_w').hidden = c !== 'OTHER'; g('s_ctryname').required = c === 'OTHER'; g('s_ctryname').disabled = c !== 'OTHER'; g('s_phone').placeholder = k.phone; g('s_link_hint').textContent = k.linkHint;
     g('s_venue_hint').textContent = c === 'AU' ? 'Suggestions are Australian clubs and ranges.' : c === 'US' ? 'Suggestions are US ranges we already list. Not there? Type the full address.' : 'Suggestions are ranges outside the USA we already list. Not there? Type the full address.';
@@ -2201,6 +2201,23 @@ function bindSubmit(){
         const town = ctry() === 'US' ? (it.value.match(/,\s*([^,]+?)\s+[A-Z]{2}\b(?:\s+\d{5})?\s*$/) || [])[1] : '';
         if (town && !val('s_suburb')) g('s_suburb').value = town;
         if (it.ctry && ctry() === 'OTHER' && !val('s_ctryname')) g('s_ctryname').value = it.ctry; datePrev(); } } });
+  /* Club type-ahead: clubs.json filtered by the chosen country + state/region; match anywhere, prefix matches first; free text allowed. */
+  (function clubAhead(){ const inp = g('s_club'), lb = g('s_club_lb'); let shown = [];
+    const pool = () => { const c = ctry(), st = val('s_state'), cn = (val('s_ctryname') || '').trim().toLowerCase(), rg = st.toLowerCase();
+      return CLUBS.filter(k => c === 'AU' ? !k.country && (!st || k.state === st) : c === 'US' ? k.country === 'USA' && (!st || !k.state || k.state === st)
+        : k.country && k.country !== 'USA' && (!cn || [k.country, k.country_name].some(n => (n || '').toLowerCase() === cn)) && (!rg || !k.state || (k.state || '').toLowerCase().includes(rg))); };
+    const close = () => { lb.hidden = true; inp.setAttribute('aria-expanded', 'false'); };
+    const open = () => { const q = inp.value.trim().toLowerCase(); if (!q) { close(); return; }
+      shown = pool().map(k => ({k, i: k.name.toLowerCase().indexOf(q), w: (' ' + k.name.toLowerCase()).indexOf(' ' + q)})).filter(o => o.i >= 0)
+        .sort((a, b) => (a.i === 0 ? 0 : a.w >= 0 ? 1 : 2) - (b.i === 0 ? 0 : b.w >= 0 ? 1 : 2) || a.k.name.localeCompare(b.k.name)).slice(0, 40).map(o => o.k);
+      if (!shown.length || (shown.length === 1 && shown[0].name.toLowerCase() === q)) { close(); return; }
+      lb.innerHTML = shown.map((k, i) => `<li role="option" class="cb-o" data-i="${i}"><b>${esc(k.name)}</b><span>${esc([k.suburb, k.state, k.country_name].filter(Boolean).join(' · '))}</span></li>`).join('');
+      lb.hidden = false; inp.setAttribute('aria-expanded', 'true');
+      lb.querySelectorAll('.cb-o').forEach(li => li.onmousedown = e => { e.preventDefault(); inp.value = shown[+li.dataset.i].name; close(); inp.dispatchEvent(new Event('change', {bubbles: true})); }); };
+    inp.addEventListener('input', open); inp.addEventListener('focus', open); inp.addEventListener('blur', () => setTimeout(close, 150));
+    inp.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+    fm.addEventListener('change', e => { if (['s_country', 's_state', 's_ctryname'].includes(e.target.id) && document.activeElement === inp) open(); else if (e.target.id !== 's_club') close(); });
+  })();
   venueCombo(); if (ctry() === 'OTHER') applyCountry();
   function check(){
     const errs = [], add = (id, m) => { setErr(id, m); if (m) errs.push(id); };
