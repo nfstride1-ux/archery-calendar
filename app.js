@@ -838,7 +838,8 @@ function vAdvertise(){
 function vPrivacy(){
   setTitle('Privacy & disclaimer');
   return `${pageHead('Privacy &amp; disclaimer', 'Short version: your data stays in your browser.', 'mixed')}<div class="wrap narrow"><section class="panel"><h2 class="sec">Privacy</h2>
-    <ul class="ticks"><li>${AUTH.on ? 'No account needed. If you don’t sign in, the' : 'No account, no sign-up. The'} shoots you save, your entries and payments, and your reminder settings are stored only in <b>your browser on this device</b> (localStorage). They are never sent to us.</li>
+    <ul class="ticks"><li>${AUTH.on ? 'No account needed. If you don’t sign in, the' : 'No account, no sign-up. The'} shoots you save, your entries and payments, your reminder settings and your remembered club details (Submit a shoot) are stored only in <b>your browser on this device</b> (localStorage). They are never sent to us.</li>
+    <li>Club details you send with a shoot are remembered on this device${AUTH.on ? ' (and in your account if you are signed in)' : ''} so you don't retype them. Tap “Not you? Clear” on the Submit form to wipe them.</li>
     <li>Clearing your browser data deletes them. Use <a href="#/settings">Settings → Export backup</a> to keep a copy or move to another device.</li>
     <li id="privStats"><b>Visit counts:</b> we count visits anonymously with <a href="https://www.goatcounter.com/" target="_blank" rel="noopener">GoatCounter</a>: which pages are viewed and the words typed into Find shoots search. <b>No cookies</b>, no advertising trackers and nothing that identifies you. Searches that look like an email address or phone number are never counted. Reminders are made on your device.</li>
     <li>"Register / enter" and email links go straight to the organiser. Anything you send them is between you and the organiser.</li>
@@ -2054,6 +2055,8 @@ function vSubmit(country){
     <input type="hidden" name="_next" value="">
     <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true"><input type="hidden" name="_captcha" value="false">
     <fieldset><legend>Your club</legend>
+      <div class="vcard me-card" id="s_mecard" hidden><div><span id="s_me_txt"></span></div><div class="me-btns"><button type="button" class="btn sm" id="s_me_edit">✏️ Change</button><button type="button" class="btn alt sm" id="s_me_clr">Not you? Clear</button></div></div>
+      <div id="s_mefields">
       <div class="grid2">${f('s_country', 'Country', `<select id="s_country" name="country" required>${Object.entries(SUB_CTRY).map(([k, v]) => `<option value="${k}" ${k === C ? 'selected' : ''}>${k === 'US' ? '🇺🇸 ' : k === 'AU' ? '🇦🇺 ' : '🌐 '}${esc(v.name)}</option>`).join('')}</select>`)}
       <div id="s_ctryname_w" ${C === 'OTHER' ? '' : 'hidden'}>${f('s_ctryname', 'Which country?', `<input id="s_ctryname" name="country_name" maxlength="60" autocomplete="country-name" placeholder="e.g. Canada" ${C === 'OTHER' ? 'required' : 'disabled'}>`)}</div>
       <div id="s_state_w">${f('s_state', K.state, subStateField(C), '', C !== 'OTHER')}</div></div>
@@ -2064,6 +2067,7 @@ function vSubmit(country){
       ${f('s_email', 'Contact email', `<input id="s_email" name="email" type="email" required maxlength="120" autocomplete="email" inputmode="email">`)}
       <p class="note verify">✅ ${esc(VERIFY_NOTE)}</p>
       ${f('s_phone', 'Phone', `<input id="s_phone" name="phone" type="tel" maxlength="20" autocomplete="tel" inputmode="tel" placeholder="${esc(K.phone)}">`, '', false)}
+      </div>
     </fieldset>
     <fieldset><legend>Event</legend>
       <p class="hint" id="s_flyer_h">Upload the flyer <b>or</b> paste a link to it – one of the two is needed.</p>
@@ -2118,6 +2122,19 @@ function bindSubmit(){
   g('s_file').addEventListener('change', () => shrinkImg(g('s_file'), g('s_file_n')));
   fm.addEventListener('shrunk', () => { if (fm.dataset.tried) check(); });
   if (ctry() === 'OTHER') applyCountry();
+  /* Remembered club details (S.subMe: this device, plus the signed-in profile's settings via sync). */
+  const ME = ['s_ctryname', 's_state', 's_orgtype', 's_club', 's_name', 's_role', 's_role_other', 's_email', 's_phone'];
+  const meShow = card => { g('s_mecard').hidden = !card; g('s_mefields').hidden = card; };
+  (function meLoad(){ const m = S.subMe; if (!m || !m.s_email) return;
+    if (m.country && m.country !== val('s_country')) { g('s_country').value = m.country; applyCountry(); }
+    ME.forEach(id => { if (g(id) && m[id] != null) g(id).value = m[id]; });
+    g('s_role').dispatchEvent(new Event('change', {bubbles: true}));
+    const st = m.s_state || m.s_ctryname;
+    g('s_me_txt').innerHTML = `Sending as <b>${esc(m.s_name)}</b>, ${esc(roleVal('s'))} – ${esc(m.s_club)}${st ? ` (${esc(st)})` : ''} · ${esc(m.s_email)}`;
+    meShow(true); })();
+  g('s_me_edit').onclick = () => { meShow(false); g('s_club').focus(); };
+  g('s_me_clr').onclick = () => { delete S.subMe; save(); ME.forEach(id => { if (g(id)) g(id).value = ''; }); g('s_role').dispatchEvent(new Event('change', {bubbles: true})); meShow(false); toast('Saved details cleared'); };
+  const meSave = () => { const m = {country: val('s_country')}; ME.forEach(id => { if (g(id)) m[id] = g(id).value; }); S.subMe = m; save(); };
   function check(){
     const errs = [], add = (id, m) => { setErr(id, m); if (m) errs.push(id); };
     if (ctry() !== 'OTHER') add('s_state', val('s_state') ? '' : 'Choose the state.');
@@ -2151,12 +2168,13 @@ function bindSubmit(){
   fm.onsubmit = e => {
     fm.dataset.tried = 1;
     const errs = check();
+    if (errs.some(id => g('s_mefields').contains(g(id)))) meShow(false);
     if (errs.length) { e.preventDefault(); $('#subErr').textContent = `Please fix ${errs.length === 1 ? 'the highlighted field' : `the ${errs.length} highlighted fields`}.`;
       const first = g(errs[0]).matches('input,select,textarea') ? g(errs[0]) : g(errs[0]).querySelector('input'); first && first.focus(); return; }
     $('#subErr').textContent = '';
     if (!SITE.formEndpoint || !navigator.onLine) { e.preventDefault(); g('subMail').click(); location.href = g('subMail').href;
       toast(navigator.onLine ? 'Opening your email app…' : 'You’re offline: opening your email app instead'); return; }
-    g('s_role_val').value = roleVal('s');
+    g('s_role_val').value = roleVal('s'); meSave();
     fm.querySelector('[name=_next]').value = location.href.split('#')[0].split('?')[0] + '?sent=1#/submit';
     fm.querySelector('[name=_subject]').value = subject();
     if (!g('s_file').files.length) g('s_file').disabled = true;   // don't send an empty file part
