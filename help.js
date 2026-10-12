@@ -15,7 +15,7 @@
       [`Type the code in the box. ${T()} <b>Sign in with code</b>. Or ${t()} <b>Sign in</b> in the email, on this same ${phone() ? 'phone' : 'computer'}.`, img('signup', '05-code')],
       [`You're signed in! The Sign in button now says <b>Account</b>. Asked to add this device's shoots? ${T()} <b>Yes</b>.`, img('signup', '06-done')]]) + pdf('signup')},
     {q: 'I didn\'t get the sign-in email', k: 'no email not arrived junk spam code missing didnt get', a: () => `<p>Look in your <b>junk / spam</b> folder for “Your Archery Calendar sign-in code”. It can take a minute or two.</p><p>Still nothing? Check the email address was typed right and ask for a new code.</p>`},
-    {q: 'How do I send us a shoot?', k: 'submit send add shoot event flyer club list new', a: () => `<p>Just send us your club's flyer. We read it and put your shoot on the calendar. No account needed.</p>` + steps([
+    {q: 'How do I add an event?', k: 'submit send add shoot event events add event add an event flyer club list new', a: () => `<p>Just send us your club's flyer. We read it and put your shoot on the calendar. No account needed.</p>` + steps([
       [`Go to <b>archerycalendars.com</b>. Scroll down. ${T()} <b>Submit a shoot</b>. <a href="#/submit">Open it now</a>`, img('send-shoot', '02-open')],
       [`Pick your country, state and club type. Type your club name, then pick your club from the list.`, img('send-shoot', '03-club')],
       [`Type your name. Pick your job at the club. Type your email.`, img('send-shoot', '04-you')],
