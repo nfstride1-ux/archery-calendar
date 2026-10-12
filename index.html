@@ -4,14 +4,14 @@
 <meta name="build" content="cddce85762">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Archery Calendar – every archery shoot in one calendar</title>
+<title>Archery Calendar – every archery event in one calendar</title>
 <meta name="theme-color" content="#0d1b2a">
-<meta name="description" content="Find archery shoots across Australia, the USA, Denmark, Malaysia and South Korea, plus world majors and seminars – Field, 3D, Target and Indoor. Save shoots, get reminders and keep track of your entries.">
+<meta name="description" content="Find archery events across Australia, the USA, Denmark, Malaysia and South Korea, plus world majors and seminars – Field, 3D, Target and Indoor. Save events, get reminders and keep track of your entries.">
 <link rel="canonical" href="https://archerycalendars.com/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Archery Calendar">
-<meta property="og:title" content="Archery Calendar – every archery shoot in one calendar">
-<meta property="og:description" content="Archery shoots across Australia and the USA in one calendar – Archery Australia, ABA, Archery WA, USA, Danish, Malaysian and Korean events and seminars, plus World Cup, World Championships and LA28 Olympic archery; Field, 3D, Target and Indoor. Save shoots, get reminders and keep track of your entries.">
+<meta property="og:title" content="Archery Calendar – every archery event in one calendar">
+<meta property="og:description" content="Archery events across Australia and the USA in one calendar – Archery Australia, ABA, Archery WA, USA, Danish, Malaysian and Korean events and seminars, plus World Cup, World Championships and LA28 Olympic archery; Field, 3D, Target and Indoor. Save events, get reminders and keep track of your entries.">
 <meta property="og:url" content="https://archerycalendars.com/">
 <meta property="og:image" content="https://archerycalendars.com/img/target-face.jpg">
 <meta property="og:image:alt" content="Arrows grouped in an archery target face">
@@ -32,11 +32,11 @@
     <a class="logo" href="#/home" aria-label="Archery Calendar home"><span class="logo-mark" aria-hidden="true"></span><span>Archery<b>Calendar</b></span></a>
     <nav class="nav" aria-label="Main">
       <a href="#/home" data-tab="home">Home</a>
-      <a href="#/browse" data-tab="browse">Find shoots</a>
+      <a href="#/browse" data-tab="browse">Find events</a>
       <a href="#/intl/USA" data-tab="intl">International</a>
       <a href="#/calendars/aba" data-tab="calendars">Calendars</a>
       <a href="#/fans" data-tab="fans">Fans</a>
-      <a href="#/calendar" data-tab="calendar">My shoots</a>
+      <a href="#/calendar" data-tab="calendar">My events</a>
       <a href="#/entries" data-tab="entries">Entries</a>
       <a href="#/settings" data-tab="settings">Settings</a>
       <a href="#help" id="navHelp" class="nav-ad" role="button" aria-label="Help">? Help</a>
@@ -46,11 +46,11 @@
     <span class="today" id="todayLbl"></span>
   </div>
 </header>
-<main id="view" tabindex="-1"><p class="loading">Loading shoots…</p></main>
+<main id="view" tabindex="-1"><p class="loading">Loading events…</p></main>
 <footer class="site-foot">
   <div class="wrap foot-grid">
     <div><a class="logo" href="#/home"><span class="logo-mark" aria-hidden="true"></span><span>Archery<b>Calendar</b></span></a>
-      <p>Every archery shoot – Field, 3D, Target and Indoor – in one calendar. Australia-wide, plus USA, Danish, Malaysian and Korean shoots, seminars &amp; workshops and world majors: World Cup, World Championships, World Masters Games and the LA28 Olympics &amp; Paralympics.</p>
+      <p>Every archery event – Field, 3D, Target and Indoor – in one calendar. Australia-wide, plus USA, Danish, Malaysian and Korean events, seminars &amp; workshops and world majors: World Cup, World Championships, World Masters Games and the LA28 Olympics &amp; Paralympics.</p>
       <p class="foot-tag"><i>Created by an archer, for archers.</i></p>
       <nav class="foot-social" aria-label="Follow us">
         <p class="foot-social-label">Follow us</p>
@@ -60,10 +60,10 @@
         </div>
       </nav>
       <div class="foot-support"><p>Archery Calendars is free. Chip in to keep it running.</p><a class="support-btn" href="https://paypal.me/ArcheryCalendar" target="_blank" rel="noopener">♥ Support the site</a> <a class="support-btn ad-foot" href="#/advertise">📣 Advertise with us</a></div></div>
-    <div><h3>Explore</h3><a href="#/browse">Find shoots</a><a href="#/calendars/aba">ABA calendar</a><a href="#/calendars/aa">Archery Australia calendar</a><a href="#/calendars/awa">Archery WA calendar</a><a href="#/calendars/taa">TAA calendar</a><a href="#/settings/clubs">Clubs: pick your clubs</a><a href="#/fans">Fans: photo wall</a><a href="#/calendar">My shoots</a><a href="#/entries">Entries &amp; payments</a><a href="#/settings">Settings &amp; reminders</a></div>
-    <div><h3>Business</h3><a href="#/advertise">Advertise with us</a><a href="#/submit">Clubs: submit a shoot / send us your flyer</a><a href="#/credits">Photo credits</a><a href="#/privacy">Privacy &amp; disclaimer</a><a href="mailto:nfshold@gmail.com">nfshold@gmail.com</a><span class="foot-co">NFS Strategic Holdings</span></div>
+    <div><h3>Explore</h3><a href="#/browse">Find events</a><a href="#/calendars/aba">ABA calendar</a><a href="#/calendars/aa">Archery Australia calendar</a><a href="#/calendars/awa">Archery WA calendar</a><a href="#/calendars/taa">TAA calendar</a><a href="#/settings/clubs">Clubs: pick your clubs</a><a href="#/fans">Fans: photo wall</a><a href="#/calendar">My events</a><a href="#/entries">Entries &amp; payments</a><a href="#/settings">Settings &amp; reminders</a></div>
+    <div><h3>Business</h3><a href="#/advertise">Advertise with us</a><a href="#/submit">Clubs: submit an event / send us your flyer</a><a href="#/credits">Photo credits</a><a href="#/privacy">Privacy &amp; disclaimer</a><a href="mailto:nfshold@gmail.com">nfshold@gmail.com</a><span class="foot-co">NFS Strategic Holdings</span></div>
   </div>
-  <div class="wrap foot-small"><b>Dates come from organisers' public calendars; always check with the organiser.</b> <span id="footStore">Your saved shoots and entries stay in your browser on this device</span> (<a href="#/privacy">privacy</a>). <a href="#/credits">Photo credits</a>.</div>
+  <div class="wrap foot-small"><b>Dates come from organisers' public calendars; always check with the organiser.</b> <span id="footStore">Your saved events and entries stay in your browser on this device</span> (<a href="#/privacy">privacy</a>). <a href="#/credits">Photo credits</a>.</div>
 </footer>
 <div id="toast" role="status" aria-live="polite"></div>
 <!-- Anonymous visit counts (GoatCounter: no cookies, no personal data). The app counts hash-route page views itself. -->
@@ -72,6 +72,6 @@
 <script src="config.js?v=605b92d184"></script>
 <script src="sync.js?v=605b92d184"></script>
 <script src="app.js?v=605b92d184"></script>
-<script src="help.js?v=5" defer></script>
+<script src="help.js?v=6" defer></script>
 </body>
 </html>
