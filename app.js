@@ -1932,6 +1932,17 @@ function kcSubmit(e, fm, email, setSubject){
    Static site, no backend: the form POSTs (multipart, with the flyer file) to SITE.formEndpoint (FormSubmit), which emails
    SITE.contact. If no endpoint is configured, or the browser is offline, "Email it instead" builds a pre-filled email. */
 const ORG_TYPES = ['Archery Australia club', 'Archery WA', 'Other state association', 'ABA club or branch', 'Other'];
+/* Who is submitting (owner 12 Oct 2026): a real person's name + their role at the club, so we can check with the club.
+   Verified club officials get fast approvals. Used by #/submit and #/fix; sent as contact_name + role_at_club. */
+const ROLE_OPTS = ['President', 'Secretary', 'Treasurer', 'Tournament/Competition organiser', 'Committee member', 'Coach', 'Other'];
+const VERIFY_NOTE = 'We check your name and role with the club before anything goes live. Verified club officials get fast approvals – it keeps the calendar safe and accurate for archers.';
+const roleFld = (p, f) => f(p + '_role', 'Your role at the club', `<select id="${p}_role" required><option value="">Choose…</option>${ROLE_OPTS.map(o => `<option>${esc(o)}</option>`).join('')}</select><input id="${p}_role_other" maxlength="80" placeholder="Your role, e.g. Range officer" aria-label="Your role (other)" hidden><input type="hidden" name="role_at_club" id="${p}_role_val">`);
+const roleVal = p => { const s = $('#' + p + '_role'), o = $('#' + p + '_role_other'), v = s ? s.value : ''; return v === 'Other' ? ((o && o.value.trim()) ? 'Other: ' + o.value.trim() : '') : v; };
+const roleBind = p => { const s = $('#' + p + '_role'), o = $('#' + p + '_role_other'); if (!s) return; s.addEventListener('change', () => { o.hidden = s.value !== 'Other'; if (!o.hidden) o.focus(); }); };
+const roleErr = p => { const v = ($('#' + p + '_role') || {}).value; return !v ? 'Choose your role at the club.' : v === 'Other' && !roleVal(p) ? 'Type your role at the club.' : ''; };
+/* A real person's name: at least two letters, not the club's name and not a club-style name ("Northern Archers", "XYZ Archery Club"). */
+const personErr = (name, club) => { const n = (name || '').trim(), c = (club || '').trim().toLowerCase();
+  return !n ? 'Enter your name.' : n.length < 2 || !/[a-z]/i.test(n) ? 'Enter your full name.' : (c && n.toLowerCase() === c) || /\b(club|archers|archery|bowmen|bowhunters|association|assoc|inc|committee|admin)\b/i.test(n) ? 'Enter your own name (a real person), not the club’s name.' : ''; };
 const SUB_DISC = [['Target','Target'],['Field','Field'],['3D','3D'],['Indoor','Indoor'],['Clout','Clout'],['Come and try','Come-and-try'],['Clinic','Clinic'],['League','League']];
 const ENTRY_METHODS = ['Assemble', 'Archers Diary', 'Email', 'Phone', 'None yet'];
 /* Overseas clubs (#/submit?country=US): country decides the organisation list, state list (or free-text region), time zones,
@@ -2010,8 +2021,10 @@ function vSubmit(country){
       <div class="grid2 hide-au" id="s_ctryname_w" ${C === 'OTHER' ? '' : 'hidden'}>${f('s_ctryname', 'Which country?', `<input id="s_ctryname" name="country_name" maxlength="60" autocomplete="country-name" placeholder="e.g. Canada">`)}</div>
       ${f('s_orgtype', 'Organisation type', `<select id="s_orgtype" name="organisation_type" required>${opt(K.orgs, 'Choose…')}</select>`)}
       ${f('s_club', 'Club or organisation name', `<input id="s_club" name="club_name" required maxlength="120" autocomplete="organization">`)}
-      <div class="grid2">${f('s_name', 'Contact name', `<input id="s_name" name="contact_name" required maxlength="80" autocomplete="name">`)}
-      ${f('s_email', 'Contact email', `<input id="s_email" name="email" type="email" required maxlength="120" autocomplete="email" inputmode="email">`)}</div>
+      <div class="grid2">${f('s_name', 'Your name', `<input id="s_name" name="contact_name" required maxlength="80" autocomplete="name">`, 'A real person, not just the club name.')}
+      ${roleFld('s', f)}</div>
+      ${f('s_email', 'Contact email', `<input id="s_email" name="email" type="email" required maxlength="120" autocomplete="email" inputmode="email">`)}
+      <p class="note verify">✅ ${esc(VERIFY_NOTE)}</p>
       ${f('s_phone', 'Phone', `<input id="s_phone" name="phone" type="tel" maxlength="20" autocomplete="tel" inputmode="tel" placeholder="${esc(K.phone)}">`, '', false)}
     </fieldset>
     <fieldset><legend>The shoot</legend>
@@ -2096,7 +2109,8 @@ function bindSubmit(){
     const errs = [], add = (id, m) => { setErr(id, m); if (m) errs.push(id); };
     add('s_orgtype', val('s_orgtype') ? '' : 'Choose an organisation type.');
     add('s_club', val('s_club') ? '' : 'Enter the club or organisation name.');
-    add('s_name', val('s_name') ? '' : 'Enter a contact name.');
+    add('s_name', personErr(val('s_name'), val('s_club')));
+    add('s_role', roleErr('s'));
     const em = val('s_email'); add('s_email', !em ? 'Enter a contact email.' : /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em) ? '' : 'That email doesn’t look right.');
     const ph = val('s_phone'); add('s_phone', !ph || /^[+()\d\s.-]{7,20}$/.test(ph) ? '' : `Use digits only, ${K().phone}.`);
     add('s_shoot', val('s_shoot') ? '' : 'Enter the shoot name.');
@@ -2123,7 +2137,7 @@ function bindSubmit(){
   fm.addEventListener('change', e => { if (fm.dataset.tried) check(); });
   fm.addEventListener('input', e => { if (fm.dataset.tried) { const w = e.target.closest('[data-f]'); if (w && w.classList.contains('bad')) check(); } });
   function mailBody(){
-    const L = [['Country', ctry() === 'OTHER' ? val('s_ctryname') : K().name], ['Organisation type', val('s_orgtype')], ['Club', val('s_club')], ['Contact name', val('s_name')], ['Contact email', val('s_email')], ['Phone', val('s_phone')],
+    const L = [['Country', ctry() === 'OTHER' ? val('s_ctryname') : K().name], ['Organisation type', val('s_orgtype')], ['Club', val('s_club')], ['Your name', val('s_name')], ['Role at the club', roleVal('s')], ['Contact email', val('s_email')], ['Phone', val('s_phone')],
       ['Shoot', val('s_shoot')], ['Discipline', discs().join(', ')], ['Start', val('s_start')], ['End', val('s_end')], ['Dates (as shown to archers)', g('s_dates_disp').value], ['Venue', val('s_venue')], [K().town, val('s_suburb')], [K().state, val('s_state')], ['Time zone', val('s_tz')],
       ['Entries close', val('s_close')], ['Entry method', val('s_method')], ['Entry link', val('s_link')],
       ['Entry form wanted', (fm.querySelector('[name=want_entry_form]:checked') || {}).value || ''], ['Flyer link', val('s_flink')], ['Notes', val('s_notes')],
@@ -2132,7 +2146,7 @@ function bindSubmit(){
   }
   const ctag = () => ctry() === 'US' ? 'USA' : ctry() === 'OTHER' ? (val('s_ctryname') || 'Overseas') : '';
   const subject = () => ctry() === 'AU' ? `New shoot: ${val('s_shoot')} – ${val('s_club')} (${val('s_state')})` : `New shoot (${ctag()}): ${val('s_shoot')} – ${val('s_club')} (${[val('s_suburb'), val('s_state')].filter(Boolean).join(', ')})`;
-  kcLoad(); g('s_email').addEventListener('change', () => kcCheck(val('s_email')));
+  roleBind('s'); kcLoad(); g('s_email').addEventListener('change', () => kcCheck(val('s_email')));
   const kcNow = id => KC.memo[kcNorm(val(id))];
   g('subMail').onclick = e => { const sub = kcTag(kcNow('s_email')) + (ctry() === 'AU' ? `Shoot submission: ${val('s_shoot') || 'new shoot'}${val('s_club') ? ' – ' + val('s_club') : ''}` : subject());
     e.currentTarget.href = `mailto:${SITE.contact}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(mailBody())}`; };
@@ -2144,7 +2158,7 @@ function bindSubmit(){
     $('#subErr').textContent = '';
     if (!SITE.formEndpoint || !navigator.onLine) { e.preventDefault(); g('subMail').click(); location.href = g('subMail').href;
       toast(navigator.onLine ? 'Opening your email app…' : 'You’re offline: opening your email app instead'); return; }
-    g('s_disc_val').value = discs().join(', ');
+    g('s_disc_val').value = discs().join(', '); g('s_role_val').value = roleVal('s');
     fm.querySelector('[name=_next]').value = location.href.split('#')[0].split('?')[0] + '?sent=1#/submit';
     fm.querySelector('[name=_subject]').value = subject(); datePrev();
     g('s_tz_name').value = val('s_tz') ? (TZ_NAME[val('s_tz')] || AU_TZ_NAME[val('s_tz')] || val('s_tz')) : '';
@@ -2283,10 +2297,11 @@ function vFix(id){
       ${f('fx_notes', 'Other notes', `<textarea id="fx_notes" name="other_notes" rows="3" maxlength="2000" placeholder="Anything else we should know"></textarea>`)}
     </fieldset>
     <fieldset><legend>3. About you</legend>
-      ${f('fx_who', 'Your name', `<input id="fx_who" name="contact_name" required maxlength="80" autocomplete="name">`, '', true)}
-      <div class="grid2">${f('fx_club', 'Club', `<input id="fx_club" name="club" required maxlength="120" autocomplete="organization" value="${esc(x && x.host ? x.host : '')}">`, '', true)}
-      ${f('fx_role', 'Your role', `<input id="fx_role" name="role" required maxlength="80" placeholder="e.g. President, Secretary">`, '', true)}</div>
+      <div class="grid2">${f('fx_who', 'Your name', `<input id="fx_who" name="contact_name" required maxlength="80" autocomplete="name">`, 'A real person, not just the club name.', true)}
+      ${roleFld('fx', (a, b, c, d = '') => f(a, b, c, d, true))}</div>
+      ${f('fx_club', 'Club', `<input id="fx_club" name="club" required maxlength="120" autocomplete="organization" value="${esc(x && x.host ? x.host : '')}">`, '', true)}
       ${f('fx_email', 'Email', `<input id="fx_email" name="email" type="email" required maxlength="120" autocomplete="email" inputmode="email">`, 'So we can check with you if anything is unclear.', true)}
+      <p class="note verify">✅ ${esc(VERIFY_NOTE)}</p>
     </fieldset>
     <p class="note priv">🔒 Nothing on the site changes straight away: your correction is emailed to us (${esc(SITE.contact)}, NFS Strategic Holdings) via FormSubmit, we check it, then update the listing.</p>
     <p class="err sum" id="fixErr" role="alert"></p>
@@ -2346,9 +2361,9 @@ function bindFix(){
       const any = changes().length; g('fx_any_e').textContent = dm || fm_ || (any ? '' : 'Tap ✏️ and change at least one thing (or tick cancelled).');
       if (!any) errs.push('fx_any');
     }
-    add('fx_who', val('fx_who') ? '' : 'Enter your name.');
+    add('fx_who', personErr(val('fx_who'), val('fx_club')));
     add('fx_club', val('fx_club') ? '' : 'Enter your club.');
-    add('fx_role', val('fx_role') ? '' : 'Enter your role, e.g. President.');
+    add('fx_role', roleErr('fx'));
     const em = val('fx_email'); add('fx_email', !em ? 'Enter your email.' : /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em) ? '' : 'That email doesn’t look right.');
     return errs;
   }
@@ -2356,10 +2371,10 @@ function bindFix(){
   const changeText = () => changes().map(([l, o, n]) => `${l}: ${o} → ${n}`).join('\n');
   fm.addEventListener('change', () => { if (fm.dataset.tried) check(); });
   fm.addEventListener('input', () => { if (fm.dataset.tried) check(); });
-  kcLoad(); g('fx_email').addEventListener('change', () => kcCheck(val('fx_email')));
+  roleBind('fx'); kcLoad(); g('fx_email').addEventListener('change', () => kcCheck(val('fx_email')));
   g('fixMail').onclick = e => { const body = [['Shoot', val('fx_name')], ['Date', val('fx_date')], ['Event ID', val('fx_id')], ['Listing', val('fx_page')]].map(([k, v]) => `${k}: ${v}`).join('\n')
       + '\n\nChanges (old → new):\n' + changeText() + (val('fx_notes') ? '\n\nOther notes: ' + val('fx_notes') : '')
-      + '\n\n' + [['Name', val('fx_who')], ['Club', val('fx_club')], ['Role', val('fx_role')], ['Email', val('fx_email')]].map(([k, v]) => `${k}: ${v}`).join('\n') + '\n\n(Attach a new flyer if you have one.)\n';
+      + '\n\n' + [['Name', val('fx_who')], ['Club', val('fx_club')], ['Role at the club', roleVal('fx')], ['Email', val('fx_email')]].map(([k, v]) => `${k}: ${v}`).join('\n') + '\n\n(Attach a new flyer if you have one.)\n';
     e.currentTarget.href = `mailto:${SITE.contact}?subject=${encodeURIComponent(kcTag(KC.memo[kcNorm(val('fx_email'))]) + subject())}&body=${encodeURIComponent(body)}`; };
   fm.onsubmit = e => {
     fm.dataset.tried = 1; pick();
@@ -2368,7 +2383,7 @@ function bindFix(){
       const first = errs[0] === 'fx_any' ? fm.querySelector('[data-pen]') : errs[0] === 'fx_start' ? g('fx_start') : errs[0] === 'fx_file' ? g('fx_file') : g(errs[0]); first && first.focus(); return; }
     $('#fixErr').textContent = '';
     if (!SITE.formEndpoint || !navigator.onLine) { e.preventDefault(); g('fixMail').click(); location.href = g('fixMail').href; toast('Opening your email app…'); return; }
-    g('fx_changes').value = changeText();
+    g('fx_changes').value = changeText(); g('fx_role_val').value = roleVal('fx');
     g('fx_gen').innerHTML = changes().map(([l, o, n]) => `<input type="hidden" name="${esc(l)}" value="${esc(o + ' → ' + n)}">`).join('');
     fm.querySelector('[name=_next]').value = location.href.split('#')[0].split('?')[0] + '?fixed=1#/fix';
     fm.querySelector('[name=_subject]').value = subject();
