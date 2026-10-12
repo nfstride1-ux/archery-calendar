@@ -2095,8 +2095,11 @@ function vSubmit(country){
       ${f('s_end', 'End date', `<input id="s_end" name="end_date" type="date" lang="${K.loc}">`, 'Leave blank for a one-day shoot.', false)}</div>
       <p class="note date-prev" id="s_dprev" aria-live="polite"></p>
       <div id="s_clash" aria-live="polite"></div><input type="hidden" name="date_clashes" id="s_clash_val">
+      <div class="vcard" id="s_vcard" hidden><div><b>Venue</b><span id="s_vcard_txt"></span><small>From our club list</small></div><button type="button" class="btn sm" id="s_vedit" aria-label="Edit venue">✏️ Edit</button></div>
+      <div id="s_vfields">
       ${f('s_venue', 'Venue', `<div class="cb" data-cb="s_venue"><input id="s_venue" name="venue" required maxlength="140" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="s_venue_lb" autocomplete="off" placeholder="Start typing the range or club name, or the address"><ul class="cb-lb" id="s_venue_lb" role="listbox" hidden></ul></div>`, `<span id="s_venue_hint">${C === 'AU' ? 'Suggestions are Australian clubs and ranges.' : C === 'US' ? 'Suggestions are US ranges we already list. Not there? Type the full address.' : 'Suggestions are ranges outside the USA we already list. Not there? Type the full address.'}</span>`)}
       ${f('s_suburb', K.town, `<input id="s_suburb" name="suburb" required maxlength="80" autocomplete="address-level2">`)}
+      </div>
       ${f('s_tz', 'Time zone', `<select id="s_tz" name="time_zone">${subTzOptions(C)}</select>`, `<span id="s_tz_hint">${C === 'OTHER' ? 'The time zone at the venue.' : 'Filled in from the state – change it if your range is in a different zone.'}</span>`, C !== 'AU')}
     </fieldset>
     <fieldset><legend>Entries</legend>
@@ -2217,6 +2220,19 @@ function bindSubmit(){
     inp.addEventListener('input', open); inp.addEventListener('focus', open); inp.addEventListener('blur', () => setTimeout(close, 150));
     inp.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
     fm.addEventListener('change', e => { if (['s_country', 's_state', 's_ctryname'].includes(e.target.id) && document.activeElement === inp) open(); else if (e.target.id !== 's_club') close(); });
+  })();
+  /* Venue auto-fill from the picked club (clubs.json address): read-only card + pencil; manual edits stop re-filling. */
+  (function venueFill(){ let manual = false, filled = false;
+    const show = on => { g('s_vcard').hidden = !on; g('s_vfields').hidden = on; };
+    const fill = () => { if (manual) return; const n = val('s_club').trim().toLowerCase(), k = n && CLUBS.find(c => c.name.toLowerCase() === n || (c.aliases || []).some(a => a.toLowerCase() === n));
+      if (k && k.address) { g('s_venue').value = k.address; g('s_suburb').value = k.suburb || (k.address.match(/,\s*([^,]+?)\s+(?:WA|NSW|VIC|QLD|SA|TAS|ACT|NT)\b/) || [])[1] || '';
+        if (k.state && !val('s_state') && [...(g('s_state').options || [])].some(o => o.value === k.state)) g('s_state').value = k.state;
+        g('s_vcard_txt').textContent = k.name + ' — ' + k.address; filled = true; show(true);
+        ['s_venue', 's_state'].forEach(id => g(id).dispatchEvent(new Event('change', {bubbles: true}))); }
+      else { if (filled) { g('s_venue').value = ''; g('s_suburb').value = ''; filled = false; } show(false); } };
+    g('s_vedit').onclick = () => { manual = true; show(false); g('s_venue').focus(); };
+    fm.addEventListener('input', e => { if (e.target.id === 's_venue' || e.target.id === 's_suburb') manual = true; });
+    fm.addEventListener('change', e => { if (e.target.id === 's_club') fill(); });
   })();
   venueCombo(); if (ctry() === 'OTHER') applyCountry();
   function check(){
