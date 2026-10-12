@@ -51,9 +51,15 @@
   const menu = () => '<div class="hb-qs">' + QA.map((o, i) => `<button type="button" data-q="${i}">${o.q}</button>`).join('') + '</div>';
   function ask(text, o){ say('me', text.replace(/</g, '&lt;')); o = o || find(text);
     say('bot', o ? o.a() + `<p class="hb-more">Anything else?</p>` + menu() : `<p>Sorry, I don't have an answer for that.</p>${fallback}${menu()}`); }
-  function toggle(on){ opened = on; box.hidden = !on; document.getElementById('hbBtn').setAttribute('aria-expanded', on);
+  function toggle(on){ opened = on; box.hidden = !on; document.getElementById('hbBtn').setAttribute('aria-expanded', on); const nh = document.getElementById('navHelp'); nh && nh.setAttribute('aria-expanded', on);
     document.body.classList.toggle('hb-open', on);
     if (on && !log.children.length) say('bot', `<p>Hi! 👋 How can I help? Tap a question or type your own.</p>${menu()}${fallback}`);
     if (on && !phone()) box.querySelector('#hbQ').focus(); }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build); else build();
+  window.openHelp = () => toggle(true);
+  function navSlot(){ const n = document.getElementById('navHelp'), b = document.getElementById('hbBtn'); if (!n) return;
+    n.addEventListener('click', e => { e.preventDefault(); toggle(!opened); });
+    /* Floating bubble only when the header Help button isn't fully on screen (e.g. phone nav scrolled) */
+    if ('IntersectionObserver' in window) new IntersectionObserver(es => es.forEach(x => b.classList.toggle('hb-hide', x.intersectionRatio > .95)), {threshold: [0, .95, 1]}).observe(n); }
+  const init = () => { build(); navSlot(); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

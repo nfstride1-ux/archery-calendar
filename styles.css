@@ -707,3 +707,4 @@ a.support-head{background:transparent!important;border:1.5px solid var(--gold)!i
 .hb-go{background:#f5b400;border:0;border-radius:10px;font-weight:800;padding:0 16px;font-size:17px;min-height:44px;cursor:pointer}
 .hb-btn{display:inline-block;background:#f5b400;color:#0f1b2d;font-weight:800;padding:10px 14px;border-radius:10px;text-decoration:none}
 body.hb-open #hbBtn{display:none}
+#hbBtn.hb-hide{display:none}
