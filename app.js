@@ -613,7 +613,7 @@ function vShoot(id){
   const mapUrl = I && x.location ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(where) : '';
   const srcName = x.source_name || (() => { try { return new URL(x.source_url).hostname.replace(/^www\./, ''); } catch { return x.source_url; } })();
   return `<section class="dhero host-hero"><div class="wrap host-row"><div class="host-txt">
-    <a class="crumb" href="${back}" id="backLink">← ${I ? esc(back === '#/intl/WORLD' ? 'World events' : iName(back.split('/')[2])) + ' events' : 'All events'}</a>
+    <a class="crumb" href="${back}" id="backLink">← ${I ? esc(back === '#/intl/WORLD' ? 'World' : iName(back.split('/')[2])) + ' events' : 'All events'}</a>
     <div class="tags">${I ? `<span class="tag ctry">${flag(x.iso2)} ${esc(x.country_name || 'International')}</span>` : ''}${catTag(x)}${isShoot(x) ? tagHtml(t) : ''}${x.level ? `<span class="tag lvl">${esc(x.level)}</span>` : ''}</div>
     <h1>${esc(x.name)}</h1><p class="sub">${esc(range(x))}${tzTxt ? ` <small>(local: ${esc(tzTxt)})</small>` : ''}${I ? (where ? ' · ' + esc(where) : '') : x.location ? ' · ' + esc(x.location) : ''}</p>${I ? `<div class="badges">${iStatus(x)}${x.world_level ? '<span class="b world">🌐 World event</span>' : ''}</div>` : badges(x)}
   </div><figure class="host-fig">${I ? iMark(x).replace('class="hm ', 'class="hm big ') : hostMark(x, true)}<figcaption>${I ? 'Organised by' : hostOf(x).org ? 'Listed by' : 'Hosted by'}<br><b>${esc(I ? iHost(x).name : hostOf(x).name)}</b></figcaption></figure></div></section>
