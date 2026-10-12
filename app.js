@@ -1694,6 +1694,12 @@ async function shrinkPhoto(file){   // -> File (JPEG, max 2400 px) or the origin
 /* "Sending as" card for Fans + Fix forms: prefill from remembered submit details (S.subMe) and the signed-in email,
    hide those fields behind a card with ✏️ Change. Hidden fields still submit and validate (errors re-open them). */
 function sendAsCard(fm, map, roleP){
+  const keyOf = {name: 's_name', email: 's_email', club: 's_club'};
+  fm.addEventListener('change', e => { const k = Object.keys(map).find(k => map[k] === e.target.id); if (k) rememberMe({[keyOf[k]]: e.target.value.trim()});
+    if (roleP && (e.target.id === roleP + '_role' || e.target.id === roleP + '_role_other')) rememberMe({s_role: ($('#' + roleP + '_role') || {}).value, s_role_other: ($('#' + roleP + '_role_other') || {}).value}); });
+  sendAsCardInner(fm, map, roleP);
+}
+function sendAsCardInner(fm, map, roleP){
   const m = S.subMe || {}, acct = (typeof AUTH !== 'undefined' && AUTH.user && AUTH.user.email) || '';
   const src = {name: m.s_name || '', email: m.s_email || acct, club: m.s_club || '', role: m.s_role || '', role_other: m.s_role_other || ''};
   Object.entries(map).forEach(([k, id]) => { const el = $('#' + id); if (el && !el.value && src[k]) el.value = src[k]; });
@@ -2154,7 +2160,8 @@ function bindSubmit(){
     meShow(true); })();
   g('s_me_edit').onclick = () => { meShow(false); g('s_club').focus(); };
   g('s_me_clr').onclick = () => { delete S.subMe; save(); ME.forEach(id => { if (g(id)) g(id).value = ''; }); g('s_role').dispatchEvent(new Event('change', {bubbles: true})); meShow(false); toast('Saved details cleared'); };
-  const meSave = () => { const m = {country: val('s_country')}; ME.forEach(id => { if (g(id)) m[id] = g(id).value; }); S.subMe = m; save(); };
+  const meSave = () => { const m = {country: val('s_country')}; ME.forEach(id => { if (g(id)) m[id] = g(id).value; }); S.subMe = Object.assign({}, S.subMe || {}, m); save(); };
+  fm.addEventListener('change', e => { if (ME.includes(e.target.id) || e.target.id === 's_country') meSave(); });   // shared details: saved as typed, reused on every form
   function check(){
     const errs = [], add = (id, m) => { setErr(id, m); if (m) errs.push(id); };
     if (ctry() !== 'OTHER') add('s_state', val('s_state') ? '' : 'Choose the state.');
