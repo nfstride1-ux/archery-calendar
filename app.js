@@ -2035,7 +2035,7 @@ function subTzOptions(c){
   return `<option value="">Choose…</option>` + z.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join('');
 }
 function subStateField(c){
-  if (c === 'OTHER') return `<input id="s_state" name="region" required maxlength="80" placeholder="e.g. Ontario, Bavaria, Canterbury" autocomplete="address-level1">`;
+  if (c === 'OTHER') return `<input id="s_state" name="region" maxlength="80" placeholder="e.g. Ontario, Bavaria, Canterbury" autocomplete="address-level1">`;
   const list = c === 'US' ? Object.entries(US_ST).sort((a, b) => a[1] < b[1] ? -1 : 1) : STATES;
   return `<select id="s_state" name="state" required><option value="">Choose…</option>${list.map(([k, n]) => `<option value="${k}">${esc(n)}${c === 'US' ? ` (${k})` : ''}</option>`).join('')}</select>`;
 }
@@ -2076,8 +2076,9 @@ function vSubmit(country){
     <input type="hidden" name="discipline" id="s_disc_val">
     <input type="hidden" name="time_zone_name" id="s_tz_name"><input type="hidden" name="dates_display" id="s_dates_disp">
     <fieldset><legend>Your club</legend>
-      ${f('s_country', 'Country', `<select id="s_country" name="country" required>${Object.entries(SUB_CTRY).map(([k, v]) => `<option value="${k}" ${k === C ? 'selected' : ''}>${k === 'US' ? '🇺🇸 ' : k === 'AU' ? '🇦🇺 ' : '🌐 '}${esc(v.name)}</option>`).join('')}</select>`)}
-      <div class="grid2 hide-au" id="s_ctryname_w" ${C === 'OTHER' ? '' : 'hidden'}>${f('s_ctryname', 'Which country?', `<input id="s_ctryname" name="country_name" maxlength="60" autocomplete="country-name" placeholder="e.g. Canada">`)}</div>
+      <div class="grid2">${f('s_country', 'Country', `<select id="s_country" name="country" required>${Object.entries(SUB_CTRY).map(([k, v]) => `<option value="${k}" ${k === C ? 'selected' : ''}>${k === 'US' ? '🇺🇸 ' : k === 'AU' ? '🇦🇺 ' : '🌐 '}${esc(v.name)}</option>`).join('')}</select>`)}
+      <div id="s_ctryname_w" ${C === 'OTHER' ? '' : 'hidden'}>${f('s_ctryname', 'Which country?', `<input id="s_ctryname" name="country_name" maxlength="60" autocomplete="country-name" placeholder="e.g. Canada" ${C === 'OTHER' ? 'required' : 'disabled'}>`)}</div>
+      <div id="s_state_w">${f('s_state', K.state, subStateField(C))}</div></div>
       ${f('s_orgtype', 'Organisation type', `<select id="s_orgtype" name="organisation_type" required>${opt(K.orgs, 'Choose…')}</select>`)}
       ${f('s_club', 'Club or organisation name', `<input id="s_club" name="club_name" required maxlength="120" autocomplete="organization">`)}
       <div class="grid2">${f('s_name', 'Your name', `<input id="s_name" name="contact_name" required maxlength="80" autocomplete="name">`, 'A real person, not just the club name.')}
@@ -2095,8 +2096,7 @@ function vSubmit(country){
       <p class="note date-prev" id="s_dprev" aria-live="polite"></p>
       <div id="s_clash" aria-live="polite"></div><input type="hidden" name="date_clashes" id="s_clash_val">
       ${f('s_venue', 'Venue', `<div class="cb" data-cb="s_venue"><input id="s_venue" name="venue" required maxlength="140" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="s_venue_lb" autocomplete="off" placeholder="Start typing the range or club name, or the address"><ul class="cb-lb" id="s_venue_lb" role="listbox" hidden></ul></div>`, `<span id="s_venue_hint">${C === 'AU' ? 'Suggestions are Australian clubs and ranges.' : C === 'US' ? 'Suggestions are US ranges we already list. Not there? Type the full address.' : 'Suggestions are ranges outside the USA we already list. Not there? Type the full address.'}</span>`)}
-      <div class="grid2">${f('s_suburb', K.town, `<input id="s_suburb" name="suburb" required maxlength="80" autocomplete="address-level2">`)}
-      <div id="s_state_w">${f('s_state', K.state, subStateField(C))}</div></div>
+      ${f('s_suburb', K.town, `<input id="s_suburb" name="suburb" required maxlength="80" autocomplete="address-level2">`)}
       ${f('s_tz', 'Time zone', `<select id="s_tz" name="time_zone">${subTzOptions(C)}</select>`, `<span id="s_tz_hint">${C === 'OTHER' ? 'The time zone at the venue.' : 'Filled in from the state – change it if your range is in a different zone.'}</span>`, C !== 'AU')}
     </fieldset>
     <fieldset><legend>Entries</legend>
@@ -2184,7 +2184,7 @@ function bindSubmit(){
     g('s_state').outerHTML = subStateField(c); g('s_tz').innerHTML = subTzOptions(c); tzAuto.v = '';
     fm.querySelector('label[for=s_state]').firstChild.textContent = k.state + ' '; fm.querySelector('label[for=s_suburb]').firstChild.textContent = k.town + ' ';
     const tzl = fm.querySelector('label[for=s_tz]'); tzl.innerHTML = 'Time zone' + (c === 'AU' ? ' <span class="opt">(optional)</span>' : ' <span class="req" aria-hidden="true">*</span>');
-    g('s_ctryname_w').hidden = c !== 'OTHER'; g('s_phone').placeholder = k.phone; g('s_link_hint').textContent = k.linkHint;
+    g('s_ctryname_w').hidden = c !== 'OTHER'; g('s_ctryname').required = c === 'OTHER'; g('s_ctryname').disabled = c !== 'OTHER'; g('s_phone').placeholder = k.phone; g('s_link_hint').textContent = k.linkHint;
     g('s_venue_hint').textContent = c === 'AU' ? 'Suggestions are Australian clubs and ranges.' : c === 'US' ? 'Suggestions are US ranges we already list. Not there? Type the full address.' : 'Suggestions are ranges outside the USA we already list. Not there? Type the full address.';
     ['s_start', 's_end'].forEach(id => g(id).setAttribute('lang', k.loc));
     if (c === 'OTHER') { try { const z = Intl.DateTimeFormat().resolvedOptions().timeZone; if (z && !/^Australia\//.test(z) && [...g('s_tz').options].some(o => o.value === z)) { g('s_tz').value = z; tzAuto.v = z; } } catch {} }
@@ -2218,7 +2218,7 @@ function bindSubmit(){
     add('s_close', cl && st && cl > (en || st) ? 'Entries should close on or before the shoot.' : '');
     add('s_venue', val('s_venue') ? '' : 'Enter the venue.');
     add('s_suburb', val('s_suburb') ? '' : ctry() === 'AU' ? 'Enter the suburb or town.' : 'Enter the city or town.');
-    add('s_state', val('s_state') ? '' : ctry() === 'OTHER' ? 'Enter the region or province.' : 'Choose the state.');
+    if (ctry() !== 'OTHER') add('s_state', val('s_state') ? '' : 'Choose the state.');
     if (ctry() === 'OTHER') add('s_ctryname', val('s_ctryname') ? '' : 'Enter the country.');
     if (ctry() !== 'AU') add('s_tz', val('s_tz') ? '' : 'Choose the time zone at the venue.');
     const me = val('s_method'), ln = val('s_link');

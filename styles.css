@@ -684,3 +684,5 @@ html.flb-on,html.flb-on body{overflow:hidden}
 .site-foot a.support-btn:hover{filter:brightness(1.08);color:var(--night)}
 a.support-head{background:transparent!important;border:1.5px solid var(--gold)!important;color:var(--gold)!important;white-space:nowrap}
 @media (max-width:600px){a.support-head{display:none!important}}
+
+[hidden]{display:none!important}
