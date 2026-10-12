@@ -2049,7 +2049,22 @@ function subVenueItems(c){
     .filter(it => { const k = it.value.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; })
     .sort((a, b) => a.label.localeCompare(b.label)).map(it => ({...it, group: c === 'US' ? 'Known US ranges' : 'Known ranges outside the USA'}));
 }
-const MAX_MB = 5;
+const MAX_MB = 4, FS_TOTAL_MB = 9.5;   // FormSubmit: all attachments together must stay under 10 MB.
+/* Shrink any browser-decodable photo (incl. HEIC on Safari) to JPEG ≤ ~4 MB, max 2400px long edge, and swap it into the file input. */
+async function shrinkImg(inp, note){
+  const f = inp.files[0]; if (!f || !(/^image\//.test(f.type) || /\.(heic|heif|jpe?g|png|webp|gif|bmp|avif)$/i.test(f.name))) { if (note) note.textContent = ''; return; }
+  if (f.size <= MAX_MB * 1048576 && /^image\/jpeg$/.test(f.type)) { if (note) note.textContent = ''; return; }
+  inp.dataset.busy = '1'; if (note) note.textContent = 'Shrinking photo…';
+  try { const bmp = await createImageBitmap(f).catch(async () => { const u = URL.createObjectURL(f), im = new Image(); im.src = u; await im.decode(); return im; });
+    let w = bmp.width, h = bmp.height, k = Math.min(1, 2400 / Math.max(w, h)), q = .85, blob;
+    for (let n = 0; n < 12; n++) { const c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
+      const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(bmp, 0, 0, c.width, c.height);
+      blob = await new Promise(r => c.toBlob(r, 'image/jpeg', q)); if (blob && blob.size <= MAX_MB * 1048576) break; if (q > .6) q -= .1; else k *= .8; }
+    const dt = new DataTransfer(); dt.items.add(new File([blob], f.name.replace(/\.[^.]+$/, '') + '.jpg', {type: 'image/jpeg'})); inp.files = dt.files;
+    if (note) note.textContent = `Photo shrunk to ${(blob.size / 1048576).toFixed(1)} MB.`;
+  } catch { if (note) note.textContent = 'Couldn’t read that photo here – try a JPG or a screenshot.'; }
+  delete inp.dataset.busy; inp.dispatchEvent(new Event('shrunk', {bubbles: true}));
+}
 function vSubmit(country){
   setTitle('Submit a shoot');
   const C = subCtry(country), K = SUB_CTRY[C];
@@ -2106,7 +2121,7 @@ function vSubmit(country){
       ${f('s_link', 'Entry link', `<input id="s_link" name="entry_link" type="text" maxlength="300" placeholder="https://" inputmode="url">`, `<span id="s_link_hint">${esc(K.linkHint)}</span>`, false)}
     </fieldset>
     <fieldset><legend>Flyer</legend>
-      ${f('s_file', 'Upload the flyer', `<input id="s_file" name="attachment" type="file" accept=".pdf,.jpg,.jpeg,application/pdf,image/jpeg">`, `PDF or JPG, up to ${MAX_MB} MB.`, false)}
+      ${f('s_file', 'Upload the flyer', `<input id="s_file" name="attachment" type="file" accept=".pdf,application/pdf,image/*">`, `PDF (up to ${MAX_MB} MB) or any photo – big photos are shrunk automatically. <span id="s_file_n" class="note"></span>`, false)}
       ${f('s_flink', '…or link to the flyer', `<input id="s_flink" name="flyer_link" type="url" maxlength="300" placeholder="https://" inputmode="url">`, 'e.g. your website or Facebook post.', false)}
       <details class="flyer-svc" id="s_fsvc"><summary>🎨 Want us to make your flyer? <span class="opt">(optional)</span></summary>
         <div class="fld" data-f="s_fs"><span class="lab" id="s_fs_l">Flyer design</span>
@@ -2116,7 +2131,7 @@ function vSubmit(country){
             <label class="chk"><input type="radio" name="flyer_request" value="$10 per flyer – we design it from instructions"><span><b>$10 per flyer</b> – we design it from your instructions</span></label></div>
           <p class="hint">Flyers are made in the Archery Calendar poster style. Your shoot is still listed the normal way – this never holds it up.</p></div>
         <div id="s_fs_more" hidden>
-          <div id="s_fphoto_w">${f('s_fphoto', 'Your photo for the flyer', `<input id="s_fphoto" name="flyer_photo" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.heic">`, `JPG, PNG or phone photo, up to ${MAX_MB} MB.`, false)}</div>
+          <div id="s_fphoto_w">${f('s_fphoto', 'Your photo for the flyer', `<input id="s_fphoto" name="flyer_photo" type="file" accept="image/*,.heic,.heif">`, `Any photo – big photos are shrunk automatically. <span id="s_fphoto_n" class="note"></span>`, false)}</div>
           ${f('s_finstr', 'Flyer instructions', `<textarea id="s_finstr" name="flyer_instructions" rows="4" maxlength="2000" placeholder="What should it say and look like? Colours, logo, wording, anything else"></textarea>`, '', false)}
           <p class="note fs-proof">We'll email you a proof to approve and payment details before anything goes live.</p></div>
       </details>
@@ -2230,6 +2245,8 @@ function bindSubmit(){
     fm.addEventListener('input', e => { if (e.target.id === 's_venue' || e.target.id === 's_suburb') manual = true; });
     fm.addEventListener('change', e => { if (e.target.id === 's_club') fill(); });
   })();
+  ['s_file', 's_fphoto'].forEach(id => g(id).addEventListener('change', () => shrinkImg(g(id), g(id + '_n'))));
+  fm.addEventListener('shrunk', () => { if (fm.dataset.tried) check(); });
   venueCombo(); if (ctry() === 'OTHER') applyCountry();
   function check(){
     const errs = [], add = (id, m) => { setErr(id, m); if (m) errs.push(id); };
@@ -2254,9 +2271,12 @@ function bindSubmit(){
     add('s_method', me ? '' : 'Choose how archers enter now.');
     add('s_link', (me === 'Assemble' || me === 'Archers Diary' || me === 'Online entry page') && !ln ? `Add your ${me === 'Online entry page' ? 'entry page' : me} link.` : ln && /^(https?:|www\.)/i.test(ln) && !isUrl(ln.replace(/^www\./i, 'https://www.')) ? 'That link doesn’t look right.' : '');
     const file = g('s_file').files[0];
-    add('s_file', !file ? '' : !/\.(pdf|jpe?g)$/i.test(file.name) ? 'Flyers must be a PDF or JPG.' : file.size > MAX_MB * 1048576 ? `That file is ${(file.size / 1048576).toFixed(1)} MB. The limit is ${MAX_MB} MB; try a link instead.` : '');
+    const isPdf = file && /\.pdf$/i.test(file.name);
+    add('s_file', !file ? '' : g('s_file').dataset.busy ? 'Still shrinking the photo – one moment.' : !isPdf && !/^image\//.test(file.type) && !/\.(jpe?g|png|webp|heic|heif)$/i.test(file.name) ? 'Flyers must be a PDF or a photo.'
+      : file.size > MAX_MB * 1048576 ? (isPdf ? `That PDF is ${(file.size / 1048576).toFixed(1)} MB (limit ${MAX_MB} MB). Upload a JPG or screenshot of the flyer instead, or paste a link.` : 'That photo is still too big – try a screenshot.') : '');
     const fp = g('s_fphoto').files[0], fv = fsVal();
-    add('s_fphoto', /^\$5/.test(fv) && fp && fp.size > MAX_MB * 1048576 ? `That photo is ${(fp.size / 1048576).toFixed(1)} MB. The limit is ${MAX_MB} MB.` : '');
+    add('s_fphoto', !/^\$5/.test(fv) || !fp ? '' : g('s_fphoto').dataset.busy ? 'Still shrinking the photo – one moment.' : fp.size > MAX_MB * 1048576 ? 'That photo is still too big – try a screenshot.'
+      : (file ? file.size : 0) + fp.size > FS_TOTAL_MB * 1048576 ? 'The flyer and photo together are too big – use a smaller flyer or a link.' : '');
     const fl = val('s_flink'); add('s_flink', fl && !isUrl(fl) ? 'Use a full link starting with https://' : '');
     add('s_ok', g('s_ok').checked ? '' : 'Please tick to give permission to publish.');
     return errs;
