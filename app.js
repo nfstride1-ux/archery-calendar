@@ -16,7 +16,7 @@ const DEFAULT = {
   notified: {},                                // reminder key -> timestamp
   notify: false,
   states: [],                                  // AUS scope: empty = all states
-  groups: ['aa','aba','awa'],                  // AUS scope: Archery Australia (incl. RGBs/clubs), ABA, Archery WA
+  groups: ['aa','aba','awa','taa'],                  // AUS scope: Archery Australia (incl. RGBs/clubs), ABA, Archery WA
   myClubs: [],                                 // club ids I belong to (clubs.json)
   homeClub: null,                              // one of myClubs
   watchClubs: [],                              // clubs I watch
@@ -27,7 +27,7 @@ const DEFAULT = {
 };
 let S = load(), EV = [], ORGS = [], CLUBS = [], CLUB = {}, BYID = {}, CMAP = {}, PH = {}, SCOPE = 'WORLD';
 const STATES = [['WA','Western Australia'],['SA','South Australia'],['VIC','Victoria'],['NSW','New South Wales'],['ACT','Australian Capital Territory'],['QLD','Queensland'],['TAS','Tasmania'],['NT','Northern Territory']];
-const GROUPS = [['aa','Archery Australia','State associations (RGBs) and clubs – target, field, indoor, clout, QREs'],['aba','Australian Bowhunters Association (ABA)','All 10 branches (A–J) – field, 3D, IFAA'],['awa','Archery WA','WA state events, QREs and club shoots']];
+const GROUPS = [['aa','Archery Australia','State associations (RGBs) and clubs – target, field, indoor, clout, QREs'],['aba','Australian Bowhunters Association (ABA)','All 10 branches (A–J) – field, 3D, IFAA'],['awa','Archery WA','WA state events, QREs and club shoots'],['taa','Traditional Archery Australia (TAA)','Traditional archery musters and club events from TAA-affiliated clubs']];
 const AUS = () => SCOPE === 'AUS';
 const SITE = Object.assign({flyers:'local', ads:true, contact:'nfshold@gmail.com'}, window.SITE || {});
 const today = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
@@ -130,6 +130,7 @@ function migrateSettings(){
   if (S.states.length === codes.length) S.states = [];
   const gr = Array.isArray(S.groups) ? S.groups.map(v => String(v).trim().toLowerCase()).filter(v => gk.includes(v)) : [];
   S.groups = gr.length ? [...new Set(gr)] : DEFAULT.groups.slice();
+  if (!S.taaAdded) { if (['aa', 'aba', 'awa'].every(g => S.groups.includes(g)) && !S.groups.includes('taa')) S.groups.push('taa'); S.taaAdded = 1; }   // TAA added Oct 2026: on for anyone who had every organisation on
   for (const k of ['countries', 'orgs']) if (!Array.isArray(S[k])) S[k] = DEFAULT[k].slice();
   for (const k of ['saved', 'entries', 'notified']) if (!S[k] || typeof S[k] !== 'object' || Array.isArray(S[k])) S[k] = {};
   S.v = 2; try { save(); } catch {}
@@ -454,7 +455,7 @@ function hay(x){
   const sc = x.state_code, st = STATES.find(z => z[0] === sc), months = [];
   if (x.start_date) for (let d = pd(x.start_date); d <= pd(x.end_date || x.start_date) && months.length < 14; d.setMonth(d.getMonth() + 1, 1)) months.push(MONL[d.getMonth()], MON[d.getMonth()], String(d.getFullYear()));
   if (x.end_date) { const e = pd(x.end_date); months.push(MONL[e.getMonth()], MON[e.getMonth()]); }
-  const grpTxt = {aa:'aa archery australia', aba:'aba bowhunters australian bowhunters association', awa:'awa archery wa archerywa'}[x.org_group] || '';
+  const grpTxt = {aa:'aa archery australia', aba:'aba bowhunters australian bowhunters association', awa:'awa archery wa archerywa', taa:'taa traditional archery australia trad'}[x.org_group] || '';
   const lvl = [x.level, x.rounds, x.titles === 'state' ? 'state titles' : x.titles === 'branch' ? 'branch titles' : '', /\bqre\b|world record/i.test((x.name || '') + ' ' + (x.level || '')) ? 'qre world record status' : '',
     /national/i.test((x.level || '') + ' ' + x.name) && !/registered/i.test(x.level || '') ? 'nationals national' : '', x.members_only ? 'club championship members' : ''];
   const cat = catOf(x), catTxt = {competition:'competition shoot tournament', club:'club shoot clubshoot social local', coaching:'coaching course coach', youth:'youth junior kids training', come_try:'come and try beginners', seminar:'seminar workshop clinic coaching coach masterclass'}[cat] + (x.book_anytime ? ' corporate team building book anytime' : '');
@@ -517,7 +518,7 @@ function vBrowse(){
   const Q = BF.q ? parseQuery(BF.q) : null, qState = !!(Q && Q.states.length);
   // A state named in the search (e.g. 'target sa') also overrides 'My states' from Settings.
   const vis = grp ? EV.filter(x => x.org_group === grp) : EV.filter(x => visible(x, !!BF.state || qState));
-  const scopes = AUS() ? [['all','All Australia'], ...GROUPS.map(g => ['g:' + g[0], {aa:'Archery Australia', aba:'ABA', awa:'Archery WA'}[g[0]]])] : [['all','All'], ['world','🌐 World'], ...S.countries.map(c => [c, CMAP[c] || c]), ...S.orgs.map(o => [o, (ORGS.find(x => x.id === o) || {}).name?.replace(/\s*\(.*\)/,'') || o])];
+  const scopes = AUS() ? [['all','All Australia'], ...GROUPS.map(g => ['g:' + g[0], {aa:'Archery Australia', aba:'ABA', awa:'Archery WA', taa:'TAA'}[g[0]]])] : [['all','All'], ['world','🌐 World'], ...S.countries.map(c => [c, CMAP[c] || c]), ...S.orgs.map(o => [o, (ORGS.find(x => x.id === o) || {}).name?.replace(/\s*\(.*\)/,'') || o])];
   const discs = [...new Set(vis.filter(x => (BF.past || !isPast(x)) && isShoot(x) && !/^(meeting|judging|coaching)/i.test(x.discipline || '')).map(x => (x.discipline || '').split(/[ (/]/)[0]).filter(Boolean))].sort();   // only disciplines with shoots to show
   if (BF.disc && !discs.includes(BF.disc)) discs.push(BF.disc);   // never hide an active filter behind 'All disciplines'
   let list = vis.slice();
@@ -889,7 +890,8 @@ function dl(blob, name){ const a = document.createElement('a'); a.href = URL.cre
 /* ---------- org calendars (rebuilt from our data) ---------- */
 const CALS = {aba:{name:'ABA', full:'Australian Bowhunters Association', src:'ABA 2026 National Calendar (12 Jun 2026)', url:'https://www.bowhunters.org.au/aba-shoot-calendar/', by:'Branch'},
   aa:{name:'Archery Australia', full:'Archery Australia (national, state and club events)', src:'Archery Australia events + World Archery calendar (Australian events)', url:'https://www.archery.org.au/events/', by:'State'},
-  awa:{name:'Archery WA', full:'Archery WA (state events, QREs and club shoots)', src:'Archery WA events', url:'https://www.archerywa.com.au/', by:'State'}};
+  awa:{name:'Archery WA', full:'Archery WA (state events, QREs and club shoots)', src:'Archery WA events', url:'https://www.archerywa.com.au/', by:'State'},
+  taa:{name:'TAA', full:'Traditional Archery Australia (musters and club events)', src:'TAA Club Events Calendar 2026 + club shoot calendars', url:'https://www.traditionalarcheryaustralia.org/club-shoot-calendars', by:'State'}};
 let CF = {org:'aba', where:'', disc:'', cat:'', club:'', mc:false, past:true};
 const calWhere = x => x.org_group === 'aba' ? (x.branch ? `${x.branch} – ${x.branch_name || ''}` : (x.state_code || '')) : (x.state_code || '');
 function vCals(arg){
@@ -1152,7 +1154,7 @@ function clubSearch(q){
   return CLUBS.filter(c => { const k = ' ' + clubKey(c) + ' '; return w.every(t => k.includes(' ' + t) ); })
     .sort((a, b) => (b.n_events > 0) - (a.n_events > 0) || a.name.localeCompare(b.name)).slice(0, 15);
 }
-const clubLine = c => [c.suburb, c.state, c.country_name && `${flag(({MAS: 'MY'})[c.country] || '')} ${c.country_name}`, c.kind, c.venue && 'Indoor range', (c.orgs || []).map(o => ({aa: 'Archery Australia', awa: 'Archery WA', aba: 'ABA'}[o])).filter(Boolean).join(' / ')].filter(Boolean).join(' · ');
+const clubLine = c => [c.suburb, c.state, c.country_name && `${flag(({MAS: 'MY'})[c.country] || '')} ${c.country_name}`, c.kind, c.venue && 'Indoor range', (c.orgs || []).map(o => ({aa: 'Archery Australia', awa: 'Archery WA', aba: 'ABA', taa: 'TAA'}[o])).filter(Boolean).join(' / ')].filter(Boolean).join(' · ');
 function clubRow(c){
   const up = c.country ? iClubEv(c.id).filter(x => !iPast(x)).length || (INTL ? 0 : c.n_events) : EV.filter(x => x.club_id === c.id && !isPast(x)).length;
   return `<li class="club-row" data-club="${esc(c.id)}"><button type="button" class="linkbtn club-name" data-clubpop="${esc(c.id)}" aria-haspopup="dialog"><b>${esc(c.name)}</b></button><span class="note">${esc(clubLine(c))}${up ? ` · ${up} upcoming shoot${up === 1 ? '' : 's'}` : ''}</span>
@@ -1223,7 +1225,7 @@ function vClub(id){
         <dt>Where</dt><dd>${esc(c.address || [c.suburb, c.state].filter(Boolean).join(', ') || '—')}<br><a href="${esc(map)}" target="_blank" rel="noopener">📍 Open in Maps ↗</a></dd>
         ${c.website ? `<dt>Website</dt><dd><a href="${esc(c.website)}" target="_blank" rel="noopener">${esc(c.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '').slice(0, 50))} ↗</a></dd>` : ''}
         ${c.email || c.phone ? `<dt>Contact</dt><dd>${c.email ? `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>` : ''}${c.email && c.phone ? '<br>' : ''}${c.phone ? `<a href="tel:${esc(c.phone.replace(/\s/g, ''))}">${esc(c.phone)}</a>` : ''}</dd>` : ''}
-        ${c.venue ? '' : `<dt>Calendars</dt><dd>${esc((c.orgs || []).map(o => ({aa: 'Archery Australia', awa: 'Archery WA', aba: 'ABA'}[o])).filter(Boolean).join(', ') || '—')}</dd>`}</dl></section>
+        ${c.venue ? '' : `<dt>Calendars</dt><dd>${esc((c.orgs || []).map(o => ({aa: 'Archery Australia', awa: 'Archery WA', aba: 'ABA', taa: 'TAA'}[o])).filter(Boolean).join(', ') || '—')}</dd>`}</dl></section>
     <h2 class="sec-h">Upcoming shoots (${up.length})</h2>${up.length ? `<div class="list">${up.map(evCard).join('')}</div>` : '<p class="note">No upcoming shoots listed yet. Watch the club to get a “New” badge when one is added.</p>'}
     ${past.length ? `<details class="past-shoots"><summary><h2 class="sec-h">Past shoots (${past.length})</h2></summary><div class="list">${past.map(evCard).join('')}</div></details>` : ''}
     <p class="note"><a href="#/clubs">← All clubs</a></p></div>`;
@@ -1346,7 +1348,7 @@ function vAccount(){
   const n = AUTH.sync.pending(), when = st.lastSync ? new Date(st.lastSync).toLocaleString('en-AU', {weekday: 'short', hour: 'numeric', minute: '2-digit'}) : '';
   const syncTxt = !navigator.onLine ? `⏳ Offline – ${n} change${n === 1 ? '' : 's'} saved on this device, will sync when you’re back online`
     : st.error && n ? `⚠ ${n} change${n === 1 ? '' : 's'} not synced yet (${esc(st.error)}). We’ll keep trying.` : n ? `⏳ Syncing ${n} change${n === 1 ? '' : 's'}…` : `✓ Synced${when ? ' · ' + esc(when) : ''}`;
-  const stTxt = S.states.length ? S.states.join(', ') : 'All of Australia', grTxt = GROUPS.filter(g => S.groups.includes(g[0])).map(g => g[0] === 'aba' ? 'ABA' : g[1]).join(', ');
+  const stTxt = S.states.length ? S.states.join(', ') : 'All of Australia', grTxt = GROUPS.filter(g => S.groups.includes(g[0])).map(g => g[0] === 'aba' ? 'ABA' : g[0] === 'taa' ? 'TAA' : g[1]).join(', ');
   return `${head}<div class="wrap narrow">${msg}
    <section class="panel"><h2 class="sec">Your details</h2><dl class="kv"><dt>Email</dt><dd>${esc(u.email || '—')}</dd></dl>
     <form id="dn"><label for="dname">Display name</label><input id="dname" maxlength="80" autocomplete="nickname" value="${esc(st.displayName || '')}">
@@ -1991,7 +1993,7 @@ function kcSubmit(e, fm, email, setSubject){
 /* ---------- submit a shoot (clubs) ----------
    Static site, no backend: the form POSTs (multipart, with the flyer file) to SITE.formEndpoint (FormSubmit), which emails
    SITE.contact. If no endpoint is configured, or the browser is offline, "Email it instead" builds a pre-filled email. */
-const ORG_TYPES = ['Archery Australia club', 'Archery WA', 'Other state association', 'ABA club or branch', 'Other'];
+const ORG_TYPES = ['Archery Australia club', 'Archery WA', 'Other state association', 'ABA club or branch', 'TAA club (Traditional Archery Australia)', 'Other'];
 /* Who is submitting (owner 12 Oct 2026): a real person's name + their role at the club, so we can check with the club.
    Verified club officials get fast approvals. Used by #/submit and #/fix; sent as contact_name + role_at_club. */
 const ROLE_OPTS = ['President', 'Secretary', 'Treasurer', 'Tournament/Competition organiser', 'Committee member', 'Coach', 'Other'];
