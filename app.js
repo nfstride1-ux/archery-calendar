@@ -295,7 +295,7 @@ function pageHead(title, sub, t = 'mixed'){
 function clubCta(compact){
   const m = `mailto:${SITE.contact}?subject=${encodeURIComponent('Our shoot / flyer for Archery Calendar')}`;
   return `<aside class="cta${compact ? ' compact' : ''}"><span class="kicker">Clubs &amp; organisers</span><b class="cta-h">Send us your flyer</b>
-    <p>No online entries? We'll list your shoot, set up an entry form and send you the entry list.</p>
+    <p>We'll list your shoot for free.</p>
     <div class="cta-btns"><a class="btn gold" href="#/submit">Submit a shoot</a><a class="cta-mail" href="${m}">or email ${esc(SITE.contact)}</a></div></aside>`;
 }
 function flyerLinkCard(x){
@@ -842,7 +842,7 @@ function vPrivacy(){
     <li>Clearing your browser data deletes them. Use <a href="#/settings">Settings → Export backup</a> to keep a copy or move to another device.</li>
     <li id="privStats"><b>Visit counts:</b> we count visits anonymously with <a href="https://www.goatcounter.com/" target="_blank" rel="noopener">GoatCounter</a>: which pages are viewed and the words typed into Find shoots search. <b>No cookies</b>, no advertising trackers and nothing that identifies you. Searches that look like an email address or phone number are never counted. Reminders are made on your device.</li>
     <li>"Register / enter" and email links go straight to the organiser. Anything you send them is between you and the organiser.</li>
-    <li><b>Submit a shoot form:</b> what a club sends us (contact name, email, phone, shoot details and flyer) is emailed to us at ${esc(SITE.contact)} via the form service FormSubmit (formsubmit.co). We use it only to check and list the shoot and, if you ask, to set up your entry form. Contact details aren't published unless they're on your flyer. Ask us any time to correct or delete them.</li>
+    <li><b>Submit a shoot form:</b> what a club sends us (contact name, email, phone, shoot details and flyer) is emailed to us at ${esc(SITE.contact)} via the form service FormSubmit (formsubmit.co). We use it only to check and list the shoot. Contact details aren't published unless they're on your flyer. Ask us any time to correct or delete them.</li>
     <li><b>Fans photos:</b> if you send us a photo, your name, email, the photo and its details are emailed to us via FormSubmit. We publish only approved photos with the caption and your name as credit – never your email. In a photo and want it removed? Email ${esc(SITE.contact)}.</li>
     <li><b>Membership cards:</b> photos of your membership cards, card names, member numbers and links you add in <a href="#/cards">My membership cards</a> are stored only in this browser on this device. They’re never uploaded, published or sent to us${window.SUPABASE_CARD_SYNC ? ', unless you turn on the private backup to your account (private storage only you can open)' : ''}. Photos are shrunk and saved without their hidden location data. Delete them any time on that page.</li>
     <li>The site is hosted on GitHub Pages, which keeps standard server logs (e.g. IP address) – see GitHub's privacy statement.</li></ul>
@@ -2059,14 +2059,12 @@ function vSubmit(country){
   if (sent) return `${head}<div class="wrap narrow"><section class="panel thanks" id="subThanks" tabindex="-1">
     <span class="thanks-mark" aria-hidden="true">✓</span><h2 class="sec">Thanks, your shoot is in</h2>
     <p>We'll check the details against your flyer and usually have it live <b>within 48 hours</b>. If anything's unclear we'll reply to the email you gave us.</p>
-    <p class="note">Asked for an entry form? We'll email you a link to check before it goes live.</p>
     <div class="row"><a class="btn gold" href="#/submit">Submit another shoot</a><a class="btn alt" href="#/browse">Find shoots</a></div></section></div>`;
   const opt = (a, ph) => `<option value="">${ph}</option>` + a.map(x => `<option>${esc(x)}</option>`).join('');
   const f = (id, lab, inp, hint = '', req = true) => `<div class="fld" data-f="${id}"><label for="${id}">${lab}${req ? ' <span class="req" aria-hidden="true">*</span>' : ' <span class="opt">(optional)</span>'}</label>${inp}${hint ? `<p class="hint" id="${id}_h">${hint}</p>` : ''}<p class="err" id="${id}_e" role="alert"></p></div>`;
   return `${head}<div class="wrap narrow sub">${subTabs('new')}
   <section class="panel sub-intro"><ul class="ticks">
     <li>Every shoot is <b>reviewed before it goes live, usually within 48 hours</b>.</li>
-    <li>No online entries? We'll list your shoot, set up an entry form and send you the entry list. Tick "yes" below.</li>
     <li>Fields marked <span class="req">*</span> are required.</li></ul></section>
   <form id="subForm" class="panel sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate>
     <input type="hidden" name="_subject" value="New shoot submission – Archery Calendar"><input type="hidden" name="known_club" value="">
@@ -2106,8 +2104,6 @@ function vSubmit(country){
       <div class="grid2">${f('s_close', 'Entries close', `<input id="s_close" name="entry_close_date" type="date">`, '', false)}
       ${f('s_method', 'How do archers enter now?', `<select id="s_method" name="entry_method" required>${opt(K.methods, 'Choose…')}</select>`)}</div>
       ${f('s_link', 'Entry link', `<input id="s_link" name="entry_link" type="text" maxlength="300" placeholder="https://" inputmode="url">`, `<span id="s_link_hint">${esc(K.linkHint)}</span>`, false)}
-      <div class="fld" data-f="s_want"><span class="lab" id="s_want_l">Want us to set up an entry form? <span class="req" aria-hidden="true">*</span></span>
-        <div class="seg" role="radiogroup" aria-labelledby="s_want_l" id="s_want"><label class="chk"><input type="radio" name="want_entry_form" value="Yes" required><span>Yes please</span></label><label class="chk"><input type="radio" name="want_entry_form" value="No"><span>No thanks</span></label></div><p class="err" id="s_want_e" role="alert"></p></div>
     </fieldset>
     <fieldset><legend>Flyer</legend>
       ${f('s_file', 'Upload the flyer', `<input id="s_file" name="attachment" type="file" accept=".pdf,.jpg,.jpeg,application/pdf,image/jpeg">`, `PDF or JPG, up to ${MAX_MB} MB.`, false)}
@@ -2127,7 +2123,7 @@ function vSubmit(country){
       ${f('s_notes', 'Notes', `<textarea id="s_notes" name="notes" rows="4" maxlength="2000" placeholder="Rounds, fees, start times, camping, anything else"></textarea>`, '', false)}
     </fieldset>
     <div class="fld consent" data-f="s_ok"><label class="chk tick"><input type="checkbox" id="s_ok" name="consent" value="Yes – permission to publish the shoot details and flyer" required><span>I'm authorised by the club and give Archery Calendar permission to publish these shoot details and the flyer. <span class="req" aria-hidden="true">*</span></span></label><p class="err" id="s_ok_e" role="alert"></p></div>
-    <p class="note priv">🔒 Privacy: your details are emailed to us (${esc(SITE.contact)}, NFS Strategic Holdings) via FormSubmit. We use them only to check and list your shoot and to set up an entry form if you ask. We don't publish your contact details unless they're on your flyer, and we never sell them. <a href="#/privacy">Privacy</a></p>
+    <p class="note priv">🔒 Privacy: your details are emailed to us (${esc(SITE.contact)}, NFS Strategic Holdings) via FormSubmit. We use them only to check and list your shoot. We don't publish your contact details unless they're on your flyer, and we never sell them. <a href="#/privacy">Privacy</a></p>
     <p class="err sum" id="subErr" role="alert"></p>
     <div class="sub-actions"><button class="btn gold" type="submit" id="subBtn">Submit shoot for review</button>
       <a class="btn alt" id="subMail" href="mailto:${esc(SITE.contact)}">Email it instead</a></div>
@@ -2257,7 +2253,6 @@ function bindSubmit(){
     const me = val('s_method'), ln = val('s_link');
     add('s_method', me ? '' : 'Choose how archers enter now.');
     add('s_link', (me === 'Assemble' || me === 'Archers Diary' || me === 'Online entry page') && !ln ? `Add your ${me === 'Online entry page' ? 'entry page' : me} link.` : ln && /^(https?:|www\.)/i.test(ln) && !isUrl(ln.replace(/^www\./i, 'https://www.')) ? 'That link doesn’t look right.' : '');
-    add('s_want', fm.querySelector('[name=want_entry_form]:checked') ? '' : 'Choose yes or no.');
     const file = g('s_file').files[0];
     add('s_file', !file ? '' : !/\.(pdf|jpe?g)$/i.test(file.name) ? 'Flyers must be a PDF or JPG.' : file.size > MAX_MB * 1048576 ? `That file is ${(file.size / 1048576).toFixed(1)} MB. The limit is ${MAX_MB} MB; try a link instead.` : '');
     const fp = g('s_fphoto').files[0], fv = fsVal();
@@ -2272,7 +2267,7 @@ function bindSubmit(){
     const L = [['Country', ctry() === 'OTHER' ? val('s_ctryname') : K().name], ['Organisation type', val('s_orgtype')], ['Club', val('s_club')], ['Your name', val('s_name')], ['Role at the club', roleVal('s')], ['Contact email', val('s_email')], ['Phone', val('s_phone')],
       ['Shoot', val('s_shoot')], ['Discipline', discs().join(', ')], ['Start', val('s_start')], ['End', val('s_end')], ['Dates (as shown to archers)', g('s_dates_disp').value], ['Venue', val('s_venue')], [K().town, val('s_suburb')], [K().state, val('s_state')], ['Time zone', val('s_tz')],
       ['Entries close', val('s_close')], ['Entry method', val('s_method')], ['Entry link', val('s_link')],
-      ['Entry form wanted', (fm.querySelector('[name=want_entry_form]:checked') || {}).value || ''], ['Flyer link', val('s_flink')], ['Flyer request', fsVal()], ['Flyer instructions', fsVal() === 'No thanks' ? '' : val('s_finstr')], ['Notes', val('s_notes')],
+      ['Flyer link', val('s_flink')], ['Flyer request', fsVal()], ['Flyer instructions', fsVal() === 'No thanks' ? '' : val('s_finstr')], ['Notes', val('s_notes')],
       ['Permission to publish', g('s_ok').checked ? 'Yes' : 'Not ticked'], ['Date clashes', (clashCheck(), g('s_clash_val').value) || 'None']];
     return L.map(([k, v]) => `${k}: ${v}`).join('\n') + '\n\n>>> Please attach the flyer (PDF or JPG) to this email before sending. <<<\n';
   }
