@@ -2347,7 +2347,7 @@ function fixRows(x){
     : kind === 'rounds' ? comboHtml('fx_rounds', 'Type a round, e.g. WA 720, Canb, Field…', true) + '<p class="hint">Pick one or more. Not listed? Type it and press Enter.</p>'
     : kind === 'divs' ? comboHtml('fx_divs', 'Type a bow type or age class…', true) + '<p class="hint">Pick all that apply. Not listed? Type it and press Enter.</p>'
     : kind === 'date' ? `<input id="fx_${k}" type="date" value="${esc(n[k])}">`
-    : kind === 'file' ? `<input id="fx_file" name="attachment" type="file" disabled accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"><p class="hint">PDF, JPG or PNG, up to ${MAX_MB} MB.</p>`
+    : kind === 'file' ? `<input id="fx_file" name="attachment" type="file" disabled accept=".pdf,application/pdf,image/*,.heic,.heif"><p class="hint">PDF (up to ${MAX_MB} MB) or any photo – big photos are shrunk automatically. <span id="fx_file_n" class="note"></span></p>`
     : `<input id="fx_${k}" maxlength="300" value="${esc(n[k])}">`;
   return `<ul class="fx-list" id="fx_rows">${FIX_ROWS.map(([k, lab, kind]) => `<li class="fx-row" data-k="${k}" data-kind="${kind}">
       <div class="fx-head"><span class="fx-lab">${esc(lab)}</span><button type="button" class="fx-pen" data-pen="${k}" aria-expanded="false" aria-label="Edit ${esc(lab.toLowerCase())}">✏️ <span>Edit</span></button></div>
@@ -2473,7 +2473,8 @@ function bindFix(){
     const row = b.closest('.fx-row'), ed = row.querySelector('.fx-edit'), on = ed.hidden;
     ed.hidden = !on; row.classList.toggle('editing', on); b.setAttribute('aria-expanded', on);
     b.innerHTML = on ? '↩ <span>Keep as is</span>' : '✏️ <span>Edit</span>';
-    const fi = g('fx_file'); if (row.dataset.k === 'flyer' && fi) { fi.disabled = !on; if (!on) fi.value = ''; }
+    const fi = g('fx_file'); if (fi && !fi.dataset.sh) { fi.dataset.sh = '1'; fi.addEventListener('change', () => shrinkImg(fi, g('fx_file_n'))); }
+    if (row.dataset.k === 'flyer' && fi) { fi.disabled = !on; if (!on) fi.value = ''; }
     const k = row.dataset.k;
     if (!on) { const n = fixNow(cur); if (CB['fx_' + k]) CB['fx_' + k].reset();
       row.querySelectorAll('input:not([type=file]):not([role=combobox]),textarea').forEach(i => { i.value = i.id === 'fx_start' ? n.start : i.id === 'fx_end' ? n.end : i.type === 'time' ? '' : n[i.id.slice(3)] || ''; }); }
@@ -2508,7 +2509,10 @@ function bindFix(){
       const dm = de && de.classList.contains('editing') ? (!s ? 'Choose the start date.' : e && e < s ? 'The end date is before the start date.' : '') : '';
       de && de.classList.toggle('bad', !!dm); if (dm) errs.push('fx_start');
       const file = g('fx_file') && g('fx_file').files[0];
-      const fm_ = !file ? '' : !/\.(pdf|jpe?g|png)$/i.test(file.name) ? 'Flyers must be a PDF, JPG or PNG.' : file.size > MAX_MB * 1048576 ? `That file is ${(file.size / 1048576).toFixed(1)} MB. The limit is ${MAX_MB} MB.` : '';
+      const isPdf = file && /\.pdf$/i.test(file.name);
+      const fm_ = !file ? '' : g('fx_file').dataset.busy ? 'Still shrinking the photo – one moment.' : !isPdf && !/^image\//.test(file.type) && !/\.(jpe?g|png|webp|heic|heif)$/i.test(file.name) ? 'Flyers must be a PDF or a photo.'
+        : file.size > MAX_MB * 1048576 ? (isPdf ? `That PDF is ${(file.size / 1048576).toFixed(1)} MB (limit ${MAX_MB} MB). Upload a JPG or screenshot of the flyer instead.` : 'That photo is still too big – try a screenshot.')
+        : file.size > FS_TOTAL_MB * 1048576 ? 'That file is too big to send.' : '';
       const fr = fm.querySelector('[data-k=flyer]'); fr && fr.classList.toggle('bad', !!fm_); if (fm_) errs.push('fx_file');
       const any = changes().length; g('fx_any_e').textContent = dm || fm_ || (any ? '' : 'Tap ✏️ and change at least one thing (or tick cancelled).');
       if (!any) errs.push('fx_any');
