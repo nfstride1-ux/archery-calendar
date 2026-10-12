@@ -2,6 +2,20 @@
  "note": "Fans page photo wall. Add a photo only after review: consent ticked, under-18s only with parent/guardian consent. Newest first. 'credit' is shown under the photo (the sender's name); leave it empty for supplied photos, which are listed on the Credits page instead.",
  "photos": [
   {
+   "id": "gosnells-state-target-2026",
+   "file": "img/fans/gosnells-state-target-2026.jpg",
+   "sm": "img/fans/gosnells-state-target-2026-sm.jpg",
+   "w": 1080,
+   "h": 1440,
+   "caption": "2026 state target finished",
+   "alt": "Gosnells Archers members in club shirts with their medals, posed in the clubhouse beside a target face",
+   "credit": "nathaniel",
+   "event": "Gosnells Archers",
+   "date": "2026-10-11",
+   "added": "2026-10-12",
+   "consent_note": "Parent/guardian consent for under-18s pictured confirmed by site owner, 12 Oct 2026"
+  },
+  {
    "id": "silver-u21-men-2026-wafc",
    "file": "img/fans/silver-u21-men-2026-wafc.jpg",
    "sm": "img/fans/silver-u21-men-2026-wafc-sm.jpg",
