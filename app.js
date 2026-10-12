@@ -2109,6 +2109,18 @@ function vSubmit(country){
     <fieldset><legend>Flyer</legend>
       ${f('s_file', 'Upload the flyer', `<input id="s_file" name="attachment" type="file" accept=".pdf,.jpg,.jpeg,application/pdf,image/jpeg">`, `PDF or JPG, up to ${MAX_MB} MB.`, false)}
       ${f('s_flink', '…or link to the flyer', `<input id="s_flink" name="flyer_link" type="url" maxlength="300" placeholder="https://" inputmode="url">`, 'e.g. your website or Facebook post.', false)}
+      <details class="flyer-svc" id="s_fsvc"><summary>🎨 Want us to make your flyer? <span class="opt">(optional)</span></summary>
+        <div class="fld" data-f="s_fs"><span class="lab" id="s_fs_l">Flyer design</span>
+          <div class="fs-opts" role="radiogroup" aria-labelledby="s_fs_l" id="s_fs">
+            <label class="chk"><input type="radio" name="flyer_request" value="No thanks" checked><span>No thanks</span></label>
+            <label class="chk"><input type="radio" name="flyer_request" value="$5 per flyer – club sends own photo + instructions"><span><b>$5 per flyer</b> – you send your own photo plus instructions</span></label>
+            <label class="chk"><input type="radio" name="flyer_request" value="$10 per flyer – we design it from instructions"><span><b>$10 per flyer</b> – we design it from your instructions</span></label></div>
+          <p class="hint">Flyers are made in the Archery Calendar poster style. Your shoot is still listed the normal way – this never holds it up.</p></div>
+        <div id="s_fs_more" hidden>
+          <div id="s_fphoto_w">${f('s_fphoto', 'Your photo for the flyer', `<input id="s_fphoto" name="flyer_photo" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.heic">`, `JPG, PNG or phone photo, up to ${MAX_MB} MB.`, false)}</div>
+          ${f('s_finstr', 'Flyer instructions', `<textarea id="s_finstr" name="flyer_instructions" rows="4" maxlength="2000" placeholder="What should it say and look like? Colours, logo, wording, anything else"></textarea>`, '', false)}
+          <p class="note fs-proof">We'll email you a proof to approve and payment details before anything goes live.</p></div>
+      </details>
       ${f('s_notes', 'Notes', `<textarea id="s_notes" name="notes" rows="4" maxlength="2000" placeholder="Rounds, fees, start times, camping, anything else"></textarea>`, '', false)}
     </fieldset>
     <div class="fld consent" data-f="s_ok"><label class="chk tick"><input type="checkbox" id="s_ok" name="consent" value="Yes – permission to publish the shoot details and flyer" required><span>I'm authorised by the club and give Archery Calendar permission to publish these shoot details and the flyer. <span class="req" aria-hidden="true">*</span></span></label><p class="err" id="s_ok_e" role="alert"></p></div>
@@ -2215,6 +2227,8 @@ function bindSubmit(){
     add('s_want', fm.querySelector('[name=want_entry_form]:checked') ? '' : 'Choose yes or no.');
     const file = g('s_file').files[0];
     add('s_file', !file ? '' : !/\.(pdf|jpe?g)$/i.test(file.name) ? 'Flyers must be a PDF or JPG.' : file.size > MAX_MB * 1048576 ? `That file is ${(file.size / 1048576).toFixed(1)} MB. The limit is ${MAX_MB} MB; try a link instead.` : '');
+    const fp = g('s_fphoto').files[0], fv = fsVal();
+    add('s_fphoto', /^\$5/.test(fv) && fp && fp.size > MAX_MB * 1048576 ? `That photo is ${(fp.size / 1048576).toFixed(1)} MB. The limit is ${MAX_MB} MB.` : '');
     const fl = val('s_flink'); add('s_flink', fl && !isUrl(fl) ? 'Use a full link starting with https://' : '');
     add('s_ok', g('s_ok').checked ? '' : 'Please tick to give permission to publish.');
     return errs;
@@ -2225,12 +2239,15 @@ function bindSubmit(){
     const L = [['Country', ctry() === 'OTHER' ? val('s_ctryname') : K().name], ['Organisation type', val('s_orgtype')], ['Club', val('s_club')], ['Your name', val('s_name')], ['Role at the club', roleVal('s')], ['Contact email', val('s_email')], ['Phone', val('s_phone')],
       ['Shoot', val('s_shoot')], ['Discipline', discs().join(', ')], ['Start', val('s_start')], ['End', val('s_end')], ['Dates (as shown to archers)', g('s_dates_disp').value], ['Venue', val('s_venue')], [K().town, val('s_suburb')], [K().state, val('s_state')], ['Time zone', val('s_tz')],
       ['Entries close', val('s_close')], ['Entry method', val('s_method')], ['Entry link', val('s_link')],
-      ['Entry form wanted', (fm.querySelector('[name=want_entry_form]:checked') || {}).value || ''], ['Flyer link', val('s_flink')], ['Notes', val('s_notes')],
+      ['Entry form wanted', (fm.querySelector('[name=want_entry_form]:checked') || {}).value || ''], ['Flyer link', val('s_flink')], ['Flyer request', fsVal()], ['Flyer instructions', fsVal() === 'No thanks' ? '' : val('s_finstr')], ['Notes', val('s_notes')],
       ['Permission to publish', g('s_ok').checked ? 'Yes' : 'Not ticked'], ['Date clashes', (clashCheck(), g('s_clash_val').value) || 'None']];
     return L.map(([k, v]) => `${k}: ${v}`).join('\n') + '\n\n>>> Please attach the flyer (PDF or JPG) to this email before sending. <<<\n';
   }
   const ctag = () => ctry() === 'US' ? 'USA' : ctry() === 'OTHER' ? (val('s_ctryname') || 'Overseas') : '';
-  const subject = () => ctry() === 'AU' ? `New shoot: ${val('s_shoot')} – ${val('s_club')} (${val('s_state')})` : `New shoot (${ctag()}): ${val('s_shoot')} – ${val('s_club')} (${[val('s_suburb'), val('s_state')].filter(Boolean).join(', ')})`;
+  const fsVal = () => (fm.querySelector('[name=flyer_request]:checked') || {}).value || 'No thanks', fsTag = () => /^\$5/.test(fsVal()) ? '[FLYER REQUEST $5] ' : /^\$10/.test(fsVal()) ? '[FLYER REQUEST $10] ' : '';
+  const subject = () => fsTag() + (ctry() === 'AU' ? `New shoot: ${val('s_shoot')} – ${val('s_club')} (${val('s_state')})` : `New shoot (${ctag()}): ${val('s_shoot')} – ${val('s_club')} (${[val('s_suburb'), val('s_state')].filter(Boolean).join(', ')})`);
+  const fsUpd = () => { const v = fsVal(), paid = v !== 'No thanks'; g('s_fs_more').hidden = !paid; g('s_fphoto_w').hidden = !/^\$5/.test(v); if (paid) g('s_fsvc').open = true; };
+  g('s_fs').addEventListener('change', fsUpd); fsUpd();
   clashCheck(); roleBind('s'); kcLoad(); g('s_email').addEventListener('change', () => kcCheck(val('s_email')));
   const kcNow = id => KC.memo[kcNorm(val(id))];
   g('subMail').onclick = e => { const sub = kcTag(kcNow('s_email')) + (ctry() === 'AU' ? `Shoot submission: ${val('s_shoot') || 'new shoot'}${val('s_club') ? ' – ' + val('s_club') : ''}` : subject());
@@ -2249,10 +2266,12 @@ function bindSubmit(){
     g('s_tz_name').value = val('s_tz') ? (TZ_NAME[val('s_tz')] || AU_TZ_NAME[val('s_tz')] || val('s_tz')) : '';
     if (ctry() === 'AU' && !val('s_tz')) g('s_tz').disabled = true;   // Australian time zone is optional: don't send an empty field
     if (!g('s_file').files.length) g('s_file').disabled = true;   // don't send an empty file part
+    const fv = fsVal(); if (fv === 'No thanks' || !/^\$5/.test(fv) || !g('s_fphoto').files.length) g('s_fphoto').disabled = true;
+    if (fv === 'No thanks') g('s_finstr').disabled = true;   // flyer request is extra info only: the shoot is listed the normal way
     const b = g('subBtn'); b.disabled = true; b.textContent = 'Sending…';
     kcSubmit(e, fm, val('s_email'), tag => { fm.querySelector('[name=_subject]').value = tag + subject(); });
   };
-  window.addEventListener('pageshow', () => { const b = $('#subBtn'); if (b) { b.disabled = false; b.textContent = 'Submit shoot for review'; g('s_file').disabled = false; const z = $('#s_tz'); if (z) z.disabled = false; } }, {once: true});
+  window.addEventListener('pageshow', () => { const b = $('#subBtn'); if (b) { b.disabled = false; b.textContent = 'Submit shoot for review'; g('s_file').disabled = false; g('s_fphoto').disabled = false; g('s_finstr').disabled = false; const z = $('#s_tz'); if (z) z.disabled = false; } }, {once: true});
 }
 
 /* ---------- Corrections: #/fix and #/fix/<event id> (also reachable as #/submit/fix). Emails nfshold via FormSubmit only; nothing on the site changes automatically. ---------- */
