@@ -1702,7 +1702,7 @@ function sendAsCard(fm, map, roleP){
 function sendAsCardInner(fm, map, roleP){
   const m = S.subMe || {}, acct = (typeof AUTH !== 'undefined' && AUTH.user && AUTH.user.email) || '';
   const src = {name: m.s_name || '', email: m.s_email || acct, club: m.s_club || '', role: m.s_role || '', role_other: m.s_role_other || ''};
-  Object.entries(map).forEach(([k, id]) => { const el = $('#' + id); if (el && !el.value && src[k]) el.value = src[k]; });
+  Object.entries(map).forEach(([k, id]) => { const el = $('#' + id); if (el && src[k] && (!el.value || k === 'club')) el.value = src[k];  /* your own club beats the event's host club */ });
   if (roleP && src.role) { const r = $('#' + roleP + '_role'); if (r && !r.value) { r.value = src.role; const o = $('#' + roleP + '_role_other'); if (o) o.value = src.role_other; r.dispatchEvent(new Event('change', {bubbles: true})); } }
   const ids = Object.values(map).concat(roleP ? [roleP + '_role'] : []), wraps = [...new Set(ids.map(id => { const el = $('#' + id); return el && (el.closest('.grid2') || el.closest('.fld')); }).filter(Boolean))];
   if (!ids.every(id => { const el = $('#' + id); return el && el.value.trim(); })) return;
