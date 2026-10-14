@@ -719,3 +719,17 @@ body.hb-open #hbBtn{display:none}
 .adm-row h3{margin:4px 0}.adm-row p{margin:4px 0}.adm-btns{gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}.adm-inst{font-size:.9em}
 .tag.st-pending{background:#fde68a;color:#3b2f00}.tag.st-live{background:#bbf7d0;color:#053b1a}.tag.st-rejected{background:#fecaca;color:#450a0a}
 @media (max-width:640px){.adm-row{grid-template-columns:1fr}}
+/* Results / scores */
+.tag.res{background:#14532d;color:#fff}
+.b.res-lnk{background:#14532d;color:#fff;text-decoration:none;font-size:.85em;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.results-box .res-grp{border:1px solid var(--line);border-radius:10px;margin:8px 0;overflow:hidden}
+.results-box summary{cursor:pointer;padding:12px;font-weight:700;font-size:1rem;min-height:44px;box-sizing:border-box;background:#f3f4f6;color:#111}
+.results-box .res-n{font-weight:400;color:#374151}
+.res-tbl{width:100%;border-collapse:collapse;font-size:1rem;line-height:1.35}
+.res-tbl th{text-align:left;font-size:.85rem;color:#374151;padding:6px 10px;border-bottom:2px solid var(--line)}
+.res-tbl td{padding:8px 10px;border-top:1px solid var(--line);vertical-align:top;color:#111}
+.res-tbl td small{color:#4b5563}
+.res-tbl .num{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.res-tbl .pl{white-space:nowrap;width:3.5em}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.results-box{scroll-margin-top:130px}

@@ -91,7 +91,7 @@ function toast(t){ const el = $('#toast'); el.textContent = t; el.classList.add(
 
 async function boot(){
   $('#todayLbl').textContent = today().toLocaleDateString('en-AU', {weekday:'short', day:'numeric', month:'short'});
-  const [e, o, ph, cl] = await Promise.all([fetch('data/events.json').then(r => r.json()), fetch('data/organisations.json').then(r => r.json()), fetch('img/credits.json', {cache: 'no-cache'}).then(r => r.json()).catch(() => ({})), fetch('data/clubs.json').then(r => r.json()).catch(() => ({clubs: []})), fetch('data/club_logos.json').then(r => r.json()).then(j => { LOGO = j.logos || {}; }).catch(() => {}), fetch('data/intl_countries.json').then(r => r.json()).then(j => { ICTRY = j; }).catch(() => {})]);
+  const [e, o, ph, cl] = await Promise.all([fetch('data/events.json').then(r => r.json()), fetch('data/organisations.json').then(r => r.json()), fetch('img/credits.json', {cache: 'no-cache'}).then(r => r.json()).catch(() => ({})), fetch('data/clubs.json').then(r => r.json()).catch(() => ({clubs: []})), fetch('data/club_logos.json').then(r => r.json()).then(j => { LOGO = j.logos || {}; }).catch(() => {}), fetch('data/intl_countries.json').then(r => r.json()).then(j => { ICTRY = j; }).catch(() => {}), fetch('data/results.json').then(r => r.json()).then(j => { RES = j.results || {}; }).catch(() => {})]);
   CLUBS = cl.clubs || []; CLUBS.forEach(c => CLUB[c.id] = c);
   PH = ph; SCOPE = e.scope || 'WORLD';
   migrateSettings();
@@ -247,7 +247,7 @@ function evCard(x){
   const on = !!S.saved[x.id], t = theme(x);
   return `<article class="ev th-${t}" role="link" tabindex="0" data-open="${esc(x.id)}" aria-label="${esc(x.name)}">
     <div class="ev-img ev-host">${dateBox(x)}${hostMark(x)}</div>
-    <div class="body"><div class="tags">${catTag(x)}${t !== 'mixed' && isShoot(x) ? tagHtml(t) : ''}${x.flyer_local ? `<span class="tag fl">📄 ${x.flyer_is_current ? x.flyer_year + ' flyer' : 'Last year’s flyer'}</span>` : ''}</div>
+    <div class="body"><div class="tags">${catTag(x)}${t !== 'mixed' && isShoot(x) ? tagHtml(t) : ''}${x.flyer_local ? `<span class="tag fl">📄 ${x.flyer_is_current ? x.flyer_year + ' flyer' : 'Last year’s flyer'}</span>` : ''}${resOf(x) ? `<span class="tag res">🏆 ${resOf(x).kind === 'full' ? 'Scores' : 'Results'}</span>` : ''}</div>
       <h3 class="name">${esc(x.name)}</h3>
       <div class="meta">${esc([x.location, x.country_code && x.country_code !== 'AUS' ? x.country : x.state].filter(Boolean).join(' · '))}</div>
       <div class="meta">${isAba(x) ? abaLogo(32, 'org-logo') : ''}${esc([x.discipline, x.org, x.aba_branch && x.aba_branch.split(' – ')[0]].filter(Boolean).join(' · '))}</div>${badges(x, true)}
@@ -593,6 +593,21 @@ function myEntry(x){
       <label for="f_notes">Notes (division, target, camping…)</label><textarea id="f_notes" rows="2">${esc(en.notes || '')}</textarea>
       <button class="btn alt block" type="submit">Save details</button></form>`}</div>`;
 }
+/* ---------- Results (data/results.json, built by sources/build_results.py) ----------
+   Only official published results, each with its source link. "full" = score table we show; "link" = official results page/PDF only. */
+let RES = {};
+const resOf = x => x && isPast(x) ? RES[x.id] : null;
+function resultsBox(x){
+  if (!x || !isPast(x)) return '';
+  const r = RES[x.id];
+  if (!r) return `<section class="panel results-box" id="results"><h2 class="sec">🏆 Results</h2><p class="note">We haven't found published results for this event yet. Clubs often post them on Archer's Diary or their own page${x.source_url ? ` – try the <a href="${esc(x.source_url)}" target="_blank" rel="noopener">event source ↗</a>` : ''}.</p></section>`;
+  const src = `<a class="btn alt block" href="${esc(r.source_url)}" target="_blank" rel="noopener">↗ ${r.kind === 'full' ? 'Full results on' : 'Open results on'} ${esc(r.source_name)}</a>`;
+  if (r.kind !== 'full') return `<section class="panel results-box" id="results"><h2 class="sec">🏆 Results</h2><p>${esc(r.title || 'Official results')} are published by the organiser.</p>${src}</section>`;
+  const n = r.groups.reduce((a, g) => a + g.rows.length, 0);
+  const med = p => p === '1' ? '🥇' : p === '2' ? '🥈' : p === '3' ? '🥉' : '';
+  const grp = (g, i) => `<details class="res-grp"${i < 2 ? ' open' : ''}><summary>${esc(g.division)} <span class="res-n">(${g.rows.length})</span></summary><table class="res-tbl"><caption class="sr-only">${esc(g.division)} results</caption><thead><tr><th scope="col">Place</th><th scope="col">Archer</th><th scope="col" class="num">Score</th></tr></thead><tbody>${g.rows.map(w => `<tr><td class="pl">${med(w.place)}${esc(w.place)}</td><td><b>${esc(w.name)}</b>${w.club ? `<br><small>${esc(w.club)}</small>` : ''}</td><td class="num">${esc(w.score)}</td></tr>`).join('')}</tbody></table></details>`;
+  return `<section class="panel results-box" id="results"><h2 class="sec">🏆 Results</h2><p class="note">${esc(r.title)} · ${n} archer${n === 1 ? '' : 's'} in ${r.groups.length} division${r.groups.length === 1 ? '' : 's'}.${r.note ? ' ' + esc(r.note) : ''} Source: <a href="${esc(r.source_url)}" target="_blank" rel="noopener">${esc(r.source_name)} ↗</a></p>${r.groups.map(grp).join('')}${src}</section>`;
+}
 function vShoot(id){
   const x = BYID[id]; if (!x) return `<div class="wrap"><div class="empty">Event not found.</div></div>`;
   setTitle(x.name);
@@ -621,6 +636,7 @@ function vShoot(id){
    <div class="main">
     ${x.date_note ? `<div class="warn date-note" id="dateNote">⚠ <b>Check the dates:</b> ${esc(x.date_note)}</div>` : ''}
     ${clashBox(x)}
+    ${resultsBox(x)}
     ${flyerCard(x)}
     ${payBox(x)}
     <section class="panel"><h2 class="sec">Event details</h2><dl class="kv">
@@ -657,6 +673,7 @@ function vShoot(id){
   </div>`;
 }
 function bindShoot(id){
+  if (/[?&]r=1/.test(location.hash)) setTimeout(() => { const r = $('#results'); if (r) r.scrollIntoView({block: 'start'}); }, 30);
   const sb = $('#saveBtn'); if (sb) sb.onclick = () => toggleSave(id);
   bindToggles($('#view'));
   const f = $('#entryForm'); if (f) {
@@ -683,7 +700,7 @@ function dayPanel(k, mineDay){
   const d = pd(k), lbl = d.toLocaleDateString('en-AU', {weekday:'long', day:'numeric', month:'long', year:'numeric'}), fol = followed();
   const clubNm = x => (CLUB[x.club_id] || {}).name || folIds(x).map(id => (CLUB[id] || {}).name).filter(Boolean)[0] || x.host || x.org || '';
   const where = x => x.state || (x._intl ? x.country_name || x.country || '' : '');
-  const row = x => { const on = !!S.saved[x.id]; return `<li class="dp-row"><div class="dp-main"><a href="#/shoot/${encodeURIComponent(x.id)}"><b>${esc(x.name)}</b></a><div class="meta">${esc([clubNm(x), x.start_times || (x.end_date && x.end_date !== x.start_date ? range(x) : ''), where(x)].filter(Boolean).join(' · '))}</div>${S.myClubs.some(id => folIds(x).includes(id)) ? '<span class="b myclub">🏠 My club</span>' : '<span class="b watching">👁 Watching</span>'}${clubOnly(x) ? ' <span class="b members">👥 Members only</span>' : ''}</div>${x.info_only ? '' : `<button class="star dp-star" aria-pressed="${on}" aria-label="${on ? 'Remove from' : 'Add to'} my events" data-star="${esc(x.id)}">${on ? '★' : '☆'}</button>`}</li>`; };
+  const row = x => { const on = !!S.saved[x.id]; return `<li class="dp-row"><div class="dp-main"><a href="#/shoot/${encodeURIComponent(x.id)}${isPast(x) ? '?r=1' : ''}"><b>${esc(x.name)}</b></a>${isPast(x) ? ` <a class="b res-lnk" href="#/shoot/${encodeURIComponent(x.id)}?r=1">🏆 ${resOf(x) ? (resOf(x).kind === 'full' ? 'See scores' : 'Results link') : 'Results'}</a>` : ''}<div class="meta">${esc([clubNm(x), x.start_times || (x.end_date && x.end_date !== x.start_date ? range(x) : ''), where(x)].filter(Boolean).join(' · '))}</div>${S.myClubs.some(id => folIds(x).includes(id)) ? '<span class="b myclub">🏠 My club</span>' : '<span class="b watching">👁 Watching</span>'}${clubOnly(x) ? ' <span class="b members">👥 Members only</span>' : ''}</div>${x.info_only ? '' : `<button class="star dp-star" aria-pressed="${on}" aria-label="${on ? 'Remove from' : 'Add to'} my events" data-star="${esc(x.id)}">${on ? '★' : '☆'}</button>`}</li>`; };
   const fs = folOnDay(k).filter(x => !mineDay.some(y => y.id === x.id));
   const homeSt = (CLUB[S.homeClub] || CLUB[fol[0]] || {}).state || (S.states.length === 1 ? S.states[0] : '');
   const stCode = homeSt && (STATES.find(s => s[0] === homeSt || s[1] === homeSt) || [])[0] || '';
@@ -701,6 +718,7 @@ function dayPanel(k, mineDay){
   }
   return h + '</section>';
 }
+let dayMine = {};
 function vCalendar(){
   setTitle('My events');
   const mine = Object.keys(S.saved).map(id => BYID[id]).filter(Boolean).sort((a, b) => (a.start_date || '9999') < (b.start_date || '9999') ? -1 : 1);
@@ -715,13 +733,14 @@ function vCalendar(){
     const allPaid = ev.length && ev.every(x => ST(x.id) === 'paid'), allEnt = ev.length && ev.every(x => ST(x.id) !== 'none');
     const mk = allPaid ? '✓$' : allEnt ? '✓' : '';
     g += `<div class="c ${ev.length ? 'has' : ''} ${t ? 't' : ''} ${CD === k ? 'sel' : ''}" data-day="${k}" role="button" tabindex="0" aria-label="${d} ${MONL[m]}${ev.length ? ': ' + esc(ev.map(x => x.name + ' – ' + ST_TXT[ST(x.id)].replace(/[☐✓$·]/g, '').replace(/\s+/g, ' ').trim()).join(', ')) : ''}${fd ? ` – ${fd} from your clubs` : ''}">${d}${fd ? '<span class="fdot" aria-hidden="true"></span>' : ''}${mk ? `<span class="mk" aria-hidden="true">${mk}</span>` : ''}${ev.length ? `<span class="dot">${ev.length > 1 ? ev.length + ' events' : '●'}</span>` : ''}</div>`; }
+  dayMine = byDay;
   const inMonth = mine.filter(x => x.start_date && (x.start_date.slice(0, 7) === iso(first).slice(0, 7) || (x.end_date || '').slice(0, 7) === iso(first).slice(0, 7)));
   const up = mine.filter(x => !isPast(x)), past = mine.filter(isPast);
   return `${pageHead('My events', 'Your saved events, month by month.', 'target')}<div class="wrap narrow"><a class="btn gold block mcc-quick" href="#/cards">🪪 My membership cards${MCD.list.length ? ` (${MCD.list.length})` : ''}</a><div class="calnav"><button id="pm" aria-label="Previous month">‹</button><b>${MONL[m]} ${y}</b><button id="nm" aria-label="Next month">›</button></div>
   <div class="grid">${g}</div>
   ${CD && CD.slice(0, 7) === iso(first).slice(0, 7) ? dayPanel(CD, byDay[CD] || []) : ''}
   ${clashPairsHtml()}
-  <div class="legend"><span class="b lg-day">■ event day</span><span class="b lg-day">✓ entered</span><span class="b lg-day">✓$ entered + paid</span><span class="b lg-today">□ today</span>${followed().length ? '<span class="b lg-day"><span class="fdot lg" aria-hidden="true"></span> your clubs</span>' : ''}</div><p class="note">Tap any day to see events from your clubs.</p>
+  <div class="legend"><span class="b lg-day">■ event day</span><span class="b lg-day">✓ entered</span><span class="b lg-day">✓$ entered + paid</span><span class="b lg-today">□ today</span>${followed().length ? '<span class="b lg-day"><span class="fdot lg" aria-hidden="true"></span> your clubs</span>' : ''}</div><p class="note">Tap any day to see events from your clubs. Tap a finished day to see the results.</p>
   ${inMonth.length ? `<h2>In ${MONL[m]}</h2>${inMonth.map(evCard).join('')}` : ''}
   <h2>All my upcoming events (${up.length})</h2>
   ${up.length ? up.map(evCard).join('') : `<div class="empty">Nothing saved yet. Tap ☆ on events in <a href="#/browse">Browse</a>.</div>`}
@@ -729,7 +748,7 @@ function vCalendar(){
   ${past.length ? `<h2>Finished (${past.length})</h2>${past.map(evCard).join('')}` : ''}</div>`;
 }
 function bindCalendar(){
-  document.querySelectorAll('.grid [data-day]').forEach(c => { c.onclick = () => { CD = CD === c.dataset.day ? '' : c.dataset.day; render(); const p = $('#dayPanel'); if (p) p.scrollIntoView({block: 'nearest', behavior: 'smooth'}); };
+  document.querySelectorAll('.grid [data-day]').forEach(c => { c.onclick = () => { const k = c.dataset.day; if (k < iso(today())) { const evs = [...(dayMine[k] || []), ...(followed().length ? folOnDay(k) : [])].filter((x, i, a) => a.findIndex(y => y.id === x.id) === i); if (evs.length === 1) { location.hash = '#/shoot/' + encodeURIComponent(evs[0].id) + '?r=1'; return; } } CD = CD === k ? '' : k; render(); const p = $('#dayPanel'); if (p) p.scrollIntoView({block: 'nearest', behavior: 'smooth'}); };
     c.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); c.click(); } }; });
   const dx = $('#dpX'); if (dx) dx.onclick = () => { CD = ''; render(); };
   const df = $('#dpFind'); if (df) df.onclick = () => { Object.assign(BF, {day: df.dataset.day, state: df.dataset.st || '', q: '', disc: '', cat: '', ost: '', club: '', clubId: '', mc: false, scope: 'all', past: false, limit: 60}); };
