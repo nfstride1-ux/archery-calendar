@@ -2214,6 +2214,3192 @@
    "source_name": "NFAA (PDF)",
    "source_url": "https://nfaausa.com/files/the-vegas-shoot-2026-150426164548.pdf",
    "checked": "2026-10-15"
+  },
+  "gosnells-club-champs-2026-target-1": {
+   "kind": "full",
+   "title": "Saturday 720 Round or 900 Round Or Target Club Championships for anyone  8:30am Arrive 9:00am Start",
+   "club_name": "Gosnells Archers Inc",
+   "date": "2026-10-10",
+   "source_name": "Archer's Diary",
+   "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=0c4708f28-29fc-4fb2-ba0c-9a9ee93c674d",
+   "groups": [
+    {
+     "division": "72 Arrow Flight",
+     "rows": [
+      {
+       "name": "Wilcockson, Jade",
+       "club": "Gosnells Archers Inc",
+       "division": "Open Recurve",
+       "score": "697"
+      },
+      {
+       "name": "Fox, Bradley",
+       "club": "Gosnells Archers Inc",
+       "division": "50+ Compound",
+       "score": "625"
+      },
+      {
+       "name": "Arthur, Daniel",
+       "club": "Gosnells Archers Inc",
+       "division": "Open Recurve",
+       "score": "619"
+      },
+      {
+       "name": "Brand, Timothy",
+       "club": "Gosnells Archers Inc",
+       "division": "70+ Compound",
+       "score": "598"
+      },
+      {
+       "name": "vagg, peiter",
+       "club": "Gosnells Archers Inc",
+       "division": "Open Recurve",
+       "score": "554"
+      },
+      {
+       "name": "Arthur, River",
+       "club": "Gosnells Archers Inc",
+       "division": "Under 14 Compound",
+       "score": "517"
+      },
+      {
+       "name": "Arntzen, Damian",
+       "club": "Gosnells Archers Inc",
+       "division": "Open Recurve",
+       "score": "455"
+      },
+      {
+       "name": "Wilcockson, Bohdi",
+       "club": "Gosnells Archers Inc",
+       "division": "Under 14 Compound",
+       "score": "400"
+      }
+     ]
+    },
+    {
+     "division": "90 Arrow Flight",
+     "rows": [
+      {
+       "name": "Wolfe, Daniel",
+       "club": "Gosnells Archers Inc",
+       "division": "Open Compound",
+       "score": "833"
+      },
+      {
+       "name": "Collins, Christopher",
+       "club": "Gosnells Archers Inc",
+       "division": "Open Compound",
+       "score": "797"
+      },
+      {
+       "name": "Wolfe, Lara",
+       "club": "Gosnells Archers Inc",
+       "division": "Under 14 Compound",
+       "score": "795"
+      },
+      {
+       "name": "Brittain, Eve",
+       "club": "Gosnells Archers Inc",
+       "division": "Under 14 Compound",
+       "score": "792"
+      },
+      {
+       "name": "Wolfe, Emma",
+       "club": "Gosnells Archers Inc",
+       "division": "Open Compound",
+       "score": "784"
+      },
+      {
+       "name": "Danby, Tanya",
+       "club": "Gosnells Archers Inc",
+       "division": "50+ Compound",
+       "score": "778"
+      },
+      {
+       "name": "Smith, Matteo",
+       "club": "Gosnells Archers Inc",
+       "division": "Under 14 Compound",
+       "score": "771"
+      },
+      {
+       "name": "Riches, Stephen",
+       "club": "Gosnells Archers Inc",
+       "division": "Open Compound",
+       "score": "760"
+      },
+      {
+       "name": "Wolfe, Khloe",
+       "club": "Gosnells Archers Inc",
+       "division": "Under 14 Compound",
+       "score": "757"
+      },
+      {
+       "name": "Coll, Niav",
+       "club": "Gosnells Archers Inc",
+       "division": "Under 14 Compound",
+       "score": "750"
+      },
+      {
+       "name": "Lenko, Caroline",
+       "club": "Gosnells Archers Inc",
+       "division": "50+ Compound",
+       "score": "731"
+      },
+      {
+       "name": "Russell, Brian",
+       "club": "Gosnells Archers Inc",
+       "division": "70+ Recurve",
+       "score": "727"
+      },
+      {
+       "name": "Powrie, Samuel",
+       "club": "Gosnells Archers Inc",
+       "division": "Under 14 Compound",
+       "score": "716"
+      },
+      {
+       "name": "Bartholomew, Carmen",
+       "club": "Gosnells Archers Inc",
+       "division": "Open Compound",
+       "score": "681"
+      },
+      {
+       "name": "Smith, Immy",
+       "club": "Gosnells Archers Inc",
+       "division": "Under 16 Barebow Recurve",
+       "score": "652"
+      },
+      {
+       "name": "Day, Carol",
+       "club": "Gosnells Archers Inc",
+       "division": "60+ Compound",
+       "score": "645"
+      },
+      {
+       "name": "Nazim, Aaliya",
+       "club": "Gosnells Archers Inc",
+       "division": "Under 16 Recurve",
+       "score": "625"
+      },
+      {
+       "name": "Tuffin, Fern",
+       "club": "Gosnells Archers Inc",
+       "division": "50+ Recurve",
+       "score": "589"
+      },
+      {
+       "name": "Brittain, Deb",
+       "club": "Gosnells Archers Inc",
+       "division": "Open Recurve",
+       "score": "523"
+      },
+      {
+       "name": "Liu, Felicia",
+       "club": "Gosnells Archers Inc",
+       "division": "Under 16 Compound",
+       "score": "151"
+      }
+     ]
+    },
+    {
+     "division": "Club Championships Canberra rounds",
+     "rows": [
+      {
+       "name": "Chapman-Bureny, Dana",
+       "club": "Gosnells Archers Inc",
+       "division": "Open Compound",
+       "score": "866"
+      },
+      {
+       "name": "Wolfe, Logan",
+       "club": "Gosnells Archers Inc",
+       "division": "Under 16 Compound",
+       "score": "855"
+      },
+      {
+       "name": "Engelen-Burney, Tahuri",
+       "club": "Gosnells Archers Inc",
+       "division": "Under 16 Compound",
+       "score": "838"
+      },
+      {
+       "name": "Thompson, Alan",
+       "club": "Gosnells Archers Inc",
+       "division": "70+ Compound",
+       "score": "832"
+      },
+      {
+       "name": "Cherednychok, Bogdan",
+       "club": "Gosnells Archers Inc",
+       "division": "Open Compound",
+       "score": "823"
+      },
+      {
+       "name": "Brand, Joanne",
+       "club": "Gosnells Archers Inc",
+       "division": "60+ Compound",
+       "score": "815"
+      },
+      {
+       "name": "Stride, Nathaniel",
+       "club": "Gosnells Archers Inc",
+       "division": "Open Compound",
+       "score": "813"
+      },
+      {
+       "name": "Stones, Colin",
+       "club": "Gosnells Archers Inc",
+       "division": "70+ Compound",
+       "score": "806"
+      },
+      {
+       "name": "Peberdy, John",
+       "club": "Gosnells Archers Inc",
+       "division": "70+ Compound",
+       "score": "758"
+      },
+      {
+       "name": "Engelen, Cody",
+       "club": "Gosnells Archers Inc",
+       "division": "Open Recurve",
+       "score": "645"
+      },
+      {
+       "name": "Newitt, Peter",
+       "club": "Gosnells Archers Inc",
+       "division": "70+ Barebow Compound",
+       "score": "600"
+      }
+     ]
+    }
+   ],
+   "checked": "2026-10-15",
+   "note": "Scores as published on Archer's Diary, highest first in each round (no placings are listed for club shoots).",
+   "event_id": "gosnells-club-champs-2026-target-1"
+  },
+  "wa-31716": {
+   "kind": "full",
+   "title": "STATE TARGET CHAMPIONSHIPS 2026",
+   "club_name": "Kalamunda Governor Stirling Archers",
+   "date": "2026-10-11",
+   "source_name": "Archer's Diary",
+   "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=009a20618-a5ec-437c-9599-153735a1dafa",
+   "groups": [
+    {
+     "division": "Under 14 Female Compound",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Wolfe, Lara",
+       "club": "Gosnells Archers Inc",
+       "round": "AA 40/1440",
+       "score": "1301"
+      },
+      {
+       "place": "2",
+       "name": "Brittain, Eve",
+       "club": "Gosnells Archers Inc",
+       "round": "AA 40/1440",
+       "score": "1240"
+      },
+      {
+       "place": "3",
+       "name": "Coll, Niav",
+       "club": "Gosnells Archers Inc",
+       "round": "AA 40/1440",
+       "score": "1197"
+      },
+      {
+       "place": "4",
+       "name": "Wolfe, Khloe",
+       "club": "Gosnells Archers Inc",
+       "round": "AA 40/1440",
+       "score": "1195"
+      }
+     ]
+    },
+    {
+     "division": "Under 14 Male Compound",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Smith, Matteo",
+       "club": "Gosnells Archers Inc",
+       "round": "AA 40/1440",
+       "score": "1244"
+      },
+      {
+       "place": "2",
+       "name": "Forward, Jack",
+       "club": "Benara Bowmen Archery Club Inc",
+       "round": "AA 40/1440",
+       "score": "1239"
+      },
+      {
+       "place": "3",
+       "name": "Powrie, Samuel",
+       "club": "Gosnells Archers Inc",
+       "round": "AA 40/1440",
+       "score": "1124"
+      }
+     ]
+    },
+    {
+     "division": "Under 14 Male Recurve",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Symmans, Kobe",
+       "club": "Archers of Greenwood",
+       "round": "AA 40/1440",
+       "score": "1154"
+      }
+     ]
+    },
+    {
+     "division": "Under 16 Female Compound",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Liu, Felicia",
+       "club": "Gosnells Archers Inc",
+       "round": "AA 50/1440",
+       "score": "1353"
+      },
+      {
+       "place": "2",
+       "name": "Bartholomew, Sophie",
+       "club": "Gosnells Archers Inc",
+       "round": "AA 50/1440",
+       "score": "1323"
+      },
+      {
+       "place": "3",
+       "name": "Godwich, Aimee",
+       "club": "Benara Bowmen Archery Club Inc",
+       "round": "AA 50/1440",
+       "score": "1289"
+      },
+      {
+       "place": "4",
+       "name": "Stone, Hayley",
+       "club": "Gosnells Archers Inc",
+       "round": "AA 50/1440",
+       "score": "1271"
+      }
+     ]
+    },
+    {
+     "division": "Under 16 Female Recurve",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Gibbon, Shea",
+       "club": "Yokine Archery Club",
+       "round": "AA 50/1440",
+       "score": "1284"
+      },
+      {
+       "place": "2",
+       "name": "Lockwood, Eloise",
+       "club": "Bowmen of Melville",
+       "round": "AA 50/1440",
+       "score": "1263"
+      },
+      {
+       "place": "3",
+       "name": "Nazim, Aaliya",
+       "club": "Gosnells Archers Inc",
+       "round": "AA 50/1440",
+       "score": "1125"
+      }
+     ]
+    },
+    {
+     "division": "Under 16 Female Barebow Recurve",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Smith, Immy",
+       "club": "Gosnells Archers Inc",
+       "round": "AA 40/1440",
+       "score": "1008"
+      },
+      {
+       "place": "2",
+       "name": "Thurgate, Caitlin",
+       "club": "Kalamunda Governor Stirling Archers",
+       "round": "AA 40/1440",
+       "score": "799"
+      }
+     ]
+    },
+    {
+     "division": "Under 16 Male Compound",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Wolfe, Logan",
+       "club": "Gosnells Archers Inc",
+       "round": "AA 50/1440",
+       "score": "1409"
+      },
+      {
+       "place": "2",
+       "name": "Snook, Joseph",
+       "club": "Northern Archers WA",
+       "round": "AA 50/1440",
+       "score": "1397"
+      },
+      {
+       "place": "3",
+       "name": "Engelen-Burney, Tahuri",
+       "club": "Gosnells Archers Inc",
+       "round": "AA 50/1440",
+       "score": "1389"
+      }
+     ]
+    },
+    {
+     "division": "Under 18 Female Recurve",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Ferdinando, Keira",
+       "club": "Yokine Archery Club",
+       "round": "WA 60/1440",
+       "score": "1158"
+      }
+     ]
+    },
+    {
+     "division": "Under 18 Female Longbow",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Nevin, Brook",
+       "club": "Sunset Coast Archers",
+       "round": "AA 50/1440",
+       "score": "540"
+      }
+     ]
+    },
+    {
+     "division": "Under 18 Male Compound",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Schrape, William",
+       "club": "Kalamunda Governor Stirling Archers",
+       "round": "WA 70/1440",
+       "score": "1361"
+      },
+      {
+       "place": "2",
+       "name": "Norton, Mitchell",
+       "club": "Kalamunda Governor Stirling Archers",
+       "round": "WA 70/1440",
+       "score": "1297"
+      }
+     ]
+    },
+    {
+     "division": "Under 18 Male Barebow Recurve",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Swanepoel, Sebastian",
+       "club": "Sunset Coast Archers",
+       "round": "WA 60/1440",
+       "score": "181"
+      }
+     ]
+    },
+    {
+     "division": "Under 21 Male Compound",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Godwich, Dominik",
+       "club": "Benara Bowmen Archery Club Inc",
+       "round": "WA 90/1440",
+       "score": "1276"
+      },
+      {
+       "place": "2",
+       "name": "Milbanke, Lincoln",
+       "club": "Bunbury Archery Club",
+       "round": "WA 90/1440",
+       "score": "1226"
+      }
+     ]
+    },
+    {
+     "division": "Open Female Compound",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Mason, Deborah",
+       "club": "Bowmen of Melville",
+       "round": "WA 70/1440",
+       "score": "1231"
+      }
+     ]
+    },
+    {
+     "division": "Open Female Recurve",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Sazonov, Charlotte",
+       "club": "Baldivis Archery Club",
+       "round": "WA 70/1440",
+       "score": "1044"
+      },
+      {
+       "place": "2",
+       "name": "Cullen, Samantha",
+       "club": "Yokine Archery Club",
+       "round": "WA 70/1440",
+       "score": "1012"
+      },
+      {
+       "place": "3",
+       "name": "Engelen, Cody",
+       "club": "Gosnells Archers Inc",
+       "round": "WA 70/1440",
+       "score": "957"
+      },
+      {
+       "place": "4",
+       "name": "Liu, Puyue",
+       "club": "Bowmen of Melville",
+       "round": "WA 70/1440",
+       "score": "945"
+      }
+     ]
+    },
+    {
+     "division": "Open Female Longbow",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Tephra, Olive",
+       "club": "Bowmen of Melville",
+       "round": "AA 50/1440",
+       "score": "819"
+      }
+     ]
+    },
+    {
+     "division": "Open Female Barebow Compound",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Jones, Robyn",
+       "club": "Bowmen of Melville",
+       "round": "WA 60/1440",
+       "score": "1003"
+      }
+     ]
+    },
+    {
+     "division": "Open Male Compound",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Chapman-Bureny, Dana",
+       "club": "Gosnells Archers Inc",
+       "round": "WA 90/1440",
+       "score": "1369"
+      },
+      {
+       "place": "2",
+       "name": "Pound, Alan",
+       "club": "Benara Bowmen Archery Club Inc",
+       "round": "WA 90/1440",
+       "score": "1362"
+      },
+      {
+       "place": "3",
+       "name": "Evans, Nate",
+       "club": "Kalamunda Governor Stirling Archers",
+       "round": "WA 90/1440",
+       "score": "1344"
+      },
+      {
+       "place": "4",
+       "name": "Choong, Michael",
+       "club": "Benara Bowmen Archery Club Inc",
+       "round": "WA 90/1440",
+       "score": "1336"
+      },
+      {
+       "place": "5",
+       "name": "Snook, Steven",
+       "club": "Northern Archers WA",
+       "round": "WA 90/1440",
+       "score": "1331"
+      },
+      {
+       "place": "6",
+       "name": "Wolfe, Daniel",
+       "club": "Gosnells Archers Inc",
+       "round": "WA 90/1440",
+       "score": "1270"
+      },
+      {
+       "place": "7",
+       "name": "Anderton, Roark",
+       "club": "Amateur Archery Centre",
+       "round": "WA 90/1440",
+       "score": "1252"
+      },
+      {
+       "place": "8",
+       "name": "Brown, Dylan",
+       "club": "Whiteman Park Archers",
+       "round": "WA 90/1440",
+       "score": "1234"
+      },
+      {
+       "place": "9",
+       "name": "Collins, Christopher",
+       "club": "Gosnells Archers Inc",
+       "round": "WA 90/1440",
+       "score": "1221"
+      },
+      {
+       "place": "10",
+       "name": "Andersen, John",
+       "club": "Gosnells Archers Inc",
+       "round": "WA 90/1440",
+       "score": "1117"
+      },
+      {
+       "place": "11",
+       "name": "Stride, Nathaniel",
+       "club": "Gosnells Archers Inc",
+       "round": "WA 90/1440",
+       "score": "1060"
+      }
+     ]
+    },
+    {
+     "division": "Open Male Recurve",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Gibbon, Brandon",
+       "club": "Yokine Archery Club",
+       "round": "WA 90/1440",
+       "score": "1198"
+      },
+      {
+       "place": "2",
+       "name": "Garcia, Jeremy",
+       "club": "Benara Bowmen Archery Club Inc",
+       "round": "WA 90/1440",
+       "score": "1179"
+      },
+      {
+       "place": "3",
+       "name": "Craggs, David",
+       "club": "Benara Bowmen Archery Club Inc",
+       "round": "WA 90/1440",
+       "score": "1051"
+      },
+      {
+       "place": "4",
+       "name": "Ranieri, Matthew",
+       "club": "Benara Bowmen Archery Club Inc",
+       "round": "WA 90/1440",
+       "score": "1008"
+      },
+      {
+       "place": "5",
+       "name": "Schrape, Andrew",
+       "club": "Kalamunda Governor Stirling Archers",
+       "round": "WA 90/1440",
+       "score": "963"
+      },
+      {
+       "place": "6",
+       "name": "Garland, Hamish",
+       "club": "Yokine Archery Club",
+       "round": "WA 90/1440",
+       "score": "949"
+      }
+     ]
+    },
+    {
+     "division": "Open Male Longbow",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Wilson, Andy",
+       "club": "Bowmen of Melville",
+       "round": "WA 60/1440",
+       "score": "901"
+      },
+      {
+       "place": "2",
+       "name": "Bartholomew, David",
+       "club": "Gosnells Archers Inc",
+       "round": "WA 60/1440",
+       "score": "698"
+      },
+      {
+       "place": "3",
+       "name": "Glazier, Kieran",
+       "club": "Bowmen of Melville",
+       "round": "WA 60/1440",
+       "score": "336"
+      }
+     ]
+    },
+    {
+     "division": "Open Male Barebow Recurve",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Petty, Daniel",
+       "club": "Bunbury Archery Club",
+       "round": "WA 70/1440",
+       "score": "645"
+      }
+     ]
+    },
+    {
+     "division": "50+ Female Compound",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Buttery, Eve",
+       "club": "Baldivis Archery Club",
+       "round": "WA 60/1440",
+       "score": "1296"
+      },
+      {
+       "place": "2",
+       "name": "Danby, Tanya",
+       "club": "Gosnells Archers Inc",
+       "round": "WA 60/1440",
+       "score": "1183"
+      }
+     ]
+    },
+    {
+     "division": "50+ Male Compound",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Bowdidge, Peter",
+       "club": "Bunbury Archery Club",
+       "round": "WA 70/1440",
+       "score": "1327"
+      },
+      {
+       "place": "2",
+       "name": "Godwich, Peter",
+       "club": "Benara Bowmen Archery Club Inc",
+       "round": "WA 70/1440",
+       "score": "1296"
+      }
+     ]
+    },
+    {
+     "division": "50+ Male Recurve",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Symmans, Damian",
+       "club": "Archers of Greenwood",
+       "round": "WA 70/1440",
+       "score": "1163"
+      },
+      {
+       "place": "2",
+       "name": "Yau, Valentine",
+       "club": "Baldivis Archery Club",
+       "round": "WA 70/1440",
+       "score": "1118"
+      }
+     ]
+    },
+    {
+     "division": "60+ Female Recurve",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Cooke, Niamh",
+       "club": "Baldivis Archery Club",
+       "round": "AA 50/1440",
+       "score": "1081"
+      }
+     ]
+    },
+    {
+     "division": "60+ Female Longbow",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Frankel, Karen",
+       "club": "Kalamunda Governor Stirling Archers",
+       "round": "AA 50/1440",
+       "score": "993"
+      },
+      {
+       "place": "2",
+       "name": "Sutherland, Ann",
+       "club": "Sunset Coast Archers",
+       "round": "AA 50/1440",
+       "score": "748"
+      }
+     ]
+    },
+    {
+     "division": "60+ Male Compound",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Lamperd, Edward",
+       "club": "Kalamunda Governor Stirling Archers",
+       "round": "WA 60/1440",
+       "score": "1356"
+      },
+      {
+       "place": "2",
+       "name": "Palandri, John",
+       "club": "Amateur Archery Centre",
+       "round": "WA 60/1440",
+       "score": "1266"
+      },
+      {
+       "place": "3",
+       "name": "King, Keith",
+       "club": "Bowmen of Melville",
+       "round": "WA 60/1440",
+       "score": "1161"
+      }
+     ]
+    },
+    {
+     "division": "60+ Male Recurve",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Knapp, Mike",
+       "club": "Baldivis Archery Club",
+       "round": "WA 60/1440",
+       "score": "1053"
+      }
+     ]
+    },
+    {
+     "division": "60+ Male Longbow",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Merdith, Nick",
+       "club": "Sunset Coast Archers",
+       "round": "AA 50/1440",
+       "score": "764"
+      }
+     ]
+    },
+    {
+     "division": "70+ Female Longbow",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Harris, Sally",
+       "club": "Kalamunda Governor Stirling Archers",
+       "round": "AA 50/1440",
+       "score": "764"
+      }
+     ]
+    },
+    {
+     "division": "70+ Male Compound",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Markham, Keith",
+       "club": "Amateur Archery Centre",
+       "round": "WA 60/1440",
+       "score": "1286"
+      },
+      {
+       "place": "2",
+       "name": "Crabtree, David",
+       "club": "Benara Bowmen Archery Club Inc",
+       "round": "WA 60/1440",
+       "score": "1282"
+      }
+     ]
+    },
+    {
+     "division": "70+ Male Recurve",
+     "rows": [
+      {
+       "place": "1",
+       "name": "McCann, Donald",
+       "club": "Bowmen of Melville",
+       "round": "WA 60/1440",
+       "score": "1138"
+      },
+      {
+       "place": "2",
+       "name": "Hutchins, Graham",
+       "club": "Bunbury Archery Club",
+       "round": "WA 60/1440",
+       "score": "879"
+      }
+     ]
+    },
+    {
+     "division": "70+ Male Longbow",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Bass, Alfie",
+       "club": "Baldivis Archery Club",
+       "round": "AA 50/1440",
+       "score": "1115"
+      },
+      {
+       "place": "2",
+       "name": "Borchert, Harald",
+       "club": "Kalamunda Governor Stirling Archers",
+       "round": "AA 50/1440",
+       "score": "910"
+      }
+     ]
+    },
+    {
+     "division": "70+ Male Barebow Compound",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Newitt, Peter",
+       "club": "Gosnells Archers Inc",
+       "round": "WA 60/1440",
+       "score": "799"
+      }
+     ]
+    },
+    {
+     "division": "70+ Male Barebow Recurve",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Burn, Bill (William)",
+       "club": "Gingin Shire Archers",
+       "round": "WA 60/1440",
+       "score": "320"
+      }
+     ]
+    },
+    {
+     "division": "70+ Male Crossbow",
+     "rows": [
+      {
+       "place": "1",
+       "name": "Turner, John W",
+       "club": "Kalamunda Governor Stirling Archers",
+       "round": "Australian 960",
+       "score": "594"
+      }
+     ]
+    }
+   ],
+   "checked": "2026-10-15",
+   "note": "Placings and scores as published on Archer's Diary.",
+   "event_id": "wa-31716"
+  },
+  "awa-2026-youth-workshop-1": {
+   "kind": "link",
+   "title": "QRE 1/2/26",
+   "source_name": "Archer's Diary",
+   "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=0b3a751b0-1cab-4487-aa01-b859e58abdd5",
+   "checked": "2026-10-15"
+  },
+  "awa-2026-03-08-qre-field": {
+   "kind": "link",
+   "title": "AWA Field QRE",
+   "source_name": "Archer's Diary",
+   "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=0c8dd8bc8-cf6e-4ace-ab6b-c0b159ff0c21",
+   "checked": "2026-10-15"
+  },
+  "awa-2026-03-15-qre-field": {
+   "kind": "link",
+   "title": "AWA Field QRE",
+   "source_name": "Archer's Diary",
+   "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=00305a992-214c-41ec-9112-e9875d437ee8",
+   "checked": "2026-10-15"
+  },
+  "awa-benara-matchplay-2026": {
+   "kind": "link",
+   "title": "BENARA BOWMEN MATCHPLAY CHALLENGE 2026",
+   "source_name": "Archer's Diary",
+   "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=07f88844f-f611-4ee1-b0d7-bc0dae8c619b",
+   "checked": "2026-10-15"
+  },
+  "awa-2026-04-19-qre-field": {
+   "kind": "link",
+   "title": "AWA Field QRE",
+   "source_name": "Archer's Diary",
+   "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=080f5c986-307d-462b-9055-65ae950acbeb",
+   "checked": "2026-10-15"
+  },
+  "wa-31324": {
+   "kind": "link",
+   "title": "2026 AWA State Field",
+   "source_name": "Archer's Diary",
+   "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=04ce678fc-1af9-4a74-bddc-14853c04a00b",
+   "checked": "2026-10-15"
+  },
+  "awa-2026-05-31-marian-newitt-memorial-shoot": {
+   "kind": "link",
+   "title": "Marian Newitt Memorial",
+   "source_name": "Archer's Diary",
+   "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=0da62412e-f189-4b60-8f27-cf89720c1e7c",
+   "checked": "2026-10-15"
+  },
+  "wa-31454": {
+   "kind": "link",
+   "title": "Yokine QRE",
+   "source_name": "Archer's Diary",
+   "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=0484e2807-22aa-4430-86b9-26cd692a3095",
+   "checked": "2026-10-15"
+  },
+  "wa-31455": {
+   "kind": "link",
+   "title": "Yokine QRE",
+   "source_name": "Archer's Diary",
+   "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=0354c52eb-3d89-47f4-9c26-a01b95669513",
+   "checked": "2026-10-15"
+  },
+  "wa-31456": {
+   "kind": "link",
+   "title": "Yokine QRE",
+   "source_name": "Archer's Diary",
+   "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=0e89162ef-d5ff-4e64-9865-5409b98e42d2",
+   "checked": "2026-10-15"
+  },
+  "wa-31457": {
+   "kind": "link",
+   "title": "Yokine QRE",
+   "source_name": "Archer's Diary",
+   "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=01c94903b-1622-4db0-85aa-addcb41cbde8",
+   "checked": "2026-10-15"
+  },
+  "awa-2026-06-28-bom-junior-tournament": {
+   "kind": "link",
+   "title": "Junior Tournament 2026",
+   "source_name": "Archer's Diary",
+   "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=01cfae271-6a85-412a-a178-9f5c2e8e0d70",
+   "checked": "2026-10-15"
+  },
+  "wa-31458": {
+   "kind": "link",
+   "title": "Yokine QRE",
+   "source_name": "Archer's Diary",
+   "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=03b1cfa59-b478-4396-ba71-0d508c0f168e",
+   "checked": "2026-10-15"
+  },
+  "wa-31459": {
+   "kind": "link",
+   "title": "Yokine QRE",
+   "source_name": "Archer's Diary",
+   "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=0035fbd5a-3be6-4ca8-b84f-ca1dc9c3430a",
+   "checked": "2026-10-15"
+  },
+  "wa-31460": {
+   "kind": "link",
+   "title": "Yokine QRE",
+   "source_name": "Archer's Diary",
+   "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=0880fc4df-203f-498c-a4ac-67c0bc72c5cb",
+   "checked": "2026-10-15"
+  },
+  "wa-31461": {
+   "kind": "link",
+   "title": "Yokine QRE",
+   "source_name": "Archer's Diary",
+   "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=0b14a7c44-321c-49d3-9472-9fbb7edd389c",
+   "checked": "2026-10-15"
+  },
+  "awa-2026-09-19-qre-field-19-09": {
+   "kind": "link",
+   "title": "AWA Field QRE",
+   "source_name": "Archer's Diary",
+   "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=033c9ec93-4dc0-4925-9754-0ecb2a38b04e",
+   "checked": "2026-10-15"
+  },
+  "awa-clout-2026": {
+   "kind": "link",
+   "title": "Archery WA State Clout 2026",
+   "source_name": "Archer's Diary",
+   "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=0afa6dbf5-4a6f-4d73-aded-983722d787b7",
+   "checked": "2026-10-15"
   }
+ },
+ "club_shoots": {
+  "2026-10-10": [
+   {
+    "kind": "full",
+    "title": "Club Shoot 10/10/26",
+    "club_name": "Amateur Archery Centre",
+    "date": "2026-10-10",
+    "source_name": "Archer's Diary",
+    "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=0859c262a-757e-4c1d-b6ec-5bba11f6c672",
+    "groups": [
+     {
+      "division": "Geelong",
+      "rows": [
+       {
+        "name": "Wood, Se Hoon",
+        "club": "Amateur Archery Centre",
+        "division": "Open Recurve",
+        "score": "805"
+       },
+       {
+        "name": "Thomas, Eugene",
+        "club": "Amateur Archery Centre",
+        "division": "70+ Compound",
+        "score": "787"
+       },
+       {
+        "name": "Wakefield, Derek",
+        "club": "Amateur Archery Centre",
+        "division": "60+ Recurve",
+        "score": "760"
+       },
+       {
+        "name": "Connell, Elizabeth",
+        "club": "Amateur Archery Centre",
+        "division": "60+ Recurve",
+        "score": "757"
+       },
+       {
+        "name": "Jacka, Craig",
+        "club": "Amateur Archery Centre",
+        "division": "60+ Recurve",
+        "score": "706"
+       },
+       {
+        "name": "Gallizzi, Adam",
+        "club": "Amateur Archery Centre",
+        "division": "Open Recurve",
+        "score": "646"
+       },
+       {
+        "name": "Atkinson, Jan",
+        "club": "Amateur Archery Centre",
+        "division": "70+ Recurve",
+        "score": "600"
+       },
+       {
+        "name": "Anderson, Alan",
+        "club": "Amateur Archery Centre",
+        "division": "70+ Barebow Recurve",
+        "score": "571"
+       }
+      ]
+     },
+     {
+      "division": "Newcastle",
+      "rows": [
+       {
+        "name": "Rodrigues, Gary",
+        "club": "Amateur Archery Centre",
+        "division": "Open Recurve",
+        "score": "752"
+       }
+      ]
+     },
+     {
+      "division": "Drake",
+      "rows": [
+       {
+        "name": "Anderton, Roark",
+        "club": "Amateur Archery Centre",
+        "division": "Open Compound",
+        "score": "868"
+       },
+       {
+        "name": "Anderton, Roy",
+        "club": "Amateur Archery Centre",
+        "division": "70+ Compound",
+        "score": "830"
+       },
+       {
+        "name": "Hickson, Roy",
+        "club": "Amateur Archery Centre",
+        "division": "70+ Compound",
+        "score": "786"
+       },
+       {
+        "name": "Ogle, Lucia",
+        "club": "Amateur Archery Centre",
+        "division": "50+ Recurve",
+        "score": "685"
+       }
+      ]
+     }
+    ],
+    "checked": "2026-10-15",
+    "note": "Scores as published on Archer's Diary, highest first in each round (no placings are listed for club shoots)."
+   },
+   {
+    "kind": "full",
+    "title": "AOG Club Shoot 10 Oct 2026",
+    "club_name": "Archers of Greenwood",
+    "date": "2026-10-10",
+    "source_name": "Archer's Diary",
+    "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=05e914a64-ee3c-4ed7-9f9f-90e0e1fc0d5d",
+    "groups": [
+     {
+      "division": "Club Shoot WA 50/720 (80cm Face)",
+      "rows": [
+       {
+        "name": "Horzsa, Andras",
+        "club": "Archers of Greenwood",
+        "division": "Open Compound",
+        "score": "582"
+       }
+      ]
+     },
+     {
+      "division": "Club Shoot 50/720 (122cm face)",
+      "rows": [
+       {
+        "name": "Van Berkel, Lucas",
+        "club": "Archers of Greenwood",
+        "division": "Open Recurve",
+        "score": "588"
+       },
+       {
+        "name": "Symmans, Kobe",
+        "club": "Archers of Greenwood",
+        "division": "Under 14 Recurve",
+        "score": "524"
+       }
+      ]
+     },
+     {
+      "division": "Club Shoot 40/720",
+      "rows": [
+       {
+        "name": "Pascoe, Aaron",
+        "club": "Sunset Coast Archers",
+        "division": "50+ Recurve",
+        "score": "632"
+       },
+       {
+        "name": "Dwyer, Kris",
+        "club": "Archers of Greenwood",
+        "division": "Open Recurve",
+        "score": "631"
+       },
+       {
+        "name": "Smith, Ray",
+        "club": "Archers of Greenwood",
+        "division": "60+ Recurve",
+        "score": "566"
+       },
+       {
+        "name": "Davey, Edward",
+        "club": "Archers of Greenwood",
+        "division": "50+ Compound",
+        "score": "285"
+       }
+      ]
+     },
+     {
+      "division": "Club Shoot 30/720",
+      "rows": [
+       {
+        "name": "Atkinson, Nigel",
+        "club": "Archers of Greenwood",
+        "division": "60+ Recurve",
+        "score": "618"
+       },
+       {
+        "name": "Mclean, Duncan",
+        "club": "Archers of Greenwood",
+        "division": "60+ Recurve",
+        "score": "612"
+       },
+       {
+        "name": "Van Berkel, Theodore",
+        "club": "Archers of Greenwood",
+        "division": "Under 18 Recurve",
+        "score": "587"
+       },
+       {
+        "name": "Fitzmaurice, Kevin",
+        "club": "Archers of Greenwood",
+        "division": "60+ Recurve",
+        "score": "586"
+       },
+       {
+        "name": "barry, Kat",
+        "club": "Archers of Greenwood",
+        "division": "Open Recurve",
+        "score": "580"
+       }
+      ]
+     },
+     {
+      "division": "Club Shoot 20/720",
+      "rows": [
+       {
+        "name": "Fitzmaurice, Andrew",
+        "club": "Archers of Greenwood",
+        "division": "Under 14 Recurve",
+        "score": "308"
+       },
+       {
+        "name": "Fitzmaurice, Sonya",
+        "club": "Archers of Greenwood",
+        "division": "50+ Recurve",
+        "score": "244"
+       },
+       {
+        "name": "Fitzmaurice, Matthew",
+        "club": "Archers of Greenwood",
+        "division": "Under 14 Recurve",
+        "score": "160"
+       }
+      ]
+     }
+    ],
+    "checked": "2026-10-15",
+    "note": "Scores as published on Archer's Diary, highest first in each round (no placings are listed for club shoots)."
+   },
+   {
+    "kind": "full",
+    "title": "BAC Saturday 10/10/26",
+    "club_name": "Baldivis Archery Club",
+    "date": "2026-10-10",
+    "source_name": "Archer's Diary",
+    "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=084106a7f-aef3-45c7-b394-db719aaa6cef",
+    "groups": [
+     {
+      "division": "Benara",
+      "rows": [
+       {
+        "name": "Knapp, Mike",
+        "club": "Baldivis Archery Club",
+        "division": "60+ Recurve",
+        "score": "382"
+       }
+      ]
+     },
+     {
+      "division": "Grange",
+      "rows": [
+       {
+        "name": "Norris, Jon",
+        "club": "Baldivis Archery Club",
+        "division": "Open Compound",
+        "score": "788"
+       },
+       {
+        "name": "Yau, Valentine",
+        "club": "Baldivis Archery Club",
+        "division": "50+ Recurve",
+        "score": "752"
+       }
+      ]
+     },
+     {
+      "division": "Melbourne",
+      "rows": [
+       {
+        "name": "Tee, Stephen",
+        "club": "Baldivis Archery Club",
+        "division": "60+ Compound",
+        "score": "400"
+       }
+      ]
+     },
+     {
+      "division": "Darwin",
+      "rows": [
+       {
+        "name": "Birch, Ken",
+        "club": "Baldivis Archery Club",
+        "division": "70+ Recurve",
+        "score": "757"
+       },
+       {
+        "name": "Duthie, Alvin",
+        "club": "Baldivis Archery Club",
+        "division": "70+ Recurve",
+        "score": "730"
+       }
+      ]
+     },
+     {
+      "division": "Geelong",
+      "rows": [
+       {
+        "name": "Norris, Noah",
+        "club": "Baldivis Archery Club",
+        "division": "Under 18 Recurve",
+        "score": "505"
+       },
+       {
+        "name": "Norris, Chloe",
+        "club": "Baldivis Archery Club",
+        "division": "Under 16 Recurve",
+        "score": "468"
+       }
+      ]
+     }
+    ],
+    "checked": "2026-10-15",
+    "note": "Scores as published on Archer's Diary, highest first in each round (no placings are listed for club shoots)."
+   },
+   {
+    "kind": "full",
+    "title": "Benara Bowmen 90 Arrows",
+    "club_name": "Benara Bowmen Archery Club Inc",
+    "date": "2026-10-10",
+    "source_name": "Archer's Diary",
+    "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=083e6050f-8e7a-4100-bfa6-7bbdae95341c",
+    "groups": [
+     {
+      "division": "Benara Club Round 90 Arrows",
+      "rows": [
+       {
+        "place": "2",
+        "name": "Owens, Aaron",
+        "club": "Benara Bowmen Archery Club Inc",
+        "round": "Darwin",
+        "score": "640"
+       },
+       {
+        "place": "3",
+        "name": "Burrell, Cassandra",
+        "club": "Benara Bowmen Archery Club Inc",
+        "round": "WA 60/900 (Canberra)",
+        "score": "257"
+       }
+      ]
+     }
+    ],
+    "checked": "2026-10-15",
+    "note": "Placings and scores as published on Archer's Diary."
+   },
+   {
+    "kind": "full",
+    "title": "96 Arrows - Mini WA90, Mini WA70, Mini WA60, Mini WA50, Mini WA40, WA50/720, Geelong, Newcastle",
+    "club_name": "Bowmen of Melville",
+    "date": "2026-10-10",
+    "source_name": "Archer's Diary",
+    "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=01c2dd56e-2693-42e0-93bf-d3d37b060ae8",
+    "groups": [
+     {
+      "division": "Open Male Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Xu, Roy",
+        "club": "Bowmen of Melville",
+        "round": "Geelong",
+        "score": "664"
+       }
+      ]
+     },
+     {
+      "division": "60+ Male Compound",
+      "rows": [
+       {
+        "place": "1",
+        "name": "King, Keith",
+        "club": "Bowmen of Melville",
+        "round": "Geelong",
+        "score": "811"
+       }
+      ]
+     },
+     {
+      "division": "70+ Male Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Miller, Darryl",
+        "club": "Bowmen of Melville",
+        "round": "Geelong",
+        "score": "700"
+       }
+      ]
+     },
+     {
+      "division": "Open Male Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Dunsire, John",
+        "club": "Bowmen of Melville",
+        "round": "Mini WA40/96",
+        "score": "844"
+       }
+      ]
+     },
+     {
+      "division": "60+ Male Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Jackson, Brent",
+        "club": "Bowmen of Melville",
+        "round": "Mini WA40/96",
+        "score": "747"
+       }
+      ]
+     },
+     {
+      "division": "60+ Male Longbow",
+      "rows": [
+       {
+        "place": "1",
+        "name": "MacCulloch, Ross",
+        "club": "Bowmen of Melville",
+        "round": "Mini WA40/96",
+        "score": "595"
+       }
+      ]
+     },
+     {
+      "division": "70+ Male Longbow",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Back, Brian",
+        "club": "Bowmen of Melville",
+        "round": "Mini WA40/96",
+        "score": "475"
+       },
+       {
+        "place": "2",
+        "name": "Egan, Robert",
+        "club": "Bowmen of Melville",
+        "round": "Mini WA40/96",
+        "score": "473"
+       }
+      ]
+     },
+     {
+      "division": "50+ Male Compound",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Lockwood, Andrew",
+        "club": "Bowmen of Melville",
+        "round": "Mini WA60/96",
+        "score": "869"
+       }
+      ]
+     },
+     {
+      "division": "60+ Male Compound",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Brown, Adam",
+        "club": "Bowmen of Melville",
+        "round": "Mini WA60/96",
+        "score": "893"
+       }
+      ]
+     },
+     {
+      "division": "60+ Male Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Gibson, Chester",
+        "club": "Bowmen of Melville",
+        "round": "Mini WA60/96",
+        "score": "835"
+       }
+      ]
+     },
+     {
+      "division": "70+ Male Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "McCann, Donald",
+        "club": "Bowmen of Melville",
+        "round": "Mini WA60/96",
+        "score": "359"
+       }
+      ]
+     },
+     {
+      "division": "Open Male Longbow",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Digby, Preston",
+        "club": "Bowmen of Melville",
+        "round": "Newcastle",
+        "score": "846"
+       },
+       {
+        "place": "2",
+        "name": "Hector, Patrick",
+        "club": "Bowmen of Melville",
+        "round": "Newcastle",
+        "score": "279"
+       }
+      ]
+     },
+     {
+      "division": "Open Male Barebow Compound",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Manihera, Darren",
+        "club": "Bowmen of Melville",
+        "round": "Newcastle",
+        "score": "801"
+       }
+      ]
+     },
+     {
+      "division": "50+ Male Compound",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Baldwin, Adam",
+        "club": "Bowmen of Melville",
+        "round": "Newcastle",
+        "score": "884"
+       }
+      ]
+     },
+     {
+      "division": "50+ Male Longbow",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Jones, Ricton",
+        "club": "Bowmen of Melville",
+        "round": "Newcastle",
+        "score": "764"
+       }
+      ]
+     },
+     {
+      "division": "50+ Male Barebow Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Schwindt, Pedro",
+        "club": "Bowmen of Melville",
+        "round": "Newcastle",
+        "score": "801"
+       }
+      ]
+     },
+     {
+      "division": "60+ Male Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Henderson, Philip",
+        "club": "Bowmen of Melville",
+        "round": "Newcastle",
+        "score": "806"
+       }
+      ]
+     },
+     {
+      "division": "60+ Male Barebow Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Wilkinson, Mark",
+        "club": "Bowmen of Melville",
+        "round": "Newcastle",
+        "score": "852"
+       }
+      ]
+     },
+     {
+      "division": "Under 16 Female Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Lockwood, Eloise",
+        "club": "Bowmen of Melville",
+        "round": "WA 50/720",
+        "score": "509"
+       }
+      ]
+     }
+    ],
+    "checked": "2026-10-15",
+    "note": "Placings and scores as published on Archer's Diary."
+   },
+   {
+    "kind": "full",
+    "title": "Club Shoot 10-10-26",
+    "club_name": "Gingin Shire Archers",
+    "date": "2026-10-10",
+    "source_name": "Archer's Diary",
+    "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=075b5c5a7-dfe4-4630-94d2-f0257b35fc93",
+    "groups": [
+     {
+      "division": "Geelong",
+      "rows": [
+       {
+        "name": "Novak, Rachelle",
+        "club": "Gingin Shire Archers",
+        "division": "50+ Compound",
+        "score": "862"
+       },
+       {
+        "name": "Meertens, Brent",
+        "club": "Gingin Shire Archers",
+        "division": "60+ Compound",
+        "score": "799"
+       }
+      ]
+     }
+    ],
+    "checked": "2026-10-15",
+    "note": "Scores as published on Archer's Diary, highest first in each round (no placings are listed for club shoots)."
+   },
+   {
+    "kind": "full",
+    "title": "Saturday 720 Round or 900 Round Or Target Club Championships for anyone  8:30am Arrive 9:00am Start",
+    "club_name": "Gosnells Archers Inc",
+    "date": "2026-10-10",
+    "source_name": "Archer's Diary",
+    "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=0c4708f28-29fc-4fb2-ba0c-9a9ee93c674d",
+    "groups": [
+     {
+      "division": "72 Arrow Flight",
+      "rows": [
+       {
+        "name": "Wilcockson, Jade",
+        "club": "Gosnells Archers Inc",
+        "division": "Open Recurve",
+        "score": "697"
+       },
+       {
+        "name": "Fox, Bradley",
+        "club": "Gosnells Archers Inc",
+        "division": "50+ Compound",
+        "score": "625"
+       },
+       {
+        "name": "Arthur, Daniel",
+        "club": "Gosnells Archers Inc",
+        "division": "Open Recurve",
+        "score": "619"
+       },
+       {
+        "name": "Brand, Timothy",
+        "club": "Gosnells Archers Inc",
+        "division": "70+ Compound",
+        "score": "598"
+       },
+       {
+        "name": "vagg, peiter",
+        "club": "Gosnells Archers Inc",
+        "division": "Open Recurve",
+        "score": "554"
+       },
+       {
+        "name": "Arthur, River",
+        "club": "Gosnells Archers Inc",
+        "division": "Under 14 Compound",
+        "score": "517"
+       },
+       {
+        "name": "Arntzen, Damian",
+        "club": "Gosnells Archers Inc",
+        "division": "Open Recurve",
+        "score": "455"
+       },
+       {
+        "name": "Wilcockson, Bohdi",
+        "club": "Gosnells Archers Inc",
+        "division": "Under 14 Compound",
+        "score": "400"
+       }
+      ]
+     },
+     {
+      "division": "90 Arrow Flight",
+      "rows": [
+       {
+        "name": "Wolfe, Daniel",
+        "club": "Gosnells Archers Inc",
+        "division": "Open Compound",
+        "score": "833"
+       },
+       {
+        "name": "Collins, Christopher",
+        "club": "Gosnells Archers Inc",
+        "division": "Open Compound",
+        "score": "797"
+       },
+       {
+        "name": "Wolfe, Lara",
+        "club": "Gosnells Archers Inc",
+        "division": "Under 14 Compound",
+        "score": "795"
+       },
+       {
+        "name": "Brittain, Eve",
+        "club": "Gosnells Archers Inc",
+        "division": "Under 14 Compound",
+        "score": "792"
+       },
+       {
+        "name": "Wolfe, Emma",
+        "club": "Gosnells Archers Inc",
+        "division": "Open Compound",
+        "score": "784"
+       },
+       {
+        "name": "Danby, Tanya",
+        "club": "Gosnells Archers Inc",
+        "division": "50+ Compound",
+        "score": "778"
+       },
+       {
+        "name": "Smith, Matteo",
+        "club": "Gosnells Archers Inc",
+        "division": "Under 14 Compound",
+        "score": "771"
+       },
+       {
+        "name": "Riches, Stephen",
+        "club": "Gosnells Archers Inc",
+        "division": "Open Compound",
+        "score": "760"
+       },
+       {
+        "name": "Wolfe, Khloe",
+        "club": "Gosnells Archers Inc",
+        "division": "Under 14 Compound",
+        "score": "757"
+       },
+       {
+        "name": "Coll, Niav",
+        "club": "Gosnells Archers Inc",
+        "division": "Under 14 Compound",
+        "score": "750"
+       },
+       {
+        "name": "Lenko, Caroline",
+        "club": "Gosnells Archers Inc",
+        "division": "50+ Compound",
+        "score": "731"
+       },
+       {
+        "name": "Russell, Brian",
+        "club": "Gosnells Archers Inc",
+        "division": "70+ Recurve",
+        "score": "727"
+       },
+       {
+        "name": "Powrie, Samuel",
+        "club": "Gosnells Archers Inc",
+        "division": "Under 14 Compound",
+        "score": "716"
+       },
+       {
+        "name": "Bartholomew, Carmen",
+        "club": "Gosnells Archers Inc",
+        "division": "Open Compound",
+        "score": "681"
+       },
+       {
+        "name": "Smith, Immy",
+        "club": "Gosnells Archers Inc",
+        "division": "Under 16 Barebow Recurve",
+        "score": "652"
+       },
+       {
+        "name": "Day, Carol",
+        "club": "Gosnells Archers Inc",
+        "division": "60+ Compound",
+        "score": "645"
+       },
+       {
+        "name": "Nazim, Aaliya",
+        "club": "Gosnells Archers Inc",
+        "division": "Under 16 Recurve",
+        "score": "625"
+       },
+       {
+        "name": "Tuffin, Fern",
+        "club": "Gosnells Archers Inc",
+        "division": "50+ Recurve",
+        "score": "589"
+       },
+       {
+        "name": "Brittain, Deb",
+        "club": "Gosnells Archers Inc",
+        "division": "Open Recurve",
+        "score": "523"
+       },
+       {
+        "name": "Liu, Felicia",
+        "club": "Gosnells Archers Inc",
+        "division": "Under 16 Compound",
+        "score": "151"
+       }
+      ]
+     },
+     {
+      "division": "Club Championships Canberra rounds",
+      "rows": [
+       {
+        "name": "Chapman-Bureny, Dana",
+        "club": "Gosnells Archers Inc",
+        "division": "Open Compound",
+        "score": "866"
+       },
+       {
+        "name": "Wolfe, Logan",
+        "club": "Gosnells Archers Inc",
+        "division": "Under 16 Compound",
+        "score": "855"
+       },
+       {
+        "name": "Engelen-Burney, Tahuri",
+        "club": "Gosnells Archers Inc",
+        "division": "Under 16 Compound",
+        "score": "838"
+       },
+       {
+        "name": "Thompson, Alan",
+        "club": "Gosnells Archers Inc",
+        "division": "70+ Compound",
+        "score": "832"
+       },
+       {
+        "name": "Cherednychok, Bogdan",
+        "club": "Gosnells Archers Inc",
+        "division": "Open Compound",
+        "score": "823"
+       },
+       {
+        "name": "Brand, Joanne",
+        "club": "Gosnells Archers Inc",
+        "division": "60+ Compound",
+        "score": "815"
+       },
+       {
+        "name": "Stride, Nathaniel",
+        "club": "Gosnells Archers Inc",
+        "division": "Open Compound",
+        "score": "813"
+       },
+       {
+        "name": "Stones, Colin",
+        "club": "Gosnells Archers Inc",
+        "division": "70+ Compound",
+        "score": "806"
+       },
+       {
+        "name": "Peberdy, John",
+        "club": "Gosnells Archers Inc",
+        "division": "70+ Compound",
+        "score": "758"
+       },
+       {
+        "name": "Engelen, Cody",
+        "club": "Gosnells Archers Inc",
+        "division": "Open Recurve",
+        "score": "645"
+       },
+       {
+        "name": "Newitt, Peter",
+        "club": "Gosnells Archers Inc",
+        "division": "70+ Barebow Compound",
+        "score": "600"
+       }
+      ]
+     }
+    ],
+    "checked": "2026-10-15",
+    "note": "Scores as published on Archer's Diary, highest first in each round (no placings are listed for club shoots).",
+    "event_id": "gosnells-club-champs-2026-target-1"
+   },
+   {
+    "kind": "full",
+    "title": "72 Arrows - WA720 Rounds",
+    "club_name": "Kalamunda Governor Stirling Archers",
+    "date": "2026-10-10",
+    "source_name": "Archer's Diary",
+    "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=0fc7f2029-f1d3-4289-b88a-a21e8a82c683",
+    "groups": [
+     {
+      "division": "Under 16 Female Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Hemsley, Lexi",
+        "club": "Kalamunda Governor Stirling Archers",
+        "round": "AA 40/720",
+        "score": "494"
+       }
+      ]
+     },
+     {
+      "division": "Under 16 Female Barebow Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Thurgate, Caitlin",
+        "club": "Kalamunda Governor Stirling Archers",
+        "round": "AA 40/720",
+        "score": "424"
+       }
+      ]
+     },
+     {
+      "division": "Under 18 Female Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Ferdinando, Keira",
+        "club": "Yokine Archery Club",
+        "round": "WA 60/720",
+        "score": "543"
+       }
+      ]
+     },
+     {
+      "division": "Open Male Compound",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Morgan, James",
+        "club": "Kalamunda Governor Stirling Archers",
+        "round": "Plantagenet (Club Records Only)",
+        "score": "627"
+       }
+      ]
+     },
+     {
+      "division": "Open Male Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Kidd, Aaron",
+        "club": "Kalamunda Governor Stirling Archers",
+        "round": "Launceston",
+        "score": "464"
+       }
+      ]
+     },
+     {
+      "division": "50+ Female Barebow Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Maitland, Samantha",
+        "club": "Kalamunda Governor Stirling Archers",
+        "round": "AA 30/720",
+        "score": "535"
+       }
+      ]
+     },
+     {
+      "division": "50+ Male Compound",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Jakobson, Cian",
+        "club": "Kalamunda Governor Stirling Archers",
+        "round": "Plantagenet (Club Records Only)",
+        "score": "658"
+       }
+      ]
+     },
+     {
+      "division": "50+ Male Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Ferdinando, Darren",
+        "club": "Yokine Archery Club",
+        "round": "WA 60/720",
+        "score": "568"
+       }
+      ]
+     },
+     {
+      "division": "60+ Female Longbow",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Frankel, Karen",
+        "club": "Kalamunda Governor Stirling Archers",
+        "round": "Kalgoorlie (Club Records Only)",
+        "score": "491"
+       }
+      ]
+     },
+     {
+      "division": "60+ Male Compound",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Parker, Micheal",
+        "club": "Kalamunda Governor Stirling Archers",
+        "round": "Launceston",
+        "score": "648"
+       }
+      ]
+     },
+     {
+      "division": "60+ Male Longbow",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Freemantle, David",
+        "club": "Kalamunda Governor Stirling Archers",
+        "round": "AA 40/720",
+        "score": "502"
+       }
+      ]
+     },
+     {
+      "division": "70+ Female Longbow",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Dickinson, Kathy",
+        "club": "Kalamunda Governor Stirling Archers",
+        "round": "AA 30/720",
+        "score": "456"
+       },
+       {
+        "place": "2",
+        "name": "Harris, Sally",
+        "club": "Kalamunda Governor Stirling Archers",
+        "round": "Kalgoorlie (Club Records Only)",
+        "score": "323"
+       }
+      ]
+     },
+     {
+      "division": "70+ Male Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Eglinton, Garry",
+        "club": "Kalamunda Governor Stirling Archers",
+        "round": "AA 30/720",
+        "score": "554"
+       }
+      ]
+     },
+     {
+      "division": "70+ Male Longbow",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Borchert, Harald",
+        "club": "Kalamunda Governor Stirling Archers",
+        "round": "Kalgoorlie (Club Records Only)",
+        "score": "450"
+       }
+      ]
+     }
+    ],
+    "checked": "2026-10-15",
+    "note": "Placings and scores as published on Archer's Diary."
+   },
+   {
+    "kind": "full",
+    "title": "Club Shoot",
+    "club_name": "Whiteman Park Archers",
+    "date": "2026-10-10",
+    "source_name": "Archer's Diary",
+    "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=0394d7a3b-d9f1-45c6-9a98-29f080f60294",
+    "groups": [
+     {
+      "division": "Club handicap 72 arrow",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Brown, Dylan",
+        "club": "Whiteman Park Archers",
+        "round": "Jnr Sorrento 720",
+        "score": "680"
+       },
+       {
+        "place": "2",
+        "name": "Platt, Rebecca",
+        "club": "Whiteman Park Archers",
+        "round": "AA 20/720",
+        "score": "559"
+       },
+       {
+        "place": "3",
+        "name": "Cottier, Chris",
+        "club": "Whiteman Park Archers",
+        "round": "Jnr Sorrento 720",
+        "score": "663"
+       },
+       {
+        "place": "4",
+        "name": "Shuttleworth, Alan",
+        "club": "Whiteman Park Archers",
+        "round": "AA 30/720",
+        "score": "528"
+       },
+       {
+        "place": "5",
+        "name": "Briggs, Robin",
+        "club": "Whiteman Park Archers",
+        "round": "Jnr Sorrento 720",
+        "score": "630"
+       }
+      ]
+     },
+     {
+      "division": "Club handicap 90 arrow",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Woon, Tian Ching",
+        "club": "Whiteman Park Archers",
+        "round": "Geelong",
+        "score": "425"
+       },
+       {
+        "place": "2",
+        "name": "Greenham, Lynne",
+        "club": "Whiteman Park Archers",
+        "round": "Geelong",
+        "score": "645"
+       }
+      ]
+     }
+    ],
+    "checked": "2026-10-15",
+    "note": "Placings and scores as published on Archer's Diary."
+   }
+  ],
+  "2026-10-11": [
+   {
+    "kind": "full",
+    "title": "Club Shoot 11/10/26",
+    "club_name": "Bunbury Archery Club",
+    "date": "2026-10-11",
+    "source_name": "Archer's Diary",
+    "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=0f04498ab-b69a-49de-9a9d-0e689535641d",
+    "groups": [
+     {
+      "division": "70+ Male Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "sterrett, john",
+        "club": "Bunbury Archery Club",
+        "round": "Darwin",
+        "score": "743"
+       }
+      ]
+     },
+     {
+      "division": "70+ Male Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "sterrett, john",
+        "club": "Bunbury Archery Club",
+        "round": "Darwin",
+        "score": "743"
+       }
+      ]
+     },
+     {
+      "division": "70+ Male",
+      "rows": [
+       {
+        "place": "1",
+        "name": "sterrett, john",
+        "club": "Bunbury Archery Club",
+        "round": "Darwin",
+        "score": "743"
+       }
+      ]
+     },
+     {
+      "division": "70+ Male",
+      "rows": [
+       {
+        "place": "1",
+        "name": "sterrett, john",
+        "club": "Bunbury Archery Club",
+        "round": "Darwin",
+        "score": "743"
+       }
+      ]
+     }
+    ],
+    "checked": "2026-10-15",
+    "note": "Placings and scores as published on Archer's Diary."
+   },
+   {
+    "kind": "full",
+    "title": "72 Arrows - Early Sunday Shoot",
+    "club_name": "Kalamunda Governor Stirling Archers",
+    "date": "2026-10-11",
+    "source_name": "Archer's Diary",
+    "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=0845f0f78-6964-4986-ace2-979f3133f634",
+    "groups": [
+     {
+      "division": "50+ Male Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Southall, Cristian",
+        "club": "Kalamunda Governor Stirling Archers",
+        "round": "AA 30/720",
+        "score": "577"
+       }
+      ]
+     },
+     {
+      "division": "60+ Male Longbow",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Freemantle, David",
+        "club": "Kalamunda Governor Stirling Archers",
+        "round": "WA 60/900 (Canberra)",
+        "score": "590"
+       }
+      ]
+     }
+    ],
+    "checked": "2026-10-15",
+    "note": "Placings and scores as published on Archer's Diary."
+   },
+   {
+    "kind": "full",
+    "title": "STATE TARGET CHAMPIONSHIPS 2026",
+    "club_name": "Kalamunda Governor Stirling Archers",
+    "date": "2026-10-11",
+    "source_name": "Archer's Diary",
+    "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=009a20618-a5ec-437c-9599-153735a1dafa",
+    "groups": [
+     {
+      "division": "Under 14 Female Compound",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Wolfe, Lara",
+        "club": "Gosnells Archers Inc",
+        "round": "AA 40/1440",
+        "score": "1301"
+       },
+       {
+        "place": "2",
+        "name": "Brittain, Eve",
+        "club": "Gosnells Archers Inc",
+        "round": "AA 40/1440",
+        "score": "1240"
+       },
+       {
+        "place": "3",
+        "name": "Coll, Niav",
+        "club": "Gosnells Archers Inc",
+        "round": "AA 40/1440",
+        "score": "1197"
+       },
+       {
+        "place": "4",
+        "name": "Wolfe, Khloe",
+        "club": "Gosnells Archers Inc",
+        "round": "AA 40/1440",
+        "score": "1195"
+       }
+      ]
+     },
+     {
+      "division": "Under 14 Male Compound",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Smith, Matteo",
+        "club": "Gosnells Archers Inc",
+        "round": "AA 40/1440",
+        "score": "1244"
+       },
+       {
+        "place": "2",
+        "name": "Forward, Jack",
+        "club": "Benara Bowmen Archery Club Inc",
+        "round": "AA 40/1440",
+        "score": "1239"
+       },
+       {
+        "place": "3",
+        "name": "Powrie, Samuel",
+        "club": "Gosnells Archers Inc",
+        "round": "AA 40/1440",
+        "score": "1124"
+       }
+      ]
+     },
+     {
+      "division": "Under 14 Male Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Symmans, Kobe",
+        "club": "Archers of Greenwood",
+        "round": "AA 40/1440",
+        "score": "1154"
+       }
+      ]
+     },
+     {
+      "division": "Under 16 Female Compound",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Liu, Felicia",
+        "club": "Gosnells Archers Inc",
+        "round": "AA 50/1440",
+        "score": "1353"
+       },
+       {
+        "place": "2",
+        "name": "Bartholomew, Sophie",
+        "club": "Gosnells Archers Inc",
+        "round": "AA 50/1440",
+        "score": "1323"
+       },
+       {
+        "place": "3",
+        "name": "Godwich, Aimee",
+        "club": "Benara Bowmen Archery Club Inc",
+        "round": "AA 50/1440",
+        "score": "1289"
+       },
+       {
+        "place": "4",
+        "name": "Stone, Hayley",
+        "club": "Gosnells Archers Inc",
+        "round": "AA 50/1440",
+        "score": "1271"
+       }
+      ]
+     },
+     {
+      "division": "Under 16 Female Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Gibbon, Shea",
+        "club": "Yokine Archery Club",
+        "round": "AA 50/1440",
+        "score": "1284"
+       },
+       {
+        "place": "2",
+        "name": "Lockwood, Eloise",
+        "club": "Bowmen of Melville",
+        "round": "AA 50/1440",
+        "score": "1263"
+       },
+       {
+        "place": "3",
+        "name": "Nazim, Aaliya",
+        "club": "Gosnells Archers Inc",
+        "round": "AA 50/1440",
+        "score": "1125"
+       }
+      ]
+     },
+     {
+      "division": "Under 16 Female Barebow Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Smith, Immy",
+        "club": "Gosnells Archers Inc",
+        "round": "AA 40/1440",
+        "score": "1008"
+       },
+       {
+        "place": "2",
+        "name": "Thurgate, Caitlin",
+        "club": "Kalamunda Governor Stirling Archers",
+        "round": "AA 40/1440",
+        "score": "799"
+       }
+      ]
+     },
+     {
+      "division": "Under 16 Male Compound",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Wolfe, Logan",
+        "club": "Gosnells Archers Inc",
+        "round": "AA 50/1440",
+        "score": "1409"
+       },
+       {
+        "place": "2",
+        "name": "Snook, Joseph",
+        "club": "Northern Archers WA",
+        "round": "AA 50/1440",
+        "score": "1397"
+       },
+       {
+        "place": "3",
+        "name": "Engelen-Burney, Tahuri",
+        "club": "Gosnells Archers Inc",
+        "round": "AA 50/1440",
+        "score": "1389"
+       }
+      ]
+     },
+     {
+      "division": "Under 18 Female Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Ferdinando, Keira",
+        "club": "Yokine Archery Club",
+        "round": "WA 60/1440",
+        "score": "1158"
+       }
+      ]
+     },
+     {
+      "division": "Under 18 Female Longbow",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Nevin, Brook",
+        "club": "Sunset Coast Archers",
+        "round": "AA 50/1440",
+        "score": "540"
+       }
+      ]
+     },
+     {
+      "division": "Under 18 Male Compound",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Schrape, William",
+        "club": "Kalamunda Governor Stirling Archers",
+        "round": "WA 70/1440",
+        "score": "1361"
+       },
+       {
+        "place": "2",
+        "name": "Norton, Mitchell",
+        "club": "Kalamunda Governor Stirling Archers",
+        "round": "WA 70/1440",
+        "score": "1297"
+       }
+      ]
+     },
+     {
+      "division": "Under 18 Male Barebow Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Swanepoel, Sebastian",
+        "club": "Sunset Coast Archers",
+        "round": "WA 60/1440",
+        "score": "181"
+       }
+      ]
+     },
+     {
+      "division": "Under 21 Male Compound",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Godwich, Dominik",
+        "club": "Benara Bowmen Archery Club Inc",
+        "round": "WA 90/1440",
+        "score": "1276"
+       },
+       {
+        "place": "2",
+        "name": "Milbanke, Lincoln",
+        "club": "Bunbury Archery Club",
+        "round": "WA 90/1440",
+        "score": "1226"
+       }
+      ]
+     },
+     {
+      "division": "Open Female Compound",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Mason, Deborah",
+        "club": "Bowmen of Melville",
+        "round": "WA 70/1440",
+        "score": "1231"
+       }
+      ]
+     },
+     {
+      "division": "Open Female Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Sazonov, Charlotte",
+        "club": "Baldivis Archery Club",
+        "round": "WA 70/1440",
+        "score": "1044"
+       },
+       {
+        "place": "2",
+        "name": "Cullen, Samantha",
+        "club": "Yokine Archery Club",
+        "round": "WA 70/1440",
+        "score": "1012"
+       },
+       {
+        "place": "3",
+        "name": "Engelen, Cody",
+        "club": "Gosnells Archers Inc",
+        "round": "WA 70/1440",
+        "score": "957"
+       },
+       {
+        "place": "4",
+        "name": "Liu, Puyue",
+        "club": "Bowmen of Melville",
+        "round": "WA 70/1440",
+        "score": "945"
+       }
+      ]
+     },
+     {
+      "division": "Open Female Longbow",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Tephra, Olive",
+        "club": "Bowmen of Melville",
+        "round": "AA 50/1440",
+        "score": "819"
+       }
+      ]
+     },
+     {
+      "division": "Open Female Barebow Compound",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Jones, Robyn",
+        "club": "Bowmen of Melville",
+        "round": "WA 60/1440",
+        "score": "1003"
+       }
+      ]
+     },
+     {
+      "division": "Open Male Compound",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Chapman-Bureny, Dana",
+        "club": "Gosnells Archers Inc",
+        "round": "WA 90/1440",
+        "score": "1369"
+       },
+       {
+        "place": "2",
+        "name": "Pound, Alan",
+        "club": "Benara Bowmen Archery Club Inc",
+        "round": "WA 90/1440",
+        "score": "1362"
+       },
+       {
+        "place": "3",
+        "name": "Evans, Nate",
+        "club": "Kalamunda Governor Stirling Archers",
+        "round": "WA 90/1440",
+        "score": "1344"
+       },
+       {
+        "place": "4",
+        "name": "Choong, Michael",
+        "club": "Benara Bowmen Archery Club Inc",
+        "round": "WA 90/1440",
+        "score": "1336"
+       },
+       {
+        "place": "5",
+        "name": "Snook, Steven",
+        "club": "Northern Archers WA",
+        "round": "WA 90/1440",
+        "score": "1331"
+       },
+       {
+        "place": "6",
+        "name": "Wolfe, Daniel",
+        "club": "Gosnells Archers Inc",
+        "round": "WA 90/1440",
+        "score": "1270"
+       },
+       {
+        "place": "7",
+        "name": "Anderton, Roark",
+        "club": "Amateur Archery Centre",
+        "round": "WA 90/1440",
+        "score": "1252"
+       },
+       {
+        "place": "8",
+        "name": "Brown, Dylan",
+        "club": "Whiteman Park Archers",
+        "round": "WA 90/1440",
+        "score": "1234"
+       },
+       {
+        "place": "9",
+        "name": "Collins, Christopher",
+        "club": "Gosnells Archers Inc",
+        "round": "WA 90/1440",
+        "score": "1221"
+       },
+       {
+        "place": "10",
+        "name": "Andersen, John",
+        "club": "Gosnells Archers Inc",
+        "round": "WA 90/1440",
+        "score": "1117"
+       },
+       {
+        "place": "11",
+        "name": "Stride, Nathaniel",
+        "club": "Gosnells Archers Inc",
+        "round": "WA 90/1440",
+        "score": "1060"
+       }
+      ]
+     },
+     {
+      "division": "Open Male Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Gibbon, Brandon",
+        "club": "Yokine Archery Club",
+        "round": "WA 90/1440",
+        "score": "1198"
+       },
+       {
+        "place": "2",
+        "name": "Garcia, Jeremy",
+        "club": "Benara Bowmen Archery Club Inc",
+        "round": "WA 90/1440",
+        "score": "1179"
+       },
+       {
+        "place": "3",
+        "name": "Craggs, David",
+        "club": "Benara Bowmen Archery Club Inc",
+        "round": "WA 90/1440",
+        "score": "1051"
+       },
+       {
+        "place": "4",
+        "name": "Ranieri, Matthew",
+        "club": "Benara Bowmen Archery Club Inc",
+        "round": "WA 90/1440",
+        "score": "1008"
+       },
+       {
+        "place": "5",
+        "name": "Schrape, Andrew",
+        "club": "Kalamunda Governor Stirling Archers",
+        "round": "WA 90/1440",
+        "score": "963"
+       },
+       {
+        "place": "6",
+        "name": "Garland, Hamish",
+        "club": "Yokine Archery Club",
+        "round": "WA 90/1440",
+        "score": "949"
+       }
+      ]
+     },
+     {
+      "division": "Open Male Longbow",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Wilson, Andy",
+        "club": "Bowmen of Melville",
+        "round": "WA 60/1440",
+        "score": "901"
+       },
+       {
+        "place": "2",
+        "name": "Bartholomew, David",
+        "club": "Gosnells Archers Inc",
+        "round": "WA 60/1440",
+        "score": "698"
+       },
+       {
+        "place": "3",
+        "name": "Glazier, Kieran",
+        "club": "Bowmen of Melville",
+        "round": "WA 60/1440",
+        "score": "336"
+       }
+      ]
+     },
+     {
+      "division": "Open Male Barebow Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Petty, Daniel",
+        "club": "Bunbury Archery Club",
+        "round": "WA 70/1440",
+        "score": "645"
+       }
+      ]
+     },
+     {
+      "division": "50+ Female Compound",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Buttery, Eve",
+        "club": "Baldivis Archery Club",
+        "round": "WA 60/1440",
+        "score": "1296"
+       },
+       {
+        "place": "2",
+        "name": "Danby, Tanya",
+        "club": "Gosnells Archers Inc",
+        "round": "WA 60/1440",
+        "score": "1183"
+       }
+      ]
+     },
+     {
+      "division": "50+ Male Compound",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Bowdidge, Peter",
+        "club": "Bunbury Archery Club",
+        "round": "WA 70/1440",
+        "score": "1327"
+       },
+       {
+        "place": "2",
+        "name": "Godwich, Peter",
+        "club": "Benara Bowmen Archery Club Inc",
+        "round": "WA 70/1440",
+        "score": "1296"
+       }
+      ]
+     },
+     {
+      "division": "50+ Male Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Symmans, Damian",
+        "club": "Archers of Greenwood",
+        "round": "WA 70/1440",
+        "score": "1163"
+       },
+       {
+        "place": "2",
+        "name": "Yau, Valentine",
+        "club": "Baldivis Archery Club",
+        "round": "WA 70/1440",
+        "score": "1118"
+       }
+      ]
+     },
+     {
+      "division": "60+ Female Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Cooke, Niamh",
+        "club": "Baldivis Archery Club",
+        "round": "AA 50/1440",
+        "score": "1081"
+       }
+      ]
+     },
+     {
+      "division": "60+ Female Longbow",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Frankel, Karen",
+        "club": "Kalamunda Governor Stirling Archers",
+        "round": "AA 50/1440",
+        "score": "993"
+       },
+       {
+        "place": "2",
+        "name": "Sutherland, Ann",
+        "club": "Sunset Coast Archers",
+        "round": "AA 50/1440",
+        "score": "748"
+       }
+      ]
+     },
+     {
+      "division": "60+ Male Compound",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Lamperd, Edward",
+        "club": "Kalamunda Governor Stirling Archers",
+        "round": "WA 60/1440",
+        "score": "1356"
+       },
+       {
+        "place": "2",
+        "name": "Palandri, John",
+        "club": "Amateur Archery Centre",
+        "round": "WA 60/1440",
+        "score": "1266"
+       },
+       {
+        "place": "3",
+        "name": "King, Keith",
+        "club": "Bowmen of Melville",
+        "round": "WA 60/1440",
+        "score": "1161"
+       }
+      ]
+     },
+     {
+      "division": "60+ Male Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Knapp, Mike",
+        "club": "Baldivis Archery Club",
+        "round": "WA 60/1440",
+        "score": "1053"
+       }
+      ]
+     },
+     {
+      "division": "60+ Male Longbow",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Merdith, Nick",
+        "club": "Sunset Coast Archers",
+        "round": "AA 50/1440",
+        "score": "764"
+       }
+      ]
+     },
+     {
+      "division": "70+ Female Longbow",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Harris, Sally",
+        "club": "Kalamunda Governor Stirling Archers",
+        "round": "AA 50/1440",
+        "score": "764"
+       }
+      ]
+     },
+     {
+      "division": "70+ Male Compound",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Markham, Keith",
+        "club": "Amateur Archery Centre",
+        "round": "WA 60/1440",
+        "score": "1286"
+       },
+       {
+        "place": "2",
+        "name": "Crabtree, David",
+        "club": "Benara Bowmen Archery Club Inc",
+        "round": "WA 60/1440",
+        "score": "1282"
+       }
+      ]
+     },
+     {
+      "division": "70+ Male Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "McCann, Donald",
+        "club": "Bowmen of Melville",
+        "round": "WA 60/1440",
+        "score": "1138"
+       },
+       {
+        "place": "2",
+        "name": "Hutchins, Graham",
+        "club": "Bunbury Archery Club",
+        "round": "WA 60/1440",
+        "score": "879"
+       }
+      ]
+     },
+     {
+      "division": "70+ Male Longbow",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Bass, Alfie",
+        "club": "Baldivis Archery Club",
+        "round": "AA 50/1440",
+        "score": "1115"
+       },
+       {
+        "place": "2",
+        "name": "Borchert, Harald",
+        "club": "Kalamunda Governor Stirling Archers",
+        "round": "AA 50/1440",
+        "score": "910"
+       }
+      ]
+     },
+     {
+      "division": "70+ Male Barebow Compound",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Newitt, Peter",
+        "club": "Gosnells Archers Inc",
+        "round": "WA 60/1440",
+        "score": "799"
+       }
+      ]
+     },
+     {
+      "division": "70+ Male Barebow Recurve",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Burn, Bill (William)",
+        "club": "Gingin Shire Archers",
+        "round": "WA 60/1440",
+        "score": "320"
+       }
+      ]
+     },
+     {
+      "division": "70+ Male Crossbow",
+      "rows": [
+       {
+        "place": "1",
+        "name": "Turner, John W",
+        "club": "Kalamunda Governor Stirling Archers",
+        "round": "Australian 960",
+        "score": "594"
+       }
+      ]
+     }
+    ],
+    "checked": "2026-10-15",
+    "note": "Placings and scores as published on Archer's Diary.",
+    "event_id": "wa-31716"
+   },
+   {
+    "kind": "full",
+    "title": "Club shoot",
+    "club_name": "Sunset Coast Archers",
+    "date": "2026-10-11",
+    "source_name": "Archer's Diary",
+    "source_url": "https://www.archersdiary.com/ViewResults.aspx?id=001bfb496-6c59-40c2-a9c9-f88d4e8e8a72",
+    "groups": [
+     {
+      "division": "Newcastle 20m 122cm face",
+      "rows": [
+       {
+        "name": "Dempsey, Cara",
+        "club": "Sunset Coast Archers",
+        "division": "Open Barebow Recurve",
+        "score": "671"
+       }
+      ]
+     },
+     {
+      "division": "Geelong 30m 122cm face",
+      "rows": [
+       {
+        "name": "Doherty, Nate",
+        "club": "Sunset Coast Archers",
+        "division": "Open Barebow Recurve",
+        "score": "645"
+       },
+       {
+        "name": "Galbraith, Athena",
+        "club": "Sunset Coast Archers",
+        "division": "Open Recurve",
+        "score": "523"
+       },
+       {
+        "name": "Mitchell, David",
+        "club": "Sunset Coast Archers",
+        "division": "60+ Barebow Recurve",
+        "score": "445"
+       }
+      ]
+     },
+     {
+      "division": "Darwin 40m 122cm face",
+      "rows": [
+       {
+        "name": "barry, Kat",
+        "club": "Archers of Greenwood",
+        "division": "Open Recurve",
+        "score": "675"
+       },
+       {
+        "name": "Swan, Mark",
+        "club": "Sunset Coast Archers",
+        "division": "50+ Barebow Recurve",
+        "score": "629"
+       }
+      ]
+     }
+    ],
+    "checked": "2026-10-15",
+    "note": "Scores as published on Archer's Diary, highest first in each round (no placings are listed for club shoots)."
+   }
+  ]
  }
 }

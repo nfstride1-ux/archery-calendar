@@ -91,7 +91,7 @@ function toast(t){ const el = $('#toast'); el.textContent = t; el.classList.add(
 
 async function boot(){
   $('#todayLbl').textContent = today().toLocaleDateString('en-AU', {weekday:'short', day:'numeric', month:'short'});
-  const [e, o, ph, cl] = await Promise.all([fetch('data/events.json').then(r => r.json()), fetch('data/organisations.json').then(r => r.json()), fetch('img/credits.json', {cache: 'no-cache'}).then(r => r.json()).catch(() => ({})), fetch('data/clubs.json').then(r => r.json()).catch(() => ({clubs: []})), fetch('data/club_logos.json').then(r => r.json()).then(j => { LOGO = j.logos || {}; }).catch(() => {}), fetch('data/intl_countries.json').then(r => r.json()).then(j => { ICTRY = j; }).catch(() => {}), fetch('data/results.json').then(r => r.json()).then(j => { RES = j.results || {}; }).catch(() => {})]);
+  const [e, o, ph, cl] = await Promise.all([fetch('data/events.json').then(r => r.json()), fetch('data/organisations.json').then(r => r.json()), fetch('img/credits.json', {cache: 'no-cache'}).then(r => r.json()).catch(() => ({})), fetch('data/clubs.json').then(r => r.json()).catch(() => ({clubs: []})), fetch('data/club_logos.json').then(r => r.json()).then(j => { LOGO = j.logos || {}; }).catch(() => {}), fetch('data/intl_countries.json').then(r => r.json()).then(j => { ICTRY = j; }).catch(() => {}), fetch('data/results.json').then(r => r.json()).then(j => { RES = j.results || {}; CSHOOT = j.club_shoots || {}; }).catch(() => {})]);
   CLUBS = cl.clubs || []; CLUBS.forEach(c => CLUB[c.id] = c);
   PH = ph; SCOPE = e.scope || 'WORLD';
   migrateSettings();
@@ -595,8 +595,18 @@ function myEntry(x){
 }
 /* ---------- Results (data/results.json, built by sources/build_results.py) ----------
    Only official published results, each with its source link. "full" = score table we show; "link" = official results page/PDF only. */
-let RES = {};
+let RES = {}, CSHOOT = {};
 const resOf = x => x && isPast(x) ? RES[x.id] : null;
+function resTables(r, nOpen){
+  const med = p => p === '1' ? '🥇' : p === '2' ? '🥈' : p === '3' ? '🥉' : '';
+  const hasPl = r.groups.some(g => g.rows.some(w => w.place));
+  const sub = w => [w.division, w.round, w.club].filter(Boolean).map(esc).join(' · ');
+  return r.groups.map((g, i) => `<details class="res-grp"${i < nOpen ? ' open' : ''}><summary>${esc(g.division)} <span class="res-n">(${g.rows.length})</span></summary><table class="res-tbl"><caption class="sr-only">${esc(g.division)} results</caption><thead><tr>${hasPl ? '<th scope="col">Place</th>' : ''}<th scope="col">Archer</th><th scope="col" class="num">Score</th></tr></thead><tbody>${g.rows.map(w => `<tr>${hasPl ? `<td class="pl">${med(w.place)}${esc(w.place || '')}</td>` : ''}<td><b>${esc(w.name)}</b>${sub(w) ? `<br><small>${sub(w)}</small>` : ''}</td><td class="num">${esc(w.score)}</td></tr>`).join('')}</tbody></table></details>`).join('');
+}
+function clubShootsHtml(k){
+  const L = CSHOOT[k] || []; if (!L.length || k >= iso(today())) return '';
+  return `<h3 class="dp-sub">🏆 Club shoot results (${L.length})</h3><p class="note">Published on Archer's Diary. Tap a shoot to see the scores.</p>${L.map(r => `<details class="res-shoot"><summary><b>${esc(r.club_name)}</b><br><small>${esc(r.title)} · ${r.groups.reduce((a, g) => a + g.rows.length, 0)} archers</small></summary>${r.event_id && BYID[r.event_id] ? `<p><a href="#/shoot/${encodeURIComponent(r.event_id)}?r=1">Open the event card ›</a></p>` : ''}<div class="results-box">${resTables(r, 1)}</div><p class="note"><a href="${esc(r.source_url)}" target="_blank" rel="noopener">Source: Archer's Diary ↗</a></p></details>`).join('')}`;
+}
 function resultsBox(x){
   if (!x || !isPast(x)) return '';
   const r = RES[x.id];
@@ -604,9 +614,7 @@ function resultsBox(x){
   const src = `<a class="btn alt block" href="${esc(r.source_url)}" target="_blank" rel="noopener">↗ ${r.kind === 'full' ? 'Full results on' : 'Open results on'} ${esc(r.source_name)}</a>`;
   if (r.kind !== 'full') return `<section class="panel results-box" id="results"><h2 class="sec">🏆 Results</h2><p>${esc(r.title || 'Official results')} are published by the organiser.</p>${src}</section>`;
   const n = r.groups.reduce((a, g) => a + g.rows.length, 0);
-  const med = p => p === '1' ? '🥇' : p === '2' ? '🥈' : p === '3' ? '🥉' : '';
-  const grp = (g, i) => `<details class="res-grp"${i < 2 ? ' open' : ''}><summary>${esc(g.division)} <span class="res-n">(${g.rows.length})</span></summary><table class="res-tbl"><caption class="sr-only">${esc(g.division)} results</caption><thead><tr><th scope="col">Place</th><th scope="col">Archer</th><th scope="col" class="num">Score</th></tr></thead><tbody>${g.rows.map(w => `<tr><td class="pl">${med(w.place)}${esc(w.place)}</td><td><b>${esc(w.name)}</b>${w.club ? `<br><small>${esc(w.club)}</small>` : ''}</td><td class="num">${esc(w.score)}</td></tr>`).join('')}</tbody></table></details>`;
-  return `<section class="panel results-box" id="results"><h2 class="sec">🏆 Results</h2><p class="note">${esc(r.title)} · ${n} archer${n === 1 ? '' : 's'} in ${r.groups.length} division${r.groups.length === 1 ? '' : 's'}.${r.note ? ' ' + esc(r.note) : ''} Source: <a href="${esc(r.source_url)}" target="_blank" rel="noopener">${esc(r.source_name)} ↗</a></p>${r.groups.map(grp).join('')}${src}</section>`;
+return `<section class="panel results-box" id="results"><h2 class="sec">🏆 Results</h2><p class="note">${esc(r.title)} · ${n} archer${n === 1 ? '' : 's'} in ${r.groups.length} division${r.groups.length === 1 ? '' : 's'}.${r.note ? ' ' + esc(r.note) : ''} Source: <a href="${esc(r.source_url)}" target="_blank" rel="noopener">${esc(r.source_name)} ↗</a></p>${resTables(r, 2)}${src}</section>`;
 }
 function vShoot(id){
   const x = BYID[id]; if (!x) return `<div class="wrap"><div class="empty">Event not found.</div></div>`;
@@ -716,7 +724,7 @@ function dayPanel(k, mineDay){
     if (!fs.length) h += `<p class="note">None of the clubs you watch have an event on this day.</p>${find}`;
     if (!S.watchClubs.some(id => CLUB[id])) h += `<p class="note">You're not watching any clubs yet.</p>${watchBtn}`;
   }
-  return h + '</section>';
+  return h + clubShootsHtml(k) + '</section>';
 }
 let dayMine = {};
 function vCalendar(){
@@ -748,7 +756,7 @@ function vCalendar(){
   ${past.length ? `<h2>Finished (${past.length})</h2>${past.map(evCard).join('')}` : ''}</div>`;
 }
 function bindCalendar(){
-  document.querySelectorAll('.grid [data-day]').forEach(c => { c.onclick = () => { const k = c.dataset.day; if (k < iso(today())) { const evs = [...(dayMine[k] || []), ...(followed().length ? folOnDay(k) : [])].filter((x, i, a) => a.findIndex(y => y.id === x.id) === i); if (evs.length === 1) { location.hash = '#/shoot/' + encodeURIComponent(evs[0].id) + '?r=1'; return; } } CD = CD === k ? '' : k; render(); const p = $('#dayPanel'); if (p) p.scrollIntoView({block: 'nearest', behavior: 'smooth'}); };
+  document.querySelectorAll('.grid [data-day]').forEach(c => { c.onclick = () => { const k = c.dataset.day; if (k < iso(today()) && !(CSHOOT[k] || []).length) { const evs = [...(dayMine[k] || []), ...(followed().length ? folOnDay(k) : [])].filter((x, i, a) => a.findIndex(y => y.id === x.id) === i); if (evs.length === 1) { location.hash = '#/shoot/' + encodeURIComponent(evs[0].id) + '?r=1'; return; } } CD = CD === k ? '' : k; render(); const p = $('#dayPanel'); if (p) p.scrollIntoView({block: 'nearest', behavior: 'smooth'}); };
     c.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); c.click(); } }; });
   const dx = $('#dpX'); if (dx) dx.onclick = () => { CD = ''; render(); };
   const df = $('#dpFind'); if (df) df.onclick = () => { Object.assign(BF, {day: df.dataset.day, state: df.dataset.st || '', q: '', disc: '', cat: '', ost: '', club: '', clubId: '', mc: false, scope: 'all', past: false, limit: 60}); };
