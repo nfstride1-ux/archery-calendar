@@ -712,3 +712,10 @@ body.hb-open #hbBtn{display:none}
 @media (max-width:759px){#hbBtn{bottom:calc(14px + env(safe-area-inset-bottom));right:10px;width:52px;height:52px;padding:0;justify-content:center;font-size:0;gap:0}#hbBtn span{width:40px;height:40px;font-size:22px}
  body:has(#instBar) #hbBtn,body:has(.upd-bar) #hbBtn{bottom:calc(84px + env(safe-area-inset-bottom))}}
 .support-btn.ad-foot{background:transparent;border:1.5px solid var(--gold);color:var(--gold);margin-left:6px}
+/* sign-in gate + instant publishing + admin */
+.sub-gate h2{margin-top:0}.sub-gate .row{gap:10px;flex-wrap:wrap;margin:14px 0 8px}
+.live-card{margin:14px 0;text-align:left}.live-link{word-break:break-all}
+.adm-row{display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:start}.adm-fl img{width:100%;border-radius:8px;border:1px solid #ccd}
+.adm-row h3{margin:4px 0}.adm-row p{margin:4px 0}.adm-btns{gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}.adm-inst{font-size:.9em}
+.tag.st-pending{background:#fde68a;color:#3b2f00}.tag.st-live{background:#bbf7d0;color:#053b1a}.tag.st-rejected{background:#fecaca;color:#450a0a}
+@media (max-width:640px){.adm-row{grid-template-columns:1fr}}

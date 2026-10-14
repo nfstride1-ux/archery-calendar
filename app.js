@@ -111,7 +111,7 @@ async function boot(){
     navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(r => { r.update();
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') r.update().catch(() => {}); }); }).catch(() => {});
   }
-  importHandoff(); clubUpdates(); route(); cardsLoad().catch(() => {});
+  importHandoff(); clubUpdates(); route(); loadLiveSubs().then(n => { if (n) softRender(); }); cardsLoad().catch(() => {});
   if (Object.keys(S.saved).concat(Object.keys(S.entries)).some(id => !BYID[id])) loadIntl().then(() => { const y = scrollY; render(); scrollTo(0, y); }).catch(() => {}); checkReminders(); setInterval(checkReminders, 60 * 60 * 1000);
   initAuth().catch(e => console.warn('auth', e));
 }
@@ -839,12 +839,12 @@ function vAdvertise(){
 function vPrivacy(){
   setTitle('Privacy & disclaimer');
   return `${pageHead('Privacy &amp; disclaimer', 'Short version: your data stays in your browser.', 'mixed')}<div class="wrap narrow"><section class="panel"><h2 class="sec">Privacy</h2>
-    <ul class="ticks"><li>${AUTH.on ? 'No account needed. If you don’t sign in, the' : 'No account, no sign-up. The'} events you save, your entries and payments, your reminder settings and your remembered club details (Submit an event) are stored only in <b>your browser on this device</b> (localStorage). They are never sent to us.</li>
+    <ul class="ticks"><li>${AUTH.on ? 'You only need an account to submit or fix an event. If you don’t sign in, the' : 'No account, no sign-up. The'} events you save, your entries and payments, your reminder settings and your remembered club details (Submit an event) are stored only in <b>your browser on this device</b> (localStorage). They are never sent to us.</li>
     <li>Club details you send with an event are remembered on this device${AUTH.on ? ' (and in your account if you are signed in)' : ''} so you don't retype them. Tap “Not you? Clear” on the Submit form to wipe them.</li>
     <li>Clearing your browser data deletes them. Use <a href="#/settings">Settings → Export backup</a> to keep a copy or move to another device.</li>
     <li id="privStats"><b>Visit counts:</b> we count visits anonymously with <a href="https://www.goatcounter.com/" target="_blank" rel="noopener">GoatCounter</a>: which pages are viewed and the words typed into Find events search. <b>No cookies</b>, no advertising trackers and nothing that identifies you. Searches that look like an email address or phone number are never counted. Reminders are made on your device.</li>
     <li>"Register / enter" and email links go straight to the organiser. Anything you send them is between you and the organiser.</li>
-    <li><b>Submit an event form:</b> what a club sends us (contact name, email, phone, event details and flyer) is emailed to us at ${esc(SITE.contact)} via the form service FormSubmit (formsubmit.co). We use it only to check and list the event. Contact details aren't published unless they're on your flyer. Ask us any time to correct or delete them.</li>
+    <li><b>Submit an event form:</b> what a club sends us (contact name, email, phone, event details and flyer, plus the email and ID of the signed-in account that sent it) is emailed to us at ${esc(SITE.contact)} via the form service FormSubmit (formsubmit.co). When you’re signed in, the event, flyer and your details are also saved to your account on Supabase so we can review and publish it; only the event details and flyer are shown publicly once it’s live. We use it only to check and list the event. Contact details aren't published unless they're on your flyer. Ask us any time to correct or delete them.</li>
     <li><b>Fans photos:</b> if you send us a photo, your name, email, the photo and its details are emailed to us via FormSubmit. We publish only approved photos with the caption and your name as credit – never your email. In a photo and want it removed? Email ${esc(SITE.contact)}.</li>
     <li><b>Membership cards:</b> photos of your membership cards, card names, member numbers and links you add in <a href="#/cards">My membership cards</a> are stored only in this browser on this device. They’re never uploaded, published or sent to us${window.SUPABASE_CARD_SYNC ? ', unless you turn on the private backup to your account (private storage only you can open)' : ''}. Photos are shrunk and saved without their hidden location data. Delete them any time on that page.</li>
     <li>The site is hosted on GitHub Pages, which keeps standard server logs (e.g. IP address) – see GitHub's privacy statement.</li></ul>
@@ -1256,7 +1256,7 @@ function setSent(em){ AUTH.sent = em || ''; try { em ? localStorage.setItem(OTP_
 function loadSent(){ try { const o = JSON.parse(localStorage.getItem(OTP_KEY) || 'null'); if (o && o.em && Date.now() - o.t < 60 * 60 * 1000) AUTH.sent = o.em; else localStorage.removeItem(OTP_KEY); } catch {} }
 function softRender(){ const a = document.activeElement; if (a && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && a.closest('#view')) return; const y = scrollY; render(); scrollTo(0, y); }
 // pages whose content depends on sign-in; other pages aren't re-drawn when sign-in finishes loading (no jumps mid-click)
-function authRender(){ if (['account', 'privacy', 'settings'].includes(document.body.dataset.page)) softRender(); }
+function authRender(){ if (['account', 'privacy', 'settings', 'submit', 'fix', 'admin'].includes(document.body.dataset.page)) softRender(); }
 function updateNav(){
   const a = $('#navAcct'); if (!a) return; a.hidden = !(AUTH.on && AUTH.ready); if (a.hidden) return;
   const fs = $('#footStore'); if (fs) fs.textContent = 'Your saved events and entries are kept in your browser on this device, and in your account if you sign in';
@@ -1296,7 +1296,7 @@ async function initAuth(){
   AUTH.client.auth.onAuthStateChange((ev, sess) => { const u = sess ? sess.user : null; AUTH.chain = AUTH.chain.then(() => onUser(u, ev)).catch(e => { AUTH.msg = String(e.message || e); }); });
   await AUTH.client.auth.getSession().catch(() => {});
   await AUTH.chain;
-  if (cameBack) { history.replaceState(null, '', location.pathname + (AUTH.user ? '#/account' : (location.hash || '#/account'))); }
+  if (cameBack) { const back = AUTH.user && takeAfter(); history.replaceState(null, '', location.pathname + (back || (AUTH.user ? '#/account' : (location.hash || '#/account')))); if (back) render(); }
   AUTH.ready = true; updateNav(); authRender();
   addEventListener('online', () => AUTH.sync.flush());
   document.addEventListener('visibilitychange', () => { if (!document.hidden) AUTH.sync.flush(); });
@@ -1312,8 +1312,29 @@ async function onUser(u){
     if (AUTH.sync.needsMergeChoice(u)) { AUTH.ask = true; if (!location.hash.startsWith('#/account')) location.hash = '#/account'; }
     else await AUTH.sync.link(u, 'account');
   }
+  if (!AUTH.ask && AUTH.ready && (location.hash || '').startsWith('#/account')) { const back = takeAfter(); if (back) { location.hash = back; return; } }
   updateNav(); authRender();
 }
+/* ---------- sign-in required to submit (owner 14 Oct 2026): submissions are tied to a known account so known submitters can be fast-approved.
+   Browsing stays fully public. The page to come back to after sign-in is kept for an hour (the emailed link may open a new tab). ---------- */
+const AFTER_KEY = 'archcal.after';
+function setAfter(h){ try { localStorage.setItem(AFTER_KEY, JSON.stringify({h, t: Date.now()})); } catch {} }
+function takeAfter(){ try { const o = JSON.parse(localStorage.getItem(AFTER_KEY) || 'null'); localStorage.removeItem(AFTER_KEY); return o && o.h && Date.now() - o.t < 60 * 60 * 1000 ? o.h : ''; } catch { return ''; } }
+const subGate = () => AUTH.configured && window.SUPABASE_ENABLED === true && !AUTH.user;
+function vSubGate(fix){
+  setTitle(fix ? 'Fix an event' : 'Submit an event');
+  const head = pageHead(fix ? 'Fix an existing event' : 'Submit an event', 'Sign in first – it takes a minute and it’s free.', '3d');
+  if (!AUTH.ready) return `${head}<div class="wrap narrow"><p class="loading">Checking sign-in…</p></div>`;
+  return `${head}<div class="wrap narrow sub"><section class="panel sub-gate" aria-labelledby="gateH">
+    <h2 class="sec" id="gateH">🔒 Please sign in to ${fix ? 'send a correction' : 'submit an event'}</h2>
+    <p>Looking at events never needs an account. To ${fix ? 'send a correction' : 'send an event'}, we ask you to sign in, so we know who it’s from. Events from people we already know get <b>approved faster</b>.</p>
+    <ul class="ticks"><li><b>Free</b>, quick sign up – no password. We email you a code.</li><li>Your name, club and email are filled in for you next time.</li><li>We never publish your email.</li></ul>
+    ${AUTH.msg ? `<p class="err" role="alert">${esc(AUTH.msg)}</p>` : ''}
+    <div class="row"><a class="btn gold" href="#/account" data-gate="in">Sign in</a><a class="btn alt" href="#/account" data-gate="new">Create a free account</a></div>
+    <p class="note">New here? “Create a free account” works the same way: type your email, then the code we send you. You’ll come straight back here after.</p></section></div>`;
+}
+function bindSubGate(){ const h = location.hash || '#/submit'; document.querySelectorAll('[data-gate]').forEach(a => a.onclick = () => setAfter(h)); }
+const acctHidden = () => `<input type="hidden" name="account_email" value="${esc(AUTH.user ? AUTH.user.email || '' : '')}"><input type="hidden" name="account_user_id" value="${esc(AUTH.user ? AUTH.user.id : '')}">`;
 const counts = () => ({saved: Object.keys(S.saved).length, ent: Object.keys(S.entries).length});
 function vAccount(){
   setTitle(AUTH.user ? 'Account' : 'Sign in');
@@ -1905,7 +1926,7 @@ function vIntl(arg){
     world ? 'World majors – Hyundai Archery World Cup, World Championships, World Masters Games, LA28 Olympics and Paralympics – plus 3D and bowhunter events, IFAA and continental championships, and seminars & workshops. Dates are local to each venue.'
       : `Archery events in ${esc(nm)}${usa ? ' – USA Archery, NFAA, ASA, IBO, TAC, Redding, Lancaster and The Vegas Shoot' : code === 'DEN' ? " – every event on Bueskydning Danmark's calendar: indoor, target, field and 3D, including the Danish championships (DM)" : code === 'MAS' ? " – events on NAAM's national calendar (Persatuan Memanah Kebangsaan Malaysia) and club seminars & workshops" : code === 'KOR' ? ' – events on the Korea Archery Association calendar (대한양궁협회) and the World Archery calendar' : code === 'NZL' ? ' – Archery NZ club tournaments (ArcheryOSA), NZ Field Archery Association field and 3D events, and NZ Bowhunters Society events' : code === 'CAN' ? ' – the Canadian Outdoor Championships, Archery Canada registered club events (ianseo) and provincial events such as the Canada Winter Games trials' : ' – 3D events and majors'}. Dates are local to each venue.`, usa ? 'us_field' : '3d');
   setTitle(`Archery events in ${nm}`);
-  head = head.replace(/(<\/h1>(?:<p>[\s\S]*?<\/p>)?)/, `$1<p class="intl-add"><a class="btn gold sm" id="iAdd" href="#/submit?country=${usa ? 'US' : 'OTHER'}">➕ Add your club's event</a> <span>Clubs add their own events – we check every event before it goes live.</span></p>`);
+  head = head.replace(/(<\/h1>(?:<p>[\s\S]*?<\/p>)?)/, `$1<p class="intl-add"><a class="btn gold sm" id="iAdd" href="#/submit?country=${usa ? 'US' : 'OTHER'}">➕ Add your club's event</a> <span>Clubs add their own events (free account) – we check every event before it goes live.</span></p>`);
   if (!INTL) { loadIntl().then(() => { if ((location.hash || '').startsWith('#/intl')) { const y = scrollY; render(); scrollTo(0, y); } }).catch(() => {}); return `${head}<div class="wrap"><p class="note" id="icount">Loading events…</p></div>`; }
   const all = INTL.events.filter(x => world ? (x.country_code !== 'USA' && x.world_page !== false) || x.world_major : x.country_code === code);
   let list = all.filter(x => IF.past || !iPast(x));
@@ -1980,7 +2001,9 @@ function render(){
   else if (p === 'fans') { v.innerHTML = vFans(); bindFans(); }
   else if (p === 'account') { v.innerHTML = vAccount(); const aw = v.querySelector('.wrap.narrow'), ap = aw && AUTH.user ? aw.querySelector('section.panel') : null;
     if (aw) aw.insertAdjacentHTML('afterbegin', cardsAcctPanel()); bindAccount(); }
+  else if (p === 'admin') { v.innerHTML = vAdmin(); bindAdmin(); }
   else if (p === 'cards') { v.innerHTML = vCards(); bindMCards(); }
+  else if ((p === 'fix' || p === 'submit') && !/(?:^|[?&])f?sent=1/.test(location.search) && !(p === 'submit' && SUBDONE.sid) && subGate()) { v.innerHTML = vSubGate(p === 'fix' || arg === 'fix'); bindSubGate(); }
   else if (p === 'fix' || (p === 'submit' && arg === 'fix')) { v.innerHTML = vFix(decodeURIComponent(p === 'fix' ? (arg || '') : (h.split('/')[3] || ''))); bindFix(); }
   else if (p === 'submit') { v.innerHTML = vSubmit(HQ.get('country')); bindSubmit(); }
   else if (p === 'calendars') { v.innerHTML = vCals(arg); bindCals(); }
@@ -1993,6 +2016,126 @@ function render(){
     bindIntlMenu(); bindClubNotice(); const ya = $('#ycAll'); if (ya) ya.onclick = () => { Object.assign(BF, {club: S.myClubs.length ? 'mine' : 'watch', q: '', cat: '', disc: '', state: '', limit: 60}); };
     $('#heroSearch').onsubmit = e => { e.preventDefault(); BF.q = $('#hq').value; BF.scope = 'all'; location.hash = '#/browse'; }; }
   bindCards(v); updateNav(); updateCardsNav();
+}
+/* ---------- instant publishing (owner 14 Oct 2026) ----------
+   Signed-in submissions are saved to Supabase (public.submitted_events). A database trigger sets status: 'live' straight away
+   for instant-approved submitters (public.approved_submitters), otherwise 'pending'. Live rows are read by everyone from the
+   public.live_events view (no emails/phones) and merged into the calendar, so it works without anyone running a script.
+   Flyers go to the public 'event-flyers' bucket (images/PDF, 10 MB). The FormSubmit email still goes out for every submission.
+   Needs supabase/instant_publishing.sql. If the table isn't there yet, submissions are email-only exactly as before. */
+const SUBDONE = {sid: '', html: ''};
+document.addEventListener('click', e => { const a = e.target.closest && e.target.closest('#subThanks a[href="#/submit"]'); if (a) { SUBDONE.sid = SUBDONE.html = ''; e.preventDefault(); location.hash === '#/submit' ? render() : (location.hash = '#/submit'); } });
+const ADMIN_EMAILS = ['nfshold@gmail.com'];   // UI only – the database checks public.admins
+const isAdmin = () => !!(AUTH.user && ADMIN_EMAILS.includes(String(AUTH.user.email || '').toLowerCase()));
+const FLY_BUCKET = 'event-flyers', FLY_MAX = 10 * 1048576;
+const CC3 = {AU: 'AUS', US: 'USA'};
+function subToEv(r){
+  const pdf = /\.pdf($|\?)/i.test(r.flyer_url || ''), y = r.start_date ? +r.start_date.slice(0, 4) : null;
+  return {id: 'sub-' + r.id, _sub: r.id, name: r.name, org: r.club, org_id: 'club-submission', org_group: 'club', club_name: r.club, country_code: CC3[r.country] || r.country || '', country: r.country === 'AU' ? 'Australia' : r.country === 'US' ? 'United States' : (r.country || ''),
+    state: r.state || null, state_code: r.state || null, start_date: r.start_date, end_date: r.end_date || r.start_date, dates_confirmed: true, location: r.venue, discipline: r.discipline || 'Target',
+    level: 'Club', category: 'competition', registration_url: r.registration_url || null, notes: r.notes || null, source_url: r.flyer_link || null, last_checked: (r.created_at || '').slice(0, 10),
+    flyer_year: r.flyer_url ? y : null, flyer_is_current: true, flyer_kind: 'Flyer', flyer_label: 'Flyer from the club', flyer_web: r.flyer_url || null, flyer_web_sm: r.flyer_url ? (pdf ? 'icons/icon-512.png' : r.flyer_url) : null,
+    flyer_is_pdf: pdf, flyer_org: r.club, flyer_source_url: pdf ? r.flyer_url : null, flyer_extract: r.notes ? {notes: r.notes, is_current: true} : null};
+}
+/* Public read of live club submissions – plain REST with the publishable key, no library needed. */
+async function loadLiveSubs(){
+  if (!AUTH.configured) return 0;
+  try { const r = await fetch(SB_URL.replace(/\/$/, '') + '/rest/v1/live_events?select=*&order=start_date.asc', {headers: {apikey: SB_KEY}});
+    if (!r.ok) return 0; const rows = await r.json(); let n = 0;
+    rows.forEach(row => { const x = subToEv(row); if (!BYID[x.id]) { EV.push(x); n++; } BYID[x.id] = Object.assign(BYID[x.id] || {}, x); });
+    if (n) EV.sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
+    return n; } catch { return 0; }
+}
+/* Save a submission. Returns {id, status, flyer_url} or null (not signed in / table not set up / error → email-only). */
+async function dbSubmit(rec, file){
+  if (!AUTH.client || !AUTH.user) return null;
+  try {
+    let flyer_path = null, flyer_url = null;
+    if (file && file.size <= FLY_MAX && (/^image\//.test(file.type) || /pdf/.test(file.type) || /\.pdf$/i.test(file.name))) {
+      const ext = (file.name.match(/\.([a-z0-9]{2,5})$/i) || [, /pdf/.test(file.type) ? 'pdf' : 'jpg'])[1].toLowerCase();
+      flyer_path = `${AUTH.user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const up = await AUTH.client.storage.from(FLY_BUCKET).upload(flyer_path, file, {contentType: file.type || (ext === 'pdf' ? 'application/pdf' : 'image/jpeg'), upsert: false});
+      if (up.error) flyer_path = null; else flyer_url = AUTH.client.storage.from(FLY_BUCKET).getPublicUrl(flyer_path).data.publicUrl;
+    }
+    const row = Object.assign({}, rec, {flyer_path, flyer_url, end_date: rec.end_date || rec.start_date});
+    const {data, error} = await AUTH.client.from('submitted_events').insert(row).select('id,status,flyer_url').single();
+    if (error) { console.warn('Archery Calendar: submission not saved to the database (email still sent):', error.message); return null; }
+    return data;
+  } catch (e) { console.warn('Archery Calendar: submission not saved to the database:', e); return null; }
+}
+/* Thanks page after FormSubmit sends people back with ?sid=: live → show the finished event card; pending → waiting for review. */
+async function subDoneLoad(sid){
+  const box = () => $('#subThanks'); let tries = 0;
+  while (!(AUTH.ready && AUTH.client) && tries++ < 40) await new Promise(r => setTimeout(r, 250));
+  let row = null;
+  try { if (AUTH.client) { const {data} = await AUTH.client.from('submitted_events').select('*').eq('id', sid).maybeSingle(); row = data; } } catch {}
+  const b = {set innerHTML(h){ SUBDONE.html = h; }};
+  if (row && row.status === 'live') {
+    const x = subToEv(row); if (!BYID[x.id]) EV.push(x); BYID[x.id] = x;
+    b.innerHTML = `<span class="thanks-mark" aria-hidden="true">✓</span><h2 class="sec">🎉 Your event is live</h2>
+      <p>You’re an approved submitter, so <b>${esc(row.name)}</b> is on the calendar now. Share the link with your club.</p>
+      <div class="live-card">${evCard(x)}</div>
+      <p class="live-link"><a href="#/shoot/${esc(x.id)}">${esc(location.origin + location.pathname)}#/shoot/${esc(x.id)}</a> <button type="button" class="btn sm" id="liveCopy">Copy link</button></p>
+      <div class="row"><a class="btn gold" href="#/shoot/${esc(x.id)}">Open your event</a><a class="btn alt" href="#/submit">Send another event</a></div>`;
+  } else {
+    b.innerHTML = `<span class="thanks-mark" aria-hidden="true">✓</span><h2 class="sec">Thanks, it’s waiting for review</h2>
+      <p>We’ll check ${row ? `<b>${esc(row.name)}</b>` : 'your event'} and put it on the calendar, usually within 48 hours. Once your club is approved, your next events go live straight away.</p>
+      <div class="row"><a class="btn gold" href="#/submit">Send another event</a><a class="btn alt" href="#/browse">Find events</a></div>`;
+  }
+  if (document.body.dataset.page !== 'submit') return;
+  render(); bindCards($('#view'));
+  const c = $('#liveCopy'); if (c) c.onclick = () => { navigator.clipboard && navigator.clipboard.writeText(location.origin + location.pathname + '#/shoot/sub-' + sid); toast('Link copied'); };
+  const t = $('#subThanks'); t && t.focus();
+}
+/* ---------- #/admin: review club submissions (admins only; the database enforces it with public.is_admin()) ---------- */
+const ADM = {rows: null, subs: null, err: '', tab: 'pending'};
+function vAdmin(){
+  setTitle('Admin');
+  const head = pageHead('Admin', 'Club submissions', 'mixed');
+  if (!AUTH.ready) return `${head}<div class="wrap"><p class="loading">Checking sign-in…</p></div>`;
+  if (!isAdmin()) return `${head}<div class="wrap narrow"><section class="panel"><p>This page is only for Archery Calendar admins. <a href="#/account">Sign in</a></p></section></div>`;
+  if (!ADM.rows) { admLoad(); return `${head}<div class="wrap"><p class="loading">Loading submissions…</p></div>`; }
+  const inst = new Map((ADM.subs || []).map(s => [String(s.email).toLowerCase(), s]));
+  const rows = ADM.rows.filter(r => ADM.tab === 'all' || r.status === ADM.tab);
+  const tabs = ['pending', 'live', 'rejected', 'all'].map(t => `<button type="button" class="btn sm ${ADM.tab === t ? 'gold' : 'alt'}" data-atab="${t}">${t[0].toUpperCase() + t.slice(1)} (${t === 'all' ? ADM.rows.length : ADM.rows.filter(r => r.status === t).length})</button>`).join(' ');
+  const one = r => { const em = String(r.submitter_email || '').toLowerCase(), s = inst.get(em), pdf = /\.pdf/i.test(r.flyer_url || '');
+    return `<article class="panel adm-row" data-id="${esc(r.id)}"><div class="adm-fl">${r.flyer_url ? `<a href="${esc(r.flyer_url)}" target="_blank" rel="noopener">${pdf ? '📄 PDF flyer ↗' : `<img src="${esc(r.flyer_url)}" alt="Flyer" loading="lazy">`}</a>` : r.flyer_link ? `<a href="${esc(r.flyer_link)}" target="_blank" rel="noopener">🔗 Flyer link ↗</a>` : '<span class="note">No flyer</span>'}</div>
+      <div class="adm-body"><p><span class="tag st-${esc(r.status)}">${esc(r.status)}</span> <span class="note">${esc(new Date(r.created_at).toLocaleString('en-AU'))}</span></p>
+      <h3>${esc(r.name)}</h3><p>${esc(r.start_date)}${r.end_date && r.end_date !== r.start_date ? ' to ' + esc(r.end_date) : ''} · ${esc(r.venue || '')} · ${esc(r.discipline || '')}</p>
+      <p><b>${esc(r.club)}</b> (${esc([r.state, r.country].filter(Boolean).join(', '))}) – ${esc(r.organisation_type || '')}</p>
+      <p>From <b>${esc(r.submitter_name || '')}</b>, ${esc(r.role || '')} · ${esc(r.submitter_email || '')}${r.contact_email && r.contact_email !== r.submitter_email ? ' · contact ' + esc(r.contact_email) : ''}</p>
+      ${r.registration_url ? `<p>Entry: <a href="${esc(r.registration_url)}" target="_blank" rel="noopener">${esc(r.registration_url)}</a></p>` : ''}${r.notes ? `<p class="note">${esc(r.notes)}</p>` : ''}
+      <div class="row adm-btns">${r.status !== 'live' ? `<button class="btn gold sm" data-act="live">✓ Approve</button>` : `<a class="btn alt sm" href="#/shoot/sub-${esc(r.id)}">View live</a>`}${r.status !== 'rejected' ? `<button class="btn alt sm" data-act="rejected">✕ Reject</button>` : ''}<button class="btn alt sm" data-act="edit">✏️ Edit</button>
+      <label class="chk adm-inst"><input type="checkbox" data-inst="${esc(em)}" data-club="${esc(r.club)}" data-name="${esc(r.submitter_name || '')}" ${s && s.instant ? 'checked' : ''}> Instant-approve ${esc(em)}</label></div></div></article>`; };
+  return `${head}<div class="wrap adm"><section class="panel"><p>${tabs} <button type="button" class="btn sm alt" id="admReload">↻ Reload</button></p>${ADM.err ? `<p class="err" role="alert">${esc(ADM.err)}</p>` : ''}</section>
+    ${rows.length ? rows.map(one).join('') : '<p class="empty">Nothing here.</p>'}
+    <section class="panel"><h2 class="sec">Approved submitters</h2><ul>${(ADM.subs || []).map(s => `<li>${s.instant ? '⚡' : '•'} <b>${esc(s.name || '')}</b> ${esc(s.email)} – ${esc(s.club || '')}${s.instant ? ' (instant)' : ''}</li>`).join('')}</ul></section></div>`;
+}
+async function admLoad(){
+  ADM.err = '';
+  try { const [a, b] = await Promise.all([AUTH.client.from('submitted_events').select('*').order('created_at', {ascending: false}).limit(300), AUTH.client.from('approved_submitters').select('*').order('club')]);
+    if (a.error) throw a.error; if (b.error) throw b.error; ADM.rows = a.data; ADM.subs = b.data;
+  } catch (e) { ADM.rows = ADM.rows || []; ADM.subs = ADM.subs || []; ADM.err = 'Couldn’t load: ' + (e.message || e) + ' (has supabase/instant_publishing.sql been run?)'; }
+  if (document.body.dataset.page === 'admin') softRenderForce();
+}
+function bindAdmin(){
+  const v = $('#view');
+  v.querySelectorAll('[data-atab]').forEach(b => b.onclick = () => { ADM.tab = b.dataset.atab; softRenderForce(); });
+  const rl = $('#admReload'); if (rl) rl.onclick = () => { ADM.rows = null; softRenderForce(); };
+  v.querySelectorAll('.adm-row [data-act]').forEach(b => b.onclick = async () => {
+    const id = b.closest('.adm-row').dataset.id, r = ADM.rows.find(x => x.id === id), act = b.dataset.act; let patch;
+    if (act === 'edit') { const f = [['name', 'Event name'], ['start_date', 'Start date (YYYY-MM-DD)'], ['end_date', 'End date (YYYY-MM-DD)'], ['venue', 'Venue'], ['discipline', 'Type'], ['registration_url', 'Entry link'], ['notes', 'Notes']];
+      patch = {}; for (const [k, l] of f) { const nv = prompt(l, r[k] || ''); if (nv === null) return; if (nv !== (r[k] || '')) patch[k] = nv || null; } if (!Object.keys(patch).length) return; }
+    else patch = {status: act};
+    b.disabled = true;
+    const {data, error} = await AUTH.client.from('submitted_events').update(patch).eq('id', id).select('*').single();
+    if (error) { toast('Not saved: ' + error.message); b.disabled = false; return; }
+    Object.assign(r, data); if (data.status === 'live') { const x = subToEv(data); if (!BYID[x.id]) EV.push(x); BYID[x.id] = x; } else if (BYID['sub-' + id]) { EV = EV.filter(x => x.id !== 'sub-' + id); delete BYID['sub-' + id]; }
+    toast(act === 'live' ? 'Approved – it’s live' : act === 'rejected' ? 'Rejected' : 'Saved'); softRenderForce(); });
+  v.querySelectorAll('[data-inst]').forEach(c => c.onchange = async () => {
+    const {error} = await AUTH.client.from('approved_submitters').upsert({email: c.dataset.inst, club: c.dataset.club, name: c.dataset.name, instant: c.checked}, {onConflict: 'email'});
+    if (error) { toast('Not saved: ' + error.message); c.checked = !c.checked; return; }
+    toast(c.checked ? 'Instant approval on' : 'Instant approval off'); ADM.subs = null; ADM.rows = null; softRenderForce(); });
 }
 /* ---------- known clubs: label submissions for review (never auto-publishes) ----------
    data/known_clubs.json holds salted SHA-256 hashes of verified clubs' emails and own email domains (built by tools/build_known_clubs.py
@@ -2065,9 +2208,11 @@ async function shrinkImg(inp, note){
 function vSubmit(country){
   setTitle('Submit an event');
   const C = subCtry(country), K = SUB_CTRY[C];
-  const sent = /(?:^|[?&])sent=1/.test(location.search);
-  if (sent) history.replaceState(null, '', location.pathname + '#/submit');
+  const sent = /(?:^|[?&])sent=1/.test(location.search), sid = new URLSearchParams(location.search).get('sid') || (sent ? '' : SUBDONE.sid);
+  if (sent) { SUBDONE.sid = sid || ''; history.replaceState(null, '', location.pathname + '#/submit'); }
+  if (sent && sid) { SUBDONE.html = '<p class="loading">Checking your event…</p>'; setTimeout(() => subDoneLoad(sid), 0); }
   const head = pageHead('Submit an event', 'Just send your flyer — we read it and build your event card for you.', '3d');
+  if (SUBDONE.sid && SUBDONE.html) return `${head}<div class="wrap narrow"><section class="panel thanks" id="subThanks" tabindex="-1">${SUBDONE.html}</section></div>`;
   if (sent) return `${head}<div class="wrap narrow"><section class="panel thanks" id="subThanks" tabindex="-1">
     <span class="thanks-mark" aria-hidden="true">✓</span><h2 class="sec">Thanks, your flyer is in</h2>
     <p>We'll read your flyer and build your event card. You'll get it to check.</p>
@@ -2077,10 +2222,10 @@ function vSubmit(country){
   return `${head}<div class="wrap narrow sub">${subTabs('new')}
   <section class="panel sub-intro"><ul class="ticks">
     <li><b>Just send your flyer</b> — we read it and build your event card for you.</li>
-    <li>Every event is <b>reviewed before it goes live, usually within 48 hours</b>.</li>
+    <li>Every event is <b>reviewed before it goes live, usually within 48 hours</b>. Approved clubs go live straight away.</li>
     <li>Fields marked <span class="req">*</span> are required.</li></ul></section>
   <form id="subForm" class="panel sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate>
-    <input type="hidden" name="_subject" value="New flyer – Archery Calendar"><input type="hidden" name="known_club" value="">
+    <input type="hidden" name="_subject" value="New flyer – Archery Calendar"><input type="hidden" name="known_club" value="">${acctHidden()}<input type="hidden" name="submission_id" value=""><input type="hidden" name="submission_status" value="email only (not saved to database)"><input type="hidden" name="flyer_stored" value="">
     <input type="hidden" name="_template" value="table">
     <input type="hidden" name="_next" value="">
     <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true"><input type="hidden" name="_captcha" value="false">
@@ -2100,13 +2245,19 @@ function vSubmit(country){
       </div>
     </fieldset>
     <fieldset><legend>Event</legend>
+      ${f('s_ename', 'Event name', `<input id="s_ename" name="event_name" required maxlength="140" placeholder="e.g. Club 3D Championships 2027">`)}
+      <div class="grid2">${f('s_start', 'Start date', `<input id="s_start" name="start_date" type="date" required>`)}
+      ${f('s_end', 'End date', `<input id="s_end" name="end_date" type="date">`, 'Leave empty for a one-day event.', false)}</div>
+      ${f('s_venue', 'Venue / address', `<input id="s_venue" name="venue" required maxlength="200" placeholder="e.g. Club range, 12 Range Rd, Town">`)}
+      <div class="grid2">${f('s_disc', 'Type of event', `<select id="s_disc" name="discipline"><option value="">Choose…</option>${['Target', 'Field', '3D', 'Indoor', 'Clout', 'Other'].map(o => `<option>${o}</option>`).join('')}</select>`, '', false)}
+      ${f('s_reg', 'Entry link', `<input id="s_reg" name="entry_link" type="url" maxlength="300" placeholder="https://" inputmode="url">`, '', false)}</div>
       <p class="hint" id="s_flyer_h">Upload the flyer <b>or</b> paste a link to it – one of the two is needed.</p>
       ${f('s_file', 'Upload the flyer', `<input id="s_file" name="attachment" type="file" accept=".pdf,application/pdf,image/*,.heic,.heif">`, `PDF (up to ${MAX_MB} MB) or any photo – big photos are shrunk automatically. <span id="s_file_n" class="note"></span>`, false)}
       ${f('s_flink', '…or flyer link', `<input id="s_flink" name="flyer_link" type="url" maxlength="300" placeholder="https://" inputmode="url">`, 'e.g. your website or Facebook post.', false)}
       ${f('s_notes', 'Notes', `<textarea id="s_notes" name="notes" rows="4" maxlength="2000" placeholder="Anything that isn't on the flyer"></textarea>`, '', false)}
     </fieldset>
     <div class="fld consent" data-f="s_ok"><label class="chk tick"><input type="checkbox" id="s_ok" name="consent" value="Yes – permission to publish the event details and flyer" required><span>I'm authorised by the club and give Archery Calendar permission to publish these event details and the flyer. <span class="req" aria-hidden="true">*</span></span></label><p class="err" id="s_ok_e" role="alert"></p></div>
-    <p class="note priv">🔒 Privacy: your details are emailed to us (${esc(SITE.contact)}, NFS Strategic Holdings) via FormSubmit. We use them only to check and list your event. We don't publish your contact details unless they're on your flyer, and we never sell them. <a href="#/privacy">Privacy</a></p>
+    <p class="note priv">🔒 Privacy: your details are emailed to us (${esc(SITE.contact)}, NFS Strategic Holdings) via FormSubmit and saved to your account (Supabase, Sydney). We use them only to check and list your event. We don't publish your contact details unless they're on your flyer, and we never sell them. <a href="#/privacy">Privacy</a></p>
     <p class="err sum" id="subErr" role="alert"></p>
     <div class="sub-actions"><button class="btn gold" type="submit" id="subBtn">Submit event for review</button>
       <a class="btn alt" id="subMail" href="mailto:${esc(SITE.contact)}">Email it instead</a></div>
@@ -2181,6 +2332,11 @@ function bindSubmit(){
       : file.size > MAX_MB * 1048576 ? (isPdf ? `That PDF is ${(file.size / 1048576).toFixed(1)} MB (limit ${MAX_MB} MB). Upload a JPG or screenshot of the flyer instead, or paste a link.` : 'That photo is still too big – try a screenshot.')
       : file.size > FS_TOTAL_MB * 1048576 ? 'That file is too big to send.' : '');
     add('s_flink', fl && !isUrl(fl) ? 'Use a full link starting with https://' : '');
+    add('s_ename', val('s_ename') ? '' : 'Enter the event name.');
+    add('s_start', /^\d{4}-\d{2}-\d{2}$/.test(val('s_start')) ? '' : 'Choose the start date.');
+    add('s_end', val('s_end') && val('s_end') < val('s_start') ? 'The end date is before the start date.' : '');
+    add('s_venue', val('s_venue') ? '' : 'Enter the venue or address.');
+    add('s_reg', val('s_reg') && !isUrl(val('s_reg')) ? 'Use a full link starting with https://' : '');
     add('s_ok', g('s_ok').checked ? '' : 'Please tick to give permission to publish.');
     return errs;
   }
@@ -2189,6 +2345,7 @@ function bindSubmit(){
   const where = () => ctry() === 'AU' ? val('s_state') : [val('s_state'), ctry() === 'US' ? 'USA' : val('s_ctryname')].filter(Boolean).join(', ');
   function mailBody(){
     const L = [['Country', ctry() === 'OTHER' ? val('s_ctryname') : K().name], [K().state, val('s_state')], ['Organisation type', val('s_orgtype')], ['Club', val('s_club')], ['Your name', val('s_name')], ['Role at the club', roleVal('s')], ['Contact email', val('s_email')], ['Phone', val('s_phone')],
+      ['Event', val('s_ename')], ['Dates', [val('s_start'), val('s_end')].filter(Boolean).join(' to ')], ['Venue', val('s_venue')], ['Type', val('s_disc')], ['Entry link', val('s_reg')],
       ['Flyer link', val('s_flink')], ['Notes', val('s_notes')], ['Permission to publish', g('s_ok').checked ? 'Yes' : 'Not ticked']];
     return L.map(([k, v]) => `${k}: ${v}`).join('\n') + '\n\n>>> Please attach the flyer (PDF or JPG) to this email before sending. <<<\n';
   }
@@ -2210,7 +2367,21 @@ function bindSubmit(){
     fm.querySelector('[name=_subject]').value = subject();
     if (!g('s_file').files.length) g('s_file').disabled = true;   // don't send an empty file part
     const b = g('subBtn'); b.disabled = true; b.textContent = 'Sending…';
-    kcSubmit(e, fm, val('s_email'), tag => { fm.querySelector('[name=_subject]').value = tag + subject(); });
+    e.preventDefault();
+    const rec = {country: ctry() === 'OTHER' ? val('s_ctryname') : ctry(), state: val('s_state'), organisation_type: val('s_orgtype'), club: val('s_club'), submitter_name: val('s_name'), role: roleVal('s'),
+      contact_email: val('s_email'), phone: val('s_phone'), name: val('s_ename'), start_date: val('s_start'), end_date: val('s_end') || val('s_start'), venue: val('s_venue'), discipline: val('s_disc'),
+      registration_url: val('s_reg'), flyer_link: val('s_flink'), notes: val('s_notes')};
+    Promise.race([kcCheck(val('s_email')), new Promise(r => setTimeout(() => r(false), 4000))]).then(async k => {
+      fm.querySelector('[name=known_club]').value = k ? 'yes' : 'no';
+      const db = await dbSubmit(rec, g('s_file').disabled ? null : g('s_file').files[0]);
+      let tag = kcTag(k);
+      if (db) { fm.querySelector('[name=submission_id]').value = db.id; fm.querySelector('[name=submission_status]').value = db.status === 'live' ? 'LIVE – instant-approved submitter, already on the site' : 'pending – approve at ' + location.origin + location.pathname + '#/admin';
+        if (db.flyer_url) fm.querySelector('[name=flyer_stored]').value = db.flyer_url;
+        if (db.status === 'live') tag = '[LIVE] ' + tag;
+        fm.querySelector('[name=_next]').value = location.href.split('#')[0].split('?')[0] + '?sent=1&sid=' + encodeURIComponent(db.id) + '#/submit'; }
+      fm.querySelector('[name=_subject]').value = tag + subject();
+      HTMLFormElement.prototype.submit.call(fm);
+    });
   };
   window.addEventListener('pageshow', () => { const b = $('#subBtn'); if (b) { b.disabled = false; b.textContent = 'Submit event for review'; g('s_file').disabled = false; } }, {once: true});
 }
@@ -2321,7 +2492,7 @@ function vFix(id){
   const f = (fid, lab, inp, hint = '', req = false) => `<div class="fld" data-f="${fid}"><label for="${fid}">${lab}${req ? ' <span class="req" aria-hidden="true">*</span>' : ' <span class="opt">(optional)</span>'}</label>${inp}${hint ? `<p class="hint" id="${fid}_h">${hint}</p>` : ''}<p class="err" id="${fid}_e" role="alert"></p></div>`;
   return `${head}<div class="wrap narrow sub">${subTabs('fix')}
   <form id="fixForm" class="panel sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate>
-    <input type="hidden" name="_subject" value="Correction:"><input type="hidden" name="known_club" value="">
+    <input type="hidden" name="_subject" value="Correction:"><input type="hidden" name="known_club" value="">${acctHidden()}
     <input type="hidden" name="_template" value="table">
     <input type="hidden" name="_next" value="">
     <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true"><input type="hidden" name="_captcha" value="false">
