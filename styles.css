@@ -738,3 +738,6 @@ body.hb-open #hbBtn{display:none}
 .res-shoot>summary small{color:#374151}
 .hm-games img{object-fit:contain;width:78%;height:78%;margin:auto}.hm-games{display:flex;align-items:center;justify-content:center;border:2px solid #fff}
 .hm-games{border-radius:50%!important}.hm-games img{width:90%;height:90%}
+.res-tbl tr.me td{background:#fff4c2;font-weight:600}
+.my-score{background:#fff4c2;border-left:4px solid #c9a000;padding:.5rem .75rem;margin:.5rem 0;border-radius:6px;color:#222}
+.my-day .meta{margin:.2rem 0 .4rem}

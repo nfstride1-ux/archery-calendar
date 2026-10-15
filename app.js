@@ -705,6 +705,26 @@ function folOnDay(k){
   return pool.filter(x => datable(x) && !x.cancelled && x.start_date <= k && evEnd(x) >= k && folIds(x).some(id => fol.includes(id)))
     .sort((a, b) => (a.start_times || '') < (b.start_times || '') ? -1 : 1);
 }
+/* Past day the user had an event: just that shoot, where it was, and its full results with their own row highlighted.
+   Matched by the account display name against Archer's Diary "Surname, First" names (results carry no AA numbers). */
+const nmKey = n => String(n || '').toLowerCase().replace(/[^a-z, ]/g, '').split(/[ ,]+/).filter(Boolean).sort().join(' ');
+function myName(){ try { return AUTH && AUTH.user && AUTH.sync.state().displayName || ''; } catch { return ''; } }
+function myDayHtml(x, k){
+  const cs = (CSHOOT[k] || []).find(r => r.event_id === x.id), r = RES[x.id] || cs, grp = (cs && cs.groups) || (r && r.groups);
+  const id = encodeURIComponent(x.id), me = nmKey(myName());
+  const venue = [x.location, x.state && !(x.location || '').includes(x.state) ? x.state : ''].filter(Boolean).join(', ');
+  let h = `<div class="my-day"><h3 class="dp-sub">★ <a href="#/shoot/${id}?r=1">${esc(x.name)}</a></h3><p class="meta">📍 ${esc(venue || (CLUB[x.club_id] || {}).name || x.host || '')}</p>`;
+  if (r && r.kind !== 'full') return h + `<a class="btn alt block" href="${esc(r.source_url)}" target="_blank" rel="noopener">↗ Results on ${esc(r.source_name)}</a></div>`;
+  if (!r) return h + `<p class="note">No published results found for this shoot yet.</p></div>`;
+  if (!grp) { fetch('data/results/' + x.id.replace(/[^A-Za-z0-9_.-]/g, '_') + '.json').then(q => q.json()).then(j => { RES[x.id].groups = j.groups; if (CD === k) render(); }).catch(() => {}); return h + '<p class="loading">Loading scores…</p></div>'; }
+  let mine = null;
+  const hasPl = grp.some(g => g.rows.some(w => w.place));
+  const tb = [...grp].sort((a, b) => (me && b.rows.some(w => nmKey(w.name) === me)) - (me && a.rows.some(w => nmKey(w.name) === me))).map(g => { const hit = me && g.rows.some(w => nmKey(w.name) === me);
+    return `<details class="res-grp" open><summary>${esc(g.division)} <span class="res-n">(${g.rows.length})</span></summary><table class="res-tbl"><caption class="sr-only">${esc(g.division)} results</caption><thead><tr>${hasPl ? '<th scope="col">Place</th>' : ''}<th scope="col">Archer</th><th scope="col" class="num">Score</th></tr></thead><tbody>${g.rows.map((w, i) => { const m = me && nmKey(w.name) === me; if (m && !mine) mine = {w, g, pos: i + 1, n: g.rows.length};
+      return `<tr${m ? ' class="me" aria-current="true"' : ''}>${hasPl ? `<td class="pl">${esc(w.place || '')}</td>` : ''}<td><b>${esc(w.name)}</b>${m ? ' <span class="b myclub">You</span>' : ''}${[w.division, w.round].filter(Boolean).length ? `<br><small>${[w.division, w.round].filter(Boolean).map(esc).join(' · ')}</small>` : ''}</td><td class="num">${esc(w.score)}${w.xs ? `<br><small>${esc(w.xs)} X</small>` : ''}${w.tens ? `<small> ${esc(w.tens)}×10</small>` : ''}</td></tr>`; }).join('')}</tbody></table></details>`; }).join('');
+  if (mine) h += `<div class="my-score"><b>Your score: ${esc(mine.w.score)}</b><br><small>${[mine.g.division, mine.w.division, mine.w.place ? 'Place ' + mine.w.place : `${mine.pos} of ${mine.n} in this round`].filter(Boolean).map(esc).join(' · ')}</small></div>`;
+  return h + `<div class="results-box">${tb}</div><p class="note">Source: <a href="${esc(r.source_url)}" target="_blank" rel="noopener">${esc(r.source_name || "Archer's Diary")} ↗</a></p></div>`;
+}
 function dayPanel(k, mineDay){
   const d = pd(k), lbl = d.toLocaleDateString('en-AU', {weekday:'long', day:'numeric', month:'long', year:'numeric'}), fol = followed();
   const clubNm = x => (CLUB[x.club_id] || {}).name || folIds(x).map(id => (CLUB[id] || {}).name).filter(Boolean)[0] || x.host || x.org || '';
@@ -715,6 +735,7 @@ function dayPanel(k, mineDay){
   const stCode = homeSt && (STATES.find(s => s[0] === homeSt || s[1] === homeSt) || [])[0] || '';
   const find = `<a href="#/browse" class="btn alt block" id="dpFind" data-day="${k}" data-st="${esc(stCode)}">🔎 Find events on this day${stCode ? ' in ' + esc(stCode) : AUS() ? ' in Australia' : ''}</a>`;
   let h = `<section class="panel day-panel" id="dayPanel" aria-live="polite"><div class="dp-head"><h2 class="sec">${esc(lbl)}</h2><button class="linkbtn" id="dpX" aria-label="Close">✕</button></div>`;
+  if (k < iso(today()) && mineDay.length) return h + mineDay.map(x => myDayHtml(x, k)).join('') + '</section>';
   if (mineDay.length) h += `<h3 class="dp-sub">★ My events</h3><ul class="dp-list">${mineDay.map(row).join('').replace(/<span class="b (myclub|watching)">[^<]*<\/span>/g, '')}</ul>`;
   const isW = x => folIds(x).some(id => S.watchClubs.includes(id)), fw = fs.filter(isW), fm = fs.filter(x => !isW(x));
   const watchBtn = `<a href="#/clubs" class="btn gold block" id="dpClubs">👁 Add clubs to watch</a>`;
