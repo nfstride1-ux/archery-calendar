@@ -460,9 +460,13 @@ function hay(x){
     /national/i.test((x.level || '') + ' ' + x.name) && !/registered/i.test(x.level || '') ? 'nationals national' : '', x.members_only ? 'club championship members' : ''];
   const cat = catOf(x), catTxt = {competition:'competition event shoot tournament', club:'club event clubshoot social local', coaching:'coaching course coach', youth:'youth junior kids training', come_try:'come and try beginners', seminar:'seminar workshop clinic coaching coach masterclass'}[cat] + (x.book_anytime ? ' corporate team building book anytime' : '');
   const stat = [x.org_status === 'flyer' ? 'flyer out details' : 'no entry details yet', x.entry_close_date ? (daysTo(x.entry_close_date) < 0 ? 'entries closed' : 'entries open') : x.registration_url ? 'entries open' : ''];
-  const cb = CLUB[x.club_id], words = snorm([x.name, x.host, cb && cb.name, ...(cb ? cb.aliases : []), x.location, x.org, sc, st && st[1], sc && CAPITAL[sc], x.discipline, catTxt, ...lvl, grpTxt, x.branch ? 'branch ' + x.branch : '', x.branch_name, ...months, ...stat, x.series_part, x.notes, ...Object.entries(x.flyer_extract || {}).filter(([k, v]) => typeof v === 'string' && !/url|source/.test(k)).map(([, v]) => v), roundTerms(x)].filter(Boolean).join(' '));
+  const cb = CLUB[x.club_id], words = snorm([x.name, x.host, cb && cb.name, ...(cb ? cb.aliases : []), x.location, x.org, sc, st && st[1], sc && CAPITAL[sc], x.discipline, catTxt, ...lvl, grpTxt, x.branch ? 'branch ' + x.branch : '', x.branch_name, ...months, ...stat, x.series_part, x.notes, x.country, x.country_name, x.country_code, x.us_state, x.us_org, x.org_id, acroTxt(x), ...Object.entries(x.flyer_extract || {}).filter(([k, v]) => typeof v === 'string' && !/url|source/.test(k)).map(([, v]) => v), roundTerms(x)].filter(Boolean).join(' '));
   return x._hay = {s: ' ' + words + ' ', w: [...new Set(words.split(' '))]};
 }
+const ACRO = [[/total archery challenge/i, 'tac'], [/indoor world series/i, 'iws'], [/\bnfaa\b|national field archery association/i, 'nfaa national field archery association'], [/\bifaa\b|international field archery/i, 'ifaa international field archery association'],
+  [/\baba\b|bowhunters association/i, 'aba australian bowhunters association'], [/\btaa\b|traditional archery australia/i, 'taa traditional archery australia'], [/\bibo\b|international bowhunting/i, 'ibo international bowhunting organization'],
+  [/\basa\b|archery shooters association/i, 'asa archery shooters association'], [/usa archery/i, 'usa archery usaa'], [/las vegas/i, 'vegas'], [/olympic/i, 'olympics olympic games']];
+function acroTxt(x){ const t = [x.name, x.org, x.org_id, x.us_org, x.host, x.location].filter(Boolean).join(' '); return ACRO.filter(([re]) => re.test(t)).map(([, a]) => a).join(' '); }
 function roundTerms(x){   // archery jargon derived from rounds/discipline text
   const t = [x.rounds, x.discipline, x.name, x.level, x.flyer_extract && x.flyer_extract.rounds].filter(Boolean).join(' ').toLowerCase(), out = [];
   for (const m of t.matchAll(/\b(wa|aa|fita)\s?(\d{2,3})\s?\/?\s?(1440|720|960|1080|900)?/g)) { out.push(m[2] + 'm'); if (m[3]) out.push(m[3], 'wa' + m[3]); if (m[1] !== 'aa') out.push('fita world archery'); }
@@ -538,6 +542,16 @@ function vBrowse(){
   if (BF.cat === 'club' && BF.mc) list = list.filter(x => followed().includes(x.club_id));
   if (BF.ost) list = list.filter(x => x.org_status === BF.ost);
   if (Q) list = list.filter(x => matchQ(x, Q));
+  // A search covers every shoot everywhere: overseas events (data/intl.json) join the results unless a state/club/group filter narrows to Australia.
+  if (Q && !grp && !BF.state && !qState && !BF.clubId && !BF.club && !BF.scope.startsWith('g:')) {
+    if (!INTL) loadIntl().then(() => { if ((location.hash || '').startsWith('#/browse') && BF.q) { const y = scrollY, a = document.activeElement && document.activeElement.id; render(); scrollTo(0, y); const e = a && $('#' + a); if (e && e.setSelectionRange) { e.focus(); e.setSelectionRange(e.value.length, e.value.length); } } }).catch(() => {});
+    else { const have = new Set(list.map(x => x.id)); let ix = INTL.events.filter(x => !have.has(x.id) && matchQ(x, Q));
+      if (BF.day) ix = ix.filter(x => datable(x) && x.start_date <= BF.day && evEnd(x) >= BF.day);
+      if (BF.disc) ix = ix.filter(x => (x.discipline || '').startsWith(BF.disc));
+      if (BF.cat) ix = ix.filter(x => catOf(x) === BF.cat);
+      if (BF.ost) ix = ix.filter(x => x.org_status === BF.ost);
+      list = list.concat(ix); }
+  }
   const myD = myDated(), nClash = myD.length ? list.filter(x => !BF.past && !S.saved[x.id] && !S.entries[x.id] && clashes(x, myD).length).length : 0;
   if (BF.hideClash && myD.length) list = list.filter(x => S.saved[x.id] || S.entries[x.id] || !clashes(x, myD).length);
   let showPastNote = false;
