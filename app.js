@@ -1895,7 +1895,11 @@ function iHost(x){
     const h = (x.location || '').split(',')[0].trim(); return {id: '', name: h && !/^\d/.test(h) ? h : x.name}; }
   return {id: US_LOGO[x.us_org] || '', name: x.org || 'Archery'};
 }
+/* Olympic / Paralympic events: the five rings or the Paralympic Agitos (Wikimedia Commons SVGs) on a white circle. */
+const GAMES_LOGO = x => /paralympic/i.test(x.name) ? {file: 'img/logos/paralympic-agitos.svg', alt: 'Paralympic Agitos'} : /olympic/i.test(x.name) ? {file: 'img/logos/olympic-rings.svg', alt: 'Olympic rings'} : null;
 function iMark(x){
+  const gl = GAMES_LOGO(x);
+  if (gl) return `<span class="hm hm-logo hm-games" style="background:#fff"><img src="${gl.file}" alt="${gl.alt}" loading="lazy" decoding="async"></span>`;
   const h = iHost(x), L = LOGO[h.id];
   if (L) return `<span class="hm hm-logo"${L.bg ? ` style="background:${esc(L.bg)}"` : ''}><img src="${esc(L.sm || L.file)}" alt="${esc(h.name)} logo" loading="lazy" decoding="async"></span>`;
   const i = h.id === 'la28' ? 'LA28' : initials(h.name);

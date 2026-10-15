@@ -736,3 +736,5 @@ body.hb-open #hbBtn{display:none}
 .res-shoot{border:1px solid var(--line);border-radius:10px;margin:8px 0;padding:0 10px;background:#fff;color:#111}
 .res-shoot>summary{cursor:pointer;padding:12px 2px;min-height:44px;box-sizing:border-box}
 .res-shoot>summary small{color:#374151}
+.hm-games img{object-fit:contain;width:78%;height:78%;margin:auto}.hm-games{display:flex;align-items:center;justify-content:center;border:2px solid #fff}
+.hm-games{border-radius:50%!important}.hm-games img{width:90%;height:90%}
