@@ -613,8 +613,8 @@ function resultsBox(x){
   if (!r) return `<section class="panel results-box" id="results"><h2 class="sec">🏆 Results</h2><p class="note">We haven't found published results for this event yet. Clubs often post them on Archer's Diary or their own page${x.source_url ? ` – try the <a href="${esc(x.source_url)}" target="_blank" rel="noopener">event source ↗</a>` : ''}.</p></section>`;
   const src = `<a class="btn alt block" href="${esc(r.source_url)}" target="_blank" rel="noopener">↗ ${r.kind === 'full' ? 'Full results on' : 'Open results on'} ${esc(r.source_name)}</a>`;
   if (r.kind !== 'full') return `<section class="panel results-box" id="results"><h2 class="sec">🏆 Results</h2><p>${esc(r.title || 'Official results')} are published by the organiser.</p>${src}</section>`;
-  const n = r.groups.reduce((a, g) => a + g.rows.length, 0);
-return `<section class="panel results-box" id="results"><h2 class="sec">🏆 Results</h2><p class="note">${esc(r.title)} · ${n} archer${n === 1 ? '' : 's'} in ${r.groups.length} division${r.groups.length === 1 ? '' : 's'}.${r.note ? ' ' + esc(r.note) : ''} Source: <a href="${esc(r.source_url)}" target="_blank" rel="noopener">${esc(r.source_name)} ↗</a></p>${resTables(r, 2)}${src}</section>`;
+  const n = r.groups ? r.groups.reduce((a, g) => a + g.rows.length, 0) : r.n, ng = r.groups ? r.groups.length : r.ng;
+return `<section class="panel results-box" id="results"><h2 class="sec">🏆 Results</h2><p class="note">${esc(r.title)} · ${n} archer${n === 1 ? '' : 's'} in ${ng} division${ng === 1 ? '' : 's'}.${r.note ? ' ' + esc(r.note) : ''} Source: <a href="${esc(r.source_url)}" target="_blank" rel="noopener">${esc(r.source_name)} ↗</a></p>${r.groups ? resTables(r, 2) : `<div id="resTables" data-id="${esc(x.id)}"><p class="loading">Loading scores…</p></div>`}${src}</section>`;
 }
 function vShoot(id){
   const x = BYID[id]; if (!x) return `<div class="wrap"><div class="empty">Event not found.</div></div>`;
@@ -681,6 +681,7 @@ function vShoot(id){
   </div>`;
 }
 function bindShoot(id){
+  const rt = $('#resTables'); if (rt) fetch('data/results/' + id.replace(/[^A-Za-z0-9_.-]/g, '_') + '.json').then(r => r.json()).then(j => { RES[id].groups = j.groups; rt.innerHTML = resTables(RES[id], 2); if (/[?&]r=1/.test(location.hash)) { const b = $('#results'); if (b) b.scrollIntoView({block: 'start'}); } }).catch(() => { rt.innerHTML = '<p class="note">Couldn\'t load the scores – use the link below.</p>'; });
   if (/[?&]r=1/.test(location.hash)) setTimeout(() => { const r = $('#results'); if (r) r.scrollIntoView({block: 'start'}); }, 30);
   const sb = $('#saveBtn'); if (sb) sb.onclick = () => toggleSave(id);
   bindToggles($('#view'));
@@ -2021,7 +2022,7 @@ function render(){
   document.body.dataset.page = p || 'home';
   if (p === 'browse') { v.innerHTML = vBrowse(); bindBrowse(); }
   else if (p === 'shoot') { const id = decodeURIComponent(arg || ''); if (S.clubNew[id]) { delete S.clubNew[id]; save(); }
-    if (!BYID[id] && !INTL) { v.innerHTML = '<div class="wrap"><p class="loading">Loading event…</p></div>'; loadIntl().then(() => { if (location.hash === h) render(); }).catch(() => { if (location.hash === h) { v.innerHTML = vShoot(id); } }); }
+    if (!BYID[id] && !INTL) { v.innerHTML = '<div class="wrap"><p class="loading">Loading event…</p></div>'; loadIntl().then(() => { if (location.hash.split('?')[0] === h) render(); }).catch(() => { if (location.hash.split('?')[0] === h) { v.innerHTML = vShoot(id); } }); }
     else { v.innerHTML = vShoot(id); bindShoot(id); } }
   else if (p === 'calendar') { v.innerHTML = vCalendar(); bindCalendar(); }
   else if (p === 'entries') v.innerHTML = vEntries();
