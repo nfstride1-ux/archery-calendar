@@ -747,3 +747,10 @@ body.hb-open #hbBtn{display:none}
 .adm-btn{position:relative;background:#fff}
 .adm-badge{display:inline-block;min-width:18px;margin-left:6px;padding:0 5px;border-radius:999px;background:#c0392b;color:#fff;font-size:11px;line-height:18px;text-align:center}
 @media (max-width:760px){.adm-btn{padding:6px 10px}.adm-btn+.acct-btn{margin-left:6px}}
+/* Add my score (self-reported) */
+.self-box .tag.unoff{display:inline-block;font-size:.75rem;font-weight:700;background:#fff4d6;color:#7a5200;border:1px solid #e3b341;border-radius:999px;padding:2px 8px;vertical-align:middle}
+.self-box tr.mine td{background:#fffbea}
+.ss-form label{display:block;margin-top:8px;font-weight:600}
+.ss-form input,.ss-form select{width:100%;box-sizing:border-box;min-height:44px;font-size:1rem}
+.ss-form .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.ss-form .row{margin-top:12px;gap:8px;flex-wrap:wrap}

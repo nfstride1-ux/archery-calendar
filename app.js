@@ -659,6 +659,7 @@ function vShoot(id){
     ${x.date_note ? `<div class="warn date-note" id="dateNote">⚠ <b>Check the dates:</b> ${esc(x.date_note)}</div>` : ''}
     ${clashBox(x)}
     ${resultsBox(x)}
+    ${typeof selfBox === 'function' ? selfBox(x) : ''}
     ${flyerCard(x)}
     ${payBox(x)}
     <section class="panel"><h2 class="sec">Event details</h2><dl class="kv">
@@ -1462,7 +1463,7 @@ function vAccount(){
    <section class="panel"><h2 class="sec">Sync</h2><p class="sync-st" id="syncSt">${syncTxt}</p>
     <p class="note">${c.saved} saved event${c.saved === 1 ? '' : 's'} · ${c.ent} entr${c.ent === 1 ? 'y' : 'ies'}. Changes save on this device straight away and sync in the background, also after being offline.</p>
     <button class="btn alt" id="syncNow">↻ Sync now</button></section>
-   ${isAdmin() || ADMNAV.ok ? `<section class="panel"><h2 class="sec">🛡 Admin</h2><p>You’re an Archery Calendar admin.${ADMNAV.n ? ` <b>${ADMNAV.n} waiting for approval.</b>` : ''}</p><p class="row"><a class="btn gold" href="#/admin">Requests &amp; submissions</a><a class="btn alt" href="#/admin/approved">Approved people</a></p></section>` : ''}
+   ${isAdmin() || ADMNAV.ok ? `<section class="panel"><h2 class="sec">🛡 Admin</h2><p>You’re an Archery Calendar admin.${ADMNAV.n ? ` <b>${ADMNAV.n} waiting for approval.</b>` : ''}</p><p class="row"><a class="btn gold" href="#/admin">Requests &amp; submissions</a><a class="btn alt" href="#/admin/approved">Approved people</a><a class="btn alt" href="#/admin/scores">Self-reported scores</a></p></section>` : ''}
    <section class="panel"><h2 class="sec">Sign out</h2>
     <button class="btn alt block" id="so">Sign out (keep my events on this device)</button>
     <button class="btn alt block" id="soClear">Sign out and remove my events from this device</button>
@@ -2077,7 +2078,7 @@ function render(){
   if (p === 'browse') { v.innerHTML = vBrowse(); bindBrowse(); }
   else if (p === 'shoot') { const id = decodeURIComponent(arg || ''); if (S.clubNew[id]) { delete S.clubNew[id]; save(); }
     if (!BYID[id] && !INTL) { v.innerHTML = '<div class="wrap"><p class="loading">Loading event…</p></div>'; loadIntl().then(() => { if (location.hash.split('?')[0] === h) render(); }).catch(() => { if (location.hash.split('?')[0] === h) { v.innerHTML = vShoot(id); } }); }
-    else { v.innerHTML = vShoot(id); bindShoot(id); } }
+    else { v.innerHTML = vShoot(id); bindShoot(id); if (typeof selfBind === 'function') selfBind(id); } }
   else if (p === 'calendar') { v.innerHTML = vCalendar(); bindCalendar(); }
   else if (p === 'entries') v.innerHTML = vEntries();
   else if (p === 'settings') { v.innerHTML = vSettings(); bindSettings(); if (arg === 'clubs') setTimeout(() => { const c = $('#clubs'); c && c.scrollIntoView(); }, 30); }
@@ -2087,7 +2088,7 @@ function render(){
   else if (p === 'fans') { v.innerHTML = vFans(); bindFans(); }
   else if (p === 'account') { v.innerHTML = vAccount(); const aw = v.querySelector('.wrap.narrow'), ap = aw && AUTH.user ? aw.querySelector('section.panel') : null;
     if (aw) aw.insertAdjacentHTML('afterbegin', cardsAcctPanel()); bindAccount(); }
-  else if (p === 'admin') { v.innerHTML = vAdmin(); bindAdmin(); }
+  else if (p === 'admin') { v.innerHTML = vAdmin(); bindAdmin(); if (location.hash.split('?')[0] === '#/admin/scores') bindAdmScores(); }
   else if (p === 'cards') { v.innerHTML = vCards(); bindMCards(); }
   else if ((p === 'fix' || p === 'submit') && !/(?:^|[?&])f?sent=1/.test(location.search) && !(p === 'submit' && SUBDONE.sid) && subGate()) { v.innerHTML = vSubGate(p === 'fix' || arg === 'fix'); bindSubGate(); }
   else if (p === 'fix' || (p === 'submit' && arg === 'fix')) { v.innerHTML = vFix(decodeURIComponent(p === 'fix' ? (arg || '') : (h.split('/')[3] || ''))); bindFix(); }
@@ -2182,10 +2183,11 @@ function vAdmin(){
   if (!isAdmin()) return `${head}<div class="wrap narrow"><section class="panel"><p>This page is only for Archery Calendar admins. <a href="#/account">Sign in</a></p></section></div>`;
   if (!ADM.rows) { admLoad(); return `${head}<div class="wrap"><p class="loading">Loading submissions…</p></div>`; }
   if (location.hash.split('?')[0] === '#/admin/approved') return vAdmApproved(head);
+  if (location.hash.split('?')[0] === '#/admin/scores') return vAdmScores(head);
   const inst = new Map((ADM.subs || []).map(s => [String(s.email).toLowerCase(), s]));
   const reqs = (ADM.reqs || []).filter(q => q.status === 'pending' && !(inst.get(q.email) || {}).instant);
   const reqHtml = `<section class="panel adm-reqs"><h2 class="sec">People asking to add shoots (${reqs.length})</h2>${reqs.length ? reqs.map(q => `<div class="adm-req" data-rid="${esc(q.id)}"><div><b>${esc(q.name || '(no name)')}</b>${q.role ? ' · ' + esc(q.role) : ''}<br>${esc(q.club || '')}<br><span class="note">${esc(q.email)} · ${q.source === 'email' ? '✉️ email' : '📝 form'} · ${esc(new Date(q.created_at).toLocaleDateString('en-AU'))}</span>${q.note ? `<br><span class="note">${esc(q.note)}</span>` : ''}</div>
-      <div class="adm-btns row"><button class="btn gold" data-ract="approve">✓ Approve</button><button class="btn alt" data-ract="delete">✕ Delete</button></div></div>`).join('') : '<p class="note">No one waiting. 🎉</p>'}<p><a href="#/admin/approved">Approved people (${(ADM.subs || []).length}) · add someone →</a></p></section>`;
+      <div class="adm-btns row"><button class="btn gold" data-ract="approve">✓ Approve</button><button class="btn alt" data-ract="delete">✕ Delete</button></div></div>`).join('') : '<p class="note">No one waiting. 🎉</p>'}<p><a href="#/admin/approved">Approved people (${(ADM.subs || []).length}) · add someone →</a></p><p><a href="#/admin/scores">Self-reported scores · remove entries →</a></p></section>`;
   const rows = ADM.rows.filter(r => ADM.tab === 'all' || r.status === ADM.tab);
   const tabs = ['pending', 'live', 'rejected', 'all'].map(t => `<button type="button" class="btn sm ${ADM.tab === t ? 'gold' : 'alt'}" data-atab="${t}">${t[0].toUpperCase() + t.slice(1)} (${t === 'all' ? ADM.rows.length : ADM.rows.filter(r => r.status === t).length})</button>`).join(' ');
   const one = r => { const em = String(r.submitter_email || '').toLowerCase(), s = inst.get(em), pdf = /\.pdf/i.test(r.flyer_url || '');
