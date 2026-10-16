@@ -136,9 +136,10 @@ function migrateSettings(){
   S.v = 2; try { save(); } catch {}
 }
 /* ---------- helpers ---------- */
+const inGrp = (x, g) => x.org_group === g || (x.also_groups || []).includes(g);   // events open to several bodies (e.g. BOM 3D: AWA + AA + TAA)
 function visible(x, anyState){
   if (S.saved[x.id]) return true;
-  if (AUS()) return (S.groups.includes(x.org_group) || x.org_group === 'venue') && (anyState || !S.states.length || !x.state_code || S.states.includes(x.state_code));
+  if (AUS()) return (S.groups.some(g => inGrp(x, g)) || x.org_group === 'venue') && (anyState || !S.states.length || !x.state_code || S.states.includes(x.state_code));
   if (S.world && x.world_level) return true;
   if (S.orgs.includes(x.org_id)) return true;
   if (x.country_code && S.countries.includes(x.country_code) && !x.world_level) {
@@ -231,6 +232,7 @@ function badges(x, onCard){
   if (x.titles) b.push(`<span class="b titles">🏅 ${x.titles === 'state' ? 'State Titles' : 'Branch Titles'}</span>`);
   else if (/state champ/i.test(x.level || '')) b.push(`<span class="b titles">🏅 State Championship</span>`);
   if (x.members_only) b.push(`<span class="b members">👥 Club members only</span>`);
+  else if (x.also_groups && x.also_groups.length) b.push(`<span class="b open-to">✅ Open to ${esc([x.org_group, ...x.also_groups].filter(g => g === 'aa' || g === 'taa').map(g => g.toUpperCase()).join(' & '))} members</span>`);
   if (x.series_part) b.push(`<span class="b series">${esc(x.series_part)}</span>`);
   if (isPast(x)) b.push(`<span class="b past">◷ Finished</span>`);
   const st = ST(x.id);
@@ -455,7 +457,7 @@ function hay(x){
   const sc = x.state_code, st = STATES.find(z => z[0] === sc), months = [];
   if (x.start_date) for (let d = pd(x.start_date); d <= pd(x.end_date || x.start_date) && months.length < 14; d.setMonth(d.getMonth() + 1, 1)) months.push(MONL[d.getMonth()], MON[d.getMonth()], String(d.getFullYear()));
   if (x.end_date) { const e = pd(x.end_date); months.push(MONL[e.getMonth()], MON[e.getMonth()]); }
-  const grpTxt = {aa:'aa archery australia', aba:'aba bowhunters australian bowhunters association', awa:'awa archery wa archerywa', taa:'taa traditional archery australia trad'}[x.org_group] || '';
+  const GT = {aa:'aa archery australia', aba:'aba bowhunters australian bowhunters association', awa:'awa archery wa archerywa', taa:'taa traditional archery australia trad'}, grpTxt = [x.org_group, ...(x.also_groups || [])].map(g => GT[g] || '').join(' ');
   const lvl = [x.level, x.rounds, x.titles === 'state' ? 'state titles' : x.titles === 'branch' ? 'branch titles' : '', /\bqre\b|world record/i.test((x.name || '') + ' ' + (x.level || '')) ? 'qre world record status' : '',
     /national/i.test((x.level || '') + ' ' + x.name) && !/registered/i.test(x.level || '') ? 'nationals national' : '', x.members_only ? 'club championship members' : ''];
   const cat = catOf(x), catTxt = {competition:'competition event shoot tournament', club:'club event clubshoot social local', coaching:'coaching course coach', youth:'youth junior kids training', come_try:'come and try beginners', seminar:'seminar workshop clinic coaching coach masterclass'}[cat] + (x.book_anytime ? ' corporate team building book anytime' : '');
@@ -521,12 +523,12 @@ function vBrowse(){
   // Picking a state on this page overrides 'My states' from Settings.
   const Q = BF.q ? parseQuery(BF.q) : null, qState = !!(Q && Q.states.length);
   // A state named in the search (e.g. 'target sa') also overrides 'My states' from Settings.
-  const vis = grp ? EV.filter(x => x.org_group === grp) : EV.filter(x => visible(x, !!BF.state || qState));
+  const vis = grp ? EV.filter(x => inGrp(x, grp)) : EV.filter(x => visible(x, !!BF.state || qState));
   const scopes = AUS() ? [['all','All Australia'], ...GROUPS.map(g => ['g:' + g[0], {aa:'Archery Australia', aba:'ABA', awa:'Archery WA', taa:'TAA'}[g[0]]])] : [['all','All'], ['world','🌐 World'], ...S.countries.map(c => [c, CMAP[c] || c]), ...S.orgs.map(o => [o, (ORGS.find(x => x.id === o) || {}).name?.replace(/\s*\(.*\)/,'') || o])];
   const discs = [...new Set(vis.filter(x => (BF.past || !isPast(x)) && isShoot(x) && !/^(meeting|judging|coaching)/i.test(x.discipline || '')).map(x => (x.discipline || '').split(/[ (/]/)[0]).filter(Boolean))].sort();   // only disciplines with events to show
   if (BF.disc && !discs.includes(BF.disc)) discs.push(BF.disc);   // never hide an active filter behind 'All disciplines'
   let list = vis.slice();
-  if (BF.scope.startsWith('g:')) list = list.filter(x => x.org_group === BF.scope.slice(2));
+  if (BF.scope.startsWith('g:')) list = list.filter(x => inGrp(x, BF.scope.slice(2)));
   else if (BF.scope === 'world') list = list.filter(x => x.world_level);
   else if (BF.scope !== 'all') list = list.filter(x => x.country_code === BF.scope && !x.world_level && !['aba','archery-wa'].includes(x.org_id) || x.org_id === BF.scope);
   if (BF.clubId) list = EV.filter(x => x.club_id === BF.clubId);
@@ -966,7 +968,7 @@ function vCals(arg){
   if (arg === 'aba-j') { CF.org = 'aba'; CF.where = 'J – WA'; CF.disc = ''; }
   else if (CALS[arg]) { if (CF.org !== arg) { CF.where = ''; CF.disc = ''; } CF.org = arg; }
   const c = CALS[CF.org]; setTitle(c.name + ' calendar');
-  const all = EV.filter(x => x.org_group === CF.org && x.start_date && x.start_date >= '2026-01-01').sort((a, b) => a.start_date < b.start_date ? -1 : a.start_date > b.start_date ? 1 : a.name < b.name ? -1 : 1);
+  const all = EV.filter(x => inGrp(x, CF.org) && x.start_date && x.start_date >= '2026-01-01').sort((a, b) => a.start_date < b.start_date ? -1 : a.start_date > b.start_date ? 1 : a.name < b.name ? -1 : 1);
   const years = [...new Set(all.map(x => x.start_date.slice(0, 4)))];
   const wheres = [...new Set(all.map(calWhere).filter(Boolean))].sort();
   const discs = [...new Set(all.filter(x => isShoot(x) && !/^(meeting|judging|coaching)/i.test(x.discipline || '')).map(x => (x.discipline || '').split(/[ (/]/)[0]).filter(Boolean))].sort();
@@ -980,7 +982,7 @@ function vCals(arg){
   let html = `${pageHead('Calendars', 'Each organisation’s full calendar, in one place. Tap an event for details, entry and reminders.', CF.org === 'aba' ? 'aba_field' : CF.cat === 'youth' && PH.youth ? 'youth' : CF.cat === 'come_try' && PH.come_try ? 'come_try' : 'mixed')}<div class="wrap cals">
   <div class="tabs" role="tablist" aria-label="Organisation">${Object.entries(CALS).map(([k, o]) => `<a role="tab" class="tab" href="#/calendars/${k}" aria-selected="${k === CF.org}">${k === 'aba' ? abaLogo(32, 'chip-logo') : ''}${esc(o.name)}</a>`).join('')}</div>
   <div class="panel cal-head"><h2 class="sec${CF.org === 'aba' ? ' with-logo' : ''}">${CF.org === 'aba' ? abaLogo(64, 'head-logo') : ''}<span>${esc(c.full)} – ${years.join(' & ') || '2026'}</span></h2>
-  ${typeSel(CF.cat, tc)}${CF.cat === 'club' ? clubDrop(CF, x => x.org_group === CF.org && (CF.past || !isPast(x))) : ''}
+  ${typeSel(CF.cat, tc)}${CF.cat === 'club' ? clubDrop(CF, x => inGrp(x, CF.org) && (CF.past || !isPast(x))) : ''}
   ${CF.org === 'aba' ? `<div class="chips" role="group" aria-label="Branch"><a class="chip" href="#/calendars/aba" id="brAll" aria-pressed="${!CF.where}">All branches</a><a class="chip" href="#/calendars/aba-j" id="brJ" aria-pressed="${CF.where === 'J – WA'}">Branch J (WA)</a></div>` : ''}
   ${CF.org === 'aba' && CF.where === 'J – WA' ? `<div class="branch-src" id="branchJ"><a class="bs-img" href="sources/aba-j-2026-branch-calendar.jpg" target="_blank" rel="noopener" aria-label="Open the Branch J calendar full size"><img src="sources/aba-j-2026-branch-calendar-sm.jpg" alt="ABA Branch J (WA) Event Calendar 2026" width="110" loading="lazy"></a>
     <div><b>ABA Branch J (WA) Event Calendar 2026</b><p class="note">The branch source for WA ABA events (supported by the WA Government and Lotterywest).<br><b>Interclub times:</b> Sat sign-in 10:00–11:00, muster 11:45, start 12:00 · Sun sign-in 8:00–9:00, muster 9:45, start 10:00.</p>

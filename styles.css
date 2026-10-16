@@ -754,3 +754,4 @@ body.hb-open #hbBtn{display:none}
 .ss-form input,.ss-form select{width:100%;box-sizing:border-box;min-height:44px;font-size:1rem}
 .ss-form .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
 .ss-form .row{margin-top:12px;gap:8px;flex-wrap:wrap}
+.b.open-to{background:#e6f6ea;color:#17602b}
