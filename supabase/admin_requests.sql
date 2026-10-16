@@ -105,4 +105,46 @@ grant execute on function public.approve_request(uuid) to authenticated;
 select public.request_approval('info@southwestbowhunters.net', 'Deborah Elliott', 'Southwest Bowhunters', 'Secretary', 'email',
   'FormSubmit 13 Oct: Walk the Trail Shoot (AZ)');
 
-select status, name, email, club from public.submitter_requests order by created_at desc;
+
+-- Bot access (no service-role key): one token, stored only as a SHA-256 hash, can approve / remove / list.
+create table if not exists public.bot_tokens (id int primary key default 1 check (id = 1), token_hash text not null, created_at timestamptz not null default now());
+alter table public.bot_tokens enable row level security;   -- no policies: unreadable from the browser
+revoke all on public.bot_tokens from anon, authenticated;
+
+create or replace function public.bot_manage_submitter(p_token text, p_action text, p_email text default null, p_name text default null, p_club text default null)
+returns jsonb language plpgsql security definer set search_path = public, extensions as $$
+declare em text := lower(trim(coalesce(p_email,''))); dom text;
+begin
+  if p_token is null or not exists (select 1 from bot_tokens where token_hash = encode(digest(p_token, 'sha256'), 'hex')) then
+    raise exception 'bad token'; end if;
+  if em like '@%' then dom := substr(em, 2); end if;
+  if p_action = 'list' then
+    return jsonb_build_object(
+      'pending', (select coalesce(jsonb_agg(jsonb_build_object('email',email,'name',name,'club',club,'note',note)), '[]') from submitter_requests where status = 'pending'),
+      'approved', (select coalesce(jsonb_agg(jsonb_build_object('email',email,'name',name,'club',club)), '[]') from approved_submitters where instant),
+      'domains', (select coalesce(jsonb_agg(domain), '[]') from approved_domains));
+  elsif p_action = 'approve' then
+    if dom is not null then insert into approved_domains (domain, label) values (dom, p_club) on conflict (domain) do nothing;
+      update submitter_requests set status = 'approved', decided_at = now() where status = 'pending' and split_part(email,'@',2) = dom;
+    else
+      if em !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' then raise exception 'bad email'; end if;
+      insert into approved_submitters (email, name, club, instant) values (em, p_name, p_club, true)
+      on conflict (email) do update set instant = true, name = coalesce(excluded.name, approved_submitters.name), club = coalesce(excluded.club, approved_submitters.club);
+      update submitter_requests set status = 'approved', decided_at = now() where status = 'pending' and email = em;
+    end if;
+  elsif p_action = 'remove' then
+    if dom is not null then delete from approved_domains where domain = dom;
+    else delete from approved_submitters where email = em;
+      update submitter_requests set status = 'deleted', decided_at = now() where status = 'pending' and email = em; end if;
+  else raise exception 'action must be approve, remove or list'; end if;
+  return jsonb_build_object('ok', true, 'action', p_action, 'target', em);
+end $$;
+revoke all on function public.bot_manage_submitter(text,text,text,text,text) from public;
+grant execute on function public.bot_manage_submitter(text,text,text,text,text) to anon, authenticated;
+
+-- Shows the bot token ONCE (first run). Copy it and give it to the bot. Later runs say it's already set.
+-- To make a new one: delete from public.bot_tokens; then run this whole block again.
+with t as (select encode(extensions.gen_random_bytes(24), 'hex') as tok),
+     ins as (insert into public.bot_tokens (token_hash) select encode(extensions.digest(tok, 'sha256'), 'hex') from t
+             where not exists (select 1 from public.bot_tokens) returning 1)
+select case when exists (select 1 from ins) then (select tok from t) else 'already set (delete from public.bot_tokens to make a new one)' end as bot_token;
