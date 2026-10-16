@@ -780,17 +780,21 @@ function vCalendar(){
     g += `<div class="c ${ev.length ? 'has' : ''} ${t ? 't' : ''} ${CD === k ? 'sel' : ''}" data-day="${k}" role="button" tabindex="0" aria-label="${d} ${MONL[m]}${ev.length ? ': ' + esc(ev.map(x => x.name + ' – ' + ST_TXT[ST(x.id)].replace(/[☐✓$·]/g, '').replace(/\s+/g, ' ').trim()).join(', ')) : ''}${fd ? ` – ${fd} from your clubs` : ''}">${d}${fd ? '<span class="fdot" aria-hidden="true"></span>' : ''}${mk ? `<span class="mk" aria-hidden="true">${mk}</span>` : ''}${ev.length ? `<span class="dot">${ev.length > 1 ? ev.length + ' events' : '●'}</span>` : ''}</div>`; }
   dayMine = byDay;
   const inMonth = mine.filter(x => x.start_date && (x.start_date.slice(0, 7) === iso(first).slice(0, 7) || (x.end_date || '').slice(0, 7) === iso(first).slice(0, 7)));
-  const up = mine.filter(x => !isPast(x)), past = mine.filter(isPast);
+  /* Upcoming / in progress first (soonest first); then Completed in the order they finished (venue/state end of last day). */
+  const endMs = x => { const e = x.end_date || x.start_date; if (!e) return Infinity; try { return ssMidnight(e, ssTz(x), 1); } catch { return pd(e).getTime() + 864e5; } };
+  const done = x => endMs(x) <= Date.now(), byEnd = (a, b) => endMs(a) - endMs(b) || ((a.start_date || '') < (b.start_date || '') ? -1 : 1);
+  const split = L => [L.filter(x => !done(x)), L.filter(done).sort(byEnd)];
+  const up = mine.filter(x => !done(x)), past = mine.filter(done).sort(byEnd), [mUp, mPast] = split(inMonth);
   return `${pageHead('My events', 'Your saved events, month by month.', 'target')}<div class="wrap narrow"><a class="btn gold block mcc-quick" href="#/cards">🪪 My membership cards${MCD.list.length ? ` (${MCD.list.length})` : ''}</a><div class="calnav"><button id="pm" aria-label="Previous month">‹</button><b>${MONL[m]} ${y}</b><button id="nm" aria-label="Next month">›</button></div>
   <div class="grid">${g}</div>
   ${CD && CD.slice(0, 7) === iso(first).slice(0, 7) ? dayPanel(CD, byDay[CD] || []) : ''}
   ${clashPairsHtml()}
   <div class="legend"><span class="b lg-day">■ event day</span><span class="b lg-day">✓ entered</span><span class="b lg-day">✓$ entered + paid</span><span class="b lg-today">□ today</span>${followed().length ? '<span class="b lg-day"><span class="fdot lg" aria-hidden="true"></span> your clubs</span>' : ''}</div><p class="note">Tap any day to see events from your clubs. Tap a finished day to see the results.</p>
-  ${inMonth.length ? `<h2>In ${MONL[m]}</h2>${inMonth.map(evCard).join('')}` : ''}
+  ${inMonth.length ? `<h2>In ${MONL[m]}</h2>${mUp.map(evCard).join('')}${mPast.length ? `<h3 class="dp-sub">Completed (${mPast.length})</h3>${mPast.map(evCard).join('')}` : ''}` : ''}
   <h2>All my upcoming events (${up.length})</h2>
   ${up.length ? up.map(evCard).join('') : `<div class="empty">Nothing saved yet. Tap ☆ on events in <a href="#/browse">Browse</a>.</div>`}
   ${up.length ? `<button class="btn block" id="icsAll">▦ Export all to phone calendar (.ics)</button>` : ''}
-  ${past.length ? `<h2>Finished (${past.length})</h2>${past.map(evCard).join('')}` : ''}</div>`;
+  ${past.length ? `<h2>Completed (${past.length})</h2>${past.map(evCard).join('')}` : ''}</div>`;
 }
 function bindCalendar(){
   document.querySelectorAll('.grid [data-day]').forEach(c => { c.onclick = () => { const k = c.dataset.day; if (k < iso(today()) && !(CSHOOT[k] || []).length) { const evs = [...(dayMine[k] || []), ...(followed().length ? folOnDay(k) : [])].filter((x, i, a) => a.findIndex(y => y.id === x.id) === i); if (evs.length === 1) { location.hash = '#/shoot/' + encodeURIComponent(evs[0].id) + '?r=1'; return; } } CD = CD === k ? '' : k; render(); const p = $('#dayPanel'); if (p) p.scrollIntoView({block: 'nearest', behavior: 'smooth'}); };
