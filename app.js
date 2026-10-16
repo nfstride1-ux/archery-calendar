@@ -111,7 +111,7 @@ async function boot(){
     navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(r => { r.update();
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') r.update().catch(() => {}); }); }).catch(() => {});
   }
-  importHandoff(); clubUpdates(); route(); loadLiveSubs().then(n => { if (n) softRender(); }); cardsLoad().catch(() => {});
+  importHandoff(); clubUpdates(); route(); loadLiveSubs().then(n => loadOverrides().then(m => { if (n || m) softRender(); })); cardsLoad().catch(() => {});
   if (Object.keys(S.saved).concat(Object.keys(S.entries)).some(id => !BYID[id])) loadIntl().then(() => { const y = scrollY; render(); scrollTo(0, y); }).catch(() => {}); checkReminders(); setInterval(checkReminders, 60 * 60 * 1000);
   initAuth().catch(e => console.warn('auth', e));
 }
@@ -679,11 +679,12 @@ function vShoot(id){
       ${x.divisions ? `<dt>Divisions</dt><dd>${esc(x.divisions)}${x.field_sources?.divisions ? ` <span class="src">${esc(srcTxt(x.field_sources.divisions))}</span>` : ''}</dd>` : ''}
       ${x.registration_opens ? `<dt>Entries open</dt><dd>${esc(x.registration_opens)}</dd>` : ''}
       ${closeTxt ? `<dt>Entries close</dt><dd>${esc(closeTxt)}${x.field_sources?.entry_close_date ? ` <span class="src">from ${esc(x.field_sources.entry_close_date)}</span>` : ''}</dd>` : ''}
+      ${x.contact ? `<dt>Contact</dt><dd>${esc(x.contact)}</dd>` : ''}
       ${x.fee ? `<dt>Fee</dt><dd>${esc(x.fee)}${x.field_sources?.fee ? ` <span class="src">from ${esc(x.field_sources.fee)}</span>` : ''}</dd>` : ''}
     </dl>${x.notes ? `<p class="note">${esc(x.notes)}</p>` : ''}</section>
     ${CALS[x.org_group] ? `<p class="note"><a href="#/calendars/${x.org_group}">📅 See it in the full ${esc(CALS[x.org_group].name)} calendar</a></p>` : ''}
     <p class="note" id="srcLine">${I ? 'Official source' : 'Source'}: ${x.source_url ? `<a href="${esc(x.source_url)}" target="_blank" rel="noopener">${esc(srcName)}</a>` : esc(srcName || 'organiser')}${x.source_extra ? ` · <a href="${esc(x.source_extra)}" target="_blank" rel="noopener">host club's event page</a>` : ''}${x.also_listed ? ` · also <a href="${esc(x.also_listed)}" target="_blank" rel="noopener">${/worldarchery/.test(x.also_listed) ? 'World Archery listing' : 'listed here'}</a>` : ''}${x.source_note ? `<br>${esc(x.source_note)}` : ''}${x.branch_source ? `<br>Branch source: <a href="${esc(x.branch_source.url)}" target="_blank" rel="noopener" id="branchSrc">${esc(x.branch_source.name)}</a>` : ''}<br>${x.last_checked ? `Checked ${esc(x.last_checked)}. ` : ''}Always confirm details with the organiser.</p>
-    <p class="note fix-link"><a href="#/fix/${esc(encodeURIComponent(x.id))}" id="fixLink">✏️ Something wrong? Suggest a fix</a></p>
+    <p class="note fix-link">${isAdmin() ? `<a class="btn gold" href="#/fix/${esc(encodeURIComponent(x.id))}" id="adminEdit">✏️ Edit (admin)</a> ` : ''}<a href="#/fix/${esc(encodeURIComponent(x.id))}" id="fixLink">✏️ Something wrong? Suggest a fix</a></p>
    </div>
    <aside class="side">
     <section class="panel act">${closeTxt && ST(id) === 'none' && daysTo(x.entry_close_date) >= 0 ? `<p class="closes">⏳ Entries close<br><b>${esc(closeTxt)}</b></p>` : ''}
@@ -1902,7 +1903,7 @@ let ICTRY = {countries: []}, INTL = null, INTLP = null;
 let IF = {code: '', q: '', disc: '', org: '', st: '', past: false, limit: 60};
 const flag = iso => iso && /^[A-Z]{2}$/.test(iso) ? String.fromCodePoint(...[...iso].map(c => 0x1F1A5 + c.charCodeAt(0))) : '🌐';
 const loadIntl = () => INTL ? Promise.resolve(INTL) : (INTLP = INTLP || fetch('data/intl.json').then(r => r.json()).then(j => {
-  j.events.forEach(x => { x._intl = true; if (!BYID[x.id]) BYID[x.id] = x; }); return (INTL = j); }));
+  j.events.forEach(x => { x._intl = true; if (OVR[x.id]) applyOvr(x, OVR[x.id]); if (!BYID[x.id]) BYID[x.id] = x; }); return (INTL = j); }));
 /* Back from an international event page returns to the same country page, filters (IF) and scroll position. */
 const IBACK = {};
 const iBackHash = x => '#/intl/' + (IF.code && (IF.code === 'WORLD' ? x.country_code !== 'USA' || x.world_major : IF.code === x.country_code) ? IF.code : x.country_code === 'USA' ? 'USA' : x.world_page === false ? x.country_code : 'WORLD');
@@ -2140,6 +2141,19 @@ function clubDefaults(ev){
   return ev;
 }
 /* Public read of live club submissions – plain REST with the publishable key, no library needed. */
+/* Admin live edits: public.event_overrides (supabase/event_overrides.sql) merged over events.json / intl.json. */
+const OVR = {};
+const OVR_KEYS = ['start_date', 'end_date', 'start_times', 'location', 'rounds', 'divisions', 'entry_close_date', 'contact', 'registration_url', 'registration_url_kind', 'cancelled', 'notes',
+  'flyer_url', 'flyer_web', 'flyer_web_sm', 'flyer_is_pdf', 'flyer_label', 'flyer_year', 'flyer_is_current', 'flyer_source_name', 'org_status', 'last_checked'];
+function applyOvr(x, f){ OVR_KEYS.forEach(k => { if (f && k in f) x[k] = f[k]; }); x._ovr = true; return x; }
+async function loadOverrides(){
+  if (!AUTH.configured) return 0;
+  try { const r = await fetch(SB_URL.replace(/\/$/, '') + '/rest/v1/event_overrides?select=event_id,fields', {headers: {apikey: SB_KEY}, cache: 'no-cache'});
+    if (!r.ok) return 0; const rows = await r.json(); let n = 0;
+    rows.forEach(o => { OVR[o.event_id] = o.fields || {}; const x = BYID[o.event_id]; if (x) { applyOvr(x, OVR[o.event_id]); n++; } });
+    if (n) EV.sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
+    return n; } catch { return 0; }
+}
 async function loadLiveSubs(){
   if (!AUTH.configured) return 0;
   try { const r = await fetch(SB_URL.replace(/\/$/, '') + '/rest/v1/live_events?select=*&order=start_date.asc', {headers: {apikey: SB_KEY}});
@@ -2538,11 +2552,11 @@ const fixDates = x => x ? [x.start_date, x.end_date && x.end_date !== x.start_da
 const fdate = d => d ? pd(d).toLocaleDateString('en-AU', {day: 'numeric', month: 'short', year: 'numeric'}) : '';
 const fixNow = x => { if (!x) return {}; const fe = x.flyer_extract || {};
   return {dates: x.start_date ? range(x) : '', start: x.start_date || '', end: x.end_date || x.start_date || '', time: x.start_times || fe.start_time || fe.times || '', venue: x.location || '',
-    rounds: x.rounds || fe.rounds || '', divs: x.divisions || fe.divisions || fe.classes || '', close: x.entry_close_date || '', link: x.registration_url || fe.registration || '',
-    flyer: x.flyer_local || x.flyer_url ? (x.flyer_label || 'Flyer on file') : '', status: x.cancelled ? 'Cancelled' : 'Going ahead (as listed)'}; };
+    rounds: x.rounds || fe.rounds || '', divs: x.divisions || fe.divisions || fe.classes || '', close: x.entry_close_date || '', link: x.contact ? (typeof x.contact === 'string' ? x.contact : [x.contact.name, x.contact.phone, x.contact.email].filter(Boolean).join(' · ')) : fe.registration || '', reg: x.registration_url || '', enotes: x.notes || '',
+    flyer: x.flyer_local || x.flyer_url || x.flyer_web ? (x.flyer_label || 'Flyer on file') : '', status: x.cancelled ? 'Cancelled' : 'Going ahead (as listed)'}; };
 // [key, label, kind]
 const FIX_ROWS = [['dates', 'Date(s)', 'dates'], ['time', 'Start time', 'time'], ['venue', 'Venue / address', 'venue'], ['rounds', 'Round(s) / distances', 'rounds'],
-  ['divs', 'Divisions / bow classes', 'divs'], ['close', 'Entry closing date', 'date'], ['link', 'Entry link / contact', 'text'], ['flyer', 'Flyer', 'file']];
+  ['divs', 'Divisions / bow classes', 'divs'], ['close', 'Entry closing date', 'date'], ['link', 'Entry contact / how to enter', 'text'], ['reg', 'Register / entry link (URL)', 'url'], ['flyer', 'Flyer', 'file'], ['enotes', 'Event notes', 'area']];
 function fixRows(x){
   if (!x) return `<p class="note" id="fx_none">Pick an event above to see what we have listed.</p>`;
   const n = fixNow(x);
@@ -2556,13 +2570,15 @@ function fixRows(x){
     : kind === 'divs' ? comboHtml('fx_divs', 'Type a bow type or age class…', true) + '<p class="hint">Pick all that apply. Not listed? Type it and press Enter.</p>'
     : kind === 'date' ? `<input id="fx_${k}" type="date" value="${esc(n[k])}">`
     : kind === 'file' ? `<input id="fx_file" name="attachment" type="file" disabled accept=".pdf,application/pdf,image/*,.heic,.heif"><p class="hint">PDF (up to ${MAX_MB} MB) or any photo – big photos are shrunk automatically. <span id="fx_file_n" class="note"></span></p>`
+    : kind === 'url' ? `<input id="fx_${k}" type="url" inputmode="url" maxlength="500" placeholder="https://…" value="${esc(n[k])}">`
+    : kind === 'area' ? `<textarea id="fx_${k}" rows="4" maxlength="2000">${esc(n[k])}</textarea>`
     : `<input id="fx_${k}" maxlength="300" value="${esc(n[k])}">`;
   return `<ul class="fx-list" id="fx_rows">${FIX_ROWS.map(([k, lab, kind]) => `<li class="fx-row" data-k="${k}" data-kind="${kind}">
       <div class="fx-head"><span class="fx-lab">${esc(lab)}</span><button type="button" class="fx-pen" data-pen="${k}" aria-expanded="false" aria-label="Edit ${esc(lab.toLowerCase())}">✏️ <span>Edit</span></button></div>
       <div class="fx-cur">${show(k) ? esc(show(k)) : '<span class="muted">Not listed</span>'}</div>
       <div class="fx-edit" hidden>${inp(k, kind)}</div></li>`).join('')}
     <li class="fx-row" data-k="status"><div class="fx-head"><span class="fx-lab">Status</span></div><div class="fx-cur">${esc(n.status)}</div>
-      <label class="chk tick"><input type="checkbox" id="fx_cancel"><span>This event is <b>cancelled or postponed</b></span></label></li></ul>`;
+      ${x.cancelled ? `<label class="chk tick"><input type="checkbox" id="fx_uncancel"><span>This event is <b>back on</b> (no longer cancelled)</span></label>` : `<label class="chk tick"><input type="checkbox" id="fx_cancel"><span>This event is <b>cancelled or postponed</b></span></label>`}</li></ul>`;
 }
 /* ---------- #/fix helpers: type-ahead combobox (single or multi with chips), venue suggestions, round/division lists ---------- */
 let RNDS = null;
@@ -2632,7 +2648,7 @@ function vFix(id){
     <span class="thanks-mark" aria-hidden="true">✓</span><h2 class="sec">Thanks, we'll review and update it shortly.</h2>
     <p>If we need anything else we'll reply to the email you gave us.</p>
     <div class="row"><a class="btn gold" href="#/fix">Fix another event</a><a class="btn alt" href="#/browse">Find events</a></div></section></div>`;
-  const x = BYID[id];
+  const x = BYID[id], ADM = isAdmin();
   const f = (fid, lab, inp, hint = '', req = false) => `<div class="fld" data-f="${fid}"><label for="${fid}">${lab}${req ? ' <span class="req" aria-hidden="true">*</span>' : ' <span class="opt">(optional)</span>'}</label>${inp}${hint ? `<p class="hint" id="${fid}_h">${hint}</p>` : ''}<p class="err" id="${fid}_e" role="alert"></p></div>`;
   return `${head}<div class="wrap narrow sub">${subTabs('fix')}
   <form id="fixForm" class="panel sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate>
@@ -2656,17 +2672,18 @@ function vFix(id){
       <p class="err" id="fx_any_e" role="alert"></p>
       ${f('fx_notes', 'Other notes', `<textarea id="fx_notes" name="other_notes" rows="3" maxlength="2000" placeholder="Anything else we should know"></textarea>`)}
     </fieldset>
-    <fieldset><legend>3. About you</legend>
+    ${ADM ? `<p class="note verify" id="fxAdmin">🛡 You're signed in as an admin: changes save <b>live</b> to the site straight away.</p>` : ''}<fieldset${ADM ? ' hidden id="fxAbout"' : ''}><legend>3. About you</legend>
       <div class="grid2">${f('fx_who', 'Your name', `<input id="fx_who" name="contact_name" required maxlength="80" autocomplete="name">`, 'A real person, not just the club name.', true)}
       ${roleFld('fx', (a, b, c, d = '') => f(a, b, c, d, true))}</div>
       ${f('fx_club', 'Club', `<input id="fx_club" name="club" required maxlength="120" autocomplete="organization" value="${esc(x && x.host ? x.host : '')}">`, '', true)}
       ${f('fx_email', 'Email', `<input id="fx_email" name="email" type="email" required maxlength="120" autocomplete="email" inputmode="email">`, 'So we can check with you if anything is unclear.', true)}
       <p class="note verify">✅ ${esc(VERIFY_NOTE)}</p>
     </fieldset>
-    <p class="note priv">🔒 Nothing on the site changes straight away: your correction is emailed to us (${esc(SITE.contact)}, NFS Strategic Holdings) via FormSubmit, we check it, then update the listing.</p>
+    <p class="note priv"${ADM ? ' hidden' : ''}>🔒 Nothing on the site changes straight away: your correction is emailed to us (${esc(SITE.contact)}, NFS Strategic Holdings) via FormSubmit, we check it, then update the listing.</p>
     <p class="err sum" id="fixErr" role="alert"></p>
-    <div class="sub-actions"><button class="btn gold" type="submit" id="fixBtn">Send correction</button>
-      <a class="btn alt" id="fixMail" href="mailto:${esc(SITE.contact)}">Email it instead</a></div>
+    <p class="note ok" id="fxLive" role="status" hidden></p>
+    <div class="sub-actions"><button class="btn gold" type="submit" id="fixBtn">${ADM ? 'Save live' : 'Send correction'}</button>
+      <a class="btn alt" id="fixMail"${ADM ? ' hidden' : ''} href="mailto:${esc(SITE.contact)}">Email it instead</a></div>
   </form></div>`;
 }
 function bindFix(){
@@ -2692,7 +2709,7 @@ function bindFix(){
       if ((k === 'rounds' || k === 'divs') && !CB['fx_' + k]) loadRounds().then(R => bindCombo('fx_' + k, k === 'rounds' ? listItems(R.rounds, catDisc(cur)) : listItems(R.divisions, cur && cur.org_group === 'aba' ? 'ABA' : ''), true)).catch(() => {});
       const i = ed.querySelector('input,textarea'); i && setTimeout(() => i.focus(), 0); }
     if (fm.dataset.tried) check(); });
-  const pick = () => { const x = list.find(e => fixLabel(e) === val('fx_ev')) || null;
+  const pick = () => { const x = list.find(e => fixLabel(e) === val('fx_ev')) || (cur && fixLabel(cur) === val('fx_ev') ? cur : null);
     if (x === cur) return x; cur = x;
     g('fx_id').value = x ? x.id : ''; g('fx_name').value = x ? x.name : ''; g('fx_date').value = fixDates(x);
     g('fx_page').value = x ? SITE_URL() + '#/shoot/' + encodeURIComponent(x.id) : '';
@@ -2709,6 +2726,7 @@ function bindFix(){
       else if (k === 'venue' || k === 'rounds' || k === 'divs') { const v = comboVal('fx_' + k); if (v && v !== (n[k] || '').trim()) out.push([lab, n[k] || 'Not listed', v]); }
       else { const v = val('fx_' + k); if (v !== (n[k] || '').trim()) out.push([lab, (k === 'close' ? fdate(n.close) : n[k]) || 'Not listed', (k === 'close' ? fdate(v) : v) || '(remove)']); } });
     if (g('fx_cancel') && g('fx_cancel').checked) out.push(['Status', n.status, 'Cancelled or postponed']);
+    if (g('fx_uncancel') && g('fx_uncancel').checked) out.push(['Status', n.status, 'Going ahead']);
     return out; };
   function check(){
     const errs = [], add = (id, m) => { setErr(id, m); if (m) errs.push(id); };
@@ -2726,6 +2744,7 @@ function bindFix(){
       const any = changes().length; g('fx_any_e').textContent = dm || fm_ || (any ? '' : 'Tap ✏️ and change at least one thing (or tick cancelled).');
       if (!any) errs.push('fx_any');
     }
+    if (isAdmin()) return errs;
     add('fx_who', personErr(val('fx_who'), val('fx_club')));
     add('fx_club', val('fx_club') ? '' : 'Enter your club.');
     add('fx_role', roleErr('fx'));
@@ -2747,6 +2766,7 @@ function bindFix(){
     if (errs.length) { e.preventDefault(); $('#fixErr').textContent = `Please fix ${errs.length === 1 ? 'the highlighted part' : `the ${errs.length} highlighted parts`}.`;
       const first = errs[0] === 'fx_any' ? fm.querySelector('[data-pen]') : errs[0] === 'fx_start' ? g('fx_start') : errs[0] === 'fx_file' ? g('fx_file') : g(errs[0]); first && first.focus(); return; }
     $('#fixErr').textContent = '';
+    if (isAdmin() && AUTH.client && AUTH.user) { e.preventDefault(); adminSave(); return; }
     if (!SITE.formEndpoint || !navigator.onLine) { e.preventDefault(); g('fixMail').click(); location.href = g('fixMail').href; toast('Opening your email app…'); return; }
     g('fx_changes').value = changeText(); g('fx_role_val').value = roleVal('fx'); rememberMe({s_name: val('fx_who'), s_email: val('fx_email'), s_club: val('fx_club'), s_role: g('fx_role').value, s_role_other: (g('fx_role_other') || {}).value});
     g('fx_gen').innerHTML = changes().map(([l, o, n]) => `<input type="hidden" name="${esc(l)}" value="${esc(o + ' → ' + n)}">`).join('');
@@ -2756,7 +2776,42 @@ function bindFix(){
     const b = g('fixBtn'); b.disabled = true; b.textContent = 'Sending…';
     kcSubmit(e, fm, val('fx_email'), tag => { fm.querySelector('[name=_subject]').value = tag + subject(); });
   };
-  window.addEventListener('pageshow', () => { const b = $('#fixBtn'); if (b) { b.disabled = false; b.textContent = 'Send correction'; } }, {once: true});
+  /* Admin: write the open, changed rows to public.event_overrides and apply them on this page at once. */
+  async function adminSave(){
+    const b = g('fixBtn'), live = g('fxLive'), x = cur, n = fixNow(x), p = {};
+    b.disabled = true; b.textContent = 'Saving…'; live.hidden = true;
+    try {
+      fm.querySelectorAll('.fx-row.editing').forEach(row => { const k = row.dataset.k;
+        if (k === 'dates') { const s = val('fx_start'), en = val('fx_end') || s; if (s) Object.assign(p, {start_date: s, end_date: en}); }
+        else if (k === 'time') { const a = val('fx_tasm'), sh = val('fx_tshoot'); if (a || sh) p.start_times = [a && 'Assembly ' + fmtTime(a), sh && 'shooting starts ' + fmtTime(sh)].filter(Boolean).join(', '); }
+        else if (k === 'venue') { const v = comboVal('fx_venue'); if (v) p.location = v; }
+        else if (k === 'rounds') { const v = comboVal('fx_rounds'); if (v) p.rounds = v; }
+        else if (k === 'divs') { const v = comboVal('fx_divs'); if (v) p.divisions = v; }
+        else if (k === 'close') p.entry_close_date = val('fx_close') || null;
+        else if (k === 'link') p.contact = val('fx_link') || null;
+        else if (k === 'reg') { const v = val('fx_reg'); if (v && !/^https?:\/\//i.test(v)) throw new Error('The register link must start with https://'); p.registration_url = v || null; p.registration_url_kind = v ? 'entry_page' : null; }
+        else if (k === 'enotes') p.notes = val('fx_enotes') || null; });
+      if (g('fx_cancel') && g('fx_cancel').checked) p.cancelled = true;
+      if (g('fx_uncancel') && g('fx_uncancel').checked) p.cancelled = false;
+      const fl = g('fx_file') && !g('fx_file').disabled && g('fx_file').files[0];
+      if (fl) { const ext = (/\.([a-z0-9]+)$/i.exec(fl.name) || [, 'jpg'])[1].toLowerCase(), isPdf = ext === 'pdf' || fl.type === 'application/pdf';
+        const path = `overrides/${x.id.replace(/[^\w.-]/g, '_')}-${Date.now()}.${ext}`;
+        const up = await AUTH.client.storage.from(FLY_BUCKET).upload(path, fl, {contentType: fl.type || (isPdf ? 'application/pdf' : 'image/jpeg'), upsert: true});
+        if (up.error) throw new Error('Flyer upload failed: ' + up.error.message);
+        const url = AUTH.client.storage.from(FLY_BUCKET).getPublicUrl(path).data.publicUrl;
+        Object.assign(p, {flyer_url: isPdf ? url : null, flyer_web: isPdf ? null : url, flyer_web_sm: isPdf ? 'icons/icon-512.png' : url, flyer_is_pdf: isPdf, flyer_label: 'Flyer (updated)', flyer_year: +(p.start_date || x.start_date || '').slice(0, 4) || null, flyer_is_current: true, flyer_source_name: 'admin upload', org_status: 'flyer'}); }
+      if (!Object.keys(p).length) throw new Error('Nothing changed: tap ✏️ and change something first.');
+      p.last_checked = new Date().toISOString().slice(0, 10);
+      const fields = Object.assign({}, OVR[x.id] || {}, p);
+      const r = await AUTH.client.from('event_overrides').upsert({event_id: x.id, fields, updated_by: AUTH.user.email}, {onConflict: 'event_id'});
+      if (r.error) throw new Error(/relation|does not exist|schema cache/i.test(r.error.message) ? 'The event_overrides table isn\'t set up yet (run supabase/event_overrides.sql).' : /row-level|permission/i.test(r.error.message) ? 'The database didn\'t accept you as an admin.' : r.error.message);
+      OVR[x.id] = fields; applyOvr(x, fields); EV.sort((a, c) => (a.start_date || '9') < (c.start_date || '9') ? -1 : 1);
+      live.innerHTML = `✅ <b>Saved live.</b> ${Object.keys(p).filter(k => !['last_checked', 'registration_url_kind'].includes(k)).length} field(s) updated for ${esc(x.name)}. <a href="#/shoot/${esc(encodeURIComponent(x.id))}">View the event</a>`;
+      live.hidden = false; toast('Saved live'); g('fx_body').innerHTML = fixRows(x); Object.keys(CB).forEach(k => delete CB[k]); bindRows();
+    } catch (err) { $('#fixErr').textContent = String(err.message || err); }
+    b.disabled = false; b.textContent = 'Save live';
+  }
+  window.addEventListener('pageshow', () => { const b = $('#fixBtn'); if (b) { b.disabled = false; b.textContent = isAdmin() ? 'Save live' : 'Send correction'; } }, {once: true});
 }
 
 /* ---------- start ---------- */
