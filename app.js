@@ -2111,7 +2111,7 @@ function render(){
    Needs supabase/instant_publishing.sql. If the table isn't there yet, submissions are email-only exactly as before. */
 const SUBDONE = {sid: '', html: ''};
 document.addEventListener('click', e => { const a = e.target.closest && e.target.closest('#subThanks a[href="#/submit"]'); if (a) { SUBDONE.sid = SUBDONE.html = ''; e.preventDefault(); location.hash === '#/submit' ? render() : (location.hash = '#/submit'); } });
-const ADMIN_EMAILS = ['nfshold@gmail.com'];   // UI only – the database checks public.admins
+const ADMIN_EMAILS = ['nfshold@gmail.com', 'nfstride1@gmail.com'];   // UI only – the database checks public.admins
 const isAdmin = () => !!(AUTH.user && ADMIN_EMAILS.includes(String(AUTH.user.email || '').toLowerCase()));
 const FLY_BUCKET = 'event-flyers', FLY_MAX = 10 * 1048576;
 const CC3 = {AU: 'AUS', US: 'USA'};
