@@ -1937,14 +1937,15 @@ function sendAsCard(fm, map, roleP){
 }
 function sendAsCardInner(fm, map, roleP){
   const m = S.subMe || {}, acct = (typeof AUTH !== 'undefined' && AUTH.user && AUTH.user.email) || '';
-  const src = {name: m.s_name || '', email: m.s_email || acct, club: m.s_club || '', role: m.s_role || '', role_other: m.s_role_other || ''};
-  Object.entries(map).forEach(([k, id]) => { const el = $('#' + id); if (el && src[k] && (!el.value || k === 'club')) el.value = src[k];  /* your own club beats the event's host club */ });
+  const acctName = acct ? (myName() || acct.split('@')[0]) : '';
+  const src = {name: m.s_name || acctName, email: acct || m.s_email || '', club: m.s_club || '', role: m.s_role || '', role_other: m.s_role_other || ''};
+  Object.entries(map).forEach(([k, id]) => { if (k === 'posting') return; const el = $('#' + id); if (el && src[k] && (!el.value || k === 'club')) el.value = src[k];  /* your own club beats the event's host club */ });
   if (roleP && src.role) { const r = $('#' + roleP + '_role'); if (r && !r.value) { r.value = src.role; const o = $('#' + roleP + '_role_other'); if (o) o.value = src.role_other; r.dispatchEvent(new Event('change', {bubbles: true})); } }
-  const ids = Object.values(map).concat(roleP ? [roleP + '_role'] : []), wraps = [...new Set(ids.map(id => { const el = $('#' + id); return el && (el.closest('.grid2') || el.closest('.fld')); }).filter(Boolean))];
+  const ids = Object.entries(map).filter(([k]) => k !== 'posting').map(([, v]) => v).concat(roleP ? [roleP + '_role'] : []), wraps = [...new Set(ids.map(id => { const el = $('#' + id); return el && (el.closest('.grid2') || el.closest('.fld')); }).filter(Boolean))];
   if (!ids.every(id => { const el = $('#' + id); return el && el.value.trim(); })) return;
   const card = document.createElement('div'); card.className = 'vcard me-card';
   const who = $('#' + map.name).value, em = $('#' + map.email).value, cl = map.club ? $('#' + map.club).value : '', rl = roleP ? roleVal(roleP) : '';
-  card.innerHTML = `<div><span>Sending as <b>${esc(who)}</b>${rl ? ', ' + esc(rl) : ''}${cl ? ' – ' + esc(cl) : ''} · ${esc(em)}</span></div><div class="me-btns"><button type="button" class="btn sm">✏️ Change</button></div>`;
+  card.innerHTML = map.posting ? `<div><span>Posting as <b>${esc(who)}</b> · ${esc(em)}</span></div><div class="me-btns"><button type="button" class="btn sm">Change</button></div>` : `<div><span>Sending as <b>${esc(who)}</b>${rl ? ', ' + esc(rl) : ''}${cl ? ' – ' + esc(cl) : ''} · ${esc(em)}</span></div><div class="me-btns"><button type="button" class="btn sm">✏️ Change</button></div>`;
   wraps[0].before(card); const show = on => { card.hidden = !on; wraps.forEach(w => w.hidden = on); };
   card.querySelector('button').onclick = () => show(false); show(true);
   fm.addEventListener('submit', () => setTimeout(() => { if (wraps.some(w => w.querySelector('.bad, [aria-invalid=true]'))) show(false); }), true);
@@ -1956,7 +1957,7 @@ function bindFans(){
   const lb = $('#lb'); if (lb) lb.onclick = e => { if (e.target === lb) lb.close(); };
   const t = $('#fanThanks'); if (t) t.focus();
   const fm = $('#fanForm'); if (!fm) return;
-  sendAsCard(fm, {name: 'f_name', email: 'f_email'});
+  sendAsCard(fm, {name: 'f_name', email: 'f_email', posting: 1});
   const g = id => $('#' + id), val = id => (g(id).value || '').trim();
   const setErr = (id, m) => { g(id + '_e').textContent = m || ''; const w = fm.querySelector(`[data-f="${id}"]`); w && w.classList.toggle('bad', !!m); const i = g(id); i && i.setAttribute('aria-invalid', m ? 'true' : 'false'); };
   function check(){
