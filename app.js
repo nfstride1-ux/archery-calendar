@@ -461,12 +461,12 @@ function regRead(p){
 const regFirstUrl = L => (L.find(o => o.url) || {}).url || null;
 /* Event page: one clean block, a button or line per method. */
 function regSection(x){
-  const L = regOf(x); if (!L.length) return '';
+  const hasPay = !!payBox(x), L = regOf(x).filter(o => !(hasPay && o.m === 'bank')); if (!L.length) return '';
   const row = o => { const d = REG_M[o.m] || REG_M.other, note = o.note ? `<p class="note">${esc(o.note)}</p>` : '';
     if (d.kind === 'url' && o.url) return `<li><a class="btn gold block" href="${esc(o.url)}" target="_blank" rel="noopener">${o.m === 'website' || o.m === 'online_form' ? '↗ Register online' : `↗ Register on ${esc(d.label)}`}</a>${o.m === 'website' || o.m === 'online_form' ? `<p class="note">${esc(d.label)}</p>` : ''}${note}</li>`;
     if (d.kind === 'url') return `<li><b>${esc(d.label)}</b>${note}</li>`;
-    if (d.kind === 'contact') return `<li><a class="btn alt block" href="${esc(o.href || 'mailto:' + o.email + '?subject=' + encodeURIComponent('Entry: ' + x.name))}">✉ Email ${esc(o.name || o.email)}</a><p class="note">${esc(o.email)}${o.phone && o.phone_src === 'flyer' ? ' · ' + esc(o.phone) + ' (from the flyer)' : ''}</p>${note}</li>`;
-    if (d.kind === 'bank') return `<li><a class="btn alt block" href="#payBox" data-paylink>💳 Bank transfer${o.bsb || o.acct ? ': details below' : ''}</a>${note}</li>`;
+    if (d.kind === 'contact') return !(o.href || o.email) ? `<li><b>✉ Contact${o.name ? ' ' + esc(o.name) : ''}</b>${note}</li>` : `<li><a class="btn alt block" href="${esc(o.href || 'mailto:' + o.email + '?subject=' + encodeURIComponent('Entry: ' + x.name))}">✉ Email ${esc(o.name || o.email)}</a><p class="note">${esc(o.email)}${o.phone && o.phone_src === 'flyer' ? ' · ' + esc(o.phone) + ' (from the flyer)' : ''}</p>${note}</li>`;
+    if (d.kind === 'bank') return `<li class="reg-bank"><b>💳 Bank transfer</b>${note}</li>`;
     if (d.kind === 'day') return `<li><b>💵 ${esc(d.label)}</b>${note}</li>`;
     return `<li><b>${esc(d.label)}</b><p class="note">${esc(o.text || '')}</p></li>`; };
   return `<section class="panel how-reg" id="howReg"><h2 class="sec">✍ How to register</h2><ul class="reg-list">${L.map(row).join('')}</ul></section>`;
@@ -766,7 +766,7 @@ function vShoot(id){
   const regBtn = x.info_only && !x.book_anytime ? '' : x.registration_url ? `<a class="btn ${closedNow ? 'alt' : 'gold'} block big-btn" id="regBtn" href="${esc(x.registration_url)}" ${isMail ? '' : 'target="_blank" rel="noopener"'}>${isMail ? '' : '↗ '}${kindLbl && !closedNow ? kindLbl : closedNow ? kind.replace(/^Register \/ enter$/, 'Entry page') + ' (entries closed)' : kind}</a>
       ${x.registration_email ? `<p class="note">Opens your email app addressed to <b>${esc(x.registration_email.to)}</b>${x.registration_email.cc ? `, cc ${esc(x.registration_email.cc)}` : ''}, with ${esc(x.registration_email.fields.join(', '))} ready to fill in.</p>` : ''}
       ${x.registration_url_source ? `<p class="note">Entry details from ${esc(x.registration_url_source)}.</p>` : ''}`
-      : regOf(x).length ? `<p class="note"><a href="#howReg">✍ See How to register</a></p>` : `<div class="warn">⚠ No online entry link found yet. ${x.org_id === 'aba' ? 'ABA events are entered through the host club.' : 'Check the source page below.'}</div>`;
+      : regOf(x).length ? `<p class="note">✍ See How to register below</p>` : `<div class="warn">⚠ No online entry link found yet. ${x.org_id === 'aba' ? 'ABA events are entered through the host club.' : 'Check the source page below.'}</div>`;
   const closed = !!x.entry_close_date && daysTo(x.entry_close_date) < 0 && !isPast(x) && !x.info_only;
   const closeTxt = x.entry_close_date ? pd(x.entry_close_date).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'long',year:'numeric'}) + (x.entry_close_time ? ', ' + x.entry_close_time : '') : '';
   /* International events (data/intl.json): same page, plus country, venue time zone and a map link; back goes to the country page. */
