@@ -27,7 +27,8 @@ create trigger approved_lower before insert or update on public.approved_submitt
 insert into public.approved_submitters (email, name, club, instant) values
   ('president@gosnellsarchers.asn.au', 'Emma', 'Gosnells Archers', true),
   ('dkmason@iinet.net.au', 'Deborah Mason', 'Bowmen of Melville', true),
-  ('northernarchersofsyd@gmail.com', 'Jeffrey Lim', 'Northern Archers of Sydney', true)
+  ('northernarchersofsyd@gmail.com', 'Jeffrey Lim', 'Northern Archers of Sydney', true),
+  ('info@southwestbowhunters.net', 'Deborah Elliott', 'Southwest Bowhunters', true)
 on conflict (email) do update set name = excluded.name, club = excluded.club, instant = true;
 
 -- 3. Submissions ---------------------------------------------------------------------------------------------------------------
