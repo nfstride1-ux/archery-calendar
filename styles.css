@@ -755,3 +755,14 @@ body.hb-open #hbBtn{display:none}
 .ss-form .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
 .ss-form .row{margin-top:12px;gap:8px;flex-wrap:wrap}
 .b.open-to{background:#e6f6ea;color:#17602b}
+/* How to register: picker + event-page list */
+.reg-dd{border:1px solid #c9ccd6;border-radius:10px;background:#fff}
+.reg-dd>summary{cursor:pointer;padding:.65rem .8rem;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:.5rem}
+.reg-dd>summary::after{content:'▾';opacity:.6}.reg-dd[open]>summary::after{content:'▴'}
+.reg-opts{display:grid;gap:.35rem;padding:.2rem .8rem .8rem;grid-template-columns:1fr}
+@media(min-width:700px){.reg-opts{grid-template-columns:1fr 1fr}}
+.reg-sub{margin-top:.6rem;padding:.6rem .8rem;border-left:3px solid #f2b705;background:#fafaf5;border-radius:6px}
+.reg-sub-h{margin:0 0 .3rem;font-weight:700}
+.reg-sub input,.reg-sub textarea{width:100%;box-sizing:border-box}
+.how-reg .reg-list{list-style:none;margin:0;padding:0;display:grid;gap:.6rem}
+.how-reg .reg-list .note{margin:.25rem 0 0}

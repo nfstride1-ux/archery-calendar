@@ -46,3 +46,10 @@ create policy "event flyers: admin overrides insert" on storage.objects for inse
 create policy "event flyers: admin overrides update" on storage.objects for update to authenticated
   using (bucket_id = 'event-flyers' and (storage.foldername(name))[1] = 'overrides' and public.is_admin())
   with check (bucket_id = 'event-flyers' and (storage.foldername(name))[1] = 'overrides' and public.is_admin());
+
+-- 4. How to register (structured methods) on club submissions. Admin overrides keep it in fields.register (jsonb), no change needed there.
+alter table public.submitted_events add column if not exists register jsonb;
+create or replace view public.live_events as
+  select id, status, country, state, organisation_type, club, name, start_date, end_date, venue, discipline, registration_url, flyer_link, flyer_url, notes, created_at, register
+  from public.submitted_events where status = 'live';
+grant select on public.live_events to anon, authenticated;

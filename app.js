@@ -350,14 +350,137 @@ function flyerCard(x){
     ${rows.length ? `<h2 class="sec">${cur ? 'From the flyer' : 'From last year’s flyer – may change this year'}</h2><dl class="kv fx">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${ly}${esc(v)}</dd>`).join('')}</dl>
     ${!cur && ex.registration_url ? `<p class="note">Last year's entry link: <a href="${esc(ex.registration_url)}" target="_blank" rel="noopener">${esc(ex.registration_url.slice(0,60))}…</a> (may not work this year)</p>` : ''}` : ''}</section>`;
 }
-/* ---------- payment details pulled from the club's flyer ---------- */
+/* REG-START ---------- How to register: structured entry methods (x.register = [{m, url, note, name, email, phone, phone_src, acct_name, bsb, acct, ref, text}]) ----------
+   Options per region come from the entry systems actually used in our data (events.json / intl.json registration links) plus the bodies' own pages:
+   AU  Archer's Diary + iScored.today (AA's official scoring/registration system; iScored registration is club shoots only), Assemble Sports (AA/RGB registrations), TryBooking, Eventbrite
+   NZ  ArcheryOSA · US USA Archery + NFAA (both on Sport80), Stride Events, ASA, IBO (3D-Scoring) · CA 2MEV · UK Archery GB Members' Portal (Sport80) · DK Bueskydning Danmark calendar
+   World Archery events: entries go through your national federation. Ianseo publishes target lists/results, so it isn't offered as an entry method. */
+const REG_ALL = ['AU', 'NZ', 'US', 'CA', 'UK', 'DK', 'INTL'];
+const REG_M = {
+  archers_diary: {label: "Archer's Diary", kind: 'url', host: /archersdiary\.com/i, def: 'https://archersdiary.com/', regions: ['AU']},
+  iscored: {label: 'iScored.today', kind: 'url', host: /iscored\.today/i, def: 'https://iscored.today/', regions: ['AU'], hint: 'Registration on iScored is for club shoots only.'},
+  assemble: {label: 'Assemble Sports', kind: 'url', host: /assemblesports\.io/i, def: 'https://account.archery.assemblesports.io/login', regions: ['AU']},
+  archeryosa: {label: 'ArcheryOSA', kind: 'url', host: /archeryosa\.com/i, def: 'https://archeryosa.com/', regions: ['NZ']},
+  usa_archery: {label: 'USA Archery (Sport80)', kind: 'url', host: /usarchery\.sport80\.com/i, def: 'https://usarchery.sport80.com/', regions: ['US']},
+  nfaa: {label: 'NFAA (Sport80)', kind: 'url', host: /nfaausa\.com|nfaa.*sport80/i, def: 'https://nfaausa.com/', regions: ['US']},
+  stride: {label: 'Stride Events', kind: 'url', host: /strideevents\.com/i, def: 'https://www.strideevents.com/', regions: ['US']},
+  asa: {label: 'ASA Archery', kind: 'url', host: /asaarchery\.com/i, def: 'https://asaarchery.com/', regions: ['US']},
+  ibo: {label: 'IBO (3D-Scoring)', kind: 'url', host: /3d-scoring\.com/i, def: 'https://www.3d-scoring.com/', regions: ['US']},
+  twomev: {label: '2MEV', kind: 'url', host: /2mev\.com/i, def: 'https://2mev.com/', regions: ['CA']},
+  agb: {label: "Archery GB Members' Portal", kind: 'url', host: /archerygb/i, def: 'https://archerygb.org/', regions: ['UK']},
+  dk: {label: 'Bueskydning Danmark calendar', kind: 'url', host: /bueskydningdanmark\.dk/i, def: 'https://bueskydningdanmark.dk/kalender/', regions: ['DK']},
+  trybooking: {label: 'TryBooking', kind: 'url', host: /trybooking\.com/i, regions: ['AU', 'NZ', 'UK']},
+  eventbrite: {label: 'Eventbrite', kind: 'url', host: /eventbrite\./i, regions: REG_ALL},
+  online_form: {label: 'Online form (Google Forms, JotForm…)', kind: 'url', host: /forms\.gle|docs\.google\.com\/forms|jotform\.com/i, regions: REG_ALL},
+  website: {label: 'Club / event website', kind: 'url', regions: REG_ALL},
+  federation: {label: 'Through your national federation', kind: 'text', regions: ['INTL', 'UK', 'DK', 'NZ', 'CA', 'US']},
+  email: {label: 'Email the organiser', kind: 'contact', regions: REG_ALL},
+  bank: {label: 'Bank transfer', kind: 'bank', regions: ['AU', 'NZ', 'UK', 'DK', 'INTL']},
+  day: {label: 'Pay on the day (cash / card)', kind: 'day', regions: REG_ALL},
+  other: {label: 'Other', kind: 'text', regions: REG_ALL}};
+const REG_NO_EMAIL = /nfshold@|nfstride/i;   // never publish the site owner's own address as an event contact
+const regRegion = cc => ({AUS: 'AU', AU: 'AU', NZL: 'NZ', NZ: 'NZ', USA: 'US', US: 'US', CAN: 'CA', CA: 'CA', GBR: 'UK', UK: 'UK', DEN: 'DK', DK: 'DK'})[cc] || 'INTL';
+const regOpts = rg => Object.keys(REG_M).filter(k => REG_M[k].regions.includes(rg));
+const regLabel = m => (REG_M[m.m] || REG_M.other).label;
+const regMethodOfUrl = u => { if (/^mailto:/i.test(u)) return 'email'; const k = Object.keys(REG_M).find(k => REG_M[k].host && REG_M[k].host.test(u)); return k || 'website'; };
+/* Migration / fallback: turn the old free-text + link fields into methods. Unclear text is kept as 'Other'. Original fields are never removed. */
+function deriveRegister(x){
+  const out = [], has = m => out.some(o => o.m === m), fx = String((x.flyer_extract || {}).registration || '').trim(), u = x.registration_url || '';
+  let fromText = false;
+  if (u && !/^mailto:/i.test(u)) { const m = regMethodOfUrl(u), o = {m, url: u};
+    if (x.registration_url_kind === 'how_to_guide') o.note = 'How-to-enter guide'; else if (x.registration_url_kind === 'volunteer') o.note = 'Volunteer application';
+    else if (fx && m === 'archers_diary' && /→|–|club:|select|pick/i.test(fx)) o.note = fx.split(/;|, pay|\. /i)[0].replace(/^(Enter via |Register on )/i, '');
+    out.push(o); }
+  const mails = [];
+  if (x.registration_email && x.registration_email.to) mails.push({email: x.registration_email.to, href: u.startsWith('mailto:') ? u : ''});
+  else if (/^mailto:/i.test(u)) mails.push({email: decodeURIComponent(u.slice(7).split('?')[0]), href: u});
+  if (typeof x.contact === 'string' && x.contact) { const em = (x.contact.match(/[\w.+-]+@[\w-]+(\.[\w-]+)+/) || [])[0];
+    if (em) mails.push({email: em, name: x.contact.split(/\s+[–-]\s+|,\s*[\w.+-]+@/)[0].replace(em, '').replace(/[·,\s]+$/, '').trim()}); }
+  mails.filter(m => !REG_NO_EMAIL.test(m.email)).forEach(m => { if (!out.some(o => o.m === 'email' && o.email === m.email)) out.push(Object.assign({m: 'email', email: m.email}, m.name ? {name: m.name} : {}, m.href ? {href: m.href} : {})); });
+  if (/archer'?s'? ?diary/i.test(fx)) { fromText = true; if (!has('archers_diary')) out.push({m: 'archers_diary', url: REG_M.archers_diary.def, note: fx.split(/;|, pay|\. /i)[0].replace(/^(Enter via |Register on )/i, '')}); }
+  if (/assemble/i.test(fx)) { fromText = true; if (!has('assemble')) out.push(Object.assign({m: 'assemble'}, /QR/i.test(fx) ? {note: 'Scan the QR code on the flyer (the Assemble page needs a login).'} : {url: REG_M.assemble.def})); }
+  if (/iscored/i.test(fx)) { fromText = true; if (!has('iscored')) out.push({m: 'iscored', url: REG_M.iscored.def}); }
+  if (/google form|jotform/i.test(fx)) { fromText = true; if (!has('online_form') && u) out.push({m: 'online_form', url: u}); }
+  if (/club website|on the .*page|straight arrow|seminar page/i.test(fx) && u) fromText = true;
+  if (/nominat|email|contact/i.test(fx) && has('email')) fromText = true;
+  const bankTxt = /bank transfer|\bEFT\b|direct deposit/i.test(fx);
+  if (x.bank_bsb || x.bank_account || bankTxt) { fromText = fromText || bankTxt;
+    out.push(Object.assign({m: 'bank'}, x.bank_account_name ? {acct_name: x.bank_account_name} : {}, x.bank_bsb ? {bsb: x.bank_bsb} : {}, x.bank_account ? {acct: x.bank_account} : {}, x.bank_reference ? {ref: x.bank_reference} : {},
+      !x.bank_bsb && !x.bank_account ? {note: (fx.match(/[^;.]*(bank transfer|EFT)[^;.]*/i) || [''])[0].trim()} : {})); }
+  const day = fx.match(/[^;.]*(on the day|cash|pay at (the )?club|sign up at the club)[^;.]*/i);
+  if (day) { fromText = true; out.push({m: 'day', note: day[0].replace(/^.*?\bor\s+/i, '').replace(/^\s*(bring|and)\s+/i, s => s.trim().toLowerCase() === 'and' ? '' : s).trim().replace(/^./, c => c.toUpperCase())}); }
+  if (fx && !fromText && !(u && out.length && /^(Enter through |Online entry form|Assemble)/i.test(fx))) out.push({m: 'other', text: fx});
+  return out;
+}
+const regOf = x => Array.isArray(x.register) ? x.register : deriveRegister(x);
+const regText = L => (L || []).map(o => [regLabel(o), o.url, o.name, o.email, o.phone && o.phone_src === 'flyer' && o.phone, o.acct_name, o.bsb && 'BSB ' + o.bsb, o.acct && 'Acct ' + o.acct, o.ref && 'Ref ' + o.ref, o.note, o.text].filter(Boolean).join(' · ')).join('\n');
+if (typeof module !== 'undefined') module.exports = {REG_M, deriveRegister, regRegion, regOpts};
+/* REG-END */
+/* ---------- How to register: picker used by Submit, Fix and the admin live edit ---------- */
+function regPicker(p, rg, L){
+  L = L || []; const opts = regOpts(rg); L.forEach(o => { if (!opts.includes(o.m)) opts.splice(opts.length - 1, 0, o.m); });
+  const got = m => L.find(o => o.m === m) || {}, v = s => esc(s || ''), bsbLbl = rg === 'AU' ? 'BSB' : rg === 'UK' ? 'Sort code' : 'Bank / branch code';
+  const sub = m => { const d = REG_M[m] || REG_M.other, o = got(m), id = `${p}_${m}`;
+    const urlF = `<label class="sub-lab">Link${d.def ? '' : ' <span class="req">*</span>'}<input id="${id}_url" type="url" inputmode="url" maxlength="500" placeholder="${v(d.def || 'https://…')}" value="${v(o.url)}"></label>`;
+    const noteF = ph => `<label class="sub-lab">Details <span class="opt">(optional)</span><input id="${id}_note" maxlength="300" placeholder="${v(ph)}" value="${v(o.note)}"></label>`;
+    const body = d.kind === 'url' ? urlF + noteF(d.hint || 'e.g. club, event name to search for') + (d.hint ? `<p class="hint">${v(d.hint)}</p>` : '')
+      : d.kind === 'bank' ? `<div class="grid2"><label class="sub-lab">Account name<input id="${id}_acct_name" maxlength="80" value="${v(o.acct_name)}"></label><label class="sub-lab">${bsbLbl}<input id="${id}_bsb" maxlength="20" inputmode="numeric" value="${v(o.bsb)}"></label>
+          <label class="sub-lab">Account number<input id="${id}_acct" maxlength="34" value="${v(o.acct)}"></label><label class="sub-lab">Reference<input id="${id}_ref" maxlength="60" placeholder="e.g. Name/3D" value="${v(o.ref)}"></label></div>${noteF('e.g. Pay by 31 Oct')}`
+      : d.kind === 'contact' ? `<div class="grid2"><label class="sub-lab">Name<input id="${id}_name" maxlength="80" placeholder="e.g. Club secretary" value="${v(o.name)}"></label><label class="sub-lab">Email <span class="req">*</span><input id="${id}_email" type="email" inputmode="email" maxlength="120" value="${v(o.email)}"></label></div>
+          <label class="sub-lab">Phone <span class="opt">(only if it's printed on the club's flyer)</span><input id="${id}_phone" type="tel" maxlength="30" value="${v(o.phone_src === 'flyer' ? o.phone : '')}"></label>`
+      : d.kind === 'day' ? noteF('e.g. Cash only · or sign up at the club by Fri 31 Oct')
+      : `<label class="sub-lab">Details <span class="req">*</span><textarea id="${id}_text" rows="2" maxlength="600">${v(o.text || o.note)}</textarea></label>`;
+    return `<div class="reg-sub" data-rm="${m}" ${L.some(o => o.m === m) ? '' : 'hidden'}><p class="reg-sub-h">${esc(d.label)}</p>${body}</div>`; };
+  return `<div class="reg-pick" id="${p}_regpick" data-rg="${rg}"><details class="reg-dd"><summary><span class="reg-sum" id="${p}_regsum">${L.length ? esc(L.map(regLabel).join(', ')) : 'Choose one or more'}</span></summary>
+    <div class="reg-opts" role="group" aria-label="How to register">${opts.map(m => `<label class="chk"><input type="checkbox" data-regm="${m}" ${L.some(o => o.m === m) ? 'checked' : ''}> <span>${esc(REG_M[m].label)}</span></label>`).join('')}</div></details>
+    ${opts.map(sub).join('')}</div>`;
+}
+function regBind(p){
+  const box = document.getElementById(p + '_regpick'); if (!box) return;
+  const upd = () => { const on = [...box.querySelectorAll('[data-regm]:checked')].map(c => c.dataset.regm);
+    box.querySelectorAll('.reg-sub').forEach(s => s.hidden = !on.includes(s.dataset.rm));
+    document.getElementById(p + '_regsum').textContent = on.length ? on.map(m => REG_M[m].label).join(', ') : 'Choose one or more'; };
+  box.querySelectorAll('[data-regm]').forEach(c => c.addEventListener('change', upd));
+}
+/* Read the picker: {list, err} – err names the first problem (https links, an email for contacts, bank needs an account). */
+function regRead(p){
+  const box = document.getElementById(p + '_regpick'); if (!box) return {list: [], err: ''};
+  const g = (m, k) => { const el = document.getElementById(`${p}_${m}_${k}`); return el ? el.value.trim() : ''; };
+  const list = [], errs = [];
+  box.querySelectorAll('[data-regm]:checked').forEach(c => { const m = c.dataset.regm, d = REG_M[m] || REG_M.other, o = {m};
+    if (d.kind === 'url') { o.url = g(m, 'url') || d.def || ''; if (!o.url) errs.push(`${d.label}: add the link.`); else if (!/^https:\/\/[^\s]+\.[^\s]+/i.test(o.url)) errs.push(`${d.label}: the link must start with https://`); }
+    if (d.kind === 'bank') { ['acct_name', 'bsb', 'acct', 'ref'].forEach(k => { if (g(m, k)) o[k] = g(m, k); }); if (!o.bsb && !o.acct && !g(m, 'note')) errs.push('Bank transfer: add the account details.'); }
+    if (d.kind === 'contact') { o.name = g(m, 'name'); o.email = g(m, 'email'); const ph = g(m, 'phone'); if (ph) { o.phone = ph; o.phone_src = 'flyer'; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(o.email)) errs.push('Email the organiser: add a valid email.'); else if (REG_NO_EMAIL.test(o.email)) errs.push('Email the organiser: use the club\u2019s own email, not the site\u2019s.');
+      if (!o.name) delete o.name; }
+    if (d.kind === 'text') { o.text = g(m, 'text'); if (!o.text) errs.push(`${d.label}: add the details.`); }
+    if (d.kind !== 'text' && g(m, 'note')) o.note = g(m, 'note');
+    list.push(o); });
+  return {list, err: errs[0] || ''};
+}
+const regFirstUrl = L => (L.find(o => o.url) || {}).url || null;
+/* Event page: one clean block, a button or line per method. */
+function regSection(x){
+  const L = regOf(x); if (!L.length) return '';
+  const row = o => { const d = REG_M[o.m] || REG_M.other, note = o.note ? `<p class="note">${esc(o.note)}</p>` : '';
+    if (d.kind === 'url' && o.url) return `<li><a class="btn gold block" href="${esc(o.url)}" target="_blank" rel="noopener">${o.m === 'website' || o.m === 'online_form' ? '↗ Register online' : `↗ Register on ${esc(d.label)}`}</a>${o.m === 'website' || o.m === 'online_form' ? `<p class="note">${esc(d.label)}</p>` : ''}${note}</li>`;
+    if (d.kind === 'url') return `<li><b>${esc(d.label)}</b>${note}</li>`;
+    if (d.kind === 'contact') return `<li><a class="btn alt block" href="${esc(o.href || 'mailto:' + o.email + '?subject=' + encodeURIComponent('Entry: ' + x.name))}">✉ Email ${esc(o.name || o.email)}</a><p class="note">${esc(o.email)}${o.phone && o.phone_src === 'flyer' ? ' · ' + esc(o.phone) + ' (from the flyer)' : ''}</p>${note}</li>`;
+    if (d.kind === 'bank') return `<li><a class="btn alt block" href="#payBox" data-paylink>💳 Bank transfer${o.bsb || o.acct ? ': details below' : ''}</a>${note}</li>`;
+    if (d.kind === 'day') return `<li><b>💵 ${esc(d.label)}</b>${note}</li>`;
+    return `<li><b>${esc(d.label)}</b><p class="note">${esc(o.text || '')}</p></li>`; };
+  return `<section class="panel how-reg" id="howReg"><h2 class="sec">✍ How to register</h2><ul class="reg-list">${L.map(row).join('')}</ul></section>`;
+}
+const regBank = x => (regOf(x).find(o => o.m === 'bank' && (o.bsb || o.acct)) || null);
+/* ---------- payment details pulled from the club's flyer (or the structured Bank transfer method) ---------- */
 function payBox(x){
-  const rows = [['Account name', x.bank_account_name], ['BSB', x.bank_bsb], ['Account number', x.bank_account], ['Reference', x.bank_reference]].filter(r => r[1]);
-  if (!rows.some(r => r[0] === 'BSB' || r[0] === 'Account number')) return '';
-  const cv = (k, v) => k === 'BSB' || k === 'Account number' ? String(v).replace(/[\s-]/g, '') : String(v);
-  return `<section class="panel pay-box" id="payBox"><h2 class="sec">💳 Payment details (from the flyer)</h2>
+  const rb = regBank(x) || {}, bk = {name: rb.acct_name || x.bank_account_name, bsb: rb.bsb || x.bank_bsb, acct: rb.acct || x.bank_account, ref: rb.ref || x.bank_reference};
+  const rows = [['Account name', bk.name], [regRegion(x.country_code) === 'UK' ? 'Sort code' : 'BSB', bk.bsb], ['Account number', bk.acct], ['Reference', bk.ref]].filter(r => r[1]);
+  if (!rows.some(r => r[0] === 'BSB' || r[0] === 'Sort code' || r[0] === 'Account number')) return '';
+  const cv = (k, v) => k === 'BSB' || k === 'Sort code' || k === 'Account number' ? String(v).replace(/[\s-]/g, '') : String(v);
+  return `<section class="panel pay-box" id="payBox"><h2 class="sec">💳 Payment details${x.bank_source === 'flyer' || !rb.bsb ? ' (from the flyer)' : ''}</h2>
     <dl class="pay-rows">${rows.map(([k, v]) => `<div class="pay-row"><dt>${k}</dt><dd><span class="pay-val">${esc(v)}</span><button type="button" class="btn alt pay-copy" data-copy="${esc(cv(k, v))}" data-copylbl="${esc(k)}" aria-label="Copy ${esc(k)}">Copy</button></dd></div>`).join('')}</dl>
-    ${x.bank_reference ? '<p class="note">Put your own name in the reference where the flyer says Name or Surname.</p>' : ''}
+    ${bk.ref ? '<p class="note">Put your own name in the reference where the flyer says Name or Surname.</p>' : ''}
     <p class="note pay-warn">Details taken from the club's flyer, so check against the flyer before paying.</p></section>`;
 }
 async function copyText(t){
@@ -643,7 +766,7 @@ function vShoot(id){
   const regBtn = x.info_only && !x.book_anytime ? '' : x.registration_url ? `<a class="btn ${closedNow ? 'alt' : 'gold'} block big-btn" id="regBtn" href="${esc(x.registration_url)}" ${isMail ? '' : 'target="_blank" rel="noopener"'}>${isMail ? '' : '↗ '}${kindLbl && !closedNow ? kindLbl : closedNow ? kind.replace(/^Register \/ enter$/, 'Entry page') + ' (entries closed)' : kind}</a>
       ${x.registration_email ? `<p class="note">Opens your email app addressed to <b>${esc(x.registration_email.to)}</b>${x.registration_email.cc ? `, cc ${esc(x.registration_email.cc)}` : ''}, with ${esc(x.registration_email.fields.join(', '))} ready to fill in.</p>` : ''}
       ${x.registration_url_source ? `<p class="note">Entry details from ${esc(x.registration_url_source)}.</p>` : ''}`
-    : `<div class="warn">⚠ No online entry link found yet. ${x.org_id === 'aba' ? 'ABA events are entered through the host club.' : 'Check the source page below.'}</div>`;
+      : regOf(x).length ? `<p class="note"><a href="#howReg">✍ See How to register</a></p>` : `<div class="warn">⚠ No online entry link found yet. ${x.org_id === 'aba' ? 'ABA events are entered through the host club.' : 'Check the source page below.'}</div>`;
   const closed = !!x.entry_close_date && daysTo(x.entry_close_date) < 0 && !isPast(x) && !x.info_only;
   const closeTxt = x.entry_close_date ? pd(x.entry_close_date).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'long',year:'numeric'}) + (x.entry_close_time ? ', ' + x.entry_close_time : '') : '';
   /* International events (data/intl.json): same page, plus country, venue time zone and a map link; back goes to the country page. */
@@ -663,6 +786,7 @@ function vShoot(id){
     ${resultsBox(x)}
     ${typeof selfBox === 'function' ? selfBox(x) : ''}
     ${flyerCard(x)}
+    ${regSection(x)}
     ${payBox(x)}
     <section class="panel"><h2 class="sec">Event details</h2><dl class="kv">
       <dt>When</dt><dd>${esc(range(x))}${I ? `<br><span class="note">Dates are local to the venue${tzTxt ? ' (' + esc(tzTxt) + ')' : ''}.</span>` : ''}${x.date_note ? '<br><span class="note">⚠ Dates differ between sources – see the note above.</span>' : ''}</dd>
@@ -679,7 +803,6 @@ function vShoot(id){
       ${x.divisions ? `<dt>Divisions</dt><dd>${esc(x.divisions)}${x.field_sources?.divisions ? ` <span class="src">${esc(srcTxt(x.field_sources.divisions))}</span>` : ''}</dd>` : ''}
       ${x.registration_opens ? `<dt>Entries open</dt><dd>${esc(x.registration_opens)}</dd>` : ''}
       ${closeTxt ? `<dt>Entries close</dt><dd>${esc(closeTxt)}${x.field_sources?.entry_close_date ? ` <span class="src">from ${esc(x.field_sources.entry_close_date)}</span>` : ''}</dd>` : ''}
-      ${x.contact ? `<dt>Contact</dt><dd>${esc(x.contact)}</dd>` : ''}
       ${x.fee ? `<dt>Fee</dt><dd>${esc(x.fee)}${x.field_sources?.fee ? ` <span class="src">from ${esc(x.field_sources.fee)}</span>` : ''}</dd>` : ''}
     </dl>${x.notes ? `<p class="note">${esc(x.notes)}</p>` : ''}</section>
     ${CALS[x.org_group] ? `<p class="note"><a href="#/calendars/${x.org_group}">📅 See it in the full ${esc(CALS[x.org_group].name)} calendar</a></p>` : ''}
@@ -2127,7 +2250,7 @@ function subToEv(r){
   const pdf = /\.pdf($|\?)/i.test(r.flyer_url || ''), y = r.start_date ? +r.start_date.slice(0, 4) : null;
   const ev = {id: 'sub-' + r.id, _sub: r.id, name: r.name, org: r.club, org_id: 'club-submission', org_group: 'club', club_name: r.club, country_code: CC3[r.country] || r.country || '', country: r.country === 'AU' ? 'Australia' : r.country === 'US' ? 'United States' : (r.country || ''),
     state: r.state || null, state_code: r.state || null, start_date: r.start_date, end_date: r.end_date || r.start_date, dates_confirmed: true, location: r.venue, discipline: r.discipline || 'Target',
-    level: 'Club', category: 'competition', registration_url: r.registration_url || null, notes: r.notes || null, source_url: r.flyer_link || null, last_checked: (r.created_at || '').slice(0, 10),
+    level: 'Club', category: 'competition', registration_url: r.registration_url || null, register: Array.isArray(r.register) && r.register.length ? r.register : undefined, notes: r.notes || null, source_url: r.flyer_link || null, last_checked: (r.created_at || '').slice(0, 10),
     flyer_year: r.flyer_url ? y : null, flyer_is_current: true, flyer_kind: 'Flyer', flyer_label: 'Flyer from the club', flyer_web: r.flyer_url || null, flyer_web_sm: r.flyer_url ? (pdf ? 'icons/icon-512.png' : r.flyer_url) : null,
     flyer_is_pdf: pdf, flyer_org: r.club, flyer_source_url: pdf ? r.flyer_url : null, flyer_extract: r.notes ? {notes: r.notes, is_current: true} : null};
   return clubDefaults(ev);
@@ -2143,7 +2266,7 @@ function clubDefaults(ev){
 /* Public read of live club submissions – plain REST with the publishable key, no library needed. */
 /* Admin live edits: public.event_overrides (supabase/event_overrides.sql) merged over events.json / intl.json. */
 const OVR = {};
-const OVR_KEYS = ['start_date', 'end_date', 'start_times', 'location', 'rounds', 'divisions', 'entry_close_date', 'contact', 'registration_url', 'registration_url_kind', 'cancelled', 'notes',
+const OVR_KEYS = ['start_date', 'end_date', 'start_times', 'location', 'rounds', 'divisions', 'entry_close_date', 'contact', 'register', 'bank_account_name', 'bank_bsb', 'bank_account', 'bank_reference', 'registration_url', 'registration_url_kind', 'cancelled', 'notes',
   'flyer_url', 'flyer_web', 'flyer_web_sm', 'flyer_is_pdf', 'flyer_label', 'flyer_year', 'flyer_is_current', 'flyer_source_name', 'org_status', 'last_checked'];
 function applyOvr(x, f){ OVR_KEYS.forEach(k => { if (f && k in f) x[k] = f[k]; }); x._ovr = true; return x; }
 async function loadOverrides(){
@@ -2174,7 +2297,8 @@ async function dbSubmit(rec, file){
       if (up.error) flyer_path = null; else flyer_url = AUTH.client.storage.from(FLY_BUCKET).getPublicUrl(flyer_path).data.publicUrl;
     }
     const row = Object.assign({}, rec, {flyer_path, flyer_url, end_date: rec.end_date || rec.start_date});
-    const {data, error} = await AUTH.client.from('submitted_events').insert(row).select('id,status,flyer_url').single();
+    let {data, error} = await AUTH.client.from('submitted_events').insert(row).select('id,status,flyer_url').single();
+    if (error && /register/i.test(error.message || '')) { delete row.register; ({data, error} = await AUTH.client.from('submitted_events').insert(row).select('id,status,flyer_url').single()); }   // before event_overrides.sql adds the column
     if (error) { console.warn('Archery Calendar: submission not saved to the database (email still sent):', error.message); return null; }
     return data;
   } catch (e) { console.warn('Archery Calendar: submission not saved to the database:', e); return null; }
@@ -2407,7 +2531,8 @@ function vSubmit(country){
       ${f('s_end', 'End date', `<input id="s_end" name="end_date" type="date">`, 'Leave empty for a one-day event.', false)}</div>
       ${f('s_venue', 'Venue / address', `<input id="s_venue" name="venue" required maxlength="200" placeholder="e.g. Club range, 12 Range Rd, Town">`)}
       <div class="grid2">${f('s_disc', 'Type of event', `<select id="s_disc" name="discipline"><option value="">Choose…</option>${['Target', 'Field', '3D', 'Indoor', 'Clout', 'Other'].map(o => `<option>${o}</option>`).join('')}</select>`, '', false)}
-      ${f('s_reg', 'Entry link', `<input id="s_reg" name="entry_link" type="url" maxlength="300" placeholder="https://" inputmode="url">`, '', false)}</div>
+</div>
+      ${f('s_regm', 'How to register', `<div id="s_regbox">${regPicker('sr', regRegion(C), [])}</div><input type="hidden" name="how_to_register" id="s_regtxt">`, 'Pick every way archers can enter or pay. Each one asks for its details.', false)}
       <p class="hint" id="s_flyer_h">Upload the flyer <b>or</b> paste a link to it – one of the two is needed.</p>
       ${f('s_file', 'Upload the flyer', `<input id="s_file" name="attachment" type="file" accept=".pdf,application/pdf,image/*,.heic,.heif">`, `PDF (up to ${MAX_MB} MB) or any photo – big photos are shrunk automatically. <span id="s_file_n" class="note"></span>`, false)}
       ${f('s_flink', '…or flyer link', `<input id="s_flink" name="flyer_link" type="url" maxlength="300" placeholder="https://" inputmode="url">`, 'e.g. your website or Facebook post.', false)}
@@ -2439,7 +2564,10 @@ function bindSubmit(){
     g('s_ctryname_w').hidden = c !== 'OTHER'; g('s_ctryname').required = c === 'OTHER'; g('s_ctryname').disabled = c !== 'OTHER'; g('s_phone').placeholder = k.phone;
     if (fm.dataset.tried) check();
   }
-  g('s_country').onchange = () => { applyCountry(); history.replaceState(null, '', location.pathname + location.search + (ctry() === 'AU' ? '#/submit' : '#/submit?country=' + ctry())); };
+  const subRg = () => ctry() === 'OTHER' ? ({'new zealand': 'NZ', 'canada': 'CA', 'united kingdom': 'UK', 'uk': 'UK', 'england': 'UK', 'scotland': 'UK', 'wales': 'UK', 'northern ireland': 'UK', 'denmark': 'DK'})[val('s_ctryname').toLowerCase()] || 'INTL' : regRegion(ctry());
+  const regRe = () => { const box = g('sr_regpick'); if (box && box.dataset.rg === subRg()) return; const keep = regRead('sr').list; g('s_regbox').innerHTML = regPicker('sr', subRg(), keep); regBind('sr'); };
+  regBind('sr'); g('s_ctryname').addEventListener('change', regRe);
+  g('s_country').onchange = () => { applyCountry(); regRe(); history.replaceState(null, '', location.pathname + location.search + (ctry() === 'AU' ? '#/submit' : '#/submit?country=' + ctry())); };
   /* Club type-ahead: clubs.json filtered by the chosen country + state/region; match anywhere, prefix matches first; free text allowed. */
   (function clubAhead(){ const inp = g('s_club'), lb = g('s_club_lb'); let shown = [];
     const pool = () => { const c = ctry(), st = val('s_state'), cn = (val('s_ctryname') || '').trim().toLowerCase(), rg = st.toLowerCase();
@@ -2493,7 +2621,7 @@ function bindSubmit(){
     add('s_start', /^\d{4}-\d{2}-\d{2}$/.test(val('s_start')) ? '' : 'Choose the start date.');
     add('s_end', val('s_end') && val('s_end') < val('s_start') ? 'The end date is before the start date.' : '');
     add('s_venue', val('s_venue') ? '' : 'Enter the venue or address.');
-    add('s_reg', val('s_reg') && !isUrl(val('s_reg')) ? 'Use a full link starting with https://' : '');
+    add('s_regm', regRead('sr').err);
     add('s_ok', g('s_ok').checked ? '' : 'Please tick to give permission to publish.');
     return errs;
   }
@@ -2502,7 +2630,7 @@ function bindSubmit(){
   const where = () => ctry() === 'AU' ? val('s_state') : [val('s_state'), ctry() === 'US' ? 'USA' : val('s_ctryname')].filter(Boolean).join(', ');
   function mailBody(){
     const L = [['Country', ctry() === 'OTHER' ? val('s_ctryname') : K().name], [K().state, val('s_state')], ['Organisation type', val('s_orgtype')], ['Club', val('s_club')], ['Your name', val('s_name')], ['Role at the club', roleVal('s')], ['Contact email', val('s_email')], ['Phone', val('s_phone')],
-      ['Event', val('s_ename')], ['Dates', [val('s_start'), val('s_end')].filter(Boolean).join(' to ')], ['Venue', val('s_venue')], ['Type', val('s_disc')], ['Entry link', val('s_reg')],
+      ['Event', val('s_ename')], ['Dates', [val('s_start'), val('s_end')].filter(Boolean).join(' to ')], ['Venue', val('s_venue')], ['Type', val('s_disc')], ['How to register', regText(regRead('sr').list)],
       ['Flyer link', val('s_flink')], ['Notes', val('s_notes')], ['Permission to publish', g('s_ok').checked ? 'Yes' : 'Not ticked']];
     return L.map(([k, v]) => `${k}: ${v}`).join('\n') + '\n\n>>> Please attach the flyer (PDF or JPG) to this email before sending. <<<\n';
   }
@@ -2519,7 +2647,7 @@ function bindSubmit(){
     $('#subErr').textContent = '';
     if (!SITE.formEndpoint || !navigator.onLine) { e.preventDefault(); g('subMail').click(); location.href = g('subMail').href;
       toast(navigator.onLine ? 'Opening your email app…' : 'You’re offline: opening your email app instead'); return; }
-    g('s_role_val').value = roleVal('s'); meSave();
+    g('s_role_val').value = roleVal('s'); g('s_regtxt').value = regText(regRead('sr').list); meSave();
     fm.querySelector('[name=_next]').value = location.href.split('#')[0].split('?')[0] + '?sent=1#/submit';
     fm.querySelector('[name=_subject]').value = subject();
     if (!g('s_file').files.length) g('s_file').disabled = true;   // don't send an empty file part
@@ -2527,7 +2655,7 @@ function bindSubmit(){
     e.preventDefault();
     const rec = {country: ctry() === 'OTHER' ? val('s_ctryname') : ctry(), state: val('s_state'), organisation_type: val('s_orgtype'), club: val('s_club'), submitter_name: val('s_name'), role: roleVal('s'),
       contact_email: val('s_email'), phone: val('s_phone'), name: val('s_ename'), start_date: val('s_start'), end_date: val('s_end') || val('s_start'), venue: val('s_venue'), discipline: val('s_disc'),
-      registration_url: val('s_reg'), flyer_link: val('s_flink'), notes: val('s_notes')};
+      registration_url: regFirstUrl(regRead('sr').list) || '', register: regRead('sr').list, flyer_link: val('s_flink'), notes: val('s_notes')};
     Promise.race([kcCheck(val('s_email')), new Promise(r => setTimeout(() => r(false), 4000))]).then(async k => {
       fm.querySelector('[name=known_club]').value = k ? 'yes' : 'no';
       const db = await dbSubmit(rec, g('s_file').disabled ? null : g('s_file').files[0]);
@@ -2552,11 +2680,11 @@ const fixDates = x => x ? [x.start_date, x.end_date && x.end_date !== x.start_da
 const fdate = d => d ? pd(d).toLocaleDateString('en-AU', {day: 'numeric', month: 'short', year: 'numeric'}) : '';
 const fixNow = x => { if (!x) return {}; const fe = x.flyer_extract || {};
   return {dates: x.start_date ? range(x) : '', start: x.start_date || '', end: x.end_date || x.start_date || '', time: x.start_times || fe.start_time || fe.times || '', venue: x.location || '',
-    rounds: x.rounds || fe.rounds || '', divs: x.divisions || fe.divisions || fe.classes || '', close: x.entry_close_date || '', link: x.contact ? (typeof x.contact === 'string' ? x.contact : [x.contact.name, x.contact.phone, x.contact.email].filter(Boolean).join(' · ')) : fe.registration || '', reg: x.registration_url || '', enotes: x.notes || '',
+    rounds: x.rounds || fe.rounds || '', divs: x.divisions || fe.divisions || fe.classes || '', close: x.entry_close_date || '', register: regText(regOf(x)), enotes: x.notes || '',
     flyer: x.flyer_local || x.flyer_url || x.flyer_web ? (x.flyer_label || 'Flyer on file') : '', status: x.cancelled ? 'Cancelled' : 'Going ahead (as listed)'}; };
 // [key, label, kind]
 const FIX_ROWS = [['dates', 'Date(s)', 'dates'], ['time', 'Start time', 'time'], ['venue', 'Venue / address', 'venue'], ['rounds', 'Round(s) / distances', 'rounds'],
-  ['divs', 'Divisions / bow classes', 'divs'], ['close', 'Entry closing date', 'date'], ['link', 'Entry contact / how to enter', 'text'], ['reg', 'Register / entry link (URL)', 'url'], ['flyer', 'Flyer', 'file'], ['enotes', 'Event notes', 'area']];
+  ['divs', 'Divisions / bow classes', 'divs'], ['close', 'Entry closing date', 'date'], ['register', 'How to register', 'register'], ['flyer', 'Flyer', 'file'], ['enotes', 'Event notes', 'area']];
 function fixRows(x){
   if (!x) return `<p class="note" id="fx_none">Pick an event above to see what we have listed.</p>`;
   const n = fixNow(x);
@@ -2570,6 +2698,7 @@ function fixRows(x){
     : kind === 'divs' ? comboHtml('fx_divs', 'Type a bow type or age class…', true) + '<p class="hint">Pick all that apply. Not listed? Type it and press Enter.</p>'
     : kind === 'date' ? `<input id="fx_${k}" type="date" value="${esc(n[k])}">`
     : kind === 'file' ? `<input id="fx_file" name="attachment" type="file" disabled accept=".pdf,application/pdf,image/*,.heic,.heif"><p class="hint">PDF (up to ${MAX_MB} MB) or any photo – big photos are shrunk automatically. <span id="fx_file_n" class="note"></span></p>`
+    : kind === 'register' ? regPicker('fxr', regRegion(x.country_code), regOf(x))
     : kind === 'url' ? `<input id="fx_${k}" type="url" inputmode="url" maxlength="500" placeholder="https://…" value="${esc(n[k])}">`
     : kind === 'area' ? `<textarea id="fx_${k}" rows="4" maxlength="2000">${esc(n[k])}</textarea>`
     : `<input id="fx_${k}" maxlength="300" value="${esc(n[k])}">`;
@@ -2705,6 +2834,7 @@ function bindFix(){
     if (!on) { const n = fixNow(cur); if (CB['fx_' + k]) CB['fx_' + k].reset();
       row.querySelectorAll('input:not([type=file]):not([role=combobox]),textarea').forEach(i => { i.value = i.id === 'fx_start' ? n.start : i.id === 'fx_end' ? n.end : i.type === 'time' ? '' : n[i.id.slice(3)] || ''; }); }
     else {
+      if (k === 'register') regBind('fxr');
       if (k === 'venue' && !CB.fx_venue) bindCombo('fx_venue', venueItems(cur), false);
       if ((k === 'rounds' || k === 'divs') && !CB['fx_' + k]) loadRounds().then(R => bindCombo('fx_' + k, k === 'rounds' ? listItems(R.rounds, catDisc(cur)) : listItems(R.divisions, cur && cur.org_group === 'aba' ? 'ABA' : ''), true)).catch(() => {});
       const i = ed.querySelector('input,textarea'); i && setTimeout(() => i.focus(), 0); }
@@ -2723,6 +2853,7 @@ function bindFix(){
       if (k === 'dates') { const s = val('fx_start'), e = val('fx_end') || s; if (s && (s !== n.start || e !== n.end)) out.push([lab, n.dates || 'Not listed', s === e ? fdate(s) : `${fdate(s)} to ${fdate(e)}`]); }
       else if (k === 'flyer') { const fl = g('fx_file').files[0]; if (fl) out.push([lab, n.flyer || 'Not listed', 'New flyer attached: ' + fl.name]); }
       else if (k === 'time') { const a = val('fx_tasm'), sh = val('fx_tshoot'); if (a || sh) out.push([lab, n.time || 'Not listed', [a && 'Assembly ' + fmtTime(a), sh && 'shooting starts ' + fmtTime(sh)].filter(Boolean).join(', ')]); }
+      else if (k === 'register') { const nl = regRead('fxr').list, a = regText(regOf(cur)), b = regText(nl); if (a !== b) out.push([lab, a || 'Not listed', b || '(remove)']); }
       else if (k === 'venue' || k === 'rounds' || k === 'divs') { const v = comboVal('fx_' + k); if (v && v !== (n[k] || '').trim()) out.push([lab, n[k] || 'Not listed', v]); }
       else { const v = val('fx_' + k); if (v !== (n[k] || '').trim()) out.push([lab, (k === 'close' ? fdate(n.close) : n[k]) || 'Not listed', (k === 'close' ? fdate(v) : v) || '(remove)']); } });
     if (g('fx_cancel') && g('fx_cancel').checked) out.push(['Status', n.status, 'Cancelled or postponed']);
@@ -2743,6 +2874,7 @@ function bindFix(){
       const fr = fm.querySelector('[data-k=flyer]'); fr && fr.classList.toggle('bad', !!fm_); if (fm_) errs.push('fx_file');
       const any = changes().length; g('fx_any_e').textContent = dm || fm_ || (any ? '' : 'Tap ✏️ and change at least one thing (or tick cancelled).');
       if (!any) errs.push('fx_any');
+      const rr = fm.querySelector('.fx-row.editing[data-k=register]') && regRead('fxr').err; if (rr) { errs.push('fx_any'); g('fx_any_e').textContent = rr; }
     }
     if (isAdmin()) return errs;
     add('fx_who', personErr(val('fx_who'), val('fx_club')));
@@ -2788,7 +2920,8 @@ function bindFix(){
         else if (k === 'rounds') { const v = comboVal('fx_rounds'); if (v) p.rounds = v; }
         else if (k === 'divs') { const v = comboVal('fx_divs'); if (v) p.divisions = v; }
         else if (k === 'close') p.entry_close_date = val('fx_close') || null;
-        else if (k === 'link') p.contact = val('fx_link') || null;
+        else if (k === 'register') { const L = regRead('fxr'); if (L.err) throw new Error(L.err); const bk = L.list.find(o => o.m === 'bank') || {};
+          Object.assign(p, {register: L.list, registration_url: regFirstUrl(L.list), registration_url_kind: regFirstUrl(L.list) ? 'entry_page' : null, bank_account_name: bk.acct_name || null, bank_bsb: bk.bsb || null, bank_account: bk.acct || null, bank_reference: bk.ref || null}); }
         else if (k === 'reg') { const v = val('fx_reg'); if (v && !/^https?:\/\//i.test(v)) throw new Error('The register link must start with https://'); p.registration_url = v || null; p.registration_url_kind = v ? 'entry_page' : null; }
         else if (k === 'enotes') p.notes = val('fx_enotes') || null; });
       if (g('fx_cancel') && g('fx_cancel').checked) p.cancelled = true;
@@ -2806,7 +2939,7 @@ function bindFix(){
       const r = await AUTH.client.from('event_overrides').upsert({event_id: x.id, fields, updated_by: AUTH.user.email}, {onConflict: 'event_id'});
       if (r.error) throw new Error(/relation|does not exist|schema cache/i.test(r.error.message) ? 'The event_overrides table isn\'t set up yet (run supabase/event_overrides.sql).' : /row-level|permission/i.test(r.error.message) ? 'The database didn\'t accept you as an admin.' : r.error.message);
       OVR[x.id] = fields; applyOvr(x, fields); EV.sort((a, c) => (a.start_date || '9') < (c.start_date || '9') ? -1 : 1);
-      live.innerHTML = `✅ <b>Saved live.</b> ${Object.keys(p).filter(k => !['last_checked', 'registration_url_kind'].includes(k)).length} field(s) updated for ${esc(x.name)}. <a href="#/shoot/${esc(encodeURIComponent(x.id))}">View the event</a>`;
+      live.innerHTML = `✅ <b>Saved live.</b> ${Object.keys(p).filter(k => !['last_checked', 'registration_url', 'registration_url_kind', 'bank_account_name', 'bank_bsb', 'bank_account', 'bank_reference'].includes(k)).length} field(s) updated for ${esc(x.name)}. <a href="#/shoot/${esc(encodeURIComponent(x.id))}">View the event</a>`;
       live.hidden = false; toast('Saved live'); g('fx_body').innerHTML = fixRows(x); Object.keys(CB).forEach(k => delete CB[k]); bindRows();
     } catch (err) { $('#fixErr').textContent = String(err.message || err); }
     b.disabled = false; b.textContent = 'Save live';
