@@ -2162,7 +2162,11 @@ function vAdmin(){
   if (!AUTH.ready) return `${head}<div class="wrap"><p class="loading">Checking sign-in…</p></div>`;
   if (!isAdmin()) return `${head}<div class="wrap narrow"><section class="panel"><p>This page is only for Archery Calendar admins. <a href="#/account">Sign in</a></p></section></div>`;
   if (!ADM.rows) { admLoad(); return `${head}<div class="wrap"><p class="loading">Loading submissions…</p></div>`; }
+  if (location.hash.split('?')[0] === '#/admin/approved') return vAdmApproved(head);
   const inst = new Map((ADM.subs || []).map(s => [String(s.email).toLowerCase(), s]));
+  const reqs = (ADM.reqs || []).filter(q => q.status === 'pending' && !(inst.get(q.email) || {}).instant);
+  const reqHtml = `<section class="panel adm-reqs"><h2 class="sec">People asking to add shoots (${reqs.length})</h2>${reqs.length ? reqs.map(q => `<div class="adm-req" data-rid="${esc(q.id)}"><div><b>${esc(q.name || '(no name)')}</b>${q.role ? ' · ' + esc(q.role) : ''}<br>${esc(q.club || '')}<br><span class="note">${esc(q.email)} · ${q.source === 'email' ? '✉️ email' : '📝 form'} · ${esc(new Date(q.created_at).toLocaleDateString('en-AU'))}</span>${q.note ? `<br><span class="note">${esc(q.note)}</span>` : ''}</div>
+      <div class="adm-btns row"><button class="btn gold" data-ract="approve">✓ Approve</button><button class="btn alt" data-ract="delete">✕ Delete</button></div></div>`).join('') : '<p class="note">No one waiting. 🎉</p>'}<p><a href="#/admin/approved">Approved people (${(ADM.subs || []).length}) · add someone →</a></p></section>`;
   const rows = ADM.rows.filter(r => ADM.tab === 'all' || r.status === ADM.tab);
   const tabs = ['pending', 'live', 'rejected', 'all'].map(t => `<button type="button" class="btn sm ${ADM.tab === t ? 'gold' : 'alt'}" data-atab="${t}">${t[0].toUpperCase() + t.slice(1)} (${t === 'all' ? ADM.rows.length : ADM.rows.filter(r => r.status === t).length})</button>`).join(' ');
   const one = r => { const em = String(r.submitter_email || '').toLowerCase(), s = inst.get(em), pdf = /\.pdf/i.test(r.flyer_url || '');
@@ -2175,13 +2179,25 @@ function vAdmin(){
       <div class="row adm-btns">${r.status !== 'live' ? `<button class="btn gold sm" data-act="live">✓ Approve</button>` : `<a class="btn alt sm" href="#/shoot/sub-${esc(r.id)}">View live</a>`}${r.status !== 'rejected' ? `<button class="btn alt sm" data-act="rejected">✕ Reject</button>` : ''}<button class="btn alt sm" data-act="edit">✏️ Edit</button>
       <label class="chk adm-inst"><input type="checkbox" data-inst="${esc(em)}" data-club="${esc(r.club)}" data-name="${esc(r.submitter_name || '')}" ${s && s.instant ? 'checked' : ''}> Instant-approve ${esc(em)}</label></div></div></article>`; };
   return `${head}<div class="wrap adm"><section class="panel"><p>${tabs} <button type="button" class="btn sm alt" id="admReload">↻ Reload</button></p>${ADM.err ? `<p class="err" role="alert">${esc(ADM.err)}</p>` : ''}</section>
-    ${rows.length ? rows.map(one).join('') : '<p class="empty">Nothing here.</p>'}
-    <section class="panel"><h2 class="sec">Approved submitters</h2><ul>${(ADM.subs || []).map(s => `<li>${s.instant ? '⚡' : '•'} <b>${esc(s.name || '')}</b> ${esc(s.email)} – ${esc(s.club || '')}${s.instant ? ' (instant)' : ''}</li>`).join('')}</ul></section></div>`;
+    ${reqHtml}<h2 class="sec">Shoots sent in</h2>
+    ${rows.length ? rows.map(one).join('') : '<p class="empty">Nothing here.</p>'}</div>`;
+}
+function vAdmApproved(head){
+  const subs = (ADM.subs || []).filter(s => s.instant);
+  return `${head}<div class="wrap adm"><p><a href="#/admin">← Back to requests</a></p>${ADM.err ? `<p class="err" role="alert">${esc(ADM.err)}</p>` : ''}
+    <section class="panel"><h2 class="sec">Add someone</h2><form id="admAdd" class="adm-add"><input name="name" placeholder="Name" autocomplete="off" required><input name="email" type="email" placeholder="Email" autocomplete="off" required><input name="club" placeholder="Club" autocomplete="off"><button class="btn gold">✓ Approve</button></form></section>
+    <section class="panel"><h2 class="sec">Approved people (${subs.length})</h2>${subs.length ? subs.map(s => `<div class="adm-req" data-sem="${esc(s.email)}"><div><b>${esc(s.name || '')}</b><br>${esc(s.club || '')}<br><span class="note">${esc(s.email)}</span></div><div class="adm-btns row"><button class="btn alt" data-sact="remove">Remove</button></div></div>`).join('') : '<p class="note">No one yet.</p>'}</section>
+    <section class="panel"><h2 class="sec">Approved club &amp; organisation email domains (${(ADM.doms || []).length})</h2><p class="note">Anyone emailing from these is approved automatically. Gmail, Hotmail, Bigpond and other free email can’t be added.</p>
+      <form id="admDom" class="adm-add"><input name="domain" placeholder="e.g. archerywa.com.au" autocomplete="off" required><input name="label" placeholder="Club / organisation" autocomplete="off"><button class="btn gold">+ Add domain</button></form>
+      ${(ADM.doms || []).map(d => `<div class="adm-req" data-dom="${esc(d.domain)}"><div><b>@${esc(d.domain)}</b><br><span class="note">${esc(d.label || '')}</span></div><div class="adm-btns row"><button class="btn alt" data-dact="remove">Remove</button></div></div>`).join('')}</section></div>`;
 }
 async function admLoad(){
   ADM.err = '';
   try { const [a, b] = await Promise.all([AUTH.client.from('submitted_events').select('*').order('created_at', {ascending: false}).limit(300), AUTH.client.from('approved_submitters').select('*').order('club')]);
     if (a.error) throw a.error; if (b.error) throw b.error; ADM.rows = a.data; ADM.subs = b.data;
+    const c = await AUTH.client.from('submitter_requests').select('*').eq('status', 'pending').order('created_at', {ascending: false});
+    const dm = await AUTH.client.from('approved_domains').select('*').order('domain'); ADM.doms = dm.error ? [] : dm.data;
+    ADM.reqs = c.error ? [] : c.data; if (c.error) ADM.err = 'Requests list needs supabase/admin_requests.sql to be run once.';
   } catch (e) { ADM.rows = ADM.rows || []; ADM.subs = ADM.subs || []; ADM.err = 'Couldn’t load: ' + (e.message || e) + ' (has supabase/instant_publishing.sql been run?)'; }
   if (document.body.dataset.page === 'admin') softRenderForce();
 }
@@ -2199,6 +2215,30 @@ function bindAdmin(){
     if (error) { toast('Not saved: ' + error.message); b.disabled = false; return; }
     Object.assign(r, data); if (data.status === 'live') { const x = subToEv(data); if (!BYID[x.id]) EV.push(x); BYID[x.id] = x; } else if (BYID['sub-' + id]) { EV = EV.filter(x => x.id !== 'sub-' + id); delete BYID['sub-' + id]; }
     toast(act === 'live' ? 'Approved – it’s live' : act === 'rejected' ? 'Rejected' : 'Saved'); softRenderForce(); });
+  v.querySelectorAll('[data-ract]').forEach(b => b.onclick = async () => {
+    const el = b.closest('.adm-req'), id = el.dataset.rid, q = (ADM.reqs || []).find(x => x.id === id); el.querySelectorAll('button').forEach(x => x.disabled = true);
+    const {error} = b.dataset.ract === 'approve' ? await AUTH.client.rpc('approve_request', {p_id: id}) : await AUTH.client.from('submitter_requests').update({status: 'deleted', decided_at: new Date().toISOString()}).eq('id', id);
+    if (error) { toast('Not saved: ' + error.message); el.querySelectorAll('button').forEach(x => x.disabled = false); return; }
+    ADM.reqs = ADM.reqs.filter(x => x.id !== id); if (b.dataset.ract === 'approve' && q) ADM.subs = (ADM.subs || []).concat({email: q.email, name: q.name, club: q.club, instant: true});
+    toast(b.dataset.ract === 'approve' ? `Approved – ${q && q.name || 'their'} shoots now go live straight away` : 'Request deleted'); softRenderForce(); });
+  v.querySelectorAll('[data-sact]').forEach(b => b.onclick = async () => {
+    const em = b.closest('[data-sem]').dataset.sem; if (!confirm('Remove ' + em + '? Their next shoots will need approving again.')) return; b.disabled = true;
+    const {error} = await AUTH.client.from('approved_submitters').delete().eq('email', em);
+    if (error) { toast('Not removed: ' + error.message); b.disabled = false; return; }
+    ADM.subs = ADM.subs.filter(s => s.email !== em); toast('Removed'); softRenderForce(); });
+  v.querySelectorAll('[data-dact]').forEach(b => b.onclick = async () => { const d = b.closest('[data-dom]').dataset.dom; if (!confirm('Remove @' + d + '?')) return; b.disabled = true;
+    const {error} = await AUTH.client.from('approved_domains').delete().eq('domain', d); if (error) { toast('Not removed: ' + error.message); b.disabled = false; return; }
+    ADM.doms = ADM.doms.filter(x => x.domain !== d); toast('Removed'); softRenderForce(); });
+  const df = $('#admDom'); if (df) df.onsubmit = async e => { e.preventDefault(); const f = Object.fromEntries(new FormData(df)), d = String(f.domain).trim().toLowerCase().replace(/^.*@/, '').replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '');
+    if (/^(gmail|googlemail|hotmail|outlook|live|msn|yahoo|ymail|bigpond|icloud|me|mac|aol|proton|protonmail|iinet|optusnet|tpg|westnet|internode|dodo|gmx|mail|zoho)\./.test(d)) { toast('Free email like @' + d + ' can’t be auto-approved'); return; }
+    const {error} = await AUTH.client.from('approved_domains').upsert({domain: d, label: f.label.trim() || null}, {onConflict: 'domain'}); if (error) { toast('Not saved: ' + error.message); return; }
+    ADM.doms = (ADM.doms || []).filter(x => x.domain !== d).concat({domain: d, label: f.label.trim()}).sort((a, b) => a.domain < b.domain ? -1 : 1); toast('Added @' + d); softRenderForce(); };
+  const af = $('#admAdd'); if (af) af.onsubmit = async e => { e.preventDefault(); const d = Object.fromEntries(new FormData(af)), em = String(d.email).trim().toLowerCase();
+    const {error} = await AUTH.client.from('approved_submitters').upsert({email: em, name: d.name.trim(), club: d.club.trim() || null, instant: true}, {onConflict: 'email'});
+    if (error) { toast('Not saved: ' + error.message); return; }
+    await AUTH.client.from('submitter_requests').update({status: 'approved', decided_at: new Date().toISOString()}).eq('email', em).eq('status', 'pending');
+    ADM.subs = (ADM.subs || []).filter(s => s.email !== em).concat({email: em, name: d.name.trim(), club: d.club.trim(), instant: true}); ADM.reqs = (ADM.reqs || []).filter(q => q.email !== em);
+    toast('Approved ' + d.name); softRenderForce(); };
   v.querySelectorAll('[data-inst]').forEach(c => c.onchange = async () => {
     const {error} = await AUTH.client.from('approved_submitters').upsert({email: c.dataset.inst, club: c.dataset.club, name: c.dataset.name, instant: c.checked}, {onConflict: 'email'});
     if (error) { toast('Not saved: ' + error.message); c.checked = !c.checked; return; }
@@ -2442,6 +2482,7 @@ function bindSubmit(){
       fm.querySelector('[name=known_club]').value = k ? 'yes' : 'no';
       const db = await dbSubmit(rec, g('s_file').disabled ? null : g('s_file').files[0]);
       let tag = kcTag(k);
+      if (!db && k !== true && AUTH.client) AUTH.client.rpc('request_approval', {p_email: val('s_email'), p_name: val('s_name'), p_club: val('s_club'), p_role: roleVal('s'), p_source: 'form', p_note: 'Shoot: ' + val('s_ename')}).then(() => {}, () => {});
       if (db) { fm.querySelector('[name=submission_id]').value = db.id; fm.querySelector('[name=submission_status]').value = db.status === 'live' ? 'LIVE – instant-approved submitter, already on the site' : 'pending – approve at ' + location.origin + location.pathname + '#/admin';
         if (db.flyer_url) fm.querySelector('[name=flyer_stored]').value = db.flyer_url;
         if (db.status === 'live') tag = '[LIVE] ' + tag;
