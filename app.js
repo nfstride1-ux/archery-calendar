@@ -1326,6 +1326,24 @@ function updateNav(){
   const n = AUTH.sync ? AUTH.sync.pending() : 0, linked = AUTH.sync && AUTH.sync.linked();
   a.textContent = AUTH.user ? `👤 ${linked && n ? '⏳ ' : ''}Account` : 'Sign in';
   a.classList.toggle('on', (location.hash || '').startsWith('#/account'));
+  admNav();
+}
+/* Admin link: shown only to admins (UI check by email, confirmed by rpc is_admin – the database enforces it anyway) */
+const ADMNAV = {uid: null, ok: false, n: 0, t: 0};
+function admNavPaint(){
+  const b = $('#navAdmin'); if (!b) return; const ok = !!(AUTH.user && (ADMNAV.ok || isAdmin()));
+  b.hidden = !ok; b.classList.toggle('on', (location.hash || '').startsWith('#/admin'));
+  const g = $('#navAdmBadge'); if (g) { g.hidden = !(ok && ADMNAV.n > 0); g.textContent = ADMNAV.n > 99 ? '99+' : String(ADMNAV.n); }
+  b.setAttribute('aria-label', ADMNAV.n ? `Admin – ${ADMNAV.n} waiting` : 'Admin');
+}
+async function admNav(){
+  admNavPaint(); const u = AUTH.user;
+  if (!u || !AUTH.client) { ADMNAV.uid = null; ADMNAV.ok = false; ADMNAV.n = 0; return; }
+  if (ADMNAV.uid === u.id && Date.now() - ADMNAV.t < 60000) return;
+  ADMNAV.uid = u.id; ADMNAV.t = Date.now();
+  try { const r = await AUTH.client.rpc('is_admin'); if (!r.error) ADMNAV.ok = !!r.data; } catch (e) {}
+  if (ADMNAV.ok || isAdmin()) try { const c = await AUTH.client.from('submitter_requests').select('email', {count: 'exact', head: true}).eq('status', 'pending'); if (!c.error) ADMNAV.n = c.count || 0; } catch (e) {}
+  admNavPaint();
 }
 /* Tables-ready check (no library needed): as a signed-out visitor, the tables and sync function must EXIST (answering
    "permission denied" is fine – that's RLS/grants working). Missing (PGRST205 / PGRST202 / 404) = schema.sql not run yet:
@@ -1444,6 +1462,7 @@ function vAccount(){
    <section class="panel"><h2 class="sec">Sync</h2><p class="sync-st" id="syncSt">${syncTxt}</p>
     <p class="note">${c.saved} saved event${c.saved === 1 ? '' : 's'} · ${c.ent} entr${c.ent === 1 ? 'y' : 'ies'}. Changes save on this device straight away and sync in the background, also after being offline.</p>
     <button class="btn alt" id="syncNow">↻ Sync now</button></section>
+   ${isAdmin() || ADMNAV.ok ? `<section class="panel"><h2 class="sec">🛡 Admin</h2><p>You’re an Archery Calendar admin.${ADMNAV.n ? ` <b>${ADMNAV.n} waiting for approval.</b>` : ''}</p><p class="row"><a class="btn gold" href="#/admin">Requests &amp; submissions</a><a class="btn alt" href="#/admin/approved">Approved people</a></p></section>` : ''}
    <section class="panel"><h2 class="sec">Sign out</h2>
     <button class="btn alt block" id="so">Sign out (keep my events on this device)</button>
     <button class="btn alt block" id="soClear">Sign out and remove my events from this device</button>

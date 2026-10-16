@@ -744,3 +744,6 @@ body.hb-open #hbBtn{display:none}
 .res-tbl tr.me td{background:#fff4c2;font-weight:600}
 .my-score{background:#fff4c2;border-left:4px solid #c9a000;padding:.5rem .75rem;margin:.5rem 0;border-radius:6px;color:#222}
 .my-day .meta{margin:.2rem 0 .4rem}
+.adm-btn{position:relative;background:#fff}
+.adm-badge{display:inline-block;min-width:18px;margin-left:6px;padding:0 5px;border-radius:999px;background:#c0392b;color:#fff;font-size:11px;line-height:18px;text-align:center}
+@media (max-width:760px){.adm-btn{padding:6px 10px}.adm-btn+.acct-btn{margin-left:6px}}
