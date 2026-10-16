@@ -770,6 +770,6 @@ body.hb-open #hbBtn{display:none}
 .how-reg .reg-list .note{margin:.25rem 0 0}
 
 /* phone: gold My events pill beside Account */
-.myev-btn{display:none}
-@media (max-width:760px){.myev-btn{display:inline-block;margin-left:6px}}
+
+@media (max-width:760px){.myev-btn{margin-left:6px}}
 @media (max-width:400px){.site-head .acct-btn{padding:6px 8px;font-size:12.5px}.site-head .acct-btn+.acct-btn{margin-left:5px}}
