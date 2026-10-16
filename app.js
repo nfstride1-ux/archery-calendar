@@ -2124,11 +2124,20 @@ const FLY_BUCKET = 'event-flyers', FLY_MAX = 10 * 1048576;
 const CC3 = {AU: 'AUS', US: 'USA'};
 function subToEv(r){
   const pdf = /\.pdf($|\?)/i.test(r.flyer_url || ''), y = r.start_date ? +r.start_date.slice(0, 4) : null;
-  return {id: 'sub-' + r.id, _sub: r.id, name: r.name, org: r.club, org_id: 'club-submission', org_group: 'club', club_name: r.club, country_code: CC3[r.country] || r.country || '', country: r.country === 'AU' ? 'Australia' : r.country === 'US' ? 'United States' : (r.country || ''),
+  const ev = {id: 'sub-' + r.id, _sub: r.id, name: r.name, org: r.club, org_id: 'club-submission', org_group: 'club', club_name: r.club, country_code: CC3[r.country] || r.country || '', country: r.country === 'AU' ? 'Australia' : r.country === 'US' ? 'United States' : (r.country || ''),
     state: r.state || null, state_code: r.state || null, start_date: r.start_date, end_date: r.end_date || r.start_date, dates_confirmed: true, location: r.venue, discipline: r.discipline || 'Target',
     level: 'Club', category: 'competition', registration_url: r.registration_url || null, notes: r.notes || null, source_url: r.flyer_link || null, last_checked: (r.created_at || '').slice(0, 10),
     flyer_year: r.flyer_url ? y : null, flyer_is_current: true, flyer_kind: 'Flyer', flyer_label: 'Flyer from the club', flyer_web: r.flyer_url || null, flyer_web_sm: r.flyer_url ? (pdf ? 'icons/icon-512.png' : r.flyer_url) : null,
     flyer_is_pdf: pdf, flyer_org: r.club, flyer_source_url: pdf ? r.flyer_url : null, flyer_extract: r.notes ? {notes: r.notes, is_current: true} : null};
+  return clubDefaults(ev);
+}
+/* Club-level default (clubs.json default_open_groups / default_open_match): e.g. Bowmen of Melville 3D and Looking Glass shoots are open to AA & TAA members. */
+function clubDefaults(ev){
+  const n = snorm(ev.club_name || ''), c = CLUBS.find(k => k.default_open_groups && [k.name, ...(k.aliases || [])].some(a => snorm(a) === n));
+  if (!c) return ev;
+  ev.club_id = ev.club_id || c.id;
+  if (new RegExp(c.default_open_match || '.', 'i').test(`${ev.name} ${ev.discipline || ''}`)) Object.assign(ev, {also_groups: c.default_open_groups.slice(), level: 'Open competition', category: 'competition'});
+  return ev;
 }
 /* Public read of live club submissions – plain REST with the publishable key, no library needed. */
 async function loadLiveSubs(){
