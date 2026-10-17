@@ -48,7 +48,7 @@
       <form class="hb-f"><label class="sr" for="hbQ">Type your question</label><input id="hbQ" type="text" placeholder="Type a question…" autocomplete="off"><button type="submit" class="hb-go">Ask</button></form>`;
     document.body.append(b, box); log = box.querySelector('.hb-log');
     b.onclick = () => toggle(!opened); box.querySelector('.hb-x').onclick = () => toggle(false);
-    box.addEventListener('keydown', e => { if (e.key === 'Escape') toggle(false); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && opened) { toggle(false); const nb = document.getElementById('hbBtn'); nb && nb.focus({preventScroll: true}); } });   // Escape closes Help wherever focus is
     box.querySelector('.hb-f').onsubmit = e => { e.preventDefault(); const i = box.querySelector('#hbQ'), v = i.value.trim(); if (!v) return; i.value = ''; ask(v); };
     log.addEventListener('click', e => { const q = e.target.closest('[data-q]'); if (q) ask(QA[+q.dataset.q].q, QA[+q.dataset.q]); if (e.target.closest('a[href^="#"]') && phone()) toggle(false); });
   }
@@ -60,7 +60,7 @@
   function toggle(on){ opened = on; box.hidden = !on; document.getElementById('hbBtn').setAttribute('aria-expanded', on); const nh = document.getElementById('navHelp'); nh && nh.setAttribute('aria-expanded', on);
     document.body.classList.toggle('hb-open', on);
     if (on && !log.children.length) say('bot', `<p>Hi! 👋 How can I help? Tap a question or type your own.</p>${menu()}${fallback}`);
-    if (on && !phone()) box.querySelector('#hbQ').focus(); }
+    if (on && !phone()) box.querySelector('#hbQ').focus(); else if (on) { box.tabIndex = -1; box.focus({preventScroll: true}); } }
   window.openHelp = () => toggle(true);
   function navSlot(){ const n = document.getElementById('navHelp'), b = document.getElementById('hbBtn'); if (!n) return;
     n.addEventListener('click', e => { e.preventDefault(); toggle(!opened); });

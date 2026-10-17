@@ -638,6 +638,8 @@ const matchQ = (x, Q) => (!Q.states.length || Q.states.includes(x.state_code)) &
   : DISC_Q[w] && x.discipline ? DISC_Q[w].test(discTxt(x))
   : wordHit(w, hay(x)));
 let BF = {day:'', q:'', disc:'', cat:'', ost:'', scope:'all', state:'', club:'', clubId:'', mc:false, past:false, hideClash:false, limit:60};
+/* Disciplines listed on an event: 'Field, Target, 3D' -> [Field, Target, 3D]; 'Target (outdoor, 720)' -> [Target]; 'Target / Para' -> [Target, Para]. */
+const discsOf = x => [...new Set(String(x.discipline || '').replace(/\([^)]*\)/g, ' ').split(/[,/]/).map(t => t.trim().split(/\s+/)[0]).filter(Boolean))];
 function vBrowse(){
   setTitle('Find events');
   const grp = AUS() && BF.scope.startsWith('g:') ? BF.scope.slice(2) : null;
@@ -648,7 +650,7 @@ function vBrowse(){
   // A state named in the search (e.g. 'target sa') also overrides 'My states' from Settings.
   const vis = grp ? EV.filter(x => inGrp(x, grp)) : EV.filter(x => visible(x, !!BF.state || qState));
   const scopes = AUS() ? [['all','All Australia'], ...GROUPS.map(g => ['g:' + g[0], {aa:'Archery Australia', aba:'ABA', awa:'Archery WA', taa:'TAA'}[g[0]]])] : [['all','All'], ['world','🌐 World'], ...S.countries.map(c => [c, CMAP[c] || c]), ...S.orgs.map(o => [o, (ORGS.find(x => x.id === o) || {}).name?.replace(/\s*\(.*\)/,'') || o])];
-  const discs = [...new Set(vis.filter(x => (BF.past || !isPast(x)) && isShoot(x) && !/^(meeting|judging|coaching)/i.test(x.discipline || '')).map(x => (x.discipline || '').split(/[ (/]/)[0]).filter(Boolean))].sort();   // only disciplines with events to show
+  const discs = [...new Set(vis.filter(x => (BF.past || !isPast(x)) && isShoot(x) && !/^(meeting|judging|coaching)/i.test(x.discipline || '')).flatMap(discsOf))].sort();   // only disciplines with events to show
   if (BF.disc && !discs.includes(BF.disc)) discs.push(BF.disc);   // never hide an active filter behind 'All disciplines'
   let list = vis.slice();
   if (BF.scope.startsWith('g:')) list = list.filter(x => inGrp(x, BF.scope.slice(2)));
@@ -661,7 +663,7 @@ function vBrowse(){
   if (!BF.clubId && !BF.club) list = list.filter(x => clubOk(x, Q));
   const active = [BF.day && `on ${esc(pd(BF.day).toLocaleDateString('en-AU', {weekday:'short', day:'numeric', month:'short', year:'numeric'}))}`, BF.q && `search “${esc(BF.q)}”`, BF.state && (STATES.find(s => s[0] === BF.state) || [, BF.state])[1], BF.disc && `discipline ${esc(BF.disc)}`, BF.cat && CATS[BF.cat] && CATS[BF.cat][2], BF.ost && OST[BF.ost] && OST[BF.ost][2], BF.club && CLUBF[BF.club], BF.clubId && CLUB[BF.clubId] && `club: ${esc(CLUB[BF.clubId].name)}`, BF.cat === 'club' && BF.mc && 'only my clubs', qState && `state from your search: ${Q.states.join(', ')}${!grp && !BF.state && S.states.length ? ' (overrides your Settings states)' : ''}`, !grp && !BF.state && !qState && S.states.length && AUS() && `your states in Settings (${S.states.join(', ')})`].filter(Boolean);
   if (BF.day) list = list.filter(x => datable(x) && x.start_date <= BF.day && evEnd(x) >= BF.day);
-  if (BF.disc) list = list.filter(x => (x.discipline || '').startsWith(BF.disc));
+  if (BF.disc) list = list.filter(x => discsOf(x).includes(BF.disc));
   const tc = typeCounts(list.filter(x => BF.past || !isPast(x)));
   if (BF.cat) list = list.filter(x => catOf(x) === BF.cat);
   if (BF.cat === 'club' && BF.mc) list = list.filter(x => followed().includes(x.club_id));
@@ -672,7 +674,7 @@ function vBrowse(){
     if (!INTL) loadIntl().then(() => { if ((location.hash || '').startsWith('#/browse') && BF.q) { const y = scrollY, a = document.activeElement && document.activeElement.id; render(); scrollTo(0, y); const e = a && $('#' + a); if (e && e.setSelectionRange) { e.focus(); e.setSelectionRange(e.value.length, e.value.length); } } }).catch(() => {});
     else { const have = new Set(list.map(x => x.id)); let ix = INTL.events.filter(x => !have.has(x.id) && matchQ(x, Q));
       if (BF.day) ix = ix.filter(x => datable(x) && x.start_date <= BF.day && evEnd(x) >= BF.day);
-      if (BF.disc) ix = ix.filter(x => (x.discipline || '').startsWith(BF.disc));
+      if (BF.disc) ix = ix.filter(x => discsOf(x).includes(BF.disc));
       if (BF.cat) ix = ix.filter(x => catOf(x) === BF.cat);
       if (BF.ost) ix = ix.filter(x => x.org_status === BF.ost);
       list = list.concat(ix); }
@@ -756,7 +758,7 @@ function resultsBox(x){
 return `<section class="panel results-box" id="results"><h2 class="sec">🏆 Results</h2><p class="note">${esc(r.title)} · ${n} archer${n === 1 ? '' : 's'} in ${ng} division${ng === 1 ? '' : 's'}.${r.note ? ' ' + esc(r.note) : ''} Source: <a href="${esc(r.source_url)}" target="_blank" rel="noopener">${esc(r.source_name)} ↗</a></p>${r.groups ? resTables(r, 2) : `<div id="resTables" data-id="${esc(x.id)}"><p class="loading">Loading scores…</p></div>`}${src}</section>`;
 }
 function vShoot(id){
-  const x = BYID[id]; if (!x) return `<div class="wrap"><div class="empty">Event not found.</div></div>`;
+  const x = BYID[id]; if (!x) return vNotFound('event', id);
   setTitle(x.name);
   const on = !!S.saved[id], en = S.entries[id];
   const kind = {how_to_guide:'How to enter (guide)', event_page:'Event page & entry', entry_page:'Register / enter', entry_system:'Enter via Archers Diary (search the event)', email:'✉ Email your nomination', nominate_aba_j:'How to nominate (ABA Branch J contacts)'}[x.registration_url_kind] || 'Register / enter';
@@ -765,6 +767,7 @@ function vShoot(id){
   const closedNow = !!x.entry_close_date && daysTo(x.entry_close_date) < 0;
   const regBtn = x.info_only && !x.book_anytime ? '' : x.registration_url ? `<a class="btn ${closedNow ? 'alt' : 'gold'} block big-btn" id="regBtn" href="${esc(x.registration_url)}" ${isMail ? '' : 'target="_blank" rel="noopener"'}>${isMail ? '' : '↗ '}${kindLbl && !closedNow ? kindLbl : closedNow ? kind.replace(/^Register \/ enter$/, 'Entry page') + ' (entries closed)' : kind}</a>
       ${x.registration_email ? `<p class="note">Opens your email app addressed to <b>${esc(x.registration_email.to)}</b>${x.registration_email.cc ? `, cc ${esc(x.registration_email.cc)}` : ''}, with ${esc(x.registration_email.fields.join(', '))} ready to fill in.</p>` : ''}
+      ${x.registration_note ? `<p class="note reg-note">ℹ ${esc(x.registration_note)}</p>` : ''}
       ${x.registration_url_source ? `<p class="note">Entry details from ${esc(x.registration_url_source)}.</p>` : ''}`
       : regOf(x).length ? `<p class="note">✍ See How to register below</p>` : `<div class="warn">⚠ No online entry link found yet. ${x.org_id === 'aba' ? 'ABA events are entered through the host club.' : 'Check the source page below.'}</div>`;
   const closed = !!x.entry_close_date && daysTo(x.entry_close_date) < 0 && !isPast(x) && !x.info_only;
@@ -1097,9 +1100,9 @@ function vCals(arg){
   const all = EV.filter(x => inGrp(x, CF.org) && x.start_date && x.start_date >= '2026-01-01').sort((a, b) => a.start_date < b.start_date ? -1 : a.start_date > b.start_date ? 1 : a.name < b.name ? -1 : 1);
   const years = [...new Set(all.map(x => x.start_date.slice(0, 4)))];
   const wheres = [...new Set(all.map(calWhere).filter(Boolean))].sort();
-  const discs = [...new Set(all.filter(x => isShoot(x) && !/^(meeting|judging|coaching)/i.test(x.discipline || '')).map(x => (x.discipline || '').split(/[ (/]/)[0]).filter(Boolean))].sort();
+  const discs = [...new Set(all.filter(x => isShoot(x) && !/^(meeting|judging|coaching)/i.test(x.discipline || '')).flatMap(discsOf))].sort();
   if (CF.where && !wheres.includes(CF.where)) CF.where = ''; if (CF.disc && !discs.includes(CF.disc)) CF.disc = '';
-  let list = all.filter(x => (!CF.where || calWhere(x) === CF.where) && (!CF.disc || (x.discipline || '').startsWith(CF.disc)) && (CF.past || !isPast(x)));
+  let list = all.filter(x => (!CF.where || calWhere(x) === CF.where) && (!CF.disc || discsOf(x).includes(CF.disc)) && (CF.past || !isPast(x)));
   if (CF.club) list = list.filter(clubFilter(CF.club));
   else list = list.filter(x => clubOk(x));
   const tc = typeCounts(list); if (CF.cat) list = list.filter(x => catOf(x) === CF.cat);
@@ -1457,7 +1460,7 @@ function updateNav(){
   const a = $('#navAcct'); if (!a) return; a.hidden = !(AUTH.on && AUTH.ready); if (a.hidden) return;
   const fs = $('#footStore'); if (fs) fs.textContent = 'Your saved events and entries are kept in your browser on this device, and in your account if you sign in';
   const n = AUTH.sync ? AUTH.sync.pending() : 0, linked = AUTH.sync && AUTH.sync.linked();
-  a.textContent = AUTH.user ? `👤 ${linked && n ? '⏳ ' : ''}Account` : 'Sign in';
+  if (AUTH.user) { a.innerHTML = `👤${linked && n ? ' ⏳' : ''}<span class="pl"> Account</span>`; a.setAttribute('aria-label', 'Account'); } else { a.textContent = 'Sign in'; a.removeAttribute('aria-label'); }
   a.classList.toggle('on', (location.hash || '').startsWith('#/account'));
   admNav();
 }
@@ -2199,6 +2202,21 @@ function bindIntl(){
   const cl = $('#iclr'); if (cl) cl.onclick = () => { Object.assign(IF, {q: '', disc: '', org: '', st: '', ctry: '', major: false, cat: '', limit: 60}); rer('#iq'); };
   const m = $('#imore'); if (m) m.onclick = () => { IF.limit += 60; rer(); };
 }
+/* Not found: missing event (old/renamed link) or unknown page. Back link + search pre-filled from the link's words. */
+function nfWords(id){ return String(id || '').replace(/^(sub|wa|ad|aba|awa|ian|nfaa|nast|kaa|bd|agb|aa)-/i, '').replace(/[-_+.]+/g, ' ').replace(/\b(19|20)\d\d\b/g, ' ').replace(/\b\d{1,2}\b/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60); }
+function vNotFound(kind, id){
+  const ev = kind === 'event'; setTitle(ev ? 'Event not found' : 'Page not found');
+  return `<div class="wrap narrow nf-wrap"><section class="panel nf-box" aria-labelledby="nfH">
+    <p class="nf-back"><a href="#/browse">← All events</a></p>
+    <h1 class="sec" id="nfH">🔎 ${ev ? 'We can’t find that event' : 'Page not found'}</h1>
+    <p>${ev ? 'It may have been renamed, merged with another listing or removed, or the link was cut short. Try a search:' : 'That link doesn’t match a page on Archery Calendar. Try a search:'}</p>
+    <form class="nf-search" id="nfSearch" role="search"><label class="sr" for="nfq">Search events</label><input id="nfq" type="search" value="${esc(nfWords(id))}" placeholder="Search an event, club or town…" autocomplete="off"><button class="btn gold" type="submit">Search</button></form>
+    <div class="nf-links"><a class="btn alt" href="#/browse">← Find events</a><a class="btn alt" href="#/intl">🌐 International</a><a class="btn alt" href="#/home">Home</a></div></section></div>`;
+}
+function bindNotFound(){ const f = $('#nfSearch'); if (!f) return; f.onsubmit = e => { e.preventDefault(); BF.q = $('#nfq').value.trim(); BF.scope = 'all'; BF.disc = ''; BF.state = ''; location.hash = '#/browse'; }; }
+/* Friendly aliases for links people type or share. */
+const ROUTE_ALIAS = {find: '#/browse', search: '#/browse', events: '#/browse', international: '#/intl', world: '#/intl/world', 'my-events': '#/calendar', myevents: '#/calendar'};
+const KNOWN_PAGES = ['home', 'browse', 'shoot', 'calendar', 'entries', 'settings', 'advertise', 'credits', 'privacy', 'fans', 'account', 'admin', 'cards', 'fix', 'submit', 'calendars', 'club', 'clubs', 'intl', 'import'];
 function route(){
   const h = location.hash || '#/home', last = route.last; route.last = h;
   if (last && last.startsWith('#/intl')) IBACK[last] = scrollY;
@@ -2206,6 +2224,7 @@ function route(){
   window.scrollTo(0, h.startsWith('#/intl') && last && last.startsWith('#/shoot/') && IBACK[h] ? IBACK[h] : 0); gcPage(); }
 function render(){
   const h0 = location.hash || '#/home', h = h0.split('?')[0], HQ = new URLSearchParams(h0.split('?')[1] || ''), [, p, arg] = h.split('/'), v = $('#view');
+  if (ROUTE_ALIAS[p]) { location.replace(ROUTE_ALIAS[p] + (h0.includes('?') ? '?' + h0.split('?')[1] : '')); return; }
   document.querySelectorAll('.nav a').forEach(a => { const on = a.dataset.tab === (p || 'home') || (p === 'shoot' && a.dataset.tab === ((BYID[decodeURIComponent(arg || '')] || {})._intl ? 'intl' : 'browse')); a.classList.toggle('on', on); on ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'); }); { const me = $('#navMyEv'); if (me) { const on = p === 'calendar'; me.classList.toggle('on', on); on ? me.setAttribute('aria-current', 'page') : me.removeAttribute('aria-current'); } }
   document.body.dataset.page = p || 'home';
   if (p === 'browse') { v.innerHTML = vBrowse(); bindBrowse(); }
@@ -2230,12 +2249,13 @@ function render(){
   else if (p === 'club') { const id = decodeURIComponent(arg || ''); v.innerHTML = vClub(id); bindClub(id); }
   else if (p === 'clubs') { v.innerHTML = vClubs(); bindClubPicker(); }
   else if (p === 'intl') { v.innerHTML = vIntl(arg); bindIntl(arg); }
-  else { v.innerHTML = vHome();
+  else { const unknown = !!(p && !KNOWN_PAGES.includes(p) && h.startsWith('#/'));
+    v.innerHTML = (unknown ? `<div class="wrap"><p class="nf-note" role="status" id="nfNote">⚠ Page not found: <code>${esc(decodeURIComponent(h0).slice(0, 60))}</code> – here’s the home page instead. <a href="#/browse">Find events →</a></p></div>` : '') + vHome();
     v.querySelectorAll('[data-cat]').forEach(a => a.onclick = () => { BF.cat = a.dataset.cat; BF.disc = ''; BF.scope = 'all'; });
     v.querySelectorAll('[data-th]').forEach(a => a.onclick = () => { BF.cat = ''; BF.disc = {field:'Field','3d':'3D',target:'Target',indoor:'Indoor'}[a.dataset.th]; BF.scope = 'all'; });
     bindIntlMenu(); bindClubNotice(); const ya = $('#ycAll'); if (ya) ya.onclick = () => { Object.assign(BF, {club: S.myClubs.length ? 'mine' : 'watch', q: '', cat: '', disc: '', state: '', limit: 60}); };
     $('#heroSearch').onsubmit = e => { e.preventDefault(); BF.q = $('#hq').value; BF.scope = 'all'; location.hash = '#/browse'; }; }
-  bindCards(v); updateNav(); updateCardsNav();
+  bindNotFound(); bindCards(v); updateNav(); updateCardsNav();
 }
 /* ---------- instant publishing (owner 14 Oct 2026) ----------
    Signed-in submissions are saved to Supabase (public.submitted_events). A database trigger sets status: 'live' straight away
@@ -2532,6 +2552,7 @@ function vSubmit(country){
       ${f('s_ename', 'Event name', `<input id="s_ename" name="event_name" required maxlength="140" placeholder="e.g. Club 3D Championships 2027">`)}
       <div class="grid2">${f('s_start', 'Start date', `<input id="s_start" name="start_date" type="date" required>`)}
       ${f('s_end', 'End date', `<input id="s_end" name="end_date" type="date">`, 'Leave empty for a one-day event.', false)}</div>
+      <p class="note past-warn" id="s_past" role="status" hidden></p>
       ${f('s_venue', 'Venue / address', `<input id="s_venue" name="venue" required maxlength="200" placeholder="e.g. Club range, 12 Range Rd, Town">`)}
       <div class="grid2">${f('s_disc', 'Type of event', `<select id="s_disc" name="discipline"><option value="">Choose…</option>${['Target', 'Field', '3D', 'Indoor', 'Clout', 'Other'].map(o => `<option>${o}</option>`).join('')}</select>`, '', false)}
 </div>
@@ -2590,6 +2611,12 @@ function bindSubmit(){
   })();
   g('s_file').addEventListener('change', () => shrinkImg(g('s_file'), g('s_file_n')));
   fm.addEventListener('shrunk', () => { if (fm.dataset.tried) check(); });
+  /* Past date: a warning only (late listings and results are fine), never blocks sending. */
+  const pastWarn = () => { const d = new Date(), today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const st = val('s_start'), en = val('s_end') || st, w = g('s_past'); if (!w) return;
+    const msg = !/^\d{4}-\d{2}-\d{2}$/.test(st) || st >= today ? '' : en < today ? '⚠ These dates have already passed. You can still send it (for example to share results), but check the year is right.' : '⚠ The start date is before today. That’s fine if the event is already running – otherwise check the date.';
+    w.textContent = msg; w.hidden = !msg; };
+  ['input', 'change'].forEach(t => { g('s_start').addEventListener(t, pastWarn); g('s_end').addEventListener(t, pastWarn); });
   if (ctry() === 'OTHER') applyCountry();
   /* Remembered club details (S.subMe: this device, plus the signed-in profile's settings via sync). */
   const ME = ['s_ctryname', 's_state', 's_orgtype', 's_club', 's_name', 's_role', 's_role_other', 's_email', 's_phone'];

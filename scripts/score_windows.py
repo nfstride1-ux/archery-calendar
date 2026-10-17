@@ -9,11 +9,14 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATE_TZ = {'WA': 'Australia/Perth', 'NSW': 'Australia/Sydney', 'ACT': 'Australia/Sydney', 'VIC': 'Australia/Melbourne', 'TAS': 'Australia/Hobart',
             'QLD': 'Australia/Brisbane', 'SA': 'Australia/Adelaide', 'NT': 'Australia/Darwin'}
 def windows():
-    out = []
+    out, seen = [], set()
     for f in ('events.json', 'intl.json'):
         for x in json.load(open(os.path.join(ROOT, 'data', f)))['events']:
             s = x.get('start_date'); e = x.get('end_date') or s
-            if not s: continue
+            # One window per event id: an event cross-listed in both files (e.g. wa-31555) keeps the events.json copy.
+            # A duplicate id in one upsert makes Postgres reject the whole push ('cannot affect row a second time').
+            if not s or x['id'] in seen: continue
+            seen.add(x['id'])
             tz = x.get('tz') or STATE_TZ.get(x.get('state_code') or x.get('state') or '') or 'Australia/Perth'
             try: z = ZoneInfo(tz)
             except Exception: tz, z = 'Australia/Perth', ZoneInfo('Australia/Perth')
