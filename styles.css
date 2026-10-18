@@ -802,3 +802,4 @@ body.hb-open #hbBtn{display:none}
 .nf-note{margin:14px 0 0;padding:10px 14px;background:#fff7d6;border:1px solid #f2d36b;border-radius:10px;color:#4a3b00;font-size:14px}
 .nf-note code{background:#fff;padding:1px 5px;border-radius:5px;word-break:break-all}
 .past-warn{color:#7a4b00;background:#fff7d6;border-left:3px solid #f2b705;padding:6px 10px;border-radius:6px}
+.qcount{margin:6px 0 2px;font-size:15px;font-weight:600;color:var(--ink,#0f1b2d)}.qcount a{color:#1d4ed8;text-decoration:none}.qcount a:hover{text-decoration:underline}#qres{scroll-margin-top:100px}
