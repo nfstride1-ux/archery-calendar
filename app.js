@@ -546,6 +546,7 @@ function vHome(){
   <div class="wrap">
     <div class="stats four"><a class="stat" href="#/calendar"><b>${up.length}</b><span>★ My events</span></a><a class="stat" href="#/entries"><b>${nEnt}</b><span>✓ Entered</span></a><a class="stat" href="#/entries"><b>${nTodo}</b><span>☐ To enter</span></a><a class="stat" href="#/entries"><b>${nPay}</b><span>$ To pay</span></a></div>
     ${intlMenu()}
+    ${pendStrip()}
     ${adSlot('banner')}
     <h2 class="sec-h">Pick your discipline</h2>
     <div class="types">${['field','3d','target','indoor'].map(t => `<a class="type th-${t}" href="#/browse" data-th="${t}" style="--img:url('${esc(photo(t === 'field' ? 'aba_field' : t).sm)}');--pos:${esc(photo(t === 'field' ? 'aba_field' : t).pos || 'center')}"><span class="type-name">${THEMES[t][0]} ${THEMES[t][1]}</span><span class="type-sub">${{field:'Bush courses, marked & unmarked', '3d':'Foam animals in the bush', target:'Outdoor ranges, 18–90 m', indoor:'18 m halls, 3-spot & Vegas'}[t]}</span></a>`).join('')}</div>
@@ -2273,6 +2274,11 @@ const ADMIN_EMAILS = ['nfshold@gmail.com', 'nfstride1@gmail.com'];   // UI only 
 const isAdmin = () => !!(AUTH.user && ADMIN_EMAILS.includes(String(AUTH.user.email || '').toLowerCase()));
 const FLY_BUCKET = 'event-flyers', FLY_MAX = 10 * 1048576;
 const CC3 = {AU: 'AUS', US: 'USA'};
+const pendCard = r => { const u = r.flyer_url || r.flyer_link || '', pdf = /\.pdf($|\?)/i.test(u), img = r.flyer_url && !pdf;
+  return `<a class="pend-card" href="${esc(u)}" target="_blank" rel="noopener">${img ? `<img src="${esc(r.flyer_url)}" alt="Flyer from ${esc(r.club || 'a club')}" loading="lazy">` : `<span class="pend-ic" aria-hidden="true">${pdf ? '📄' : '🔗'}</span>`}
+    <span class="pend-txt"><b>${esc(r.club || 'New flyer')}</b><span class="tag pend-tag">Details coming</span><span class="note">Open the flyer ↗</span></span></a>`; };
+const pendStrip = () => FLYQ.rows.length ? `<section class="pend-strip" aria-label="New flyers, details coming"><h2 class="sec-h">New flyers, details coming</h2>
+  <p class="note">Just in from clubs. We're adding the dates from the flyers now.</p><div class="pend-row">${FLYQ.rows.map(pendCard).join('')}</div></section>` : '';
 function subToEv(r){
   const pdf = /\.pdf($|\?)/i.test(r.flyer_url || ''), y = r.start_date ? +r.start_date.slice(0, 4) : null;
   const ev = {id: 'sub-' + r.id, _sub: r.id, name: r.name, org: r.club, org_id: 'club-submission', org_group: 'club', club_name: r.club, country_code: CC3[r.country] || r.country || '', country: r.country === 'AU' ? 'Australia' : r.country === 'US' ? 'United States' : (r.country || ''),
@@ -2304,11 +2310,17 @@ async function loadOverrides(){
     if (n) EV.sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
     return n; } catch { return 0; }
 }
+/* Flyer-only live (owner 20 Oct 2026, supabase/flyer_only_publishing.sql): approved flyers with no name/date yet are live with
+   details_pending = true. They show in the "New flyers, details coming" strip, never as dated events. FLYQ.ok = the SQL is live. */
+const FLYQ = {ok: false, rows: []};
 async function loadLiveSubs(){
   if (!AUTH.configured) return 0;
-  try { const r = await fetch(SB_URL.replace(/\/$/, '') + '/rest/v1/live_events?select=*&order=start_date.asc', {headers: {apikey: SB_KEY}});
+  try { const base = SB_URL.replace(/\/$/, '') + '/rest/v1/live_events?order=start_date.asc.nullslast&select=', hd = {headers: {apikey: SB_KEY}};
+    let r = await fetch(base + '*,details_pending', hd); FLYQ.ok = r.ok;
+    if (!r.ok) r = await fetch(base + '*', hd);   // before flyer_only_publishing.sql: same as before
     if (!r.ok) return 0; const rows = await r.json(); let n = 0;
-    rows.forEach(row => { const x = subToEv(row); if (!BYID[x.id]) { EV.push(x); n++; } BYID[x.id] = Object.assign(BYID[x.id] || {}, x); });
+    FLYQ.rows = rows.filter(row => row.details_pending || !row.start_date); n += FLYQ.rows.length;
+    rows.filter(row => !(row.details_pending || !row.start_date)).forEach(row => { const x = subToEv(row); if (!BYID[x.id]) { EV.push(x); n++; } BYID[x.id] = Object.assign(BYID[x.id] || {}, x); });
     if (n) EV.sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
     return n; } catch { return 0; }
 }
@@ -2323,8 +2335,10 @@ async function dbSubmit(rec, file){
       const up = await AUTH.client.storage.from(FLY_BUCKET).upload(flyer_path, file, {contentType: file.type || (ext === 'pdf' ? 'application/pdf' : 'image/jpeg'), upsert: false});
       if (up.error) flyer_path = null; else flyer_url = AUTH.client.storage.from(FLY_BUCKET).getPublicUrl(flyer_path).data.publicUrl;
     }
-    const row = Object.assign({}, rec, {flyer_path, flyer_url, end_date: rec.end_date || rec.start_date});
-    let {data, error} = await AUTH.client.from('submitted_events').insert(row).select('id,status,flyer_url').single();
+    const row = Object.assign({}, rec, {flyer_path, flyer_url, start_date: rec.start_date || null, end_date: rec.end_date || rec.start_date || null});
+    if (!row.start_date && !flyer_url && !row.flyer_link) return null;   // flyer only, but the upload failed: email it instead
+    let {data, error} = await AUTH.client.from('submitted_events').insert(row).select('id,status,flyer_url,details_pending').single();
+    if (error && /details_pending/i.test(error.message || '')) ({data, error} = await AUTH.client.from('submitted_events').insert(row).select('id,status,flyer_url').single());
     if (error && /register/i.test(error.message || '')) { delete row.register; ({data, error} = await AUTH.client.from('submitted_events').insert(row).select('id,status,flyer_url').single()); }   // before event_overrides.sql adds the column
     if (error) { console.warn('Archery Calendar: submission not saved to the database (email still sent):', error.message); return null; }
     return data;
@@ -2337,7 +2351,13 @@ async function subDoneLoad(sid){
   let row = null;
   try { if (AUTH.client) { const {data} = await AUTH.client.from('submitted_events').select('*').eq('id', sid).maybeSingle(); row = data; } } catch {}
   const b = {set innerHTML(h){ SUBDONE.html = h; }};
-  if (row && row.status === 'live') {
+  if (row && row.status === 'live' && (row.details_pending || !row.start_date)) {
+    if (!FLYQ.rows.some(r => r.id === row.id)) FLYQ.rows.unshift(row);
+    b.innerHTML = `<span class="thanks-mark" aria-hidden="true">✓</span><h2 class="sec">🎉 Your flyer is live</h2>
+      <p>It's on the site now under <b>New flyers, details coming</b>. Live now, we'll add the dates from your flyer shortly.</p>
+      <div class="pend-row">${pendCard(row)}</div>
+      <div class="row"><a class="btn gold" href="#/">See it on the home page</a><a class="btn alt" href="#/submit">Send another event</a></div>`;
+  } else if (row && row.status === 'live') {
     const x = subToEv(row); if (!BYID[x.id]) EV.push(x); BYID[x.id] = x;
     b.innerHTML = `<span class="thanks-mark" aria-hidden="true">✓</span><h2 class="sec">🎉 Your event is live</h2>
       <p>You’re an approved submitter, so <b>${esc(row.name)}</b> is on the calendar now. Share the link with your club.</p>
@@ -2373,11 +2393,11 @@ function vAdmin(){
   const one = r => { const em = String(r.submitter_email || '').toLowerCase(), s = inst.get(em), pdf = /\.pdf/i.test(r.flyer_url || '');
     return `<article class="panel adm-row" data-id="${esc(r.id)}"><div class="adm-fl">${r.flyer_url ? `<a href="${esc(r.flyer_url)}" target="_blank" rel="noopener">${pdf ? '📄 PDF flyer ↗' : `<img src="${esc(r.flyer_url)}" alt="Flyer" loading="lazy">`}</a>` : r.flyer_link ? `<a href="${esc(r.flyer_link)}" target="_blank" rel="noopener">🔗 Flyer link ↗</a>` : '<span class="note">No flyer</span>'}</div>
       <div class="adm-body"><p><span class="tag st-${esc(r.status)}">${esc(r.status)}</span> <span class="note">${esc(new Date(r.created_at).toLocaleString('en-AU'))}</span></p>
-      <h3>${esc(r.name)}</h3><p>${esc(r.start_date)}${r.end_date && r.end_date !== r.start_date ? ' to ' + esc(r.end_date) : ''} · ${esc(r.venue || '')} · ${esc(r.discipline || '')}</p>
+      <h3>${esc(r.name)}${r.details_pending ? ' <span class="tag pend-tag">Details coming</span>' : ''}</h3><p>${r.start_date ? esc(r.start_date) : 'No date yet'}${r.end_date && r.end_date !== r.start_date ? ' to ' + esc(r.end_date) : ''} · ${esc(r.venue || '')} · ${esc(r.discipline || '')}</p>
       <p><b>${esc(r.club)}</b> (${esc([r.state, r.country].filter(Boolean).join(', '))}) – ${esc(r.organisation_type || '')}</p>
       <p>From <b>${esc(r.submitter_name || '')}</b>, ${esc(r.role || '')} · ${esc(r.submitter_email || '')}${r.contact_email && r.contact_email !== r.submitter_email ? ' · contact ' + esc(r.contact_email) : ''}</p>
       ${r.registration_url ? `<p>Entry: <a href="${esc(r.registration_url)}" target="_blank" rel="noopener">${esc(r.registration_url)}</a></p>` : ''}${r.notes ? `<p class="note">${esc(r.notes)}</p>` : ''}
-      <div class="row adm-btns">${r.status !== 'live' ? `<button class="btn gold sm" data-act="live">✓ Approve</button>` : `<a class="btn alt sm" href="#/shoot/sub-${esc(r.id)}">View live</a>`}${r.status !== 'rejected' ? `<button class="btn alt sm" data-act="rejected">✕ Reject</button>` : ''}<button class="btn alt sm" data-act="edit">✏️ Edit</button>
+      <div class="row adm-btns">${r.status !== 'live' ? `<button class="btn gold sm" data-act="live">✓ Approve</button>` : `<a class="btn alt sm" href="#/shoot/sub-${esc(r.id)}">View live</a>`}${r.status !== 'rejected' ? `<button class="btn alt sm" data-act="rejected">✕ Reject</button>` : ''}<button class="btn alt sm" data-act="edit">✏️ Edit</button><button class="btn alt sm" data-act="delete">🗑 Delete</button>
       <label class="chk adm-inst"><input type="checkbox" data-inst="${esc(em)}" data-club="${esc(r.club)}" data-name="${esc(r.submitter_name || '')}" ${s && s.instant ? 'checked' : ''}> Instant-approve ${esc(em)}</label></div></div></article>`; };
   return `${head}<div class="wrap adm"><section class="panel"><p>${tabs} <button type="button" class="btn sm alt" id="admReload">↻ Reload</button></p>${ADM.err ? `<p class="err" role="alert">${esc(ADM.err)}</p>` : ''}</section>
     ${reqHtml}<h2 class="sec">Shoots sent in</h2>
@@ -2408,13 +2428,18 @@ function bindAdmin(){
   const rl = $('#admReload'); if (rl) rl.onclick = () => { ADM.rows = null; softRenderForce(); };
   v.querySelectorAll('.adm-row [data-act]').forEach(b => b.onclick = async () => {
     const id = b.closest('.adm-row').dataset.id, r = ADM.rows.find(x => x.id === id), act = b.dataset.act; let patch;
-    if (act === 'edit') { const f = [['name', 'Event name'], ['start_date', 'Start date (YYYY-MM-DD)'], ['end_date', 'End date (YYYY-MM-DD)'], ['venue', 'Venue'], ['discipline', 'Type'], ['registration_url', 'Entry link'], ['notes', 'Notes']];
+    if (act === 'delete') { if (!confirm('Delete “' + r.name + '” for good?')) return; b.disabled = true;
+      const {error} = await AUTH.client.from('submitted_events').delete().eq('id', id);
+      if (error) { toast('Not deleted: ' + error.message); b.disabled = false; return; }
+      ADM.rows = ADM.rows.filter(x => x.id !== id); FLYQ.rows = FLYQ.rows.filter(x => x.id !== id); EV = EV.filter(x => x.id !== 'sub-' + id); delete BYID['sub-' + id];
+      toast('Deleted'); softRenderForce(); return; }
+    if (act === 'edit') { const f = [['club', 'Club'], ['name', 'Event name'], ['start_date', 'Start date (YYYY-MM-DD)'], ['end_date', 'End date (YYYY-MM-DD)'], ['venue', 'Venue'], ['discipline', 'Type'], ['registration_url', 'Entry link'], ['notes', 'Notes']];
       patch = {}; for (const [k, l] of f) { const nv = prompt(l, r[k] || ''); if (nv === null) return; if (nv !== (r[k] || '')) patch[k] = nv || null; } if (!Object.keys(patch).length) return; }
     else patch = {status: act};
     b.disabled = true;
     const {data, error} = await AUTH.client.from('submitted_events').update(patch).eq('id', id).select('*').single();
     if (error) { toast('Not saved: ' + error.message); b.disabled = false; return; }
-    Object.assign(r, data); if (data.status === 'live') { const x = subToEv(data); if (!BYID[x.id]) EV.push(x); BYID[x.id] = x; } else if (BYID['sub-' + id]) { EV = EV.filter(x => x.id !== 'sub-' + id); delete BYID['sub-' + id]; }
+    Object.assign(r, data); FLYQ.rows = FLYQ.rows.filter(x => x.id !== id); if (data.status === 'live' && (data.details_pending || !data.start_date)) FLYQ.rows.unshift(data); else if (data.status === 'live') { const x = subToEv(data); if (!BYID[x.id]) EV.push(x); BYID[x.id] = x; } else if (BYID['sub-' + id]) { EV = EV.filter(x => x.id !== 'sub-' + id); delete BYID['sub-' + id]; }
     toast(act === 'live' ? 'Approved – it’s live' : act === 'rejected' ? 'Rejected' : 'Saved'); softRenderForce(); });
   v.querySelectorAll('[data-ract]').forEach(b => b.onclick = async () => {
     const el = b.closest('.adm-req'), id = el.dataset.rid, q = (ADM.reqs || []).find(x => x.id === id); el.querySelectorAll('button').forEach(x => x.disabled = true);
@@ -2662,8 +2687,8 @@ function bindSubmit(){
     g('s_email_w').hidden = ap; g('s_who').hidden = ap;
     if (ap && AUTH.user) g('s_email').value = AUTH.user.email || '';
     g('s_mode').textContent = ap ? '✓ You’re an approved submitter, so your events go live straight away.' : 'We check each flyer and put it on the calendar, usually within 48 hours. Approved clubs go live straight away.';
-    b.textContent = ap ? (complete() ? 'Publish now' : 'Send flyer to publish') : 'Send flyer';
-    h.textContent = !ap ? '' : complete() ? 'Goes live on the calendar as soon as you tap Publish now.' : 'Just the flyer is fine: we read it and put it live for you. Add the club, event name and start date under details and it goes live the second you tap.';
+    b.textContent = ap ? (complete() || FLYQ.ok ? 'Publish now' : 'Send flyer to publish') : 'Send flyer';
+    h.textContent = !ap ? '' : complete() ? 'Goes live on the calendar as soon as you tap Publish now.' : FLYQ.ok ? 'Live now, we’ll add the dates from your flyer shortly.' : 'Just the flyer is fine: we read it and put it live for you. Add the club, event name and start date under details and it goes live the second you tap.';
   }
   if (AUTH.user && AUTH.client) { const em = String(AUTH.user.email || '').toLowerCase();
     if (!isAdmin() && !(em in SUBAPP)) AUTH.client.rpc('email_preapproved', {em}).then(({data}) => { SUBAPP[em] = data === true; upd(); }, () => {}); }
@@ -2674,7 +2699,7 @@ function bindSubmit(){
   function mailBody(){
     const L = [['Country', ctry() === 'OTHER' ? val('s_ctryname') : K().name], [K().state, val('s_state')], ['Organisation type', val('s_orgtype')], ['Club', val('s_club')], ['Your name', val('s_name')], ['Role at the club', roleVal('s')], ['Contact email', val('s_email')], ['Phone', val('s_phone')],
       ['Event', val('s_ename')], ['Dates', [val('s_start'), val('s_end')].filter(Boolean).join(' to ')], ['Venue', val('s_venue')], ['Type', val('s_disc')], ['How to register', regText(regRead('sr').list)],
-      ['Flyer link', val('s_flink')], ['Notes', val('s_notes')], ['Permission to publish', g('s_ok').checked ? 'Yes' : 'Not ticked']];
+      ['Flyer link', val('s_flink')], ['Notes', val('s_notes')], ['Permission to publish', 'Yes – sent by the club / organiser']];
     return L.map(([k, v]) => `${k}: ${v}`).join('\n') + '\n\n>>> Please attach the flyer (PDF or JPG) to this email before sending. <<<\n';
   }
   const subject = () => `New flyer: ${val('s_club') || 'flyer only, details on the flyer'}${where() ? ` (${where()})` : ''}`;
@@ -2703,13 +2728,14 @@ function bindSubmit(){
       registration_url: regFirstUrl(regRead('sr').list) || '', register: regRead('sr').list, flyer_link: val('s_flink'), notes: val('s_notes')};
     Promise.race([kcCheck(val('s_email')), new Promise(r => setTimeout(() => r(false), 4000))]).then(async k => {
       fm.querySelector('[name=known_club]').value = k ? 'yes' : 'no';
-      const db = complete() ? await dbSubmit(rec, g('s_file').disabled ? null : g('s_file').files[0]) : null;   // flyer only: emailed, we build the card from the flyer
+      const db = complete() || (ap && FLYQ.ok) ? await dbSubmit(rec, g('s_file').disabled ? null : g('s_file').files[0]) : null;   // flyer only + approved: live as 'details coming'; otherwise emailed
       let tag = kcTag(k);
       if (!db && !ap && k !== true && AUTH.client) AUTH.client.rpc('request_approval', {p_email: val('s_email'), p_name: val('s_name') || null, p_club: val('s_club') || null, p_role: roleVal('s') || null, p_source: 'form', p_note: 'Shoot: ' + (val('s_ename') || 'flyer only')}).then(() => {}, () => {});
       if (!db) fm.querySelector('[name=submission_status]').value = ap ? 'APPROVED submitter (' + val('s_email') + ') – flyer only: read the flyer and publish it straight away' : 'flyer only – read the flyer and build the event';
-      if (db) { fm.querySelector('[name=submission_id]').value = db.id; fm.querySelector('[name=submission_status]').value = db.status === 'live' ? 'LIVE – instant-approved submitter, already on the site' : 'pending – approve at ' + location.origin + location.pathname + '#/admin';
+      const pend = db && db.status === 'live' && (db.details_pending || !complete());
+      if (db) { fm.querySelector('[name=submission_id]').value = db.id; fm.querySelector('[name=submission_status]').value = pend ? 'LIVE flyer only – DETAILS PENDING: read the flyer and fill in club, event name, dates and venue (bot_submission fill, id ' + db.id + ')' : db.status === 'live' ? 'LIVE – instant-approved submitter, already on the site' : 'pending – approve at ' + location.origin + location.pathname + '#/admin';
         if (db.flyer_url) fm.querySelector('[name=flyer_stored]').value = db.flyer_url;
-        if (db.status === 'live') tag = '[LIVE] ' + tag;
+        if (db.status === 'live') tag = (pend ? '[LIVE – DETAILS NEEDED] ' : '[LIVE] ') + tag;
         fm.querySelector('[name=_next]').value = location.href.split('#')[0].split('?')[0] + '?sent=1&sid=' + encodeURIComponent(db.id) + '#/submit'; }
       fm.querySelector('[name=_subject]').value = tag + subject();
       HTMLFormElement.prototype.submit.call(fm);
