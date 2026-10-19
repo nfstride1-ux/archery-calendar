@@ -2472,7 +2472,14 @@ function kcSubmit(e, fm, email, setSubject){
 /* ---------- submit an event (clubs) ----------
    Static site, no backend: the form POSTs (multipart, with the flyer file) to SITE.formEndpoint (FormSubmit), which emails
    SITE.contact. If no endpoint is configured, or the browser is offline, "Email it instead" builds a pre-filled email. */
-const ORG_TYPES = ['Archery Australia club', 'Archery WA', 'Other state association', 'ABA club or branch', 'TAA club (Traditional Archery Australia)', 'Other'];
+/* Archery Australia's Recognised Governing Bodies (archery.org.au, Oct 2026). Queensland is split North/South; there is no NT body. */
+const AA_STATE_BODIES = [['Archery NSW', 'NSW'], ['Archery ACT', 'ACT'], ['Archery Victoria', 'VIC'], ['Archery Tasmania', 'TAS'], ['Archery SA (South Australia)', 'SA'], ['Archery WA', 'WA'],
+  ['North Queensland Archery (NQAA)', 'QLD'], ['South Queensland Archery (SQAS)', 'QLD']];
+const ORG_TYPES = ['Archery Australia club', ...AA_STATE_BODIES.map(b => b[0]), 'ABA club or branch', 'TAA club (Traditional Archery Australia)', 'Other'];
+/* Flyer-only submit (owner 20 Oct 2026): the flyer is all we need. Admins and approved submitters (approved_submitters / approved_domains,
+   checked with public.email_preapproved) skip the identity questions and publish straight away; everyone else needs the flyer + an email. */
+const SUBAPP = {};   // email -> true/false (approved), cached for this visit
+const subApproved = () => { const em = String(AUTH.user && AUTH.user.email || '').toLowerCase(); return !!em && (isAdmin() || SUBAPP[em] === true); };
 /* Who is submitting (owner 12 Oct 2026): a real person's name + their role at the club, so we can check with the club.
    Verified club officials get fast approvals. Used by #/submit and #/fix; sent as contact_name + role_at_club. */
 const ROLE_OPTS = ['President', 'Secretary', 'Treasurer', 'Tournament/Competition organiser', 'Committee member', 'Coach', 'Other'];
@@ -2523,55 +2530,50 @@ function vSubmit(country){
   if (SUBDONE.sid && SUBDONE.html) return `${head}<div class="wrap narrow"><section class="panel thanks" id="subThanks" tabindex="-1">${SUBDONE.html}</section></div>`;
   if (sent) return `${head}<div class="wrap narrow"><section class="panel thanks" id="subThanks" tabindex="-1">
     <span class="thanks-mark" aria-hidden="true">✓</span><h2 class="sec">Thanks, your flyer is in</h2>
-    <p>We'll read your flyer and build your event card. You'll get it to check.</p>
+    <p>We'll read your flyer and put your event on the calendar for you.</p>
     <div class="row"><a class="btn gold" href="#/submit">Send another flyer</a><a class="btn alt" href="#/browse">Find events</a></div></section></div>`;
   const opt = (a, ph) => `<option value="">${ph}</option>` + a.map(x => `<option>${esc(x)}</option>`).join('');
   const f = (id, lab, inp, hint = '', req = true) => `<div class="fld" data-f="${id}"><label for="${id}">${lab}${req ? ' <span class="req" aria-hidden="true">*</span>' : ' <span class="opt">(optional)</span>'}</label>${inp}${hint ? `<p class="hint" id="${id}_h">${hint}</p>` : ''}<p class="err" id="${id}_e" role="alert"></p></div>`;
+  const ap = subApproved();
   return `${head}<div class="wrap narrow sub">${subTabs('new')}
-  <section class="panel sub-intro"><ul class="ticks">
-    <li><b>Just send your flyer</b> — we read it and build your event card for you.</li>
-    <li>Every event is <b>reviewed before it goes live, usually within 48 hours</b>. Approved clubs go live straight away.</li>
-    <li>Fields marked <span class="req">*</span> are required.</li></ul></section>
+  <section class="panel sub-intro"><p class="sub-lead"><b>Just send your flyer.</b> That's all we need. We read it and build your event card for you.</p>
+    <p class="note sub-mode" id="s_mode">${ap ? '✓ You’re an approved submitter, so your events go live straight away.' : 'We check each flyer and put it on the calendar, usually within 48 hours. Approved clubs go live straight away.'}</p></section>
   <form id="subForm" class="panel sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate>
     <input type="hidden" name="_subject" value="New flyer – Archery Calendar"><input type="hidden" name="known_club" value="">${acctHidden()}<input type="hidden" name="submission_id" value=""><input type="hidden" name="submission_status" value="email only (not saved to database)"><input type="hidden" name="flyer_stored" value="">
     <input type="hidden" name="_template" value="table">
     <input type="hidden" name="_next" value="">
     <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true"><input type="hidden" name="_captcha" value="false">
-    <fieldset><legend>Your club</legend>
-      <div class="vcard me-card" id="s_mecard" hidden><div><span id="s_me_txt"></span></div><div class="me-btns"><button type="button" class="btn sm" id="s_me_edit">✏️ Change</button><button type="button" class="btn alt sm" id="s_me_clr">Not you? Clear</button></div></div>
-      <div id="s_mefields">
-      <div class="grid2">${f('s_country', 'Country', `<select id="s_country" name="country" required>${Object.entries(SUB_CTRY).map(([k, v]) => `<option value="${k}" ${k === C ? 'selected' : ''}>${k === 'US' ? '🇺🇸 ' : k === 'AU' ? '🇦🇺 ' : '🌐 '}${esc(v.name)}</option>`).join('')}</select>`)}
-      <div id="s_ctryname_w" ${C === 'OTHER' ? '' : 'hidden'}>${f('s_ctryname', 'Which country?', `<input id="s_ctryname" name="country_name" maxlength="60" autocomplete="country-name" placeholder="e.g. Canada" ${C === 'OTHER' ? 'required' : 'disabled'}>`)}</div>
-      <div id="s_state_w">${f('s_state', K.state, subStateField(C), '', C !== 'OTHER')}</div></div>
-      ${f('s_orgtype', 'Organisation type', `<select id="s_orgtype" name="organisation_type" required>${opt(K.orgs, 'Choose…')}</select>`)}
-      ${f('s_club', 'Club or organisation name', `<div class="cb"><input id="s_club" name="club_name" required maxlength="120" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="s_club_lb" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="Start typing your club's name"><ul class="cb-lb" id="s_club_lb" role="listbox" hidden></ul></div>`, 'Pick from the list, or type a new club.')}
-      <div class="grid2">${f('s_name', 'Your name', `<input id="s_name" name="contact_name" required maxlength="80" autocomplete="name">`, 'A real person, not just the club name.')}
+    <input type="hidden" name="consent" value="Yes – sent by the club / organiser, permission to publish the event details and flyer">
+    ${f('s_file', 'Your flyer', `<input id="s_file" name="attachment" type="file" accept=".pdf,application/pdf,image/*,.heic,.heif">`, `A photo, screenshot or PDF. Big photos are shrunk automatically. <span id="s_file_n" class="note"></span>`)}
+    ${f('s_flink', '…or a link to it', `<input id="s_flink" name="flyer_link" type="url" maxlength="300" placeholder="https://" inputmode="url">`, 'e.g. your website or Facebook post.', false)}
+    <div id="s_email_w" ${ap ? 'hidden' : ''}>${f('s_email', 'Your email', `<input id="s_email" name="email" type="email" maxlength="120" autocomplete="email" inputmode="email">`, 'So we can reply if we have a question.')}</div>
+    <details class="sub-more" id="s_more"><summary>Add details (optional)</summary>
+    <p class="hint">Anything you leave out, we take from the flyer.</p>
+    <div class="vcard me-card" id="s_mecard" hidden><div><span id="s_me_txt"></span></div><div class="me-btns"><button type="button" class="btn sm" id="s_me_edit">✏️ Change</button><button type="button" class="btn alt sm" id="s_me_clr">Not you? Clear</button></div></div>
+    <div id="s_mefields">
+      <div class="grid2">${f('s_country', 'Country', `<select id="s_country" name="country">${Object.entries(SUB_CTRY).map(([k, v]) => `<option value="${k}" ${k === C ? 'selected' : ''}>${k === 'US' ? '🇺🇸 ' : k === 'AU' ? '🇦🇺 ' : '🌐 '}${esc(v.name)}</option>`).join('')}</select>`, '', false)}
+      <div id="s_ctryname_w" ${C === 'OTHER' ? '' : 'hidden'}>${f('s_ctryname', 'Which country?', `<input id="s_ctryname" name="country_name" maxlength="60" autocomplete="country-name" placeholder="e.g. Canada" ${C === 'OTHER' ? '' : 'disabled'}>`, '', false)}</div>
+      <div id="s_state_w">${f('s_state', K.state, subStateField(C), '', false)}</div></div>
+      ${f('s_orgtype', 'Organisation', `<select id="s_orgtype" name="organisation_type">${opt(K.orgs, 'Choose…')}</select>`, '', false)}
+      ${f('s_club', 'Club or organisation name', `<div class="cb"><input id="s_club" name="club_name" maxlength="120" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="s_club_lb" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="Start typing your club's name"><ul class="cb-lb" id="s_club_lb" role="listbox" hidden></ul></div>`, '', false)}
+      <div id="s_who" ${ap ? 'hidden' : ''}><div class="grid2">${f('s_name', 'Your name', `<input id="s_name" name="contact_name" maxlength="80" autocomplete="name">`, '', false)}
       ${roleFld('s', f)}</div>
-      ${f('s_email', 'Contact email', `<input id="s_email" name="email" type="email" required maxlength="120" autocomplete="email" inputmode="email">`)}
-      <p class="note verify">✅ ${esc(VERIFY_NOTE)}</p>
-      ${f('s_phone', 'Phone', `<input id="s_phone" name="phone" type="tel" maxlength="20" autocomplete="tel" inputmode="tel" placeholder="${esc(K.phone)}">`, '', false)}
-      </div>
-    </fieldset>
-    <fieldset><legend>Event</legend>
-      ${f('s_ename', 'Event name', `<input id="s_ename" name="event_name" required maxlength="140" placeholder="e.g. Club 3D Championships 2027">`)}
-      <div class="grid2">${f('s_start', 'Start date', `<input id="s_start" name="start_date" type="date" required>`)}
-      ${f('s_end', 'End date', `<input id="s_end" name="end_date" type="date">`, 'Leave empty for a one-day event.', false)}</div>
+      ${f('s_phone', 'Phone', `<input id="s_phone" name="phone" type="tel" maxlength="20" autocomplete="tel" inputmode="tel" placeholder="${esc(K.phone)}">`, '', false)}</div>
+    </div>
+      ${f('s_ename', 'Event name', `<input id="s_ename" name="event_name" maxlength="140" placeholder="e.g. Club 3D Championships 2027">`, '', false)}
+      <div class="grid2">${f('s_start', 'Start date', `<input id="s_start" name="start_date" type="date">`, '', false)}
+      ${f('s_end', 'End date', `<input id="s_end" name="end_date" type="date">`, '', false)}</div>
       <p class="note past-warn" id="s_past" role="status" hidden></p>
-      ${f('s_venue', 'Venue / address', `<input id="s_venue" name="venue" required maxlength="200" placeholder="e.g. Club range, 12 Range Rd, Town">`)}
-      <div class="grid2">${f('s_disc', 'Type of event', `<select id="s_disc" name="discipline"><option value="">Choose…</option>${['Target', 'Field', '3D', 'Indoor', 'Clout', 'Other'].map(o => `<option>${o}</option>`).join('')}</select>`, '', false)}
-</div>
-      ${f('s_regm', 'How to register', `<div id="s_regbox">${regPicker('sr', regRegion(C), [])}</div><input type="hidden" name="how_to_register" id="s_regtxt">`, 'Pick every way archers can enter or pay. Each one asks for its details.', false)}
-      <p class="hint" id="s_flyer_h">Upload the flyer <b>or</b> paste a link to it – one of the two is needed.</p>
-      ${f('s_file', 'Upload the flyer', `<input id="s_file" name="attachment" type="file" accept=".pdf,application/pdf,image/*,.heic,.heif">`, `PDF (up to ${MAX_MB} MB) or any photo – big photos are shrunk automatically. <span id="s_file_n" class="note"></span>`, false)}
-      ${f('s_flink', '…or flyer link', `<input id="s_flink" name="flyer_link" type="url" maxlength="300" placeholder="https://" inputmode="url">`, 'e.g. your website or Facebook post.', false)}
-      ${f('s_notes', 'Notes', `<textarea id="s_notes" name="notes" rows="4" maxlength="2000" placeholder="Anything that isn't on the flyer"></textarea>`, '', false)}
-    </fieldset>
-    <div class="fld consent" data-f="s_ok"><label class="chk tick"><input type="checkbox" id="s_ok" name="consent" value="Yes – permission to publish the event details and flyer" required><span>I'm authorised by the club and give Archery Calendar permission to publish these event details and the flyer. <span class="req" aria-hidden="true">*</span></span></label><p class="err" id="s_ok_e" role="alert"></p></div>
-    <p class="note priv">🔒 Privacy: your details are emailed to us (${esc(SITE.contact)}, NFS Strategic Holdings) via FormSubmit and saved to your account (Supabase, Sydney). We use them only to check and list your event. We don't publish your contact details unless they're on your flyer, and we never sell them. <a href="#/privacy">Privacy</a></p>
+      ${f('s_venue', 'Venue / address', `<input id="s_venue" name="venue" maxlength="200" placeholder="e.g. Club range, 12 Range Rd, Town">`, '', false)}
+      ${f('s_disc', 'Type of event', `<select id="s_disc" name="discipline"><option value="">Choose…</option>${['Target', 'Field', '3D', 'Indoor', 'Clout', 'Other'].map(o => `<option>${o}</option>`).join('')}</select>`, '', false)}
+      ${f('s_regm', 'How to register', `<div id="s_regbox">${regPicker('sr', regRegion(C), [])}</div><input type="hidden" name="how_to_register" id="s_regtxt">`, '', false)}
+      ${f('s_notes', 'Notes', `<textarea id="s_notes" name="notes" rows="3" maxlength="2000" placeholder="Anything that isn't on the flyer"></textarea>`, '', false)}
+    </details>
     <p class="err sum" id="subErr" role="alert"></p>
-    <div class="sub-actions"><button class="btn gold" type="submit" id="subBtn">Submit event for review</button>
+    <div class="sub-actions"><button class="btn gold" type="submit" id="subBtn">${ap ? 'Publish now' : 'Send flyer'}</button>
       <a class="btn alt" id="subMail" href="mailto:${esc(SITE.contact)}">Email it instead</a></div>
-    <p class="note">"Email it instead" opens your email app with the details filled in. Attach the flyer before you send.</p>
+    <p class="note sub-how" id="s_how"></p>
+    <p class="note priv">By sending, you confirm you're allowed to share this flyer. 🔒 Your details go to us (${esc(SITE.contact)}) via FormSubmit and your account (Supabase, Sydney). We only use them to list your event and never publish or sell them. <a href="#/privacy">Privacy</a></p>
   </form></div>`;
 }
 function bindSubmit(){
@@ -2585,11 +2587,11 @@ function bindSubmit(){
   const ctry = () => subCtry(val('s_country')), K = () => SUB_CTRY[ctry()];
   function applyCountry(){
     const c = ctry(), k = SUB_CTRY[c], el = g('s_orgtype'), v = el.value;
-    el.outerHTML = `<select id="s_orgtype" name="organisation_type" required><option value="">Choose…</option>${k.orgs.map(o => `<option>${esc(o)}</option>`).join('')}</select>`;
+    el.outerHTML = `<select id="s_orgtype" name="organisation_type"><option value="">Choose…</option>${k.orgs.map(o => `<option>${esc(o)}</option>`).join('')}</select>`;
     if ([...g('s_orgtype').options].some(o => o.value === v)) g('s_orgtype').value = v;
     g('s_state').outerHTML = subStateField(c);
-    fm.querySelector('label[for=s_state]').innerHTML = esc(k.state) + (c === 'OTHER' ? ' <span class="opt">(optional)</span>' : ' <span class="req" aria-hidden="true">*</span>');
-    g('s_ctryname_w').hidden = c !== 'OTHER'; g('s_ctryname').required = c === 'OTHER'; g('s_ctryname').disabled = c !== 'OTHER'; g('s_phone').placeholder = k.phone;
+    fm.querySelector('label[for=s_state]').innerHTML = esc(k.state) + ' <span class="opt">(optional)</span>';
+    g('s_ctryname_w').hidden = c !== 'OTHER'; g('s_ctryname').disabled = c !== 'OTHER'; g('s_phone').placeholder = k.phone;
     if (fm.dataset.tried) check();
   }
   const subRg = () => ctry() === 'OTHER' ? ({'new zealand': 'NZ', 'canada': 'CA', 'united kingdom': 'UK', 'uk': 'UK', 'england': 'UK', 'scotland': 'UK', 'wales': 'UK', 'northern ireland': 'UK', 'denmark': 'DK'})[val('s_ctryname').toLowerCase()] || 'INTL' : regRegion(ctry());
@@ -2613,7 +2615,10 @@ function bindSubmit(){
     inp.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
     fm.addEventListener('change', e => { if (['s_country', 's_state', 's_ctryname'].includes(e.target.id) && document.activeElement === inp) open(); else if (e.target.id !== 's_club') close(); });
   })();
-  g('s_file').addEventListener('change', () => shrinkImg(g('s_file'), g('s_file_n')));
+  fm.addEventListener('change', e => { if (e.target.id !== 's_orgtype' || ctry() !== 'AU') return;
+    const b = AA_STATE_BODIES.find(x => x[0] === e.target.value), st = g('s_state');
+    if (b && st && (!st.value || !AA_STATE_BODIES.some(x => x[0] === e.target.value && x[1] === st.value))) { st.value = b[1]; st.dispatchEvent(new Event('change', {bubbles: true})); } });
+  g('s_file').addEventListener('change', () => { shrinkImg(g('s_file'), g('s_file_n')); upd(); });
   fm.addEventListener('shrunk', () => { if (fm.dataset.tried) check(); });
   /* Past date: a warning only (late listings and results are fine), never blocks sending. */
   const pastWarn = () => { const d = new Date(), today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -2636,29 +2641,33 @@ function bindSubmit(){
   g('s_me_clr').onclick = () => { delete S.subMe; save(); ME.forEach(id => { if (g(id)) g(id).value = ''; }); g('s_role').dispatchEvent(new Event('change', {bubbles: true})); meShow(false); toast('Saved details cleared'); };
   const meSave = () => { const m = {country: val('s_country')}; ME.forEach(id => { if (g(id)) m[id] = g(id).value; }); S.subMe = Object.assign({}, S.subMe || {}, m); save(); };
   fm.addEventListener('change', e => { if (ME.includes(e.target.id) || e.target.id === 's_country') meSave(); });   // shared details: saved as typed, reused on every form
+  /* Flyer-only: the flyer (or a link to it) is the only must-have, plus an email for people we don't know yet. Optional details are only checked if typed. */
   function check(){
-    const errs = [], add = (id, m) => { setErr(id, m); if (m) errs.push(id); };
-    if (ctry() !== 'OTHER') add('s_state', val('s_state') ? '' : 'Choose the state.');
-    if (ctry() === 'OTHER') add('s_ctryname', val('s_ctryname') ? '' : 'Enter the country.');
-    add('s_orgtype', val('s_orgtype') ? '' : 'Choose an organisation type.');
-    add('s_club', val('s_club') ? '' : 'Enter the club or organisation name.');
-    add('s_name', personErr(val('s_name'), val('s_club')));
-    add('s_role', roleErr('s'));
-    const em = val('s_email'); add('s_email', !em ? 'Enter a contact email.' : /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em) ? '' : 'That email doesn’t look right.');
-    const ph = val('s_phone'); add('s_phone', !ph || /^[+()\d\s.-]{7,20}$/.test(ph) ? '' : `Use digits only, ${K().phone}.`);
+    const errs = [], add = (id, m) => { setErr(id, m); if (m) errs.push(id); }, ap = subApproved();
     const file = g('s_file').files[0], fl = val('s_flink'), isPdf = file && /\.pdf$/i.test(file.name);
-    add('s_file', !file ? (fl ? '' : 'Upload the flyer or paste a link to it below.') : g('s_file').dataset.busy ? 'Still shrinking the photo – one moment.' : !isPdf && !/^image\//.test(file.type) && !/\.(jpe?g|png|webp|heic|heif)$/i.test(file.name) ? 'Flyers must be a PDF or a photo.'
+    add('s_file', !file ? (fl ? '' : 'Add your flyer (or paste a link to it below).') : g('s_file').dataset.busy ? 'Still shrinking the photo – one moment.' : !isPdf && !/^image\//.test(file.type) && !/\.(jpe?g|png|webp|heic|heif)$/i.test(file.name) ? 'Flyers must be a PDF or a photo.'
       : file.size > MAX_MB * 1048576 ? (isPdf ? `That PDF is ${(file.size / 1048576).toFixed(1)} MB (limit ${MAX_MB} MB). Upload a JPG or screenshot of the flyer instead, or paste a link.` : 'That photo is still too big – try a screenshot.')
       : file.size > FS_TOTAL_MB * 1048576 ? 'That file is too big to send.' : '');
     add('s_flink', fl && !isUrl(fl) ? 'Use a full link starting with https://' : '');
-    add('s_ename', val('s_ename') ? '' : 'Enter the event name.');
-    add('s_start', /^\d{4}-\d{2}-\d{2}$/.test(val('s_start')) ? '' : 'Choose the start date.');
-    add('s_end', val('s_end') && val('s_end') < val('s_start') ? 'The end date is before the start date.' : '');
-    add('s_venue', val('s_venue') ? '' : 'Enter the venue or address.');
-    add('s_regm', regRead('sr').err);
-    add('s_ok', g('s_ok').checked ? '' : 'Please tick to give permission to publish.');
+    const em = val('s_email'); add('s_email', ap ? '' : !em ? 'Add your email so we can reply.' : /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em) ? '' : 'That email doesn’t look right.');
+    const ph = ap ? '' : val('s_phone'); add('s_phone', !ph || /^[+()\d\s.-]{7,20}$/.test(ph) ? '' : `Use digits only, ${K().phone}.`);
+    add('s_end', val('s_end') && val('s_start') && val('s_end') < val('s_start') ? 'The end date is before the start date.' : '');
+    add('s_regm', regRead('sr').list.length ? regRead('sr').err : '');
     return errs;
   }
+  /* Enough typed for a calendar card right now (club, event name, start date)? Then a signed-in submission is saved and approved ones go live. */
+  const complete = () => !!(val('s_club') && val('s_ename') && /^\d{4}-\d{2}-\d{2}$/.test(val('s_start')));
+  function upd(){
+    const ap = subApproved(), b = g('subBtn'), h = g('s_how'); if (!b || b.disabled) return;
+    g('s_email_w').hidden = ap; g('s_who').hidden = ap;
+    if (ap && AUTH.user) g('s_email').value = AUTH.user.email || '';
+    g('s_mode').textContent = ap ? '✓ You’re an approved submitter, so your events go live straight away.' : 'We check each flyer and put it on the calendar, usually within 48 hours. Approved clubs go live straight away.';
+    b.textContent = ap ? (complete() ? 'Publish now' : 'Send flyer to publish') : 'Send flyer';
+    h.textContent = !ap ? '' : complete() ? 'Goes live on the calendar as soon as you tap Publish now.' : 'Just the flyer is fine: we read it and put it live for you. Add the club, event name and start date under details and it goes live the second you tap.';
+  }
+  if (AUTH.user && AUTH.client) { const em = String(AUTH.user.email || '').toLowerCase();
+    if (!isAdmin() && !(em in SUBAPP)) AUTH.client.rpc('email_preapproved', {em}).then(({data}) => { SUBAPP[em] = data === true; upd(); }, () => {}); }
+  fm.addEventListener('input', upd); fm.addEventListener('change', upd);
   fm.addEventListener('change', () => { if (fm.dataset.tried) check(); });
   fm.addEventListener('input', e => { if (fm.dataset.tried) { const w = e.target.closest('[data-f]'); if (w && w.classList.contains('bad')) check(); } });
   const where = () => ctry() === 'AU' ? val('s_state') : [val('s_state'), ctry() === 'US' ? 'USA' : val('s_ctryname')].filter(Boolean).join(', ');
@@ -2668,7 +2677,7 @@ function bindSubmit(){
       ['Flyer link', val('s_flink')], ['Notes', val('s_notes')], ['Permission to publish', g('s_ok').checked ? 'Yes' : 'Not ticked']];
     return L.map(([k, v]) => `${k}: ${v}`).join('\n') + '\n\n>>> Please attach the flyer (PDF or JPG) to this email before sending. <<<\n';
   }
-  const subject = () => `New flyer: ${val('s_club') || 'club'}${where() ? ` (${where()})` : ''}`;
+  const subject = () => `New flyer: ${val('s_club') || 'flyer only, details on the flyer'}${where() ? ` (${where()})` : ''}`;
   roleBind('s'); kcLoad(); g('s_email').addEventListener('change', () => kcCheck(val('s_email')));
   const kcNow = id => KC.memo[kcNorm(val(id))];
   g('subMail').onclick = e => { e.currentTarget.href = `mailto:${SITE.contact}?subject=${encodeURIComponent(kcTag(kcNow('s_email')) + subject())}&body=${encodeURIComponent(mailBody())}`; };
@@ -2676,6 +2685,7 @@ function bindSubmit(){
     fm.dataset.tried = 1;
     const errs = check();
     if (errs.some(id => g('s_mefields').contains(g(id)))) meShow(false);
+    if (errs.some(id => g('s_more').contains(g(id)))) g('s_more').open = true;
     if (errs.length) { e.preventDefault(); $('#subErr').textContent = `Please fix ${errs.length === 1 ? 'the highlighted field' : `the ${errs.length} highlighted fields`}.`;
       const first = g(errs[0]).matches('input,select,textarea') ? g(errs[0]) : g(errs[0]).querySelector('input'); first && first.focus(); return; }
     $('#subErr').textContent = '';
@@ -2687,14 +2697,16 @@ function bindSubmit(){
     if (!g('s_file').files.length) g('s_file').disabled = true;   // don't send an empty file part
     const b = g('subBtn'); b.disabled = true; b.textContent = 'Sending…';
     e.preventDefault();
-    const rec = {country: ctry() === 'OTHER' ? val('s_ctryname') : ctry(), state: val('s_state'), organisation_type: val('s_orgtype'), club: val('s_club'), submitter_name: val('s_name'), role: roleVal('s'),
-      contact_email: val('s_email'), phone: val('s_phone'), name: val('s_ename'), start_date: val('s_start'), end_date: val('s_end') || val('s_start'), venue: val('s_venue'), discipline: val('s_disc'),
+    const ap = subApproved();
+    const rec = {country: ctry() === 'OTHER' ? val('s_ctryname') : ctry(), state: val('s_state'), organisation_type: val('s_orgtype'), club: val('s_club'), submitter_name: ap ? '' : val('s_name'), role: ap ? '' : roleVal('s'),
+      contact_email: val('s_email'), phone: ap ? '' : val('s_phone'), name: val('s_ename'), start_date: val('s_start'), end_date: val('s_end') || val('s_start'), venue: val('s_venue') || 'See flyer', discipline: val('s_disc'),
       registration_url: regFirstUrl(regRead('sr').list) || '', register: regRead('sr').list, flyer_link: val('s_flink'), notes: val('s_notes')};
     Promise.race([kcCheck(val('s_email')), new Promise(r => setTimeout(() => r(false), 4000))]).then(async k => {
       fm.querySelector('[name=known_club]').value = k ? 'yes' : 'no';
-      const db = await dbSubmit(rec, g('s_file').disabled ? null : g('s_file').files[0]);
+      const db = complete() ? await dbSubmit(rec, g('s_file').disabled ? null : g('s_file').files[0]) : null;   // flyer only: emailed, we build the card from the flyer
       let tag = kcTag(k);
-      if (!db && k !== true && AUTH.client) AUTH.client.rpc('request_approval', {p_email: val('s_email'), p_name: val('s_name'), p_club: val('s_club'), p_role: roleVal('s'), p_source: 'form', p_note: 'Shoot: ' + val('s_ename')}).then(() => {}, () => {});
+      if (!db && !ap && k !== true && AUTH.client) AUTH.client.rpc('request_approval', {p_email: val('s_email'), p_name: val('s_name') || null, p_club: val('s_club') || null, p_role: roleVal('s') || null, p_source: 'form', p_note: 'Shoot: ' + (val('s_ename') || 'flyer only')}).then(() => {}, () => {});
+      if (!db) fm.querySelector('[name=submission_status]').value = ap ? 'APPROVED submitter (' + val('s_email') + ') – flyer only: read the flyer and publish it straight away' : 'flyer only – read the flyer and build the event';
       if (db) { fm.querySelector('[name=submission_id]').value = db.id; fm.querySelector('[name=submission_status]').value = db.status === 'live' ? 'LIVE – instant-approved submitter, already on the site' : 'pending – approve at ' + location.origin + location.pathname + '#/admin';
         if (db.flyer_url) fm.querySelector('[name=flyer_stored]').value = db.flyer_url;
         if (db.status === 'live') tag = '[LIVE] ' + tag;
@@ -2703,7 +2715,8 @@ function bindSubmit(){
       HTMLFormElement.prototype.submit.call(fm);
     });
   };
-  window.addEventListener('pageshow', () => { const b = $('#subBtn'); if (b) { b.disabled = false; b.textContent = 'Submit event for review'; g('s_file').disabled = false; } }, {once: true});
+  window.addEventListener('pageshow', () => { const b = $('#subBtn'); if (b) { b.disabled = false; g('s_file').disabled = false; upd(); } }, {once: true});
+  upd();
 }
 
 /* ---------- Corrections: #/fix and #/fix/<event id> (also reachable as #/submit/fix). Emails nfshold via FormSubmit only; nothing on the site changes automatically. ---------- */
