@@ -562,7 +562,7 @@ details.panel summary{cursor:pointer;padding:4px 0}
 .see-all{margin:22px 0 8px}
 @media (max-width:1760px){header .today,.today{display:none}}
 /* tablets / small laptops: put the nav on its own scrollable row so nothing runs off the edge */
-@media (max-width:1480px) and (min-width:721px){
+@media (min-width:721px){
  .head-row{flex-wrap:wrap;row-gap:0}
  .nav{order:3;flex-basis:100%;overflow-x:auto;scrollbar-width:none;padding:2px 0 10px}
  .nav::-webkit-scrollbar{display:none}
@@ -776,7 +776,7 @@ body.hb-open #hbBtn{display:none}
 
 /* phone header (17 Oct): logo + Cards (+ Admin) + Account/Sign in + gold My events stay on ONE row at every width.
    Small screens: Cards/Admin/Account go icon-only (aria-labels keep the names for screen readers) and the wordmark shrinks. */
-@media (max-width:1480px) and (min-width:721px){.site-head .head-row{column-gap:0}.site-head .cards-btn{margin-left:16px}.site-head .acct-btn+.acct-btn{margin-left:6px}}
+@media (min-width:721px){.site-head .head-row{column-gap:0}.site-head .cards-btn{margin-left:16px}.site-head .acct-btn+.acct-btn{margin-left:6px}}
 @media (max-width:900px){.site-head .head-row:has(#navAdmin:not([hidden])) .acct-btn .pl{display:none}}
 @media (max-width:520px){
  .site-head .logo{font-size:16px;letter-spacing:.02em;gap:7px;min-width:0;white-space:nowrap}
@@ -862,3 +862,55 @@ body.hb-open #hbBtn{display:none}
  .ls-links{grid-column:1/-1;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px 14px}
  .ls-post{flex-basis:100%}
 }
+/* Add event (20 Oct 2026): gold "+ Add event" in the header on every screen; on phones also a round + bottom-right (not on #/submit or #/fix). */
+.site-head .add-btn{display:inline-flex;align-items:center;gap:4px}
+.site-head .add-btn>span[aria-hidden]{font-weight:900;font-size:1.15em;line-height:1}
+body[data-page=submit] .site-head .add-btn{outline:2px solid #fff;outline-offset:2px}
+@media (max-width:520px){.site-head .add-btn{min-width:30px;justify-content:center}}
+.fab-add{display:none}
+@media (max-width:760px){
+ .fab-add{position:fixed;right:12px;bottom:calc(78px + env(safe-area-inset-bottom));z-index:59;display:grid;place-items:center;width:56px;height:56px;border-radius:50%;background:var(--gold);color:var(--night);border:2px solid var(--night);box-shadow:0 6px 18px rgba(0,0,0,.3);text-decoration:none;font:900 34px/1 var(--disp,inherit)}
+ .fab-add span{margin-top:-3px}
+ .fab-add:focus-visible{outline:3px solid var(--night);outline-offset:3px}
+ body:has(#hbBtn.hb-hide) .fab-add,body:not(:has(#hbBtn)) .fab-add{bottom:calc(16px + env(safe-area-inset-bottom))}
+ body:has(#instBar) .fab-add,body:has(.upd-bar) .fab-add{bottom:calc(148px + env(safe-area-inset-bottom))}
+ body:has(#instBar):has(#hbBtn.hb-hide) .fab-add,body:has(.upd-bar):has(#hbBtn.hb-hide) .fab-add{bottom:calc(84px + env(safe-area-inset-bottom))}
+ body[data-page=submit] .fab-add,body[data-page=fix] .fab-add,body.hb-open .fab-add{display:none}
+ .fab-add.fab-dodge{opacity:0;pointer-events:none;transition:opacity .15s}
+ .site-foot{padding-bottom:160px}
+}
+/* Flyer preview before publish (20 Oct 2026) */
+.fp{margin:16px 0 8px;padding:14px;border:2px solid var(--night);border-radius:14px;background:#f8fafc}
+.fp-h{margin:0 0 4px;font-size:20px}
+.fp-status{margin:0 0 12px;font-size:15px;color:#1e293b}
+.fp-grid{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:16px;align-items:start}
+.fp-fly{margin:0;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;text-align:center;position:sticky;top:12px}
+.fp-fly img{display:block;width:100%;height:auto;max-height:520px;object-fit:contain;background:#fff}
+.fp-fly .fp-ic{display:block;font-size:56px;padding:24px 0 6px}.fp-fly figcaption{padding:0 10px 14px;font-size:14px;word-break:break-word}
+.fp-lbl{margin:0 0 6px;font:700 13px/1.2 var(--disp,inherit);letter-spacing:.08em;text-transform:uppercase;color:#334155}
+.fp-card{pointer-events:none;margin-bottom:12px}.fp-card .ev{margin:0}.fp-card .fp-pend{overflow:visible}
+.fp-extra{pointer-events:none}.fp-extra .panel{margin:12px 0 0}
+.fp-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.fp-row{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.fp-row.need{border:2px solid #b45309;background:#fffbeb}
+.fp-head{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 10px}
+.fp-lab{font-weight:700;font-size:14px;grid-column:1}
+.fp-head .fp-pen{grid-column:2;grid-row:1/span 2}
+.fp-head .fp-flag,.fp-head .fp-ok{grid-column:1;justify-self:start}
+.fp-flag{font-size:12.5px;font-weight:800;color:#78350f;background:#fde68a;border:1px solid #b45309;border-radius:999px;padding:2px 9px;white-space:nowrap}
+.fp-ok{font-size:12.5px;font-weight:600;color:#1e3a8a;white-space:nowrap}
+.fp-pen{min-height:36px}
+.fp-cur{font-size:15px;margin-top:2px;word-break:break-word}
+.fp-edit{display:flex;gap:8px;align-items:center;margin-top:8px}.fp-edit input,.fp-edit select{flex:1;min-width:0}
+.fp-only{margin:14px 0 0}
+.sub-actions .btn:disabled{opacity:.5;cursor:not-allowed;filter:grayscale(.6)}
+@media (max-width:760px){.fp{padding:12px 10px}.fp-grid{grid-template-columns:1fr}.fp-fly{position:static;max-width:320px;margin:0 auto}.fp-fly img{max-height:420px}}
+/* Header with + Add event: keep logo + buttons on one row on phones */
+@media (max-width:440px){
+ .site-head .logo{font-size:14px;letter-spacing:.01em;gap:6px}
+ .site-head .logo-mark{width:22px;height:22px}
+ .site-head .acct-btn{padding:6px 7px;font-size:12px}
+ .site-head .acct-btn+.acct-btn{margin-left:4px}
+ .site-head .add-btn{min-width:28px}
+}
+@media (max-width:370px){.site-head .logo{font-size:12.5px;letter-spacing:0;gap:5px}.site-head .logo-mark{width:20px;height:20px}.site-head .acct-btn{padding:6px 6px}.site-head .acct-btn+.acct-btn{margin-left:3px}}

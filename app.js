@@ -2588,6 +2588,46 @@ async function shrinkImg(inp, note){
   } catch { if (note) note.textContent = 'Couldn’t read that photo here – try a JPG or a screenshot.'; }
   delete inp.dataset.busy; inp.dispatchEvent(new Event('shrunk', {bubbles: true}));
 }
+/* ---------- Flyer preview before publish (owner approved 20 Oct 2026) ----------
+   As soon as a flyer (file or link) is loaded, the submit button locks and a preview shows the flyer beside the event card exactly as
+   it will be published (the site's own evCard / pendCard / payBox / regSection). Every line has a pencil to fix it in place.
+   The AI reader is the Supabase Edge Function read-flyer (supabase/functions/read-flyer, key in the GEMINI_API_KEY secret, never here).
+   No function / not signed in / it fails: the preview still works with every line blank and marked "Check this". */
+const FP_ROWS = [['title', 'Event name', 'text', 's_ename'], ['club', 'Club', 'text', 's_club'], ['start_date', 'Start date', 'date', 's_start'], ['end_date', 'End date', 'date', 's_end'],
+  ['start_time', 'Start time', 'text'], ['venue', 'Venue', 'text', 's_venue'], ['shoot_type', 'Type of event', 'disc', 's_disc'], ['entry', 'How to enter (link or method)', 'text'],
+  ['bank_account_name', 'Account name', 'text'], ['bank_bsb', 'BSB', 'text'], ['bank_account', 'Account number', 'text'], ['bank_reference', 'Payment reference', 'text']];
+const FP = {on: false, busy: false, rendered: false, src: '', url: '', pdf: false, v: {}, conf: {}, ok: {}, msg: '', reqId: 0};
+const FP_DISC = ['Target', 'Field', '3D', 'Indoor', 'Clout', 'Other'];
+const fpSure = k => FP.ok[k] || (FP.conf[k] || 0) >= 0.8;
+const fpPanel = () => `<section class="fp" id="s_prev" hidden aria-labelledby="fp_h">
+    <h3 class="fp-h" id="fp_h">Check your event before it goes live</h3>
+    <p class="fp-status" id="fp_status" role="status" aria-live="polite"></p>
+    <div class="fp-grid"><figure class="fp-fly" id="fp_fly"></figure>
+      <div class="fp-right"><p class="fp-lbl">How it will look on the calendar</p><div class="fp-card" id="fp_card" inert></div>
+        <ul class="fp-list" id="fp_list"></ul><div class="fp-extra" id="fp_extra" inert></div></div></div>
+    <label class="chk tick fp-only"><input type="checkbox" id="fp_only"><span id="fp_only_t">Publish flyer-only, details coming</span></label></section>`;
+/* Shrink a photo to max 1600px JPEG for the reader (small = cheap); PDFs go as they are if under ~2 MB. */
+async function fpB64(file){
+  if (/pdf/.test(file.type) || /\.pdf$/i.test(file.name)) { if (file.size > 2.1 * 1048576) return null;
+    return {mime: 'application/pdf', data: await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.onerror = no; r.readAsDataURL(file); })}; }
+  const bmp = await createImageBitmap(file).catch(async () => { const u = URL.createObjectURL(file), im = new Image(); im.src = u; await im.decode(); return im; });
+  const k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height)), c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(bmp, 0, 0, c.width, c.height);
+  return {mime: 'image/jpeg', data: c.toDataURL('image/jpeg', .8).split(',')[1]};
+}
+/* Ask read-flyer. Returns {fields, confidence} or {err: 'sign_in' | 'off' | 'cap' | 'fail'}. */
+async function fpRead(file){
+  if (!SB_URL || !(AUTH.client && AUTH.user)) return {err: 'sign_in'};
+  try { const img = await fpB64(file); if (!img) return {err: 'fail'};
+    const {data} = await AUTH.client.auth.getSession(), tok = data && data.session && data.session.access_token; if (!tok) return {err: 'sign_in'};
+    const ac = new AbortController(), t = setTimeout(() => ac.abort(), 30000);
+    const r = await fetch(SB_URL.replace(/\/$/, '') + '/functions/v1/read-flyer', {method: 'POST', signal: ac.signal,
+      headers: {'Content-Type': 'application/json', apikey: SB_KEY, Authorization: 'Bearer ' + tok}, body: JSON.stringify({image: img.data, mime: img.mime})});
+    clearTimeout(t);
+    if (r.status === 404 || r.status === 503) return {err: 'off'}; if (r.status === 429) return {err: 'cap'}; if (r.status === 401) return {err: 'sign_in'};
+    if (!r.ok) return {err: 'fail'}; const j = await r.json(); return j && j.fields ? j : {err: 'fail'};
+  } catch { return {err: 'fail'}; }
+}
 function vSubmit(country){
   setTitle('Submit an event');
   const C = subCtry(country), K = SUB_CTRY[C];
@@ -2614,6 +2654,7 @@ function vSubmit(country){
     <input type="hidden" name="consent" value="Yes – sent by the club / organiser, permission to publish the event details and flyer">
     ${f('s_file', 'Your flyer', `<input id="s_file" name="attachment" type="file" accept=".pdf,application/pdf,image/*,.heic,.heif">`, `A photo, screenshot or PDF. Big photos are shrunk automatically. <span id="s_file_n" class="note"></span>`)}
     ${f('s_flink', '…or a link to it', `<input id="s_flink" name="flyer_link" type="url" maxlength="300" placeholder="https://" inputmode="url">`, 'e.g. your website or Facebook post.', false)}
+    ${fpPanel()}<input type="hidden" name="start_time" id="s_time"><input type="hidden" name="payment_details" id="s_paytxt">
     <div id="s_email_w" ${ap ? 'hidden' : ''}>${f('s_email', 'Your email', `<input id="s_email" name="email" type="email" maxlength="120" autocomplete="email" inputmode="email">`, 'So we can reply if we have a question.')}</div>
     <details class="sub-more" id="s_more"><summary>Add details (optional)</summary>
     <p class="hint">Anything you leave out, we take from the flyer.</p>
@@ -2686,7 +2727,7 @@ function bindSubmit(){
   fm.addEventListener('change', e => { if (e.target.id !== 's_orgtype' || ctry() !== 'AU') return;
     const b = AA_STATE_BODIES.find(x => x[0] === e.target.value), st = g('s_state');
     if (b && st && (!st.value || !AA_STATE_BODIES.some(x => x[0] === e.target.value && x[1] === st.value))) { st.value = b[1]; st.dispatchEvent(new Event('change', {bubbles: true})); } });
-  g('s_file').addEventListener('change', () => { shrinkImg(g('s_file'), g('s_file_n')); upd(); });
+  g('s_file').addEventListener('change', async () => { upd(); await shrinkImg(g('s_file'), g('s_file_n')); fpStart(); });
   fm.addEventListener('shrunk', () => { if (fm.dataset.tried) check(); });
   /* Past date: a warning only (late listings and results are fine), never blocks sending. */
   const pastWarn = () => { const d = new Date(), today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -2725,11 +2766,92 @@ function bindSubmit(){
   }
   /* Enough typed for a calendar card right now (club, event name, start date)? Then a signed-in submission is saved and approved ones go live. */
   const complete = () => !!(val('s_club') && val('s_ename') && /^\d{4}-\d{2}-\d{2}$/.test(val('s_start')));
+  /* ---- flyer preview (see FP_ROWS above vSubmit) ---- */
+  const fpRow = k => FP_ROWS.find(x => x[0] === k);
+  const fpVal = k => { const r = fpRow(k); return r && r[3] ? val(r[3]) : String(FP.v[k] || '').trim(); };
+  const fpSet = (k, v) => { const r = fpRow(k); v = String(v == null ? '' : v);
+    if (r && r[3]) { const el = g(r[3]); if (!el) return; if (r[2] === 'disc') { const o = FP_DISC.find(d => d.toLowerCase() === v.trim().toLowerCase()); el.value = o || (v.trim() ? 'Other' : ''); } else el.value = v; }
+    else FP.v[k] = v; };
+  const fpIsDate = k => /^\d{4}-\d{2}-\d{2}$/.test(fpVal(k));
+  /* How to register for the card: the picker under "Add details", plus the entry line and bank details from the preview. */
+  const fpReg = () => { const L = regRead('sr').list.slice(), e = fpVal('entry');
+    if (e) { const u = (e.match(/https:\/\/[^\s]+\.[^\s]+/i) || [])[0], rest = u ? e.replace(u, '').replace(/^[\s:–-]+|[\s:–-]+$/g, '') : e;
+      if (u) { const m = regMethodOfUrl(u); if (!L.some(o => o.m === m)) L.push(Object.assign({m, url: u}, rest ? {note: rest} : {})); }
+      else if (!L.some(o => o.m === 'other')) L.push({m: 'other', text: e}); }
+    const bk = {acct_name: fpVal('bank_account_name'), bsb: fpVal('bank_bsb'), acct: fpVal('bank_account'), ref: fpVal('bank_reference')};
+    if ((bk.bsb || bk.acct) && !L.some(o => o.m === 'bank' && (o.bsb || o.acct))) { const o = {m: 'bank'}; Object.keys(bk).forEach(k => { if (bk[k]) o[k] = bk[k]; }); L.push(o); }
+    return L; };
+  const fpEv = () => { const L = fpReg(), st = fpIsDate('start_date') ? fpVal('start_date') : null;
+    const x = subToEv({id: 'preview', name: fpVal('title') || 'Event name', club: fpVal('club'), country: ctry() === 'OTHER' ? val('s_ctryname') : ctry(), state: val('s_state'),
+      start_date: st, end_date: (fpIsDate('end_date') && fpVal('end_date')) || st, venue: fpVal('venue') || 'See flyer', discipline: fpVal('shoot_type'),
+      registration_url: regFirstUrl(L), register: L, notes: null, flyer_url: FP.pdf ? null : FP.url || null, flyer_link: val('s_flink'), created_at: new Date().toISOString()});
+    if (fpVal('start_time')) x.start_times = fpVal('start_time');
+    return x; };
+  const fpStatus = t => { const s = g('fp_status'); if (s) s.textContent = t; };
+  function fpCard(){
+    const c = g('fp_card'), ex = g('fp_extra'); if (!c) return; const x = fpEv();
+    c.innerHTML = x.start_date ? evCard(x) : `<div class="pend-row fp-pend">${pendCard({club: fpVal('club') || fpVal('title') || 'New flyer', flyer_url: FP.pdf ? null : FP.url || null, flyer_link: val('s_flink')})}</div>
+      <p class="note">With no start date yet, it shows in <b>New flyers, details coming</b> until the date is added.</p>`;
+    ex.innerHTML = payBox(x) + regSection(x);
+    FP.rendered = true;
+  }
+  function fpList(){
+    const ul = g('fp_list'); if (!ul) return;
+    ul.innerHTML = FP_ROWS.map(([k, lab, kind]) => { const v = fpVal(k), sure = k === 'end_date' && !v ? true : !!v && fpSure(k);
+      const show = !v ? (k === 'end_date' ? 'Same day as the start' : '<span class="muted">Not filled in</span>') : kind === 'date' && fpIsDate(k) ? esc(fdate(v)) : esc(v);
+      const inp = kind === 'date' ? `<input id="fp_in_${k}" type="date" value="${esc(v)}">`
+        : kind === 'disc' ? `<select id="fp_in_${k}"><option value="">Choose…</option>${FP_DISC.map(o => `<option ${o === v ? 'selected' : ''}>${o}</option>`).join('')}</select>`
+        : `<input id="fp_in_${k}" maxlength="${k === 'entry' ? 300 : 160}" value="${esc(v)}"${k === 'bank_bsb' || k === 'bank_account' ? ' inputmode="numeric"' : ''}>`;
+      return `<li class="fp-row${sure ? '' : ' need'}" data-fpk="${k}"><div class="fp-head"><span class="fp-lab">${esc(lab)}</span>
+        ${sure ? (v ? `<span class="fp-ok">✓ ${FP.ok[k] ? 'Checked' : 'From your flyer'}</span>` : '') : '<span class="fp-flag">⚠ Check this</span>'}
+        <button type="button" class="fx-pen fp-pen" aria-expanded="false" aria-controls="fp_ed_${k}" aria-label="Edit ${esc(lab.toLowerCase())}">✏️ <span>Edit</span></button></div>
+        <div class="fp-cur">${show}</div>
+        <div class="fp-edit" id="fp_ed_${k}" hidden><label class="sr" for="fp_in_${k}">${esc(lab)}</label>${inp}<button type="button" class="btn sm fp-done">Done</button></div></li>`; }).join('');
+  }
+  g('fp_list').addEventListener('click', e => { const li = e.target.closest('.fp-row'); if (!li) return; const k = li.dataset.fpk;
+    if (e.target.closest('.fp-pen')) { const ed = li.querySelector('.fp-edit'), b = li.querySelector('.fp-pen'); ed.hidden = !ed.hidden; b.setAttribute('aria-expanded', String(!ed.hidden)); if (!ed.hidden) g('fp_in_' + k).focus(); }
+    else if (e.target.closest('.fp-done')) { FP.ok[k] = true; fpList(); fpCard(); upd(); const p = g('fp_list').querySelector(`[data-fpk="${k}"] .fp-pen`); p && p.focus(); } });
+  g('fp_list').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('input')) { e.preventDefault(); const d = e.target.closest('.fp-row').querySelector('.fp-done'); d && d.click(); } });
+  g('fp_list').addEventListener('input', e => { const li = e.target.closest('.fp-row'); if (!li) return; fpSet(li.dataset.fpk, e.target.value); fpCard(); });
+  fm.addEventListener('input', e => { if (FP.on && !g('fp_list').contains(e.target)) { fpList(); fpCard(); } });
+  fm.addEventListener('change', e => { if (FP.on && !g('fp_list').contains(e.target) && e.target.id !== 's_file' && e.target.id !== 's_flink') { fpList(); fpCard(); } });
+  async function fpStart(){
+    const f = g('s_file').files[0], link = val('s_flink'), box = g('s_prev');
+    if (!f && !(link && isUrl(link))) { FP.on = false; FP.src = ''; FP.busy = false; box.hidden = true; upd(); return; }
+    const src = f ? `f:${f.name}:${f.size}:${f.lastModified}` : 'l:' + link; if (src === FP.src) return;
+    FP.src = src; if (FP.url) URL.revokeObjectURL(FP.url);
+    FP.pdf = !!f && (/pdf/.test(f.type) || /\.pdf$/i.test(f.name)); FP.url = f ? URL.createObjectURL(f) : ''; FP.conf = {}; FP.ok = {}; FP.on = true; FP.rendered = false;
+    FP_ROWS.forEach(([k]) => { if (fpVal(k)) FP.ok[k] = true; });   // anything already typed counts as checked
+    g('fp_fly').innerHTML = f && !FP.pdf ? `<img src="${esc(FP.url)}" alt="Your flyer">` : f ? `<span class="fp-ic" aria-hidden="true">📄</span><figcaption>${esc(f.name)}</figcaption>`
+      : `<span class="fp-ic" aria-hidden="true">🔗</span><figcaption><a href="${esc(link)}" target="_blank" rel="noopener">Open your flyer link ↗</a></figcaption>`;
+    box.hidden = false; fpList(); fpCard();
+    if (!f) { fpStatus('We can’t read a flyer from a link automatically. Fill in each line marked Check this.'); upd(); return; }
+    FP.busy = true; fpStatus('Reading your flyer…'); upd();
+    const id = ++FP.reqId, res = await fpRead(f); if (id !== FP.reqId) return; FP.busy = false;
+    if (res.fields) { const F = res.fields, C = res.confidence || {}, put = (k, v, c) => { if (!v || fpVal(k)) return; fpSet(k, v); FP.conf[k] = c || 0; };
+      ['title', 'club', 'start_date', 'end_date', 'start_time', 'venue', 'shoot_type', 'bank_account_name', 'bank_bsb', 'bank_account', 'bank_reference'].forEach(k => put(k, F[k], C[k]));
+      put('entry', [F.entry_method, F.entry_link].filter(Boolean).join(' '), Math.min(...['entry_method', 'entry_link'].filter(k => F[k]).map(k => C[k] || 0), 1));
+      fpStatus('We read your flyer. Check anything marked “Check this”, fix it with ✏️ Edit, then tap the button below.'); }
+    else fpStatus(res.err === 'sign_in' ? 'Sign in and we’ll fill these in from your flyer for you. For now, fill in each line marked Check this.'
+      : res.err === 'cap' ? 'You’ve reached today’s limit for automatic flyer reading. Fill in each line marked Check this.'
+      : 'We couldn’t read the flyer automatically, so please fill in each line marked Check this.');
+    fpList(); fpCard(); upd();
+  }
+  const fpReady = () => !FP.on || (FP.rendered && !FP.busy && ((!!fpVal('title') && fpIsDate('start_date')) || g('fp_only').checked));
+  g('fp_only').addEventListener('change', upd);
+  g('s_flink').addEventListener('change', () => { if (!g('s_file').files[0]) fpStart(); });
   function upd(){
-    const ap = subApproved(), b = g('subBtn'), h = g('s_how'); if (!b || b.disabled) return;
+    const ap = subApproved(), b = g('subBtn'), h = g('s_how'); if (!b || b.dataset.sending) return;
     g('s_email_w').hidden = ap; g('s_who').hidden = ap;
     if (ap && AUTH.user) g('s_email').value = AUTH.user.email || '';
     g('s_mode').textContent = ap ? '✓ You’re an approved submitter, so your events go live straight away.' : 'We check each flyer and put it on the calendar, usually within 48 hours. Approved clubs go live straight away.';
+    if (FP.on) { const ok = fpReady(); b.disabled = !ok; b.setAttribute('aria-disabled', String(!ok));
+      b.textContent = FP.busy ? 'Reading your flyer…' : ap ? 'Looks right, publish' : 'Looks right, send';
+      g('fp_only_t').textContent = ap ? 'Publish flyer-only, details coming' : 'Send the flyer only, you add the details';
+      h.textContent = FP.busy ? 'One moment, we’re reading your flyer.' : !ok ? 'Add the event name and start date in the preview (tap ✏️ Edit), or tick the flyer-only box, to carry on.'
+        : !ap ? 'We check it and put it on the calendar, usually within 48 hours.' : complete() ? 'Goes live on the calendar as soon as you tap Looks right, publish.' : FLYQ.ok ? 'Goes live now, and we’ll add the missing details from your flyer shortly.' : 'We read your flyer and put it live for you.';
+      return; }
+    b.disabled = false; b.removeAttribute('aria-disabled');
     b.textContent = ap ? (complete() || FLYQ.ok ? 'Publish now' : 'Send flyer to publish') : 'Send flyer';
     h.textContent = !ap ? '' : complete() ? 'Goes live on the calendar as soon as you tap Publish now.' : FLYQ.ok ? 'Live now, we’ll add the dates from your flyer shortly.' : 'Just the flyer is fine: we read it and put it live for you. Add the club, event name and start date under details and it goes live the second you tap.';
   }
@@ -2741,7 +2863,7 @@ function bindSubmit(){
   const where = () => ctry() === 'AU' ? val('s_state') : [val('s_state'), ctry() === 'US' ? 'USA' : val('s_ctryname')].filter(Boolean).join(', ');
   function mailBody(){
     const L = [['Country', ctry() === 'OTHER' ? val('s_ctryname') : K().name], [K().state, val('s_state')], ['Organisation type', val('s_orgtype')], ['Club', val('s_club')], ['Your name', val('s_name')], ['Role at the club', roleVal('s')], ['Contact email', val('s_email')], ['Phone', val('s_phone')],
-      ['Event', val('s_ename')], ['Dates', [val('s_start'), val('s_end')].filter(Boolean).join(' to ')], ['Venue', val('s_venue')], ['Type', val('s_disc')], ['How to register', regText(regRead('sr').list)],
+      ['Event', val('s_ename')], ['Dates', [val('s_start'), val('s_end')].filter(Boolean).join(' to ')], ['Start time', fpVal('start_time')], ['Venue', val('s_venue')], ['Type', val('s_disc')], ['How to register', regText(fpReg())],
       ['Flyer link', val('s_flink')], ['Notes', val('s_notes')], ['Permission to publish', 'Yes – sent by the club / organiser']];
     return L.map(([k, v]) => `${k}: ${v}`).join('\n') + '\n\n>>> Please attach the flyer (PDF or JPG) to this email before sending. <<<\n';
   }
@@ -2750,6 +2872,7 @@ function bindSubmit(){
   const kcNow = id => KC.memo[kcNorm(val(id))];
   g('subMail').onclick = e => { e.currentTarget.href = `mailto:${SITE.contact}?subject=${encodeURIComponent(kcTag(kcNow('s_email')) + subject())}&body=${encodeURIComponent(mailBody())}`; };
   fm.onsubmit = e => {
+    if (FP.on && !fpReady()) { e.preventDefault(); upd(); return; }   // preview first: nothing goes until it's been checked
     fm.dataset.tried = 1;
     const errs = check();
     if (errs.some(id => g('s_mefields').contains(g(id)))) meShow(false);
@@ -2759,16 +2882,17 @@ function bindSubmit(){
     $('#subErr').textContent = '';
     if (!SITE.formEndpoint || !navigator.onLine) { e.preventDefault(); g('subMail').click(); location.href = g('subMail').href;
       toast(navigator.onLine ? 'Opening your email app…' : 'You’re offline: opening your email app instead'); return; }
-    g('s_role_val').value = roleVal('s'); g('s_regtxt').value = regText(regRead('sr').list); meSave();
+    g('s_role_val').value = roleVal('s'); g('s_regtxt').value = regText(fpReg()); g('s_time').value = fpVal('start_time');
+    g('s_paytxt').value = [['Account name', fpVal('bank_account_name')], ['BSB', fpVal('bank_bsb')], ['Account', fpVal('bank_account')], ['Reference', fpVal('bank_reference')]].filter(r => r[1]).map(r => r.join(': ')).join(' · '); meSave();
     fm.querySelector('[name=_next]').value = location.href.split('#')[0].split('?')[0] + '?sent=1#/submit';
     fm.querySelector('[name=_subject]').value = subject();
     if (!g('s_file').files.length) g('s_file').disabled = true;   // don't send an empty file part
-    const b = g('subBtn'); b.disabled = true; b.textContent = 'Sending…';
+    const b = g('subBtn'); b.disabled = true; b.dataset.sending = '1'; b.textContent = 'Sending…';
     e.preventDefault();
     const ap = subApproved();
     const rec = {country: ctry() === 'OTHER' ? val('s_ctryname') : ctry(), state: val('s_state'), organisation_type: val('s_orgtype'), club: val('s_club'), submitter_name: ap ? '' : val('s_name'), role: ap ? '' : roleVal('s'),
       contact_email: val('s_email'), phone: ap ? '' : val('s_phone'), name: val('s_ename'), start_date: val('s_start'), end_date: val('s_end') || val('s_start'), venue: val('s_venue') || 'See flyer', discipline: val('s_disc'),
-      registration_url: regFirstUrl(regRead('sr').list) || '', register: regRead('sr').list, flyer_link: val('s_flink'), notes: val('s_notes')};
+      registration_url: regFirstUrl(fpReg()) || '', register: fpReg(), flyer_link: val('s_flink'), notes: [fpVal('start_time') && 'Start time: ' + fpVal('start_time'), val('s_notes')].filter(Boolean).join('\n')};
     Promise.race([kcCheck(val('s_email')), new Promise(r => setTimeout(() => r(false), 4000))]).then(async k => {
       fm.querySelector('[name=known_club]').value = k ? 'yes' : 'no';
       const db = complete() || (ap && FLYQ.ok) ? await dbSubmit(rec, g('s_file').disabled ? null : g('s_file').files[0]) : null;   // flyer only + approved: live as 'details coming'; otherwise emailed
@@ -2784,7 +2908,7 @@ function bindSubmit(){
       HTMLFormElement.prototype.submit.call(fm);
     });
   };
-  window.addEventListener('pageshow', () => { const b = $('#subBtn'); if (b) { b.disabled = false; g('s_file').disabled = false; upd(); } }, {once: true});
+  window.addEventListener('pageshow', () => { const b = $('#subBtn'); if (b) { delete b.dataset.sending; b.disabled = false; g('s_file').disabled = false; upd(); } }, {once: true});
   upd();
 }
 
@@ -3065,3 +3189,11 @@ function bindFix(){
 
 /* ---------- start ---------- */
 boot().catch(e => { $('#view').innerHTML = `<div class="empty">Couldn't load event data (${esc(e.message)}). If you opened the file directly, run it from a web server.</div>`; });
+/* Phone + Add event button: step aside while a form box or button is underneath it (same idea as the Help bubble). */
+(function fabDodge(){ const b = document.getElementById('fabAdd'); if (!b) return; let t = 0;
+  const chk = () => { t = 0; b.classList.remove('fab-dodge'); if (innerWidth > 760) return; const r = b.getBoundingClientRect(); if (!r.width) return;
+    const pts = [[r.left + r.width / 2, r.top + r.height / 2], [r.left + 6, r.top + 6], [r.left + 6, r.bottom - 6], [r.right - 6, r.top + 6]];
+    b.style.visibility = 'hidden'; const hit = pts.some(([x, y]) => { const e = document.elementFromPoint(x, y); return e && e.closest('select,input,textarea'); }); b.style.visibility = '';
+    b.classList.toggle('fab-dodge', hit); };
+  const q = () => { if (!t) t = requestAnimationFrame(chk); };
+  addEventListener('scroll', q, {passive: true}); addEventListener('resize', q); addEventListener('hashchange', () => setTimeout(chk, 400)); setTimeout(chk, 800); })();
