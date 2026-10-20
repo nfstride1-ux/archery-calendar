@@ -527,6 +527,48 @@ function checkReminders(){
 }
 
 /* ---------- views ---------- */
+// Live stream countdown – Archery Australia National Target & Para Championships finals (Hobart, 24 Oct 2026, 9am AEDT). Shows to target, LIVE NOW for 10 h, then hides itself.
+const LS = {start: Date.parse('2026-10-24T09:00:00+11:00'), hrs: 10, watch: 'https://archery.org.au/videos/', post: 'https://www.facebook.com/share/19ufdj2yVj/'};
+function lsZone(d){
+  const nm = loc => { try { return (new Intl.DateTimeFormat(loc, {timeZoneName: 'short'}).formatToParts(d).find(x => x.type === 'timeZoneName') || {}).value || ''; } catch (e) { return ''; } };
+  const tries = ['en-AU', 'en-US', 'en-GB', 'en-NZ', 'en-IN', navigator.language || 'en'].map(nm);
+  return tries.find(z => z && !/^(GMT|UTC)[+-]/.test(z)) || tries.find(Boolean) || '';
+}
+function lsWhen(){
+  const d = new Date(LS.start), o = {weekday: 'short', day: 'numeric', month: 'short'};
+  let day, tm;
+  try { day = new Intl.DateTimeFormat('en-AU', o).format(d).replace(/,/g, ''); tm = new Intl.DateTimeFormat('en-AU', {hour: 'numeric', minute: '2-digit', hour12: true}).format(d).replace(/\s/g, '').toLowerCase(); }
+  catch (e) { day = d.toDateString().slice(0, 10); tm = d.toTimeString().slice(0, 5); }
+  return `${day}, ${tm} your time (${lsZone(d)})`;
+}
+function lsCount(ms){
+  const t = Math.max(0, Math.floor(ms / 1000)), p = n => String(n).padStart(2, '0');
+  const u = [[Math.floor(t / 86400), 'days', 'd'], [Math.floor(t / 3600) % 24, 'hrs', 'h'], [Math.floor(t / 60) % 60, 'min', 'm'], [t % 60, 'sec', 's']];
+  return u.map(([n, l], i) => `<span class="ls-u"><b>${i ? p(n) : n}</b><small>${l}</small></span>`).join('');
+}
+function lsState(now = Date.now()){ return now < LS.start ? 'soon' : now < LS.start + LS.hrs * 3600e3 ? 'live' : 'over'; }
+function lsBox(){
+  const st = lsState(); if (st === 'over') return '';
+  const live = st === 'live';
+  return `<aside class="ls-box${live ? ' on' : ''}" id="lsBox" aria-label="Live stream: National Target and Para Championships finals">
+    <a class="ls-thumb" href="${LS.watch}" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true"><picture><source type="image/webp" srcset="img/aa-target-para-2026-stream.webp"><img src="img/aa-target-para-2026-stream.jpg" alt="" width="440" height="550" loading="lazy"></picture></a>
+    <div class="ls-body">
+      <p class="ls-tag">${live ? '<span class="ls-dot" aria-hidden="true"></span> LIVE NOW' : '▶ Live stream'}</p>
+      <h2 class="ls-h">${live ? 'LIVE NOW, watch the finals' : 'Target &amp; Para Champs finals'}</h2>
+      ${live ? '' : `<div class="ls-count" id="lsCount" role="timer" aria-live="off">${lsCount(LS.start - Date.now())}</div>`}
+      <p class="ls-when">${live ? 'Streaming now from Hobart' : `Starts ${esc(lsWhen())}`}<small>9:00am AEDT, Tasmania · Archery Australia</small></p>
+    </div>
+    <div class="ls-links"><a class="btn gold ls-watch" href="${LS.watch}" target="_blank" rel="noopener">▶ Watch live</a>
+      <a class="ls-url" href="${LS.watch}" target="_blank" rel="noopener">archery.org.au/videos</a>
+      <a class="ls-post" href="${LS.post}" target="_blank" rel="noopener">Archery Australia post ↗</a></div>
+  </aside>`;
+}
+setInterval(() => {
+  const b = document.getElementById('lsBox'); if (!b) return;
+  const st = lsState(), on = b.classList.contains('on');
+  if (st === 'over' || (st === 'live') !== on) { const t = document.createElement('div'); t.innerHTML = lsBox(); b.replaceWith(...t.childNodes); return; }
+  const c = document.getElementById('lsCount'); if (c) c.innerHTML = lsCount(LS.start - Date.now());
+}, 1000);
 function vHome(){
   setTitle('Archery Calendar');
   const mine = Object.keys(S.saved).map(id => BYID[id]).filter(Boolean);
@@ -543,8 +585,9 @@ function vHome(){
     ${next ? `<a class="next-card" href="#/shoot/${esc(next.id)}"><span class="kicker">Your next event</span><b class="big">${daysTo(next.start_date) <= 0 ? 'On now' : daysTo(next.start_date) + ' days'}</b>
       <span class="nm">${esc(next.name)}</span><span>${esc(range(next))}</span><span class="st">${ST_TXT[ST(next.id)]}</span></a>` : ''}
   </div>${credit('mixed')}</section>
-  <div class="wrap">
+  <div class="wrap home-wrap">
     <div class="stats four"><a class="stat" href="#/calendar"><b>${up.length}</b><span>★ My events</span></a><a class="stat" href="#/entries"><b>${nEnt}</b><span>✓ Entered</span></a><a class="stat" href="#/entries"><b>${nTodo}</b><span>☐ To enter</span></a><a class="stat" href="#/entries"><b>${nPay}</b><span>$ To pay</span></a></div>
+    ${lsBox()}
     ${intlMenu()}
     ${pendStrip()}
     ${adSlot('banner')}
