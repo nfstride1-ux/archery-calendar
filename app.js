@@ -278,19 +278,22 @@ const SPONSORS = [{id:'ramrods', name:'RamRods Archery', founding:true, start:'2
 function spUrl(s, medium, content){ return s.url + (s.url.includes('?') ? '&' : '?') + 'utm_source=archerycalendars&utm_medium=' + medium + '&utm_campaign=founding_sponsor&utm_content=' + content; }
 function spCard(s, medium, content, strip){
   const logo = `<div class="sp-logo"><img src="${esc(s.logo)}" alt="${esc(s.name)}" width="${s.w}" height="${s.h}" loading="lazy" decoding="async"></div>`;
-  return `<a class="sp${s.founding ? ' sp-founding' : ''}" href="${esc(spUrl(s, medium, content))}" target="_blank" rel="sponsored noopener" data-sp="${esc(s.id)}" aria-label="${esc(s.name)}${s.founding ? ', founding sponsor' : ''} (opens ${esc(s.url.replace(/^https?:\/\/|\/$/g, ''))})">
+  return `<a class="sp${s.founding ? ' sp-founding' : ''}" href="${esc(spUrl(s, medium, content))}" target="_blank" rel="sponsored noopener" data-sp="${esc(s.id)}" data-gc="sponsor/${esc(s.id)}/${esc(content)}" data-gc-t="${esc(s.name)} sponsor click (${esc(content.replace(/_/g, ' '))})" aria-label="${esc(s.name)}${s.founding ? ', founding sponsor' : ''} (opens ${esc(s.url.replace(/^https?:\/\/|\/$/g, ''))})">
     ${s.founding ? `<span class="sp-badge"><span aria-hidden="true">★</span> ${strip ? 'Founding' : 'Founding Sponsor'}</span>` : ''}${strip ? `<span class="sp-body">${logo}<span class="sp-cta">${esc(s.cta)} →</span></span>` : `${logo}<span class="sp-txt">${esc(s.txt)}</span><span class="sp-cta">${esc(s.cta)} →</span>`}</a>`;
 }
-const spOpen = (more) => `<a class="sp sp-open" href="#/advertise"><b>Sponsor spot open</b><span>Your logo + link here</span>${more ? '<em>Advertise with us →</em>' : ''}</a>`;
+const SP_OPEN_SPOTS = false;   // true = show the dashed "Sponsor spot open" cards again (left rail, right rail, strip)
+const spOpen = (more) => SP_OPEN_SPOTS ? `<a class="sp sp-open" href="#/advertise"><b>Sponsor spot open</b><span>Your logo + link here</span>${more ? '<em>Advertise with us →</em>' : ''}</a>` : '';
 function spRails(){
   if (!SPONSORS.length) return '';
-  return `<aside class="sp-rail sp-rail-l" aria-label="Sponsors"><div class="sp-rail-in"><div class="sp-rail-h">Supported by</div>${SPONSORS.map((s, i) => spCard(s, 'sponsor_rail', 'left_rail')).join('')}${spOpen(true)}</div></aside>
-  <aside class="sp-rail sp-rail-r" aria-label="More sponsor spots"><div class="sp-rail-in"><div class="sp-rail-h">Sponsors</div>${spOpen(true)}${spOpen(true)}</div></aside>`;
+  const right = spOpen(true) + spOpen(true);
+  return `<aside class="sp-rail sp-rail-l" aria-label="Sponsors"><div class="sp-rail-in"><div class="sp-rail-h">Supported by</div>${SPONSORS.map(s => spCard(s, 'sponsor_rail', 'left_rail')).join('')}${spOpen(true)}</div></aside>
+  ${right ? `<aside class="sp-rail sp-rail-r" aria-label="More sponsor spots"><div class="sp-rail-in"><div class="sp-rail-h">Sponsors</div>${right}</div></aside>` : ''}`;
 }
 function spStrip(){
   if (!SPONSORS.length) return '';
-  return `<section class="sp-strip" aria-label="Sponsors"><div class="sp-strip-h"><span>Supported by</span><span aria-hidden="true">Swipe →</span></div>
-    <div class="sp-strip-row">${SPONSORS.map(s => spCard(s, 'sponsor_strip', 'home_strip', true)).join('')}${spOpen()}${spOpen()}</div></section>`;
+  const cards = SPONSORS.map(s => spCard(s, 'sponsor_strip', 'home_strip', true)).join('') + spOpen() + spOpen(), n = SPONSORS.length + (SP_OPEN_SPOTS ? 2 : 0);
+  return `<section class="sp-strip${n === 1 ? ' one' : ''}" aria-label="Sponsors"><div class="sp-strip-h"><span>Supported by</span>${n > 1 ? '<span aria-hidden="true">Swipe →</span>' : ''}</div>
+    <div class="sp-strip-row">${cards}</div></section>`;
 }
 function bindCards(root = document){
   bindToggles(root);
@@ -549,7 +552,7 @@ function checkReminders(){
 
 /* ---------- views ---------- */
 // Live stream countdown – Archery Australia National Target & Para Championships finals (Hobart, 24 Oct 2026, 9am AEDT). Shows to target, LIVE NOW for 10 h, then hides itself.
-const LS = {start: Date.parse('2026-10-24T09:00:00+11:00'), hrs: 10, watch: 'https://archery.org.au/videos/', post: 'https://www.facebook.com/share/19ufdj2yVj/'};
+const LS = {id: 'aa-2026-4', title: 'Watch live: AA National Target & Para Champs finals 2026', start: Date.parse('2026-10-24T09:00:00+11:00'), hrs: 10, watch: 'https://archery.org.au/videos/', post: 'https://www.facebook.com/share/19ufdj2yVj/'};
 function lsZone(d){
   const nm = loc => { try { return (new Intl.DateTimeFormat(loc, {timeZoneName: 'short'}).formatToParts(d).find(x => x.type === 'timeZoneName') || {}).value || ''; } catch (e) { return ''; } };
   const tries = ['en-AU', 'en-US', 'en-GB', 'en-NZ', 'en-IN', navigator.language || 'en'].map(nm);
@@ -570,17 +573,18 @@ function lsCount(ms){
 function lsState(now = Date.now()){ return now < LS.start ? 'soon' : now < LS.start + LS.hrs * 3600e3 ? 'live' : 'over'; }
 function lsBox(){
   const st = lsState(); if (st === 'over') return '';
+  const gw = `data-gc="watch-live/${esc(LS.id)}" data-gc-t="${esc(LS.title)}"`;   // click counted in GoatCounter (gcClicks)
   const live = st === 'live';
   return `<aside class="ls-box${live ? ' on' : ''}" id="lsBox" aria-label="Live stream: National Target and Para Championships finals">
-    <a class="ls-thumb" href="${LS.watch}" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true"><picture><source type="image/webp" srcset="img/aa-target-para-2026-stream.webp"><img src="img/aa-target-para-2026-stream.jpg" alt="" width="440" height="550" loading="lazy"></picture></a>
+    <a class="ls-thumb" href="${LS.watch}" ${gw} target="_blank" rel="noopener" tabindex="-1" aria-hidden="true"><picture><source type="image/webp" srcset="img/aa-target-para-2026-stream.webp"><img src="img/aa-target-para-2026-stream.jpg" alt="" width="440" height="550" loading="lazy"></picture></a>
     <div class="ls-body">
       <p class="ls-tag">${live ? '<span class="ls-dot" aria-hidden="true"></span> LIVE NOW' : '▶ Live stream'}</p>
       <h2 class="ls-h">${live ? 'LIVE NOW, watch the finals' : 'Target &amp; Para Champs finals'}</h2>
       ${live ? '' : `<div class="ls-count" id="lsCount" role="timer" aria-live="off">${lsCount(LS.start - Date.now())}</div>`}
       <p class="ls-when">${live ? 'Streaming now from Hobart' : `Starts ${esc(lsWhen())}`}<small>9:00am AEDT, Tasmania · Archery Australia</small></p>
     </div>
-    <div class="ls-links"><a class="btn gold ls-watch" href="${LS.watch}" target="_blank" rel="noopener">▶ Watch live</a>
-      <a class="ls-url" href="${LS.watch}" target="_blank" rel="noopener">archery.org.au/videos</a>
+    <div class="ls-links"><a class="btn gold ls-watch" href="${LS.watch}" ${gw} target="_blank" rel="noopener">▶ Watch live</a>
+      <a class="ls-url" href="${LS.watch}" ${gw} target="_blank" rel="noopener">archery.org.au/videos</a>
       <a class="ls-post" href="${LS.post}" target="_blank" rel="noopener">Archery Australia post ↗</a></div>
   </aside>`;
 }
@@ -2082,6 +2086,16 @@ function importHandoff(){
 const GCQ = [];
 function gc(o){ try { const g = window.goatcounter; if (g && typeof g.count === 'function') g.count(o); else if (GCQ.length < 30) GCQ.push(o); } catch {} }
 window.gcFlush = () => { const g = window.goatcounter; if (g && typeof g.count === 'function') GCQ.splice(0).forEach(gc); };
+/* Outbound clicks as GoatCounter events: any element with data-gc="<path>" (live-stream watch links: watch-live/<event-id>;
+   sponsor links: sponsor/<id>/<placement>). Capture phase, never preventDefault, so the link always opens; gc() swallows errors and
+   queues until count.js loads. auxclick covers middle-click "open in new tab". */
+function gcClick(e){
+  if (e.type === 'auxclick' && e.button !== 1) return;
+  const a = e.target && e.target.closest && e.target.closest('[data-gc]'); if (!a) return;
+  const now = Date.now(); if (a === gcClick.el && now - gcClick.t < 800) return; gcClick.el = a; gcClick.t = now;   // one count per tap
+  gc({path: a.dataset.gc, title: a.dataset.gcT || a.dataset.gc, event: true});
+}
+document.addEventListener('click', gcClick, true); document.addEventListener('auxclick', gcClick, true);
 function gcPage(){
   const path = (location.hash || '#/home').replace(/^#/, '').split('?')[0].replace(/[^\w\/.-]/g, '').slice(0, 120) || '/home';
   if (path === gcPage.last) return; gcPage.last = path; gc({path, title: document.title});

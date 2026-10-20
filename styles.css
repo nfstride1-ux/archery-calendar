@@ -967,3 +967,7 @@ body[data-page=submit] .site-head .add-btn{outline:2px solid #fff;outline-offset
  .sp-rail .sp-open span,.sp-rail .sp-open em{font-size:15px}
 }
 @media print{.sp-rail,.sp-strip{display:none!important}}
+/* One sponsor card in the strip (open spots switched off): no swipe row, a single card sized to the content and centred */
+.sp-strip.one .sp-strip-row{overflow:visible;justify-content:center;scroll-snap-type:none}
+.sp-strip.one .sp{flex:0 1 380px;max-width:100%}
+.sp-strip.one .sp-strip-h{justify-content:center}
