@@ -914,3 +914,45 @@ body[data-page=submit] .site-head .add-btn{outline:2px solid #fff;outline-offset
  .site-head .add-btn{min-width:28px}
 }
 @media (max-width:370px){.site-head .logo{font-size:12.5px;letter-spacing:0;gap:5px}.site-head .logo-mark{width:20px;height:20px}.site-head .acct-btn{padding:6px 6px}.site-head .acct-btn+.acct-btn{margin-left:3px}}
+/* Sponsors: rails in the empty side margins on wide desktops, swipeable strip everywhere else (home page). */
+.home-wrap{position:relative}
+.sp-rail{display:none}
+.sp-rail-in{position:sticky;top:88px;width:210px;display:flex;flex-direction:column;gap:14px;padding-top:28px}
+.sp-rail-h,.sp-strip-h span:first-child{font-family:var(--disp);font-weight:700;text-transform:uppercase;letter-spacing:.14em;font-size:13px;color:var(--muted)}
+.sp-rail-h{display:flex;align-items:center;gap:8px}.sp-rail-h::after{content:"";flex:1;height:1px;background:var(--line)}
+.sp{display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:var(--r);box-shadow:0 1px 2px rgba(15,23,42,.06),0 8px 24px rgba(15,23,42,.07);text-decoration:none;color:var(--ink);overflow:hidden;transition:transform .15s,box-shadow .15s}
+.sp:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(15,23,42,.08),0 14px 32px rgba(15,23,42,.12)}
+.sp-founding{border:2px solid var(--night)}
+.sp-badge{background:var(--night);color:var(--gold);font-family:var(--disp);font-weight:800;letter-spacing:.12em;text-transform:uppercase;font-size:13px;padding:6px 12px;display:flex;align-items:center;gap:6px}
+.sp-logo{background:#fff;padding:20px 16px 8px;display:flex;align-items:center;justify-content:center}
+.sp-logo img{width:100%;max-width:188px;height:auto;display:block}
+.sp-txt{padding:0 14px 2px;font-size:13px;color:var(--muted);text-align:center;line-height:1.4}
+.sp-cta{margin:12px 14px 14px;display:flex;align-items:center;justify-content:center;min-height:40px;border-radius:10px;background:var(--night);color:#fff;font:700 14px/1.2 var(--body)}
+.sp:hover .sp-cta,.sp:focus-visible .sp-cta{background:var(--blue)}
+.sp-open{border:2px dashed #94a3b8;background:repeating-linear-gradient(135deg,#fff 0 14px,#f6f7f9 14px 28px);box-shadow:none;align-items:center;justify-content:center;text-align:center;padding:20px 14px;min-height:130px}
+.sp-open b{font-family:var(--disp);font-size:22px;font-weight:800;text-transform:uppercase;line-height:1.05;color:var(--ink2,#334155)}
+.sp-open span{font-size:13px;color:var(--muted);margin-top:4px}
+.sp-open em{font-style:normal;margin-top:10px;font-size:13px;font-weight:700;color:var(--night);border-bottom:2px solid var(--gold)}
+.sp-strip{--sp-pad:20px;margin:26px calc(-1 * var(--sp-pad)) 6px}
+.sp-strip-h{display:flex;justify-content:space-between;align-items:baseline;padding:0 var(--sp-pad);margin-bottom:8px}
+.sp-strip-h span:last-child{font-size:12px;font-weight:700;color:var(--night)}
+.sp-strip-row{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-left:var(--sp-pad);padding:4px var(--sp-pad) 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.sp-strip-row::-webkit-scrollbar{display:none}
+.sp-strip .sp{flex:0 0 74%;max-width:300px;scroll-snap-align:start}
+.sp-strip .sp-founding{flex-direction:row;align-items:stretch}
+.sp-strip .sp-founding .sp-badge{writing-mode:vertical-rl;transform:rotate(180deg);justify-content:center;padding:10px 6px;font-size:12px}
+.sp-strip .sp-body{flex:1;display:flex;flex-direction:column;justify-content:center;min-width:0}
+.sp-strip .sp-logo{padding:14px 14px 4px}
+.sp-strip .sp-cta{margin:8px 12px 12px;min-height:36px;font-size:13px}
+.sp-strip .sp-open{min-height:0;padding:16px 12px}
+.sp-strip .sp-open b{font-size:19px}
+@media (min-width:760px){.sp-strip-h span:last-child{display:none}}
+@media (max-width:720px){.sp-strip{--sp-pad:14px}}
+/* rails only where the side margins are wide enough (1200px content + 2 x 234px) */
+@media (min-width:1670px){
+ .sp-rail{display:block;position:absolute;top:0;bottom:0;width:210px}
+ .sp-rail-l{right:calc(100% + 24px)}.sp-rail-r{left:calc(100% + 24px)}
+ .home-wrap:has(> .ls-box) .sp-rail-r{display:none}   /* the live-stream box already uses the right margin */
+ .sp-strip{display:none}
+}
+@media print{.sp-rail,.sp-strip{display:none!important}}

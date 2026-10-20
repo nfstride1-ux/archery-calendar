@@ -271,6 +271,27 @@ function adSlot(kind, t){
     <span>Your archery shop here. Show ${what ? what + ' ' : ''}archers your gear on every ${what ? what + ' ' : ''}event page.</span>
     <a class="btn gold block" href="#/advertise">Advertise with us</a></aside>`;
 }
+/* Sponsors (paid, always on - not tied to SITE.ads). Desktop: rails in the empty side margins (home page, wide screens).
+   Smaller screens: a swipeable strip between sections. Every sponsor link is UTM-tagged so clicks can be reported. */
+/* RamRods: 6-month founding-sponsor trial 2026-10-21 to 2027-04-21. start/end are records only - nothing auto-hides; renewal is a manual decision. */
+const SPONSORS = [{id:'ramrods', name:'RamRods Archery', founding:true, start:'2026-10-21', end:'2027-04-21', url:'https://ramrods.com/', logo:'img/logos/sponsor-ramrods.png', w:640, h:188, txt:'Bow stabilizers, weights & accessories', cta:'Visit ramrods.com'}];
+function spUrl(s, medium, content){ return s.url + (s.url.includes('?') ? '&' : '?') + 'utm_source=archerycalendars&utm_medium=' + medium + '&utm_campaign=founding_sponsor&utm_content=' + content; }
+function spCard(s, medium, content, strip){
+  const logo = `<div class="sp-logo"><img src="${esc(s.logo)}" alt="${esc(s.name)}" width="${s.w}" height="${s.h}" loading="lazy" decoding="async"></div>`;
+  return `<a class="sp${s.founding ? ' sp-founding' : ''}" href="${esc(spUrl(s, medium, content))}" target="_blank" rel="sponsored noopener" data-sp="${esc(s.id)}" aria-label="${esc(s.name)}${s.founding ? ', founding sponsor' : ''} (opens ${esc(s.url.replace(/^https?:\/\/|\/$/g, ''))})">
+    ${s.founding ? `<span class="sp-badge"><span aria-hidden="true">★</span> ${strip ? 'Founding' : 'Founding Sponsor'}</span>` : ''}${strip ? `<span class="sp-body">${logo}<span class="sp-cta">${esc(s.cta)} →</span></span>` : `${logo}<span class="sp-txt">${esc(s.txt)}</span><span class="sp-cta">${esc(s.cta)} →</span>`}</a>`;
+}
+const spOpen = (more) => `<a class="sp sp-open" href="#/advertise"><b>Sponsor spot open</b><span>Your logo + link here</span>${more ? '<em>Advertise with us →</em>' : ''}</a>`;
+function spRails(){
+  if (!SPONSORS.length) return '';
+  return `<aside class="sp-rail sp-rail-l" aria-label="Sponsors"><div class="sp-rail-in"><div class="sp-rail-h">Supported by</div>${SPONSORS.map((s, i) => spCard(s, 'sponsor_rail', 'left_rail')).join('')}${spOpen(true)}</div></aside>
+  <aside class="sp-rail sp-rail-r" aria-label="More sponsor spots"><div class="sp-rail-in"><div class="sp-rail-h">Sponsors</div>${spOpen(true)}${spOpen(true)}</div></aside>`;
+}
+function spStrip(){
+  if (!SPONSORS.length) return '';
+  return `<section class="sp-strip" aria-label="Sponsors"><div class="sp-strip-h"><span>Supported by</span><span aria-hidden="true">Swipe →</span></div>
+    <div class="sp-strip-row">${SPONSORS.map(s => spCard(s, 'sponsor_strip', 'home_strip', true)).join('')}${spOpen()}${spOpen()}</div></section>`;
+}
 function bindCards(root = document){
   bindToggles(root);
   root.querySelectorAll('[data-star]').forEach(b => b.onclick = ev => { ev.stopPropagation(); toggleSave(b.dataset.star); });
@@ -585,10 +606,11 @@ function vHome(){
     ${next ? `<a class="next-card" href="#/shoot/${esc(next.id)}"><span class="kicker">Your next event</span><b class="big">${daysTo(next.start_date) <= 0 ? 'On now' : daysTo(next.start_date) + ' days'}</b>
       <span class="nm">${esc(next.name)}</span><span>${esc(range(next))}</span><span class="st">${ST_TXT[ST(next.id)]}</span></a>` : ''}
   </div>${credit('mixed')}</section>
-  <div class="wrap home-wrap">
+  <div class="wrap home-wrap">${spRails()}
     <div class="stats four"><a class="stat" href="#/calendar"><b>${up.length}</b><span>★ My events</span></a><a class="stat" href="#/entries"><b>${nEnt}</b><span>✓ Entered</span></a><a class="stat" href="#/entries"><b>${nTodo}</b><span>☐ To enter</span></a><a class="stat" href="#/entries"><b>${nPay}</b><span>$ To pay</span></a></div>
     ${lsBox()}
     ${intlMenu()}
+    ${spStrip()}
     ${pendStrip()}
     ${adSlot('banner')}
     <h2 class="sec-h">Pick your discipline</h2>
