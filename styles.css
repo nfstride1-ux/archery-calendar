@@ -948,11 +948,22 @@ body[data-page=submit] .site-head .add-btn{outline:2px solid #fff;outline-offset
 .sp-strip .sp-open b{font-size:19px}
 @media (min-width:760px){.sp-strip-h span:last-child{display:none}}
 @media (max-width:720px){.sp-strip{--sp-pad:14px}}
-/* rails only where the side margins are wide enough (1200px content + 2 x 234px) */
-@media (min-width:1670px){
- .sp-rail{display:block;position:absolute;top:0;bottom:0;width:210px}
- .sp-rail-l{right:calc(100% + 24px)}.sp-rail-r{left:calc(100% + 24px)}
+/* rails only where the side margins are wide enough: from 1900px, the same width and edge gap as the live-stream box
+   (min(380px, (100vw - 1248px) / 2), 4px outside the 1200px wrap), so both sides stay balanced and clear of the content. */
+@media (min-width:1900px){
+ .sp-rail{display:block;position:absolute;top:0;bottom:0;width:min(380px,calc((100vw - 1248px) / 2))}
+ .sp-rail-l{right:calc(100% + 4px)}.sp-rail-r{left:calc(100% + 4px)}
  .home-wrap:has(> .ls-box) .sp-rail-r{display:none}   /* the live-stream box already uses the right margin */
  .sp-strip{display:none}
+ .sp-rail-in{width:100%;padding-top:20px;gap:16px}
+ .sp-rail-h{font-size:14px}
+ .sp-rail .sp-badge{font-size:16px;padding:9px 16px}
+ .sp-rail .sp-logo{padding:26px 22px 12px}
+ .sp-rail .sp-logo img{max-width:290px}
+ .sp-rail .sp-txt{font-size:16px;padding:0 18px 2px;color:var(--ink2)}
+ .sp-rail .sp-cta{margin:16px;min-height:50px;font-size:17px;border-radius:12px}
+ .sp-rail .sp-open{min-height:170px;padding:24px 18px}
+ .sp-rail .sp-open b{font-size:26px}
+ .sp-rail .sp-open span,.sp-rail .sp-open em{font-size:15px}
 }
 @media print{.sp-rail,.sp-strip{display:none!important}}
