@@ -406,6 +406,13 @@ label.chk input{width:auto;min-height:auto}
 .fan-meta{display:block;color:#4b5563;font-size:13.5px;margin-top:4px}
 .fan-rm{margin:4px 0 18px}
 .fan-send{max-width:760px}
+.fan-prev{margin-top:10px}
+.fan-prev-box{display:flex;align-items:center;justify-content:center;max-width:320px;min-height:64px;padding:6px;background:#fff;border:1px solid var(--line);border-radius:12px}
+.fan-prev-box img{display:block;max-width:100%;max-height:180px;width:auto;height:auto;object-fit:contain;border-radius:8px}
+.fan-prev-na{margin:0;padding:8px;font-size:14px;color:var(--ink2);text-align:center}
+.fan-prev-meta{margin:6px 0 0;font-size:13px;color:var(--muted);word-break:break-all}
+.fan-prev-meta .linkbtn{color:var(--blue);font-weight:600;white-space:nowrap;padding:0 0 0 6px}
+@media (max-width:600px){.fan-prev-box{max-width:100%}.fan-prev-box img{max-height:140px}}
 .lb{border:0;padding:0;background:#09121e;color:#fff;max-width:min(96vw,1100px);max-height:96vh;border-radius:12px}
 .lb::backdrop{background:rgba(0,0,0,.8)}
 .lb img{display:block;max-width:100%;max-height:84vh;margin:0 auto}
@@ -920,6 +927,8 @@ body[data-page=submit] .site-head .add-btn{outline:2px solid #fff;outline-offset
 .sp-rail-in{position:sticky;top:88px;width:210px;display:flex;flex-direction:column;gap:14px;padding-top:28px}
 .sp-rail-h,.sp-strip-h span:first-child{font-family:var(--disp);font-weight:700;text-transform:uppercase;letter-spacing:.14em;font-size:13px;color:var(--muted)}
 .sp-rail-h{display:flex;align-items:center;gap:8px}.sp-rail-h::after{content:"";flex:1;height:1px;background:var(--line)}
+/* "Supported by" label: dark navy, larger and bolder so it reads clearly on the light background */
+.sp-rail-h,.sp-strip-h span:first-child{color:var(--night);font-weight:800;font-size:15px;letter-spacing:.12em}
 .sp{display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:var(--r);box-shadow:0 1px 2px rgba(15,23,42,.06),0 8px 24px rgba(15,23,42,.07);text-decoration:none;color:var(--ink);overflow:hidden;transition:transform .15s,box-shadow .15s}
 .sp:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(15,23,42,.08),0 14px 32px rgba(15,23,42,.12)}
 .sp-founding{border:2px solid var(--night)}
@@ -935,7 +944,7 @@ body[data-page=submit] .site-head .add-btn{outline:2px solid #fff;outline-offset
 .sp-open em{font-style:normal;margin-top:10px;font-size:13px;font-weight:700;color:var(--night);border-bottom:2px solid var(--gold)}
 .sp-strip{--sp-pad:20px;margin:26px calc(-1 * var(--sp-pad)) 6px}
 .sp-strip-h{display:flex;justify-content:space-between;align-items:baseline;padding:0 var(--sp-pad);margin-bottom:8px}
-.sp-strip-h span:last-child{font-size:12px;font-weight:700;color:var(--night)}
+.sp-strip-h span:last-child:not(:first-child){font-size:12px;font-weight:700;color:var(--night)}
 .sp-strip-row{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-left:var(--sp-pad);padding:4px var(--sp-pad) 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .sp-strip-row::-webkit-scrollbar{display:none}
 .sp-strip .sp{flex:0 0 74%;max-width:300px;scroll-snap-align:start}
@@ -946,7 +955,7 @@ body[data-page=submit] .site-head .add-btn{outline:2px solid #fff;outline-offset
 .sp-strip .sp-cta{margin:8px 12px 12px;min-height:36px;font-size:13px}
 .sp-strip .sp-open{min-height:0;padding:16px 12px}
 .sp-strip .sp-open b{font-size:19px}
-@media (min-width:760px){.sp-strip-h span:last-child{display:none}}
+@media (min-width:760px){.sp-strip-h span:last-child:not(:first-child){display:none}}   /* hide only the Swipe hint, never the label */
 @media (max-width:720px){.sp-strip{--sp-pad:14px}}
 /* rails only where the side margins are wide enough: from 1900px, the same width and edge gap as the live-stream box
    (min(380px, (100vw - 1248px) / 2), 4px outside the 1200px wrap), so both sides stay balanced and clear of the content. */
@@ -956,7 +965,7 @@ body[data-page=submit] .site-head .add-btn{outline:2px solid #fff;outline-offset
  .home-wrap:has(> .ls-box) .sp-rail-r{display:none}   /* the live-stream box already uses the right margin */
  .sp-strip{display:none}
  .sp-rail-in{width:100%;padding-top:20px;gap:16px}
- .sp-rail-h{font-size:14px}
+ .sp-rail-h{font-size:17px;padding-top:26px}   /* clear of the hero photo edge */
  .sp-rail .sp-badge{font-size:16px;padding:9px 16px}
  .sp-rail .sp-logo{padding:26px 22px 12px}
  .sp-rail .sp-logo img{max-width:290px}

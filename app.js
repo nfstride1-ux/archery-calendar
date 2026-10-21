@@ -1983,7 +1983,7 @@ const fdate = d => !d ? '' : /^\d{4}-\d{2}-\d{2}$/.test(d) ? pd(d).toLocaleDateS
     <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true"><input type="hidden" name="_captcha" value="false">
     <div class="grid2">${fld('f_name', 'Your name', `<input id="f_name" name="name" required maxlength="80" autocomplete="name">`, 'Shown as the photo credit.')}
     ${fld('f_email', 'Your email', `<input id="f_email" name="email" type="email" required maxlength="120" autocomplete="email" inputmode="email">`, 'Not published.')}</div>
-    ${fld('f_file', 'Photo', `<input id="f_file" name="attachment" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.heic" required>`, `JPG, PNG or phone photo, up to ${FAN_MAX_MB} MB.`)}
+    ${fld('f_file', 'Photo', `<input id="f_file" name="attachment" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.heic" required><div class="fan-prev" id="f_prev" hidden aria-live="polite"><div class="fan-prev-box"><img id="f_prev_img" alt="Preview of the photo you chose"><p class="fan-prev-na" id="f_prev_na" hidden>Preview not available, photo will still be sent.</p></div><p class="fan-prev-meta"><span id="f_prev_n"></span> <button type="button" class="linkbtn" id="f_prev_x">Remove photo</button></p></div>`, `JPG, PNG or phone photo, up to ${FAN_MAX_MB} MB.`)}
     ${fld('f_cap', 'Caption', `<input id="f_cap" name="caption" required maxlength="200" placeholder="e.g. Our juniors at the Gosnells club champs">`)}
     <div class="grid2">${fld('f_event', 'Event or club', `<input id="f_event" name="event_or_club" maxlength="140">`, '', false)}
     ${fld('f_date', 'Date taken', `<input id="f_date" name="date_taken" type="date" max="${iso(today())}">`, '', false)}</div>
@@ -2048,6 +2048,24 @@ function bindFans(){
     add('f_ok', g('f_ok').checked ? '' : 'Please tick to confirm.');
     return errs;
   }
+  // Small preview under the file input (display only; the form still submits the chosen file as before)
+  let prevUrl = '';
+  const showPrev = () => {
+    const f = g('f_file').files[0], box = g('f_prev'), im = g('f_prev_img'), na = g('f_prev_na');
+    if (prevUrl) { URL.revokeObjectURL(prevUrl); prevUrl = ''; }
+    im.onload = im.onerror = null; im.removeAttribute('src');
+    if (!f) { box.hidden = true; return; }
+    const mb = f.size / 1048576;
+    g('f_prev_n').textContent = `${f.name} · ${mb >= 1 ? mb.toFixed(1) + ' MB' : Math.max(1, Math.round(f.size / 1024)) + ' KB'}`;
+    box.hidden = false; im.hidden = false; na.hidden = true;
+    prevUrl = URL.createObjectURL(f);
+    im.onerror = () => { im.hidden = true; na.hidden = false; if (prevUrl) { URL.revokeObjectURL(prevUrl); prevUrl = ''; } };
+    im.onload = () => { if (prevUrl) { URL.revokeObjectURL(prevUrl); prevUrl = ''; } };
+    im.src = prevUrl;
+  };
+  g('f_file').addEventListener('change', showPrev);
+  g('f_prev_x').onclick = () => { const i = g('f_file'); i.value = ''; showPrev(); i.dispatchEvent(new Event('change', {bubbles: true})); i.focus(); };
+  if (g('f_file').files.length) showPrev();
   fm.addEventListener('change', () => { if (fm.dataset.tried) check(); });
   fm.onsubmit = async e => {
     e.preventDefault(); fm.dataset.tried = 1;
