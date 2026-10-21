@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Club events API – Archery Calendar</title>
+<meta name="description" content="How a club's own software can add, update and remove its events on archerycalendars.com automatically.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon.ico">
+<style>
+  body{margin:0;background:#fff;color:#1a1f2b;font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+  main{max-width:820px;margin:0 auto;padding:28px 20px 60px}
+  h1{font-size:30px;line-height:1.2;margin:0 0 6px;color:#0b3d91}
+  h2{font-size:21px;margin:34px 0 8px;color:#0b3d91;border-bottom:2px solid #dbe6f7;padding-bottom:4px}
+  a{color:#0b57d0}
+  code,pre{font:14px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}
+  code{background:#eef3fb;padding:1px 5px;border-radius:4px}
+  pre{background:#f4f7fc;border:1px solid #d5dfef;border-radius:8px;padding:14px;overflow-x:auto}
+  pre code{background:none;padding:0}
+  table{border-collapse:collapse;width:100%;font-size:15px}
+  th,td{border:1px solid #d5dfef;padding:7px 9px;text-align:left;vertical-align:top}
+  th{background:#eef3fb}
+  .box{background:#f4f7fc;border-left:4px solid #0b57d0;padding:10px 14px;border-radius:4px}
+  .lead{font-size:18px;color:#3a4357}
+  .back{display:inline-block;margin-bottom:18px}
+</style>
+</head>
+<body>
+<main>
+<a class="back" href="./">← Archery Calendar</a>
+<h1>Club events API</h1>
+<p class="lead">For clubs that keep their events in their own software. Send each event to us as you enter it, and it shows on archerycalendars.com within a minute. Change it later and the calendar updates. Delete it and it's gone.</p>
+
+<div class="box"><b>Getting a key:</b> email <a href="mailto:nfshold@gmail.com">nfshold@gmail.com</a>. Each club gets its own private key. A key can only add, change or remove that club's own events, nothing else on the site. Keep it secret, like a password. If it ever leaks, tell us and we'll switch it off straight away and send a new one.</div>
+
+<h2>1. The address</h2>
+<pre><code>https://sllsqpfqwckwtljzjxli.supabase.co/functions/v1/club-events</code></pre>
+<p>Send your key in a header on every call:</p>
+<pre><code>X-Api-Key: YOUR_CLUB_KEY</code></pre>
+
+<h2>2. Add or update events</h2>
+<p><b>POST</b> JSON with <code>Content-Type: application/json</code>. Send one event or up to 50 at a time.</p>
+<pre><code>curl -X POST https://sllsqpfqwckwtljzjxli.supabase.co/functions/v1/club-events \
+  -H "X-Api-Key: YOUR_CLUB_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+  "events": [{
+    "id": "2027-field-champs",
+    "title": "Club Field Championships",
+    "start_date": "2027-03-14",
+    "end_date": "2027-03-14",
+    "start_time": "8:30am assembly, 9:00am shooting",
+    "venue": "Club range, 1 Example Road, Sometown SA",
+    "shoot_type": "Field",
+    "entry_method": "archers_diary",
+    "entry_link": "https://archersdiary.com/...",
+    "entry_close_date": "2027-03-07",
+    "rounds": "2 x 28 target field",
+    "notes": "BBQ lunch available.",
+    "flyer_url": "https://yourclub.example/flyers/field-champs.pdf"
+  }]
+}'</code></pre>
+<p><b>Updates:</b> the <code>id</code> is <i>your own</i> id for the event (from your software). Send the same <code>id</code> again with the new details and we replace the old version, so there are never duplicates. Always send the full event, not just the changed fields.</p>
+
+<h2>3. The fields</h2>
+<table>
+<tr><th>Field</th><th>Needed?</th><th>What to send</th></tr>
+<tr><td><code>id</code></td><td>Yes</td><td>Your own id for the event. 1–64 letters, numbers, <code>. _ : -</code></td></tr>
+<tr><td><code>title</code></td><td>Yes</td><td>Event name, up to 140 characters</td></tr>
+<tr><td><code>start_date</code></td><td>Yes</td><td><code>YYYY-MM-DD</code></td></tr>
+<tr><td><code>end_date</code></td><td>No</td><td><code>YYYY-MM-DD</code>. Leave out for one-day events</td></tr>
+<tr><td><code>start_time</code></td><td>No</td><td>Plain words, up to 100 characters, e.g. <code>8:30am assembly</code></td></tr>
+<tr><td><code>venue</code></td><td>Yes</td><td>Range name and address, up to 200 characters</td></tr>
+<tr><td><code>shoot_type</code></td><td>Yes</td><td>One of <code>Target</code>, <code>Field</code>, <code>3D</code>, <code>Indoor</code>, <code>Clout</code>, <code>Other</code></td></tr>
+<tr><td><code>entry_method</code></td><td>No</td><td>One of <code>archers_diary</code>, <code>iscored</code>, <code>assemble</code>, <code>trybooking</code>, <code>eventbrite</code>, <code>online_form</code>, <code>website</code>, <code>email</code>, <code>day</code> (pay on the day), <code>other</code> (explain in notes)</td></tr>
+<tr><td><code>entry_link</code></td><td>For online entry</td><td>Full web address starting with <code>https://</code></td></tr>
+<tr><td><code>entry_email</code></td><td>For <code>email</code> entry</td><td>The club's entries email address (shown publicly)</td></tr>
+<tr><td><code>entry_close_date</code></td><td>No</td><td><code>YYYY-MM-DD</code></td></tr>
+<tr><td><code>bank_account_name</code>, <code>bank_bsb</code>, <code>bank_account</code>, <code>bank_reference</code></td><td>No</td><td>Payment details for entries (BSB 6 digits, account 4–10 digits)</td></tr>
+<tr><td><code>rounds</code></td><td>No</td><td>Up to 200 characters</td></tr>
+<tr><td><code>notes</code></td><td>No</td><td>Anything else archers should know, up to 1000 characters</td></tr>
+<tr><td><code>flyer_url</code></td><td>No</td><td>Web address of the flyer (image or PDF), starting with <code>https://</code></td></tr>
+<tr><td><code>cancelled</code></td><td>No</td><td><code>true</code> keeps the event listed but marks it Cancelled</td></tr>
+</table>
+<p>Rules: text can't contain <code>&lt;</code> or <code>&gt;</code>, links must be <code>http(s)://</code> web addresses, and any field not in this table is refused. Your club's name and state come from your key, so you don't send them.</p>
+
+<h2>4. Delete an event</h2>
+<pre><code>curl -X DELETE "https://sllsqpfqwckwtljzjxli.supabase.co/functions/v1/club-events?id=2027-field-champs" \
+  -H "X-Api-Key: YOUR_CLUB_KEY"</code></pre>
+<p>To keep it on the calendar marked as cancelled instead, send it again with <code>"cancelled": true</code>.</p>
+
+<h2>5. See what we have for your club</h2>
+<pre><code>curl https://sllsqpfqwckwtljzjxli.supabase.co/functions/v1/club-events -H "X-Api-Key: YOUR_CLUB_KEY"</code></pre>
+
+<h2>6. Responses</h2>
+<p>Success (HTTP 200):</p>
+<pre><code>{
+ "ok": true,
+ "club": "Your Archery Club",
+ "results": [ { "id": "2027-field-champs", "result": "created" } ],
+ "page": "https://archerycalendars.com/#/browse"
+}</code></pre>
+<p><code>result</code> is <code>created</code> or <code>updated</code>. If anything is wrong, nothing in that call is saved and you get <code>"ok": false</code> with a plain-English reason:</p>
+<pre><code>{ "ok": false, "error": "event 1: start_date must be YYYY-MM-DD" }</code></pre>
+<table>
+<tr><th>Code</th><th>Meaning</th></tr>
+<tr><td>400</td><td>Something in the event needs fixing (the error says what)</td></tr>
+<tr><td>401</td><td>Key missing, wrong or switched off</td></tr>
+<tr><td>404</td><td>Delete: no event with that id for your club</td></tr>
+<tr><td>413</td><td>Too big (max 64 KB per call)</td></tr>
+<tr><td>429</td><td>Too many calls (max 30 a minute, 600 a day). Wait and try again</td></tr>
+</table>
+
+<h2>Good to know</h2>
+<ul>
+<li>Events usually show on the site within a minute. Archers may need to refresh the page.</li>
+<li>Please send one call at a time (wait for each answer before the next). Batch several events into one call instead of sending them side by side.</li>
+<li>Every call is logged (club, time, what changed).</li>
+<li>Only send real, confirmed events. Questions? Email <a href="mailto:nfshold@gmail.com">nfshold@gmail.com</a>.</li>
+</ul>
+</main>
+</body>
+</html>

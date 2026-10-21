@@ -111,7 +111,7 @@ async function boot(){
     navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(r => { r.update();
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') r.update().catch(() => {}); }); }).catch(() => {});
   }
-  importHandoff(); clubUpdates(); route(); loadLiveSubs().then(n => loadOverrides().then(m => { if (n || m) softRender(); })); cardsLoad().catch(() => {});
+  importHandoff(); clubUpdates(); route(); Promise.all([loadLiveSubs(), loadClubApi()]).then(([n, k]) => loadOverrides().then(m => { if (n || k || m) softRender(); })); cardsLoad().catch(() => {});
   if (Object.keys(S.saved).concat(Object.keys(S.entries)).some(id => !BYID[id])) loadIntl().then(() => { const y = scrollY; render(); scrollTo(0, y); }).catch(() => {}); checkReminders(); setInterval(checkReminders, 60 * 60 * 1000);
   initAuth().catch(e => console.warn('auth', e));
 }
@@ -2400,6 +2400,34 @@ async function loadLiveSubs(){
     if (!r.ok) return 0; const rows = await r.json(); let n = 0;
     FLYQ.rows = rows.filter(row => row.details_pending || !row.start_date); n += FLYQ.rows.length;
     rows.filter(row => !(row.details_pending || !row.start_date)).forEach(row => { const x = subToEv(row); if (!BYID[x.id]) { EV.push(x); n++; } BYID[x.id] = Object.assign(BYID[x.id] || {}, x); });
+    if (n) EV.sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
+    return n; } catch { return 0; }
+}
+/* Club events API (owner 21 Oct 2026, supabase/functions/club-events, docs club-api.html): trusted clubs push their own events
+   from their own software. The function writes the public fields to storage club-api-public/events.json; this merges them in.
+   Everything is escaped on display like every other event. */
+const API_REG_URL = ['archers_diary', 'iscored', 'assemble', 'trybooking', 'eventbrite', 'online_form', 'website'];
+function apiToEv(r){
+  const pdf = /\.pdf($|\?)/i.test(r.flyer_url || ''), reg = [];
+  if (API_REG_URL.includes(r.entry_method) && /^https?:\/\//i.test(r.entry_link || '')) reg.push({m: r.entry_method, url: r.entry_link});
+  if (r.entry_method === 'email' && r.entry_email) reg.push({m: 'email', email: r.entry_email});
+  if (r.entry_method === 'day') reg.push({m: 'day'});
+  if (r.bank_bsb || r.bank_account) reg.push({m: 'bank', acct_name: r.bank_account_name || '', bsb: r.bank_bsb || '', acct: r.bank_account || '', ref: r.bank_reference || ''});
+  const ev = {id: ('api-' + r.club_slug + '-' + r.id).replace(/[^A-Za-z0-9_-]/g, '-'), _api: true, name: r.title, org: r.club, org_id: 'club-submission', org_group: 'club', club_name: r.club,
+    country_code: CC3[r.country] || r.country || '', country: r.country === 'AU' ? 'Australia' : (r.country || ''), state: r.state || null, state_code: r.state || null,
+    start_date: r.start_date, end_date: r.end_date || r.start_date, dates_confirmed: true, location: r.venue, discipline: r.shoot_type || 'Target', level: 'Club', category: 'competition',
+    start_times: r.start_time || null, rounds: r.rounds || null, entry_close_date: r.entry_close_date || null, registration_url: /^https?:\/\//i.test(r.entry_link || '') ? r.entry_link : null,
+    register: reg.length ? reg : undefined, notes: r.notes || null, cancelled: !!r.cancelled, last_checked: String(r.updated_at || '').slice(0, 10),
+    flyer_year: r.flyer_url ? +r.start_date.slice(0, 4) : null, flyer_is_current: true, flyer_kind: 'Flyer', flyer_label: 'Flyer from the club', flyer_web: r.flyer_url || null,
+    flyer_web_sm: r.flyer_url ? (pdf ? 'icons/icon-512.png' : r.flyer_url) : null, flyer_is_pdf: pdf, flyer_org: r.club, flyer_source_url: pdf ? r.flyer_url : null};
+  return clubDefaults(ev);
+}
+async function loadClubApi(){
+  if (!SB_URL) return 0;
+  try { const r = await fetch(SB_URL.replace(/\/$/, '') + '/storage/v1/object/public/club-api-public/events.json', {cache: 'no-cache'});
+    if (!r.ok) return 0; const d = await r.json(); let n = 0;
+    (Array.isArray(d.events) ? d.events : []).filter(e => e && e.id && e.title && /^\d{4}-\d{2}-\d{2}$/.test(e.start_date || '')).forEach(row => {
+      const x = apiToEv(row); if (!BYID[x.id]) { EV.push(x); n++; } BYID[x.id] = Object.assign(BYID[x.id] || {}, x); });
     if (n) EV.sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
     return n; } catch { return 0; }
 }
