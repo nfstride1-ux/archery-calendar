@@ -1026,3 +1026,8 @@ body[data-page=submit] .site-head .add-btn{outline:2px solid #fff;outline-offset
 .next-card .cd-cap{font-size:13px;opacity:.85;margin-bottom:2px}
 /* Phones: room at the bottom so the floating + and ? buttons never cover the end of event notes. */
 @media (max-width:760px){main{padding-bottom:calc(150px + env(safe-area-inset-bottom))}}
+/* ScoreTool scores in My events (scoretool.js) */
+.grid .c.stl{box-shadow:inset 0 -4px 0 #1d4ed8}
+.grid .c .stl-dot{position:absolute;left:3px;bottom:3px;font-size:11px;line-height:1}
+.stl-box .stl-sc{background:#e3ecff;color:#1d4ed8;border-color:#bcd0f5}
+.stl-code{display:block;word-break:break-all;user-select:all;background:#f4f7fb;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:14px}
