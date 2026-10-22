@@ -613,12 +613,12 @@ function lsBox(){
       <a class="ls-post" href="${LS.post}" target="_blank" rel="noopener">Archery Australia post ↗</a></div>
   </aside>`;
 }
-setInterval(() => {
+function TICKS_LS(){
   const b = document.getElementById('lsBox'); if (!b) return;
   const st = lsState(), on = b.classList.contains('on');
   if (st === 'over' || (st === 'live') !== on) { const t = document.createElement('div'); t.innerHTML = lsBox(); b.replaceWith(...t.childNodes); return; }
   const c = document.getElementById('lsCount'); if (c) c.innerHTML = lsCount(LS.start - Date.now());
-}, 1000);
+}
 function vHome(){
   setTitle('Archery Calendar');
   const mine = Object.keys(S.saved).map(id => BYID[id]).filter(Boolean);
@@ -632,7 +632,7 @@ function vHome(){
     <div class="hero-copy"><p class="kicker">Field · 3D · Target · Indoor</p><h1>Every archery event.<br><span>One calendar.</span></h1>
       <p class="lead">${AUS() ? 'Find archery events across Australia – Archery Australia, ABA and Archery WA.' : 'Find events across WA, Australia and the world.'} Save them, get reminders before entries close, and keep track of what you've paid.</p>
       <form class="hero-search" id="heroSearch" role="search"><input type="search" id="hq" placeholder="Search an event, club or town…" aria-label="Search events"><button class="btn gold" type="submit">Find events</button></form></div>
-    ${next ? `<a class="next-card" href="#/shoot/${esc(next.id)}"><span class="kicker">Your next event</span><b class="big">${bigDays(next.start_date)}</b>
+    ${next ? `<a class="next-card" href="#/shoot/${esc(next.id)}"><span class="kicker">Your next event</span>${bigCd(next)}
       <span class="nm">${esc(next.name)}</span><span>${esc(range(next))}</span><span class="st">${ST_TXT[ST(next.id)]}</span></a>` : ''}
   </div>${credit('mixed')}</section>
   <div class="wrap home-wrap">${spRails()}
@@ -2320,20 +2320,32 @@ function tzMid(d, tz){
     const off = Date.UTC(+p.year, p.month - 1, +p.day, +p.hour % 24, +p.minute) - g; return g - off; } catch { return new Date(y, m - 1, dd).getTime(); }
 }
 const dayLbl = n => n === 1 ? '1 day' : n + ' days';
-const bigDays = sd => { const d = daysTo(sd); return d < 0 ? 'On now' : d === 0 ? 'Today' : dayLbl(d); };   // calendar days, same as the countdown badge
+const cdSE = x => { const tz = evTz(x); return [tzMid(x.start_date, tz), tzMid(x.end_date || x.start_date, tz) + 864e5]; };
+// Big next-card number: whole days left, floor of the same remaining time the badge ticks down (badge 112d 7h → big 112 days).
+function bigText(s, e){ const n = Date.now(); if (n >= e) return 'Finished'; if (n >= s) return 'On now'; const d = Math.floor((s - n) / 864e5); return d < 1 ? 'Under 1 day' : dayLbl(d); }
+function bigCd(x){ if (!x || !/^\d{4}-\d\d-\d\d$/.test(x.start_date || '')) return '<b class="big">–</b>'; const [s, e] = cdSE(x);
+  return `<b class="big" data-cdb="${s}" data-cde="${e}">${bigText(s, e)}</b><small class="cd-cap">full days until the first day starts</small>`; }
 function cdBadge(x, big){
   if (!x || !isMajor(x) || !/^\d{4}-\d\d-\d\d$/.test(x.start_date || '') || x.cancelled || x.status === 'cancelled' || x.status === 'dates_tba') return '';
   if (iPast(x)) return '';
-  const tz = evTz(x), s = tzMid(x.start_date, tz), e = tzMid(x.end_date || x.start_date, tz) + 864e5;
-  return `<span class="b cd${big ? ' cd-big' : ''}" data-cd="${s}" data-cde="${e}" data-cds="${x.start_date}" title="Calendar days until the first day. Start times aren't shown unless the organiser publishes them.">${cdText(s, e, x.start_date)}</span>`;
+  const [s, e] = cdSE(x);
+  return `<span class="b cd${big ? ' cd-big' : ''}" data-cd="${s}" data-cde="${e}" title="Counts down to the start of the first day (midnight, venue time). Start times aren't shown unless the organiser publishes them.">${cdText(s, e)}</span>`;
 }
-function cdText(s, e, sd){
+function cdText(s, e){
   const n = Date.now();
   if (n >= e) return '◷ Finished';
   if (n >= s) { const tot = Math.max(1, Math.round((e - s) / 864e5)), d = Math.min(tot, Math.floor((n - s) / 864e5) + 1); return `● Live now · day ${d} of ${tot}`; }
-  const d = sd ? daysTo(sd) : Math.ceil((s - n) / 864e5); return d <= 0 ? '⏱ Starts today' : `⏱ Starts in ${dayLbl(d)}`;
+  const t = Math.floor((s - n) / 1000), d = Math.floor(t / 86400), h = Math.floor(t % 86400 / 3600), m = Math.floor(t % 3600 / 60), sec = t % 60;
+  return `⏱ Starts in ${d ? d + 'd ' : ''}${d || h ? h + 'h ' : ''}${m}m ${sec}s`;
 }
-setInterval(() => document.querySelectorAll('[data-cd]').forEach(el => { const t = cdText(+el.dataset.cd, +el.dataset.cde, el.dataset.cds); if (el.textContent !== t) el.textContent = t; el.classList.toggle('cd-live', t.startsWith('●')); }), 20000);
+// One shared 1-second ticker for every countdown on the page (badges, next-card big number, livestream box); paused while the tab is hidden.
+const TICKS = [TICKS_LS, () => {
+  document.querySelectorAll('[data-cd]').forEach(el => { const t = cdText(+el.dataset.cd, +el.dataset.cde); if (el.textContent !== t) el.textContent = t; el.classList.toggle('cd-live', t.startsWith('●')); });
+  document.querySelectorAll('[data-cdb]').forEach(el => { const t = bigText(+el.dataset.cdb, +el.dataset.cde); if (el.textContent !== t) el.textContent = t; });
+}];
+const tickAll = () => { if (!document.hidden) TICKS.forEach(f => { try { f(); } catch (_) {} }); };
+setInterval(tickAll, 1000);
+document.addEventListener('visibilitychange', tickAll);
 /* Country home: intro from the data itself, next events, majors, US states, then the full list (vIntl). */
 function iMini(x){
   const u = entryUrl(x);
@@ -2435,7 +2447,7 @@ function vCountryHome(code){
   const maj = up.filter(isMajor), nReg = up.filter(x => entryUrl(x)).length, orgs = [...new Set(up.map(x => x.source_name || x.org).filter(Boolean))];
   const mine = Object.keys(S.saved).map(id => BYID[id]).filter(x => x && x.country_code === code && !iPast(x)).sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
   const nx = mine[0] || maj.find(x => x.start_date);
-  const next = nx ? `<a class="next-card" href="#/shoot/${esc(encodeURIComponent(nx.id))}"><span class="kicker">${mine[0] ? 'Your next event' : 'Next major event'}</span><b class="big">${bigDays(nx.start_date)}</b>
+  const next = nx ? `<a class="next-card" href="#/shoot/${esc(encodeURIComponent(nx.id))}"><span class="kicker">${mine[0] ? 'Your next event' : 'Next major event'}</span>${bigCd(nx)}
       <span class="nm">${esc(nx.name)}</span><span>${esc(range(nx))}</span>${cdBadge(nx)}</a>` : '';
   const lead = up.length ? `${up.length} upcoming event${up.length === 1 ? '' : 's'}${orgs.length ? ` from ${esc(orgs.slice(0, 3).join(', '))}${orgs.length > 3 ? ` and ${orgs.length - 3} more` : ''}` : ''}. Save them, get reminders before entries close, and keep track of what you've paid.` : `No upcoming events listed in ${the}${esc(nm)} yet.`;
   const disc = CDISC.map(([k, lbl, re, gen]) => { const ev = up.filter(x => re.test(x.discipline || x.name || '')); return {k, lbl, n: ev.length, ph: discPhoto(code, k, gen), by: [...new Set(ev.map(x => x.org).filter(Boolean))].slice(0, 3)}; }).filter(d => d.n);

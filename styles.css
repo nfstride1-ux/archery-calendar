@@ -1021,3 +1021,8 @@ body[data-page=submit] .site-head .add-btn{outline:2px solid #fff;outline-offset
 .fan-empty p{max-width:56ch;margin:8px auto}
 .fan-add-top{margin:14px 0}
 @media (max-width:480px){.site-head .myev-btn{font-size:0;padding-left:10px;padding-right:10px}.site-head .myev-btn::before{content:"★";font-size:16px}.site-head .ctry-sw{padding-left:8px;padding-right:8px}}
+/* Countdowns tick every second (22 Oct 2026): fixed-width digits so badges don't jiggle; caption under the next-card big number. */
+.b.cd{font-variant-numeric:tabular-nums}
+.next-card .cd-cap{font-size:13px;opacity:.85;margin-bottom:2px}
+/* Phones: room at the bottom so the floating + and ? buttons never cover the end of event notes. */
+@media (max-width:760px){main{padding-bottom:calc(150px + env(safe-area-inset-bottom))}}
