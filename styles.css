@@ -980,3 +980,9 @@ body[data-page=submit] .site-head .add-btn{outline:2px solid #fff;outline-offset
 .sp-strip.one .sp-strip-row{overflow:visible;justify-content:center;scroll-snap-type:none}
 .sp-strip.one .sp{flex:0 1 380px;max-width:100%}
 .sp-strip.one .sp-strip-h{justify-content:center}
+
+/* One-tap entry button on event cards, international cards and the calendar day panel (owner 22 Oct 2026) */
+.ev-reg{min-height:44px;padding:8px 14px;font-size:15px;margin:10px 0 2px;white-space:normal;text-align:center;max-width:100%}
+.ev-reg.gold{border-color:var(--night)}
+.dp-reg{display:inline-flex;margin:6px 0 4px;min-height:40px;font-size:14px}
+.iacts .ev-reg{margin:0 8px 0 0}

@@ -214,7 +214,7 @@ function range(x){
 const OST = {flyer:['📄','2026 flyer out','Flyer out'], no_details:['⏳','No entry details yet','No entry details yet']};
 function orgBadge(x){
   const k = x.org_status; if (!OST[k] || x.info_only && !x.book_anytime) return '';
-  const lbl = k === 'flyer' ? (x.flyer_is_current ? `${x.flyer_year || (x.start_date || '').slice(0, 4)} flyer out` : 'Details & entry out') : OST[k][1];
+  const lbl = k === 'flyer' ? (x.flyer_is_current ? `${x.flyer_year || (x.start_date || '').slice(0, 4)} flyer out` : 'Details & entry out') : k === 'no_details' && entryUrl(x) ? 'No flyer yet' : OST[k][1];   // has an entry link, so don't say "no entry details"
   return `<span class="b ost ost-${k}">${OST[k][0]} ${lbl}</span>`;
 }
 function entryBadge(x){
@@ -245,6 +245,23 @@ function badges(x, onCard){
   if (x.world_level) b.push(AUS() ? `<span class="b world">🏆 International event</span>` : `<span class="b world">🌐 World / major</span>`);
   return b.length ? `<div class="badges">${b.join('')}</div>` : '';
 }
+/* One-tap entry link (owner 22 Oct 2026): the event's own registration/entry page as a gold button wherever an event shows.
+   Only http(s) URLs from the event's registration_url (never invented); nothing for info-only, cancelled or finished events. */
+const safeHttp = u => { u = String(u || '').trim(); return /^https?:\/\/[^\s<>"'`]+$/i.test(u) ? u : ''; };
+function entryUrl(x){ return !x || (x.info_only && !x.book_anytime) || x.cancelled ? '' : safeHttp(x.registration_url); }
+function entryLbl(x){
+  const closed = !!x.entry_close_date && daysTo(x.entry_close_date) < 0;
+  if (closed) return 'Entry page (entries closed)';
+  if (catOf(x) === 'come_try') return 'Book a place';
+  if (!isShoot(x)) return 'Register / book';
+  return {event_page: 'Event page & entry', entry_system: 'Enter via Archers Diary', how_to_guide: 'How to enter', volunteer: 'Volunteer application'}[x.registration_url_kind] || 'Register / Enter';
+}
+function entryBtn(x, cls = '', past){
+  const u = entryUrl(x); if (!u || (past !== undefined ? past : (x.end_date || x.start_date) && daysTo(x.end_date || x.start_date) < 0)) return '';
+  const lb = entryLbl(x), closed = /closed/.test(lb);
+  if (closed && !cls.includes('keep-closed')) return '';   // cards skip closed entries; the event page still links the entry page
+  return `<a class="btn sm ${closed ? 'alt' : 'gold'} ev-reg ${cls}" href="${esc(u)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(lb)}: ${esc(x.name)} (opens in a new tab)"><span aria-hidden="true">✍</span> ${esc(lb)} <span aria-hidden="true">↗</span></a>`;
+}
 function evCard(x){
   const on = !!S.saved[x.id], t = theme(x);
   return `<article class="ev th-${t}" role="link" tabindex="0" data-open="${esc(x.id)}" aria-label="${esc(x.name)}">
@@ -253,6 +270,7 @@ function evCard(x){
       <h3 class="name">${esc(x.name)}</h3>
       <div class="meta">${esc([x.location, x.country_code && x.country_code !== 'AUS' ? x.country : x.state].filter(Boolean).join(' · '))}</div>
       <div class="meta">${isAba(x) ? abaLogo(32, 'org-logo') : ''}${esc([x.discipline, x.org, x.aba_branch && x.aba_branch.split(' – ')[0]].filter(Boolean).join(' · '))}</div>${badges(x, true)}
+      ${entryBtn(x)}
       ${x.info_only ? '' : statusToggles(x)}</div>
     ${x.info_only ? '' : `<button class="star" aria-pressed="${on}" aria-label="${on ? 'Remove from' : 'Add to'} my events" data-star="${esc(x.id)}">${on ? '★' : '☆'}</button>`}
   </article>`;
@@ -372,7 +390,7 @@ function flyerCard(x){
     <div><span class="fl-badge ${cur ? 'cur' : 'old'}">${cur ? '📄 ' + x.flyer_year + ' flyer – current' : '⚠ ' + x.flyer_year + ' flyer – last year'}</span>
     <p class="fl-label">${esc(x.flyer_label)}</p><p class="note">Tap the flyer to open it full size.<br>${x.flyer_url ? `Original: <a href="${esc(x.flyer_url)}" target="_blank" rel="noopener">organiser's file</a>` : esc(x.flyer_found_on || '')}</p></div></div>
     ${rows.length ? `<h2 class="sec">${cur ? 'From the flyer' : 'From last year’s flyer – may change this year'}</h2><dl class="kv fx">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${ly}${esc(v)}</dd>`).join('')}</dl>
-    ${!cur && ex.registration_url ? `<p class="note">Last year's entry link: <a href="${esc(ex.registration_url)}" target="_blank" rel="noopener">${esc(ex.registration_url.slice(0,60))}…</a> (may not work this year)</p>` : ''}` : ''}</section>`;
+    ${!cur && safeHttp(ex.registration_url) ? `<p class="note">Last year's entry link: <a href="${esc(safeHttp(ex.registration_url))}" target="_blank" rel="noopener">${esc(ex.registration_url.slice(0,60))}…</a> (may not work this year)</p>` : ''}` : ''}</section>`;
 }
 /* REG-START ---------- How to register: structured entry methods (x.register = [{m, url, note, name, email, phone, phone_src, acct_name, bsb, acct, ref, text}]) ----------
    Options per region come from the entry systems actually used in our data (events.json / intl.json registration links) plus the bodies' own pages:
@@ -487,7 +505,7 @@ const regFirstUrl = L => (L.find(o => o.url) || {}).url || null;
 function regSection(x){
   const hasPay = !!payBox(x), L = regOf(x).filter(o => !(hasPay && o.m === 'bank')); if (!L.length) return '';
   const row = o => { const d = REG_M[o.m] || REG_M.other, note = o.note ? `<p class="note">${esc(o.note)}</p>` : '';
-    if (d.kind === 'url' && o.url) return `<li><a class="btn gold block" href="${esc(o.url)}" target="_blank" rel="noopener">${o.m === 'website' || o.m === 'online_form' ? '↗ Register online' : `↗ Register on ${esc(d.label)}`}</a>${o.m === 'website' || o.m === 'online_form' ? `<p class="note">${esc(d.label)}</p>` : ''}${note}</li>`;
+    if (d.kind === 'url' && safeHttp(o.url)) return `<li><a class="btn gold block" href="${esc(safeHttp(o.url))}" target="_blank" rel="noopener">${o.m === 'website' || o.m === 'online_form' ? '↗ Register online' : `↗ Register on ${esc(d.label)}`}</a>${o.m === 'website' || o.m === 'online_form' ? `<p class="note">${esc(d.label)}</p>` : ''}${note}</li>`;
     if (d.kind === 'url') return `<li><b>${esc(d.label)}</b>${note}</li>`;
     if (d.kind === 'contact') return !(o.href || o.email) ? `<li><b>✉ Contact${o.name ? ' ' + esc(o.name) : ''}</b>${note}</li>` : `<li><a class="btn alt block" href="${esc(o.href || 'mailto:' + o.email + '?subject=' + encodeURIComponent('Entry: ' + x.name))}">✉ Email ${esc(o.name || o.email)}</a><p class="note">${esc(o.email)}${o.phone && o.phone_src === 'flyer' ? ' · ' + esc(o.phone) + ' (from the flyer)' : ''}</p>${note}</li>`;
     if (d.kind === 'bank') return `<li class="reg-bank"><b>💳 Bank transfer</b>${note}</li>`;
@@ -839,7 +857,8 @@ function vShoot(id){
   const kindLbl = catOf(x) === 'come_try' && x.registration_url ? 'Book a place' : !isShoot(x) && x.registration_url ? 'Register / book' : null;
   const t = theme(x), isMail = x.registration_url_kind === 'email';
   const closedNow = !!x.entry_close_date && daysTo(x.entry_close_date) < 0;
-  const regBtn = x.info_only && !x.book_anytime ? '' : x.registration_url ? `<a class="btn ${closedNow ? 'alt' : 'gold'} block big-btn" id="regBtn" href="${esc(x.registration_url)}" ${isMail ? '' : 'target="_blank" rel="noopener"'}>${isMail ? '' : '↗ '}${kindLbl && !closedNow ? kindLbl : closedNow ? kind.replace(/^Register \/ enter$/, 'Entry page') + ' (entries closed)' : kind}</a>
+  const regU = /^mailto:[^\s<>"'`]+$/i.test(String(x.registration_url || '').trim()) ? String(x.registration_url).trim() : safeHttp(x.registration_url);   // http(s) or mailto only
+  const regBtn = x.info_only && !x.book_anytime ? '' : regU ? `<a class="btn ${closedNow ? 'alt' : 'gold'} block big-btn" id="regBtn" href="${esc(regU)}" ${/^mailto:/i.test(regU) ? '' : 'target="_blank" rel="noopener noreferrer"'}>${isMail ? '' : '↗ '}${kindLbl && !closedNow ? kindLbl : closedNow ? kind.replace(/^Register \/ enter$/, 'Entry page') + ' (entries closed)' : kind}</a>
       ${x.registration_email ? `<p class="note">Opens your email app addressed to <b>${esc(x.registration_email.to)}</b>${x.registration_email.cc ? `, cc ${esc(x.registration_email.cc)}` : ''}, with ${esc(x.registration_email.fields.join(', '))} ready to fill in.</p>` : ''}
       ${x.registration_note ? `<p class="note reg-note">ℹ ${esc(x.registration_note)}</p>` : ''}
       ${x.registration_url_source ? `<p class="note">Entry details from ${esc(x.registration_url_source)}.</p>` : ''}`
@@ -949,7 +968,7 @@ function dayPanel(k, mineDay){
   const d = pd(k), lbl = d.toLocaleDateString('en-AU', {weekday:'long', day:'numeric', month:'long', year:'numeric'}), fol = followed();
   const clubNm = x => (CLUB[x.club_id] || {}).name || folIds(x).map(id => (CLUB[id] || {}).name).filter(Boolean)[0] || x.host || x.org || '';
   const where = x => x.state || (x._intl ? x.country_name || x.country || '' : '');
-  const row = x => { const on = !!S.saved[x.id]; return `<li class="dp-row"><div class="dp-main"><a href="#/shoot/${encodeURIComponent(x.id)}${isPast(x) ? '?r=1' : ''}"><b>${esc(x.name)}</b></a>${isPast(x) ? ` <a class="b res-lnk" href="#/shoot/${encodeURIComponent(x.id)}?r=1">🏆 ${resOf(x) ? (resOf(x).kind === 'full' ? 'See scores' : 'Results link') : 'Results'}</a>` : ''}<div class="meta">${esc([clubNm(x), x.start_times || (x.end_date && x.end_date !== x.start_date ? range(x) : ''), where(x)].filter(Boolean).join(' · '))}</div>${S.myClubs.some(id => folIds(x).includes(id)) ? '<span class="b myclub">🏠 My club</span>' : '<span class="b watching">👁 Watching</span>'}${clubOnly(x) ? ' <span class="b members">👥 Members only</span>' : ''}</div>${x.info_only ? '' : `<button class="star dp-star" aria-pressed="${on}" aria-label="${on ? 'Remove from' : 'Add to'} my events" data-star="${esc(x.id)}">${on ? '★' : '☆'}</button>`}</li>`; };
+  const row = x => { const on = !!S.saved[x.id]; return `<li class="dp-row"><div class="dp-main"><a href="#/shoot/${encodeURIComponent(x.id)}${isPast(x) ? '?r=1' : ''}"><b>${esc(x.name)}</b></a>${isPast(x) ? ` <a class="b res-lnk" href="#/shoot/${encodeURIComponent(x.id)}?r=1">🏆 ${resOf(x) ? (resOf(x).kind === 'full' ? 'See scores' : 'Results link') : 'Results'}</a>` : ''}<div class="meta">${esc([clubNm(x), x.start_times || (x.end_date && x.end_date !== x.start_date ? range(x) : ''), where(x)].filter(Boolean).join(' · '))}</div>${isPast(x) ? '' : entryBtn(x, 'dp-reg', false)}${S.myClubs.some(id => folIds(x).includes(id)) ? '<span class="b myclub">🏠 My club</span>' : '<span class="b watching">👁 Watching</span>'}${clubOnly(x) ? ' <span class="b members">👥 Members only</span>' : ''}</div>${x.info_only ? '' : `<button class="star dp-star" aria-pressed="${on}" aria-label="${on ? 'Remove from' : 'Add to'} my events" data-star="${esc(x.id)}">${on ? '★' : '☆'}</button>`}</li>`; };
   const fs = folOnDay(k).filter(x => !mineDay.some(y => y.id === x.id));
   const homeSt = (CLUB[S.homeClub] || CLUB[fol[0]] || {}).state || (S.states.length === 1 ? S.states[0] : '');
   const stCode = homeSt && (STATES.find(s => s[0] === homeSt || s[1] === homeSt) || [])[0] || '';
@@ -2234,7 +2253,7 @@ function iCard(x){
       <div class="meta">${esc([x.discipline || 'Discipline not listed', x.org].filter(Boolean).join(' · '))}</div>
       <div class="badges">${iStatus(x)}${x.category === 'seminar' ? '<span class="b sem">🎤 Seminar / workshop</span>' : ''}${(x.intl_clubs || []).some(id => followed().includes(id)) ? '<span class="b watching">👁 Watching</span>' : ''}${x.dates_confirmed === false && x.start_date && !iPast(x) ? '<span class="b tbc">? Dates TBC</span>' : ''}${x.world_major ? '<span class="b world">🏆 World major</span>' : x.world_level && x.us_org === 'world' ? '<span class="b world">🌐 World event</span>' : ''}${x.registration_opens && !iPast(x) && !(x.registration_url && /^\d{4}-/.test(x.registration_opens) && daysTo(x.registration_opens) < 0) ? `<span class="b tbc">◷ Entries open ${esc(/^\d{4}-\d\d-\d\d$/.test(x.registration_opens) ? pd(x.registration_opens).toLocaleDateString('en-AU', {day: 'numeric', month: 'short', year: 'numeric'}) : x.registration_opens)}</span>` : ''}</div>
       ${x.notes ? `<p class="note">${esc(x.notes)}</p>` : ''}
-      <p class="iacts">${x.registration_url ? `<a class="btn sm" href="${esc(x.registration_url)}" target="_blank" rel="noopener">✍ Entry / event page ↗</a>` : '<span class="note">No entry link published yet.</span>'}
+      <p class="iacts">${entryUrl(x) ? (iPast(x) ? `<a class="btn sm alt" href="${esc(entryUrl(x))}" target="_blank" rel="noopener noreferrer">✍ Entry / event page ↗</a>` : entryBtn(x, '', false)) : '<span class="note">No entry link published yet.</span>'}
         ${x.source_url ? `<a href="${esc(x.source_url)}" target="_blank" rel="noopener">Source${x.source_name ? ': ' + esc(x.source_name) : ''} ↗</a>` : `<span class="note">Source: ${esc(x.source_name || 'organiser')}</span>`}${x.also_listed ? ` · <a href="${esc(x.also_listed)}" target="_blank" rel="noopener">Also listed ↗</a>` : ''}</p></div>
   </article>`;
 }
@@ -2521,7 +2540,7 @@ function vAdmin(){
       <h3>${esc(r.name)}${r.details_pending ? ' <span class="tag pend-tag">Details coming</span>' : ''}</h3><p>${r.start_date ? esc(r.start_date) : 'No date yet'}${r.end_date && r.end_date !== r.start_date ? ' to ' + esc(r.end_date) : ''} · ${esc(r.venue || '')} · ${esc(r.discipline || '')}</p>
       <p><b>${esc(r.club)}</b> (${esc([r.state, r.country].filter(Boolean).join(', '))}) – ${esc(r.organisation_type || '')}</p>
       <p>From <b>${esc(r.submitter_name || '')}</b>, ${esc(r.role || '')} · ${esc(r.submitter_email || '')}${r.contact_email && r.contact_email !== r.submitter_email ? ' · contact ' + esc(r.contact_email) : ''}</p>
-      ${r.registration_url ? `<p>Entry: <a href="${esc(r.registration_url)}" target="_blank" rel="noopener">${esc(r.registration_url)}</a></p>` : ''}${r.notes ? `<p class="note">${esc(r.notes)}</p>` : ''}
+      ${safeHttp(r.registration_url) ? `<p>Entry: <a href="${esc(safeHttp(r.registration_url))}" target="_blank" rel="noopener">${esc(r.registration_url)}</a></p>` : ''}${r.notes ? `<p class="note">${esc(r.notes)}</p>` : ''}
       <div class="row adm-btns">${r.status !== 'live' ? `<button class="btn gold sm" data-act="live">✓ Approve</button>` : `<a class="btn alt sm" href="#/shoot/sub-${esc(r.id)}">View live</a>`}${r.status !== 'rejected' ? `<button class="btn alt sm" data-act="rejected">✕ Reject</button>` : ''}<button class="btn alt sm" data-act="edit">✏️ Edit</button><button class="btn alt sm" data-act="delete">🗑 Delete</button>
       <label class="chk adm-inst"><input type="checkbox" data-inst="${esc(em)}" data-club="${esc(r.club)}" data-name="${esc(r.submitter_name || '')}" ${s && s.instant ? 'checked' : ''}> Instant-approve ${esc(em)}</label></div></div></article>`; };
   return `${head}<div class="wrap adm"><section class="panel"><p>${tabs} <button type="button" class="btn sm alt" id="admReload">↻ Reload</button></p>${ADM.err ? `<p class="err" role="alert">${esc(ADM.err)}</p>` : ''}</section>
