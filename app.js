@@ -2005,23 +2005,23 @@ function vFans(){
   const sent = /(?:^|[?&])fsent=1/.test(location.search);
   if (sent) history.replaceState(null, '', location.pathname + '#/fans');
 const fdate = d => !d ? '' : /^\d{4}-\d{2}-\d{2}$/.test(d) ? pd(d).toLocaleDateString(LOC(), {day: 'numeric', month: 'short', year: 'numeric'}) : d;
-  const hc = homeCode(), FW = FANS.map((f, i) => [f, i]).sort((a, b) => ((b[0].country || 'AUS') === hc) - ((a[0].country || 'AUS') === hc)), nHere = FW.filter(([f]) => (f.country || 'AUS') === hc).length;
+  const hc = homeCode(), FW = FANS.map((f, i) => [f, i]).filter(([f]) => (f.country || 'AUS') === hc), nHere = FW.length, cnm = hc === 'AUS' ? 'Australia' : hc === 'WORLD' ? '' : iName(hc), cthe = /^(United|Netherlands)/.test(cnm) ? 'the ' : '';   // each country shows only its own fan photos (photo.country, default AUS)
   const wall = FW.map(([f, i]) => `<figure class="fan"><button type="button" class="fan-img" data-zoom="${i}" aria-label="Enlarge: ${esc(f.caption)}"><img src="${esc(f.sm)}" alt="${esc(f.alt || f.caption)}" loading="lazy" width="${f.w ? 480 : ''}" height="${f.w ? Math.round(480 * f.h / f.w) : ''}"><span class="zoom" aria-hidden="true">⤢ Enlarge</span></button>
     <figcaption><b>${esc(f.caption)}</b>${[f.credit && '📷 ' + f.credit, f.event, fdate(f.date)].filter(Boolean).length ? `<span class="fan-meta">${esc([f.credit && '📷 ' + f.credit, f.event, fdate(f.date)].filter(Boolean).join(' · '))}</span>` : ''}</figcaption></figure>`).join('');
   const fld = (id, lab, inp, hint = '', req = true) => `<div class="fld" data-f="${id}"><label for="${id}">${lab}${req ? ' <span class="req" aria-hidden="true">*</span>' : ' <span class="opt">(optional)</span>'}</label>${inp}${hint ? `<p class="hint">${hint}</p>` : ''}<p class="err" id="${id}_e" role="alert"></p></div>`;
   return `${head}<div class="wrap fans">
   ${sent ? `<section class="panel thanks" id="fanThanks" tabindex="-1"><span class="thanks-mark" aria-hidden="true">✓</span><h2 class="sec">Thanks, we’ve got your photo</h2><p>We check every photo before it goes up, usually within a few days. We’ll email you if we have a question.</p></section>` : ''}
-  ${hc !== 'AUS' && !nHere ? `<p class="note fan-ctry">No fan photos from ${hc === 'WORLD' ? 'your country' : (/^(United|Netherlands)/.test(iName(hc)) ? 'the ' : '') + esc(iName(hc))} yet. Send yours below! The photos here are from Australia.</p>` : ''}
-  <div class="fan-wall">${wall || '<p class="note">No photos yet – be the first!</p>'}</div>
+  ${nHere ? `<p class="fan-add-top"><a class="btn gold" href="#send" data-fansend>📷 Add your fan photo</a></p><div class="fan-wall">${wall}</div>` : `<section class="panel fan-empty"><h2 class="sec-h">No fan photos from ${cnm ? cthe + esc(cnm) : 'your country'} yet</h2><p>Be the first: podiums, club days, a great shot on the course. It takes a minute, like adding an event, and we check every photo before it goes up.</p><p><a class="btn gold big-btn" href="#send" data-fansend>📷 Add your fan photo</a></p></section>`}
   <p class="note fan-rm">In a photo and want it removed? Email <a href="mailto:${esc(SITE.contact)}?subject=${encodeURIComponent('Photo removal – Archery Calendar Fans page')}">${esc(SITE.contact)}</a> and we’ll take it down.</p>
   <section class="panel sub fan-send" id="send"><h2 class="sec">📷 Send us your photo</h2>
-   <ul class="ticks"><li>Podiums, club days, a great shot on the course – archery photos from Australia.</li><li>Every photo is <b>reviewed before it’s posted</b>. We may crop or resize it.</li><li>Fields marked <span class="req">*</span> are required.</li></ul>
-   <form id="fanForm" class="sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate><input type="hidden" name="Country" value="${esc(hc === 'AUS' ? 'Australia' : hc === 'WORLD' ? 'Other' : iName(hc))}">
+   <ul class="ticks"><li>Podiums, club days, a great shot on the course – archery photos from ${cnm ? cthe + esc(cnm) : 'your country'}.</li><li>Every photo is <b>reviewed before it’s posted</b>. We may crop or resize it.</li><li>Fields marked <span class="req">*</span> are required.</li></ul>
+   <form id="fanForm" class="sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate>
     <input type="hidden" name="_subject" value="Fan photo – Archery Calendar"><input type="hidden" name="_template" value="table"><input type="hidden" name="_next" value="">
     <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true"><input type="hidden" name="_captcha" value="false">
     <div class="grid2">${fld('f_name', 'Your name', `<input id="f_name" name="name" required maxlength="80" autocomplete="name">`, 'Shown as the photo credit.')}
     ${fld('f_email', 'Your email', `<input id="f_email" name="email" type="email" required maxlength="120" autocomplete="email" inputmode="email">`, 'Not published.')}</div>
     ${fld('f_file', 'Photo', `<input id="f_file" name="attachment" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.heic" required><div class="fan-prev" id="f_prev" hidden aria-live="polite"><div class="fan-prev-box"><img id="f_prev_img" alt="Preview of the photo you chose"><p class="fan-prev-na" id="f_prev_na" hidden>Preview not available, photo will still be sent.</p></div><p class="fan-prev-meta"><span id="f_prev_n"></span> <button type="button" class="linkbtn" id="f_prev_x">Remove photo</button></p></div>`, `JPG, PNG or phone photo, up to ${FAN_MAX_MB} MB.`)}
+    ${fld('f_ctry', 'Country', `<input id="f_ctry" name="country" required maxlength="60" autocomplete="country-name" value="${esc(cnm)}">`, 'Change it if the photo is from somewhere else.')}
     ${fld('f_cap', 'Caption', `<input id="f_cap" name="caption" required maxlength="200" placeholder="e.g. Our juniors at the Gosnells club champs">`)}
     <div class="grid2">${fld('f_event', 'Event or club', `<input id="f_event" name="event_or_club" maxlength="140">`, '', false)}
     ${fld('f_date', 'Date taken', `<input id="f_date" name="date_taken" type="date" max="${iso(today())}">`, '', false)}</div>
@@ -2071,6 +2071,7 @@ function bindFans(){
     $('#lbImg').src = f.file; $('#lbImg').alt = f.alt || f.caption; $('#lbCap').textContent = f.caption + (f.credit ? ' · 📷 ' + f.credit : ''); d.showModal ? d.showModal() : d.setAttribute('open', ''); });
   const lb = $('#lb'); if (lb) lb.onclick = e => { if (e.target === lb) lb.close(); };
   const t = $('#fanThanks'); if (t) t.focus();
+  document.querySelectorAll('[data-fansend]').forEach(a => a.onclick = e => { e.preventDefault(); const sd = $('#send'); if (sd) { sd.scrollIntoView({behavior: 'smooth', block: 'start'}); const f = $('#f_file'); f && setTimeout(() => f.focus({preventScroll: true}), 400); } });
   const fm = $('#fanForm'); if (!fm) return;
   sendAsCard(fm, {name: 'f_name', email: 'f_email', posting: 1});
   const g = id => $('#' + id), val = id => (g(id).value || '').trim();
@@ -2082,6 +2083,7 @@ function bindFans(){
     const f = g('f_file').files[0];
     add('f_file', !f ? 'Choose a photo.' : !/^image\//.test(f.type) && !/\.(jpe?g|png|webp|heic|heif)$/i.test(f.name) ? 'That isn’t a photo file.' : f.size > FAN_MAX_MB * 1048576 ? `That photo is ${(f.size / 1048576).toFixed(1)} MB. The limit is ${FAN_MAX_MB} MB.` : '');
     add('f_cap', val('f_cap') ? '' : 'Add a caption.');
+    add('f_ctry', val('f_ctry') ? '' : 'Enter the country.');
     add('f_date', val('f_date') && val('f_date') > iso(today()) ? 'The date is in the future.' : '');
     add('f_ok', g('f_ok').checked ? '' : 'Please tick to confirm.');
     return errs;
@@ -2110,7 +2112,7 @@ function bindFans(){
     const errs = check();
     if (errs.length) { $('#fanErr').textContent = `Please fix ${errs.length === 1 ? 'the highlighted field' : `the ${errs.length} highlighted fields`}.`; const i = g(errs[0]); i && i.focus(); return; }
     $('#fanErr').textContent = '';
-    if (!SITE.formEndpoint || !navigator.onLine) { location.href = `mailto:${SITE.contact}?subject=${encodeURIComponent('Fan photo: ' + val('f_cap'))}&body=${encodeURIComponent(`Name: ${val('f_name')}\nCaption: ${val('f_cap')}\nEvent/club: ${val('f_event')}\nDate: ${val('f_date')}\nConsent: Yes\n\n>>> Please attach your photo to this email. <<<\n`)}`; return; }
+    if (!SITE.formEndpoint || !navigator.onLine) { location.href = `mailto:${SITE.contact}?subject=${encodeURIComponent('Fan photo: ' + val('f_cap'))}&body=${encodeURIComponent(`Name: ${val('f_name')}\nCaption: ${val('f_cap')}\nEvent/club: ${val('f_event')}\nCountry: ${val('f_ctry')}\nDate: ${val('f_date')}\nConsent: Yes\n\n>>> Please attach your photo to this email. <<<\n`)}`; return; }
     const b = g('fanBtn'); b.disabled = true; b.textContent = 'Preparing photo…';
     const f = g('f_file').files[0];
     if (f.size > 4 * 1048576 || !/^image\/(jpeg|png)$/.test(f.type)) {
@@ -2118,7 +2120,7 @@ function bindFans(){
       if (s !== f && typeof DataTransfer === 'function') { try { const dt = new DataTransfer(); dt.items.add(s); g('f_file').files = dt.files; } catch {} }
     }
     fm.querySelector('[name=_next]').value = location.href.split('#')[0].split('?')[0] + '?fsent=1#/fans'; rememberMe({s_name: val('f_name'), s_email: val('f_email')});
-    fm.querySelector('[name=_subject]').value = `Fan photo: ${val('f_cap').slice(0, 80)} – ${val('f_name')}`;
+    fm.querySelector('[name=_subject]').value = `Fan photo (${val('f_ctry').slice(0, 40)}): ${val('f_cap').slice(0, 80)} – ${val('f_name')}`;
     b.textContent = 'Sending…'; HTMLFormElement.prototype.submit.call(fm);
   };
 }
@@ -2482,9 +2484,10 @@ function vIntl(arg){
   const wctr = world ? [...new Set(all.filter(x => IF.past || !iPast(x)).map(x => x.country_code).filter(Boolean))].sort((a, b) => iName(a) < iName(b) ? -1 : 1) : [];
   const active = [IF.q && `search “${esc(IF.q)}”`, IF.org && US_ORGS.find(o => o[0] === IF.org)[1], IF.st && US_ST[IF.st], world && IF.ctry && iName(IF.ctry), world && IF.major && 'World majors', IF.cat === 'seminar' ? 'Seminars & workshops' : IF.cat === 'shoots' && 'Events only', IF.disc].filter(Boolean);
   return `${head}<div class="wrap intl-page home-wrap">${spRails(world ? 'world_intl' : String(iIso(code) || code).toLowerCase() + '_intl')}
-    ${iCtryStrip(code)}${world ? '' : iHome(code, all)}${spStrip(world ? 'world' : String(iIso(code) || code).toLowerCase(), 'intl')}
-    <div class="intl-top"><label for="ictry">Country</label><select id="ictry">${intlOptions(code)}</select>
-      <a class="note" href="#/browse">🇦🇺 Australian events are in Find events</a></div>
+    <section class="panel intl-menu intl-panel" aria-labelledby="intlH"><h2 class="sec-h" id="intlH">🌐 International</h2>
+      <form id="intlForm" class="intl-form"><label for="intlSel">Country</label><select id="intlSel">${intlOptions(code)}</select><button class="btn" type="submit">Show events →</button>
+      <a class="note" href="#/browse">🇦🇺 Australian events are in Find events</a></form>${iCtryStrip(code)}</section>
+    ${world ? '' : iHome(code, all)}${spStrip(world ? 'world' : String(iIso(code) || code).toLowerCase(), 'intl')}
     <div class="browse"><div class="filters"><input type="search" id="iq" placeholder="${usa ? 'Search: vegas, nfaa, ibo, texas, CA…' : code === 'DEN' ? 'Search: DM, indoor, 3D, Aarhus, Taastrup…' : code === 'MAS' ? 'Search: indoor, Selangor, Kedah, seminar…' : code === 'KOR' ? 'Search: festival, trials, Jeju, workshop…' : code === 'NZL' ? 'Search: Auckland, Christchurch, 720, NZFAA, 3D…' : code === 'CAN' ? 'Search: Manitoba, BC, MICA, 18m, nationals…' : 'Search event, club, town…'}" value="${esc(IF.q)}" aria-label="Search events in ${esc(nm)}">
       ${world ? `<label for="ictr2" class="sr">Country</label><select id="ictr2" aria-label="Country"><option value="">All countries</option>${wctr.map(c => `<option value="${c}" ${IF.ctry === c ? 'selected' : ''}>${flag(iIso(c))} ${esc(iName(c))}</option>`).join('')}</select>` : ''}
       ${usa ? `<label for="ist" class="sr">State</label><select id="ist" aria-label="US state"><option value="">All states</option>${sts.map(c => `<option value="${c}" ${IF.st === c ? 'selected' : ''}>${esc(US_ST[c])} (${c})</option>`).join('')}</select>` : ''}
@@ -2506,7 +2509,7 @@ function vIntl(arg){
 }
 function bindIntl(){
   const rer = sel => { const y = scrollY; render(); scrollTo(0, y); const e = sel && $(sel); if (e) { e.focus({preventScroll: true}); if (e.type === 'search' || e.type === 'text') e.setSelectionRange(e.value.length, e.value.length); } };
-  const c = $('#ictry'); if (c) c.onchange = () => { location.hash = '#/intl/' + c.value; };
+  bindIntlMenu(); const c = $('#intlSel'); if (c) c.onchange = () => { location.hash = '#/intl/' + c.value; };
   const q = $('#iq'); if (q) q.oninput = () => { IF.q = q.value; IF.limit = 60; clearTimeout(bindIntl.t); bindIntl.t = setTimeout(() => { rer('#iq'); gcSearch(IF.q); }, 250); };
   const st = $('#ist'); if (st) st.onchange = () => { IF.st = st.value; rer('#ist'); };
   const c2 = $('#ictr2'); if (c2) c2.onchange = () => { IF.ctry = c2.value; IF.limit = 60; rer('#ictr2'); };
