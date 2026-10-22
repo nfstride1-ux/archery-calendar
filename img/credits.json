@@ -268,17 +268,17 @@
   "alt": "Kyudo archers drawing their bows in a dojo"
  },
  "c_mx": {
-  "file": "img/hero-mx-arqueria.jpg",
-  "sm": "img/hero-mx-arqueria-sm.jpg",
-  "title": "Photo: Federación Mexicana de Tiro con Arco",
-  "by": "Federación Mexicana de Tiro con Arco",
-  "source": "Facebook",
-  "url": null,
-  "license": null,
-  "license_url": null,
-  "date": null,
-  "year": 2026,
-  "pos": "60% 12%",
-  "alt": "Three Mexican archers celebrating with their bows"
+  "file": "img/hero-mx-zocalo-2017.jpg",
+  "sm": "img/hero-mx-zocalo-2017-sm.jpg",
+  "title": "World Archery Championships 2017, Zócalo, Mexico City",
+  "by": "Gobierno de la Ciudad de México (Gobierno CDMX)",
+  "source": "Wikimedia Commons",
+  "url": "https://commons.wikimedia.org/wiki/File:Campeonato_de_Tiro_con_Arco_2017_-i---i-_(24033275948).jpg",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "date": "2017-10-22",
+  "year": 2017,
+  "pos": "center 40%",
+  "alt": "A Mexican archer at full draw in front of Mexican flags and a packed stand at the 2017 World Archery Championships in the Zócalo, Mexico City"
  }
 }

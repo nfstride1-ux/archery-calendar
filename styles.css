@@ -986,3 +986,31 @@ body[data-page=submit] .site-head .add-btn{outline:2px solid #fff;outline-offset
 .ev-reg.gold{border-color:var(--night)}
 .dp-reg{display:inline-flex;margin:6px 0 4px;min-height:40px;font-size:14px}
 .iacts .ev-reg{margin:0 8px 0 0}
+/* Country home pages, countdowns, organiser page (countrypages preview) */
+.ctry-strip{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.ctry-chip{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:6px 12px;border:2px solid var(--night);border-radius:999px;background:#fff;color:var(--night);font-weight:700;text-decoration:none;font-size:15px}
+.ctry-chip small{font-weight:600;opacity:.8}
+.ctry-chip[aria-current=page]{background:var(--night);color:#fff}
+.ctry-chip:hover{background:#eef3fb}.ctry-chip[aria-current=page]:hover{background:var(--night)}
+.ihome{margin:14px 0}
+.ihome-intro{font-size:17px;margin:0 0 6px}
+.ph-credit{font-size:13px;color:#4b5563;margin:0 0 8px}
+.ihome-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media (max-width:760px){.ihome-grid{grid-template-columns:1fr}}
+.imini-list{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.imini{border:1px solid #d5dfef;border-left:4px solid #0b57d0;border-radius:8px;padding:10px 12px;background:#fff;display:grid;gap:4px}
+.imini-n{font-weight:800;color:var(--night);text-decoration:none;font-size:16px}.imini-n:hover{text-decoration:underline}
+.imini-m{font-size:14px;color:#374151}
+.imini .ev-reg{justify-self:start}
+.b.cd{color:#0b3d91;border:2px solid #0b57d0;background:#eef3fb;font-weight:800;font-variant-numeric:tabular-nums}
+.b.cd.cd-big{font-size:16px;padding:6px 12px}
+.b.cd.cd-live{background:#0b3d91;color:#fff;border-color:#0b3d91}
+.iempty p{max-width:62ch}
+.org-form{display:grid;gap:6px;max-width:560px}
+.org-form label{font-weight:800;margin-top:6px}
+.org-form input,.org-form textarea{font:inherit;font-size:16px;padding:9px 10px;border:2px solid #9aa9c2;border-radius:8px}
+.org-form [aria-invalid]{border-color:#0b3d91;border-style:dashed;outline:2px solid #0b57d0}
+.org-form .btn{justify-self:start;margin-top:8px}
+.org-page pre{background:#f4f7fc;border:1px solid #d5dfef;border-radius:8px;padding:12px;overflow-x:auto;font-size:13px}
+.org-page code{word-break:break-all}
+@media (max-width:760px){.ctry-strip{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:6px;scrollbar-width:thin}.ctry-chip{flex:0 0 auto}}
