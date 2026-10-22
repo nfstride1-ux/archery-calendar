@@ -261,7 +261,7 @@ function entryLbl(x){
   if (closed) return 'Entry page (entries closed)';
   if (catOf(x) === 'come_try') return 'Book a place';
   if (!isShoot(x)) return 'Register / book';
-  return {event_page: 'Event page & entry', entry_system: 'Enter via Archers Diary', how_to_guide: 'How to enter', volunteer: 'Volunteer application'}[x.registration_url_kind] || 'Register / Enter';
+  return {event_page: 'Event page & entry', entry_system: 'Enter via Archers Diary', wareos: 'Enter via World Archery', how_to_guide: 'How to enter', volunteer: 'Volunteer application'}[x.registration_url_kind] || 'Register / Enter';
 }
 function entryBtn(x, cls = '', past){
   const u = entryUrl(x); if (!u || (past !== undefined ? past : (x.end_date || x.start_date) && daysTo(x.end_date || x.start_date) < 0)) return '';
@@ -437,7 +437,7 @@ function deriveRegister(x){
   const out = [], has = m => out.some(o => o.m === m), fx = String((x.flyer_extract || {}).registration || '').trim(), u = x.registration_url || '';
   let fromText = false;
   if (u && !/^mailto:/i.test(u)) { const m = regMethodOfUrl(u), o = {m, url: u};
-    if (x.registration_url_kind === 'how_to_guide') o.note = 'How-to-enter guide'; else if (x.registration_url_kind === 'volunteer') o.note = 'Volunteer application';
+    if (x.registration_url_kind === 'wareos') o.wa = true; else if (x.registration_url_kind === 'how_to_guide') o.note = 'How-to-enter guide'; else if (x.registration_url_kind === 'volunteer') o.note = 'Volunteer application';
     else if (fx && m === 'archers_diary' && /→|–|club:|select|pick/i.test(fx)) o.note = fx.split(/;|, pay|\. /i)[0].replace(/^(Enter via |Register on )/i, '');
     out.push(o); }
   const mails = [];
@@ -512,7 +512,7 @@ const regFirstUrl = L => (L.find(o => o.url) || {}).url || null;
 function regSection(x){
   const hasPay = !!payBox(x), L = regOf(x).filter(o => !(hasPay && o.m === 'bank')); if (!L.length) return '';
   const row = o => { const d = REG_M[o.m] || REG_M.other, note = o.note ? `<p class="note">${esc(o.note)}</p>` : '';
-    if (d.kind === 'url' && safeHttp(o.url)) return `<li><a class="btn gold block" href="${esc(safeHttp(o.url))}" target="_blank" rel="noopener">${o.m === 'website' || o.m === 'online_form' ? '↗ Register online' : `↗ Register on ${esc(d.label)}`}</a>${o.m === 'website' || o.m === 'online_form' ? `<p class="note">${esc(d.label)}</p>` : ''}${note}</li>`;
+    if (d.kind === 'url' && safeHttp(o.url)) return `<li><a class="btn gold block" href="${esc(safeHttp(o.url))}" target="_blank" rel="noopener">${o.wa ? '↗ Enter via World Archery' : o.m === 'website' || o.m === 'online_form' ? '↗ Register online' : `↗ Register on ${esc(d.label)}`}</a>${o.m === 'website' || o.m === 'online_form' ? `<p class="note">${esc(d.label)}</p>` : ''}${note}</li>`;
     if (d.kind === 'url') return `<li><b>${esc(d.label)}</b>${note}</li>`;
     if (d.kind === 'contact') return !(o.href || o.email) ? `<li><b>✉ Contact${o.name ? ' ' + esc(o.name) : ''}</b>${note}</li>` : `<li><a class="btn alt block" href="${esc(o.href || 'mailto:' + o.email + '?subject=' + encodeURIComponent('Entry: ' + x.name))}">✉ Email ${esc(o.name || o.email)}</a><p class="note">${esc(o.email)}${o.phone && o.phone_src === 'flyer' ? ' · ' + esc(o.phone) + ' (from the flyer)' : ''}</p>${note}</li>`;
     if (d.kind === 'bank') return `<li class="reg-bank"><b>💳 Bank transfer</b>${note}</li>`;
@@ -632,7 +632,7 @@ function vHome(){
     <div class="hero-copy"><p class="kicker">Field · 3D · Target · Indoor</p><h1>Every archery event.<br><span>One calendar.</span></h1>
       <p class="lead">${AUS() ? 'Find archery events across Australia – Archery Australia, ABA and Archery WA.' : 'Find events across WA, Australia and the world.'} Save them, get reminders before entries close, and keep track of what you've paid.</p>
       <form class="hero-search" id="heroSearch" role="search"><input type="search" id="hq" placeholder="Search an event, club or town…" aria-label="Search events"><button class="btn gold" type="submit">Find events</button></form></div>
-    ${next ? `<a class="next-card" href="#/shoot/${esc(next.id)}"><span class="kicker">Your next event</span><b class="big">${daysTo(next.start_date) <= 0 ? 'On now' : daysTo(next.start_date) + (daysTo(next.start_date) === 1 ? ' day' : ' days')}</b>
+    ${next ? `<a class="next-card" href="#/shoot/${esc(next.id)}"><span class="kicker">Your next event</span><b class="big">${bigDays(next.start_date)}</b>
       <span class="nm">${esc(next.name)}</span><span>${esc(range(next))}</span><span class="st">${ST_TXT[ST(next.id)]}</span></a>` : ''}
   </div>${credit('mixed')}</section>
   <div class="wrap home-wrap">${spRails()}
@@ -859,7 +859,7 @@ function vShoot(id){
   const x = BYID[id]; if (!x) return vNotFound('event', id);
   setTitle(x.name);
   const on = !!S.saved[id], en = S.entries[id];
-  const kind = {how_to_guide:'How to enter (guide)', event_page:'Event page & entry', entry_page:'Register / enter', entry_system:'Enter via Archers Diary (search the event)', email:'✉ Email your nomination', nominate_aba_j:'How to nominate (ABA Branch J contacts)'}[x.registration_url_kind] || 'Register / enter';
+  const kind = {how_to_guide:'How to enter (guide)', event_page:'Event page & entry', entry_page:'Register / enter', entry_system:'Enter via Archers Diary (search the event)', wareos:'Enter via World Archery', email:'✉ Email your nomination', nominate_aba_j:'How to nominate (ABA Branch J contacts)'}[x.registration_url_kind] || 'Register / enter';
   const kindLbl = catOf(x) === 'come_try' && x.registration_url ? 'Book a place' : !isShoot(x) && x.registration_url ? 'Register / book' : null;
   const t = theme(x), isMail = x.registration_url_kind === 'email';
   const closedNow = !!x.entry_close_date && daysTo(x.entry_close_date) < 0;
@@ -2319,19 +2319,21 @@ function tzMid(d, tz){
   try { const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', {timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric'}).formatToParts(new Date(g)).map(o => [o.type, o.value]));
     const off = Date.UTC(+p.year, p.month - 1, +p.day, +p.hour % 24, +p.minute) - g; return g - off; } catch { return new Date(y, m - 1, dd).getTime(); }
 }
+const dayLbl = n => n === 1 ? '1 day' : n + ' days';
+const bigDays = sd => { const d = daysTo(sd); return d < 0 ? 'On now' : d === 0 ? 'Today' : dayLbl(d); };   // calendar days, same as the countdown badge
 function cdBadge(x, big){
   if (!x || !isMajor(x) || !/^\d{4}-\d\d-\d\d$/.test(x.start_date || '') || x.cancelled || x.status === 'cancelled' || x.status === 'dates_tba') return '';
   if (iPast(x)) return '';
   const tz = evTz(x), s = tzMid(x.start_date, tz), e = tzMid(x.end_date || x.start_date, tz) + 864e5;
-  return `<span class="b cd${big ? ' cd-big' : ''}" data-cd="${s}" data-cde="${e}" title="Counts down to the start of the first day${tz ? ' (venue time)' : ''}. Start times aren't shown unless the organiser publishes them.">${cdText(s, e)}</span>`;
+  return `<span class="b cd${big ? ' cd-big' : ''}" data-cd="${s}" data-cde="${e}" data-cds="${x.start_date}" title="Calendar days until the first day. Start times aren't shown unless the organiser publishes them.">${cdText(s, e, x.start_date)}</span>`;
 }
-function cdText(s, e){
+function cdText(s, e, sd){
   const n = Date.now();
   if (n >= e) return '◷ Finished';
   if (n >= s) { const tot = Math.max(1, Math.round((e - s) / 864e5)), d = Math.min(tot, Math.floor((n - s) / 864e5) + 1); return `● Live now · day ${d} of ${tot}`; }
-  const m = Math.floor((s - n) / 6e4); return `⏱ Starts in ${Math.floor(m / 1440)}d ${Math.floor(m % 1440 / 60)}h ${m % 60}m`;
+  const d = sd ? daysTo(sd) : Math.ceil((s - n) / 864e5); return d <= 0 ? '⏱ Starts today' : `⏱ Starts in ${dayLbl(d)}`;
 }
-setInterval(() => document.querySelectorAll('[data-cd]').forEach(el => { const t = cdText(+el.dataset.cd, +el.dataset.cde); if (el.textContent !== t) el.textContent = t; el.classList.toggle('cd-live', t.startsWith('●')); }), 20000);
+setInterval(() => document.querySelectorAll('[data-cd]').forEach(el => { const t = cdText(+el.dataset.cd, +el.dataset.cde, el.dataset.cds); if (el.textContent !== t) el.textContent = t; el.classList.toggle('cd-live', t.startsWith('●')); }), 20000);
 /* Country home: intro from the data itself, next events, majors, US states, then the full list (vIntl). */
 function iMini(x){
   const u = entryUrl(x);
@@ -2433,7 +2435,7 @@ function vCountryHome(code){
   const maj = up.filter(isMajor), nReg = up.filter(x => entryUrl(x)).length, orgs = [...new Set(up.map(x => x.source_name || x.org).filter(Boolean))];
   const mine = Object.keys(S.saved).map(id => BYID[id]).filter(x => x && x.country_code === code && !iPast(x)).sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
   const nx = mine[0] || maj.find(x => x.start_date);
-  const next = nx ? `<a class="next-card" href="#/shoot/${esc(encodeURIComponent(nx.id))}"><span class="kicker">${mine[0] ? 'Your next event' : 'Next major event'}</span><b class="big">${daysTo(nx.start_date) <= 0 ? 'On now' : daysTo(nx.start_date) + (daysTo(nx.start_date) === 1 ? ' day' : ' days')}</b>
+  const next = nx ? `<a class="next-card" href="#/shoot/${esc(encodeURIComponent(nx.id))}"><span class="kicker">${mine[0] ? 'Your next event' : 'Next major event'}</span><b class="big">${bigDays(nx.start_date)}</b>
       <span class="nm">${esc(nx.name)}</span><span>${esc(range(nx))}</span>${cdBadge(nx)}</a>` : '';
   const lead = up.length ? `${up.length} upcoming event${up.length === 1 ? '' : 's'}${orgs.length ? ` from ${esc(orgs.slice(0, 3).join(', '))}${orgs.length > 3 ? ` and ${orgs.length - 3} more` : ''}` : ''}. Save them, get reminders before entries close, and keep track of what you've paid.` : `No upcoming events listed in ${the}${esc(nm)} yet.`;
   const disc = CDISC.map(([k, lbl, re, gen]) => { const ev = up.filter(x => re.test(x.discipline || x.name || '')); return {k, lbl, n: ev.length, ph: discPhoto(code, k, gen), by: [...new Set(ev.map(x => x.org).filter(Boolean))].slice(0, 3)}; }).filter(d => d.n);
