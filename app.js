@@ -2199,7 +2199,7 @@ function intlMenu(){
   if (!ICTRY.countries.length) return '';
   return `<section class="panel intl-menu" aria-labelledby="intlH"><h2 class="sec-h" id="intlH">🌐 International</h2>
     <p class="note">Events outside Australia, each country on its own page, plus World events: World Cup, World Championships, World Masters Games and the LA28 Olympics &amp; Paralympics. Find events stays Australia-only.</p>
-    <form id="intlForm" class="intl-form"><label for="intlSel">Country</label><select id="intlSel">${intlOptions('USA')}</select><button class="btn" type="submit">Show events →</button></form>${iCtryStrip('')}<p class="note"><a href="#/organisers">Clubs &amp; organisers: API access →</a></p></section>`;
+    <form id="intlForm" class="intl-form"><label for="intlSel">Country</label><select id="intlSel">${intlOptions('USA')}</select><button class="btn" type="submit">Show events →</button></form>${iCtryStrip('')}</section>`;
 }
 function bindIntlMenu(){ const f = $('#intlForm'); if (f) f.onsubmit = e => { e.preventDefault(); location.hash = '#/intl/' + $('#intlSel').value; }; }
 /* Card mark: the organising body's / host's own logo (img/clubs/us-*.webp, sources in data/club_logos.json), never a photo of people.
@@ -2322,72 +2322,16 @@ function iHome(code, all){
   const nReg = up.filter(x => entryUrl(x)).length;
   const cred = p && p.by ? `<p class="ph-credit">Photo: ${esc(p.by)}${p.source ? ` (${esc(p.source)})` : ''}. More on the <a href="#/credits">Credits page</a>.</p>` : '';
   if (!up.length) return `<section class="panel ihome iempty">${cred}<h2 class="sec-h">No upcoming events in ${esc(nm)} yet</h2>
-    <p>We haven't got any upcoming ${esc(nm)} events listed right now. Run a club or tournament there? Send it in and we'll add it, or ask for API access to keep your events up to date automatically.</p>
-    <p class="iacts"><a class="btn gold" href="#/submit?country=OTHER">➕ Submit an event</a> <a class="btn alt" href="#/organisers">For organisers / API access</a> <a class="btn alt" href="#/intl/WORLD">🌐 World events</a></p></section>`;
+    <p>We haven't got any upcoming ${esc(nm)} events listed right now. Run a club or tournament there? Send it in and we'll add it.</p>
+    <p class="iacts"><a class="btn gold" href="#/submit?country=OTHER">➕ Submit an event</a> <a class="btn alt" href="#/intl/WORLD">🌐 World events</a></p></section>`;
   const maj = up.filter(isMajor), next = up.slice(0, 3);
   const sts = code === 'USA' ? Object.entries(up.reduce((a, x) => (x.us_state && (a[x.us_state] = (a[x.us_state] || 0) + 1), a), {})).sort((a, b) => b[1] - a[1]) : [];
   return `<section class="panel ihome">${cred}
     <p class="ihome-intro"><b>${up.length} upcoming event${up.length === 1 ? '' : 's'} in ${esc(nm)}</b>${orgs.length ? `, from ${esc(orgs.slice(0, 4).join(', '))}${orgs.length > 4 ? ` and ${orgs.length - 4} more` : ''}` : ''}. ${nReg ? `${nReg} with an online entry link.` : 'Entry details are on each event page.'}</p>
     <div class="ihome-grid"><div><h2 class="sec-h">Coming up next</h2><ul class="imini-list">${next.map(iMini).join('')}</ul></div>
     ${maj.length ? `<div><h2 class="sec-h">🏆 Major events &amp; championships</h2><ul class="imini-list">${maj.slice(0, 6).map(iMini).join('')}</ul>${maj.length > 6 ? `<p class="note">${maj.length - 6} more in the full list below.</p>` : ''}</div>` : ''}</div>
-    ${sts.length ? `<h2 class="sec-h">By state</h2><div class="chips" role="group" aria-label="Events by US state">${sts.map(([s, n]) => `<button class="chip" data-ihst="${s}" aria-pressed="${IF.st === s}">${esc(US_ST[s] || s)} <small>${n}</small></button>`).join('')}</div>` : ''}
-    <p class="note"><a href="#/organisers">Organisers: get API access to add and update your ${esc(nm)} events automatically →</a></p></section>
+    ${sts.length ? `<h2 class="sec-h">By state</h2><div class="chips" role="group" aria-label="Events by US state">${sts.map(([s, n]) => `<button class="chip" data-ihst="${s}" aria-pressed="${IF.st === s}">${esc(US_ST[s] || s)} <small>${n}</small></button>`).join('')}</div>` : ''}</section>
     <h2 class="sec-h" id="iall">All ${esc(nm)} events</h2>`;
-}
-/* For organisers / API access: request form goes the same way as the other site forms (FormSubmit email to SITE.contact) and,
-   where Supabase is set up, also into the #/admin requests queue (request_approval, source 'api'). No keys are ever shown here. */
-function vOrganisers(){
-  setTitle('For organisers: API access');
-  const ep = (SB_URL || 'https://YOUR-PROJECT.supabase.co').replace(/\/$/, '') + '/functions/v1/club-events';
-  const ex = JSON.stringify({events: [{id: 'spring-open-2027', title: 'Spring Open 2027', start_date: '2027-03-13', end_date: '2027-03-14', venue: 'Club range, Townsville', shoot_type: 'Target', entry_link: 'https://example.org/enter', entry_method: 'website'}]}, null, 2);
-  const sent = /(?:^|[?&])osent=1/.test(location.search);
-  return `${pageHead('For organisers: API access', 'Clubs, associations and tournament organisers can add, update and remove their own events on Archery Calendar automatically, straight from their own software.', 'mixed')}
-  <div class="wrap narrow org-page">
-    ${sent ? '<div class="panel ok-box" role="status">✓ Thanks, your request has been sent. We\'ll reply by email.</div>' : ''}
-    <section class="panel"><h2 class="sec-h">What you get</h2><ul>
-      <li>Your own private API key. It can only add, change or remove <b>your own</b> events, nothing else on the site.</li>
-      <li>Events go live on the calendar within about a minute, with your entry link on a Register button.</li>
-      <li>Major events and championships get a live countdown, and a "Live now, day X of Y" banner while they run.</li>
-      <li>Free. Keys can be turned off at any time.</li></ul></section>
-    <section class="panel"><h2 class="sec-h">Ask for API access</h2>
-    <form id="orgForm" class="org-form" method="POST" action="${esc(SITE.formEndpoint || '')}" novalidate>
-      <input type="hidden" name="_subject" value="API access request – Archery Calendar"><input type="hidden" name="_next" value=""><input type="hidden" name="_captcha" value="false"><input type="hidden" name="_template" value="table"><input type="text" name="_honey" class="sr" tabindex="-1" autocomplete="off" aria-hidden="true">
-      <input type="hidden" name="Request" value="API access (organiser)">
-      <label for="o_name">Your name</label><input id="o_name" name="Name" required maxlength="120" autocomplete="name">
-      <label for="o_org">Club or organisation</label><input id="o_org" name="Organisation" required maxlength="120" autocomplete="organization">
-      <label for="o_ctry">Country</label><input id="o_ctry" name="Country" required maxlength="60" autocomplete="country-name">
-      <label for="o_email">Email</label><input id="o_email" name="email" type="email" required maxlength="120" autocomplete="email">
-      <label for="o_web">Website</label><input id="o_web" name="Website" type="url" maxlength="300" placeholder="https://">
-      <label for="o_what">What events would you add?</label><textarea id="o_what" name="Events" required maxlength="1000" rows="4" placeholder="e.g. our club's monthly 3D shoots and the state field championships"></textarea>
-      <p class="err" id="orgErr" role="alert"></p>
-      <button class="btn gold" id="orgBtn" type="submit">Send request</button>
-      <p class="note">We use these details only to reply to you and set up your key (see <a href="#/privacy">privacy</a>).</p></form></section>
-    <section class="panel"><h2 class="sec-h">Short API docs</h2>
-      <p><b>Endpoint:</b> <code>${esc(ep)}</code></p>
-      <p><b>Header:</b> <code>X-Api-Key: YOUR_KEY</code> (we send your key privately; never put it in a public web page).</p>
-      <p><b>Add or update</b> (POST, <code>Content-Type: application/json</code>, up to 50 events a call). Use your own event <code>id</code>; sending the same id again updates it.</p>
-      <pre><code>${esc(ex)}</code></pre>
-      <p><b>List your events:</b> GET. <b>Remove one:</b> DELETE <code>?id=YOUR_EVENT_ID</code>. Set <code>"cancelled": true</code> to show it as cancelled.</p>
-      <p class="note">Rules: text can't contain &lt; or &gt;, links must be https:// or http://, dates are YYYY-MM-DD, max 30 calls a minute. Full field list: <a href="club-api.html">developer guide</a>.</p></section>
-  </div>`;
-}
-function bindOrganisers(){
-  const f = $('#orgForm'); if (!f) return; const g = id => document.getElementById(id), val = id => (g(id).value || '').trim();
-  f.onsubmit = e => {
-    e.preventDefault();
-    const bad = ['o_name', 'o_org', 'o_ctry', 'o_email', 'o_what'].filter(id => !val(id) || /[<>]/.test(val(id)));
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val('o_email')) && !bad.includes('o_email')) bad.push('o_email');
-    if (val('o_web') && !/^https?:\/\/[^\s<>"'`]+\.[^\s<>"'`]+$/i.test(val('o_web'))) bad.push('o_web');
-    f.querySelectorAll('input,textarea').forEach(i => i.toggleAttribute('aria-invalid', bad.includes(i.id)));
-    if (bad.length) { g('orgErr').textContent = 'Please check the highlighted field' + (bad.length > 1 ? 's' : '') + '.'; g(bad[0]).focus(); return; }
-    g('orgErr').textContent = '';
-    const note = `API access · ${val('o_org')} · ${val('o_ctry')} · ${val('o_web')} · ${val('o_what')}`.slice(0, 500);
-    if (AUTH.client) AUTH.client.rpc('request_approval', {p_email: val('o_email'), p_name: val('o_name'), p_club: val('o_org'), p_role: 'organiser', p_source: 'api', p_note: note}).then(() => {}, () => {});
-    if (!SITE.formEndpoint || !navigator.onLine) { location.href = `mailto:${SITE.contact}?subject=${encodeURIComponent('API access request: ' + val('o_org'))}&body=${encodeURIComponent(`Name: ${val('o_name')}\nOrganisation: ${val('o_org')}\nCountry: ${val('o_ctry')}\nEmail: ${val('o_email')}\nWebsite: ${val('o_web')}\nEvents: ${val('o_what')}\n`)}`; return; }
-    f.querySelector('[name=_next]').value = location.href.split('#')[0].split('?')[0] + '?osent=1#/organisers';
-    f.querySelector('[name=_subject]').value = `API access request: ${val('o_org').slice(0, 80)} (${val('o_ctry').slice(0, 40)})`;
-    g('orgBtn').disabled = true; g('orgBtn').textContent = 'Sending…'; HTMLFormElement.prototype.submit.call(f);
-  };
 }
 function vIntl(arg){
   let code = String(decodeURIComponent(arg || 'USA')).toUpperCase();
@@ -2466,8 +2410,8 @@ function vNotFound(kind, id){
 }
 function bindNotFound(){ const f = $('#nfSearch'); if (!f) return; f.onsubmit = e => { e.preventDefault(); BF.q = $('#nfq').value.trim(); BF.scope = 'all'; BF.disc = ''; BF.state = ''; location.hash = '#/browse'; }; }
 /* Friendly aliases for links people type or share. */
-const ROUTE_ALIAS = {find: '#/browse', search: '#/browse', events: '#/browse', international: '#/intl', world: '#/intl/world', 'my-events': '#/calendar', myevents: '#/calendar', organizers: '#/organisers', api: '#/organisers'};
-const KNOWN_PAGES = ['home', 'browse', 'shoot', 'calendar', 'entries', 'settings', 'advertise', 'credits', 'privacy', 'fans', 'account', 'admin', 'cards', 'fix', 'submit', 'calendars', 'club', 'clubs', 'intl', 'import', 'organisers'];
+const ROUTE_ALIAS = {find: '#/browse', search: '#/browse', events: '#/browse', international: '#/intl', world: '#/intl/world', 'my-events': '#/calendar', myevents: '#/calendar'};
+const KNOWN_PAGES = ['home', 'browse', 'shoot', 'calendar', 'entries', 'settings', 'advertise', 'credits', 'privacy', 'fans', 'account', 'admin', 'cards', 'fix', 'submit', 'calendars', 'club', 'clubs', 'intl', 'import'];
 function route(){
   const h = location.hash || '#/home', last = route.last; route.last = h;
   if (last && last.startsWith('#/intl')) IBACK[last] = scrollY;
@@ -2500,7 +2444,6 @@ function render(){
   else if (p === 'club') { const id = decodeURIComponent(arg || ''); v.innerHTML = vClub(id); bindClub(id); }
   else if (p === 'clubs') { v.innerHTML = vClubs(); bindClubPicker(); }
   else if (p === 'intl') { v.innerHTML = vIntl(arg); bindIntl(arg); }
-  else if (p === 'organisers') { v.innerHTML = vOrganisers(); bindOrganisers(); }
   else { const unknown = !!(p && !KNOWN_PAGES.includes(p) && h.startsWith('#/'));
     v.innerHTML = (unknown ? `<div class="wrap"><p class="nf-note" role="status" id="nfNote">⚠ Page not found: <code>${esc(decodeURIComponent(h0).slice(0, 60))}</code> – here’s the home page instead. <a href="#/browse">Find events →</a></p></div>` : '') + vHome();
     v.querySelectorAll('[data-cat]').forEach(a => a.onclick = () => { BF.cat = a.dataset.cat; BF.disc = ''; BF.scope = 'all'; });
