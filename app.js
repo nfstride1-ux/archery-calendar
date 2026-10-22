@@ -151,6 +151,7 @@ function visible(x, anyState){
 }
 const THEMES = {field:['🌲','Field'], '3d':['🦌','3D'], target:['🎯','Target'], indoor:['🏠','Indoor'], mixed:['🏹','Archery']};
 const photo = t => PH[t === 'mixed' ? 'hero' : t] || PH.hero || {};
+const cHero = code => 'c_' + String(iIso(code) || '').toLowerCase();   // per-country hero key in img/credits.json (c_us, c_gb, c_dk…); falls back to the generic photo
 // ABA pages never show Archery Australia / World Archery team imagery: ABA events use their own bush / 3D animal photo set.
 // ABA logo (transparent; 32/64/128/256 px PNG + WebP). Only ever used on ABA content.
 const abaLogo = (n = 32, cls = 'org-logo') => `<picture class="${cls}"><source type="image/webp" srcset="img/logos/aba-logo-${n}.webp 1x, img/logos/aba-logo-${Math.min(n * 2, 256)}.webp 2x"><img src="img/logos/aba-logo-${n}.png" srcset="img/logos/aba-logo-${Math.min(n * 2, 256)}.png 2x" alt="Australian Bowhunters Association" height="${n}" width="${Math.round(n * 263 / 342)}" loading="lazy" decoding="async"></picture>`;
@@ -621,7 +622,7 @@ function vHome(){
   const next = up.find(x => x.start_date);
   const h = photo('mixed');
   return `
-  <section class="hero" style="--img:url('${esc(h.file)}')"><div class="wrap hero-grid">
+  <section class="hero" style="--img:url('${esc(h.file)}');--pos:${esc(h.pos || 'center 35%')}"><div class="wrap hero-grid">
     <div class="hero-copy"><p class="kicker">Field · 3D · Target · Indoor</p><h1>Every archery event.<br><span>One calendar.</span></h1>
       <p class="lead">${AUS() ? 'Find archery events across Australia – Archery Australia, ABA and Archery WA.' : 'Find events across WA, Australia and the world.'} Save them, get reminders before entries close, and keep track of what you've paid.</p>
       <form class="hero-search" id="heroSearch" role="search"><input type="search" id="hq" placeholder="Search an event, club or town…" aria-label="Search events"><button class="btn gold" type="submit">Find events</button></form></div>
@@ -2268,7 +2269,7 @@ function vIntl(arg){
   if (IF.code !== code) Object.assign(IF, {code, q: '', disc: '', org: '', st: '', ctry: '', major: false, cat: '', past: false, limit: 60});
   let nm = iName(code), head = pageHead(world ? '🌐 World events: find an event' : `${flag(iIso(code) || 'US')} ${esc(nm)}: find an event`,
     world ? 'World majors – Hyundai Archery World Cup, World Championships, World Masters Games, LA28 Olympics and Paralympics – plus 3D and bowhunter events, IFAA and continental championships, and seminars & workshops. Dates are local to each venue.'
-      : `Archery events in ${esc(nm)}${usa ? ' – USA Archery, NFAA, ASA, IBO, TAC, Redding, Lancaster and The Vegas Shoot' : code === 'DEN' ? " – every event on Bueskydning Danmark's calendar: indoor, target, field and 3D, including the Danish championships (DM)" : code === 'MAS' ? " – events on NAAM's national calendar (Persatuan Memanah Kebangsaan Malaysia) and club seminars & workshops" : code === 'KOR' ? ' – events on the Korea Archery Association calendar (대한양궁협회) and the World Archery calendar' : code === 'NZL' ? ' – Archery NZ club tournaments (ArcheryOSA), NZ Field Archery Association field and 3D events, and NZ Bowhunters Society events' : code === 'CAN' ? ' – the Canadian Outdoor Championships, Archery Canada registered club events (ianseo) and provincial events such as the Canada Winter Games trials' : ' – 3D events and majors'}. Dates are local to each venue.`, usa ? 'us_field' : '3d');
+      : `Archery events in ${esc(nm)}${usa ? ' – USA Archery, NFAA, ASA, IBO, TAC, Redding, Lancaster and The Vegas Shoot' : code === 'DEN' ? " – every event on Bueskydning Danmark's calendar: indoor, target, field and 3D, including the Danish championships (DM)" : code === 'MAS' ? " – events on NAAM's national calendar (Persatuan Memanah Kebangsaan Malaysia) and club seminars & workshops" : code === 'KOR' ? ' – events on the Korea Archery Association calendar (대한양궁협회) and the World Archery calendar' : code === 'NZL' ? ' – Archery NZ club tournaments (ArcheryOSA), NZ Field Archery Association field and 3D events, and NZ Bowhunters Society events' : code === 'CAN' ? ' – the Canadian Outdoor Championships, Archery Canada registered club events (ianseo) and provincial events such as the Canada Winter Games trials' : ' – 3D events and majors'}. Dates are local to each venue.`, world ? '3d' : PH[cHero(code)] ? cHero(code) : usa ? 'us_field' : '3d');
   setTitle(`Archery events in ${nm}`);
   head = head.replace(/(<\/h1>(?:<p>[\s\S]*?<\/p>)?)/, `$1<p class="intl-add"><a class="btn gold sm" id="iAdd" href="#/submit?country=${usa ? 'US' : 'OTHER'}">➕ Add your club's event</a> <span>Clubs add their own events (free account) – we check every event before it goes live.</span></p>`);
   if (!INTL) { loadIntl().then(() => { if ((location.hash || '').startsWith('#/intl')) { const y = scrollY; render(); scrollTo(0, y); } }).catch(() => {}); return `${head}<div class="wrap"><p class="note" id="icount">Loading events…</p></div>`; }
