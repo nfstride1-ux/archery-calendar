@@ -116,7 +116,7 @@ async function boot(){
   if (bare && S.homeCountry && S.homeCountry !== 'AUS') history.replaceState(null, '', homeHash(S.homeCountry));
   route(); setHomeLinks(); window.addEventListener('hashchange', () => { geoLand.moved = true; setHomeLinks(); }, {once: false});
   { const sw = $('#ctrySw'); if (sw) sw.onclick = ctryMenu; }
-  if (bare && !S.homeCountry) geoLand().catch(() => {});
+  if (!S.homeCountry) geoLand().catch(() => {});   // deep links too (e.g. #/fans), so country-aware pages follow the visitor's country
   setTimeout(() => loadIntl().then(() => setHomeLinks()).catch(() => {}), 2500); Promise.all([loadLiveSubs(), loadClubApi()]).then(([n, k]) => loadOverrides().then(m => { if (n || k || m) softRender(); })); cardsLoad().catch(() => {});
   if (Object.keys(S.saved).concat(Object.keys(S.entries)).some(id => !BYID[id])) loadIntl().then(() => { const y = scrollY; render(); scrollTo(0, y); }).catch(() => {}); checkReminders(); setInterval(checkReminders, 60 * 60 * 1000);
   initAuth().catch(e => console.warn('auth', e));
@@ -2379,6 +2379,7 @@ function ctryHasHome(c){ return c === 'AUS' || (!!c && c !== 'WORLD' && iHasPage
 async function geoLand(){
   if (S.homeCountry) return;
   let c = ''; try { c = sessionStorage.getItem(GEO3) || ''; } catch {}
+  const fresh = !c;
   if (!c) {
     let cc = '';
     try { const ac = new AbortController(), t = setTimeout(() => ac.abort(), 1500);
@@ -2390,6 +2391,7 @@ async function geoLand(){
     try { sessionStorage.setItem(GEO3, c); } catch {}
   }
   setHomeLinks();
+  if (fresh && c !== 'AUS' && /^#\/(fans|calendar|browse)/.test(location.hash || '') && typeof softRender === 'function') softRender();
   if (c !== 'AUS' && (!location.hash || location.hash === '#' || location.hash === '#/home') && !geoLand.moved) location.replace(homeHash(c));
 }
 function setHomeLinks(){
