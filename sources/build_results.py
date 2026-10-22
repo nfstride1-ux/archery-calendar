@@ -55,6 +55,7 @@ R = {
   'nfaa-fdc-2026': link(NF + 'first-dakota-classic-2026-010926203350.pdf', 'NFAA (PDF)'),
   'nfaa-target-2026': link(NF + 'outdoor-target-nationals-2026-010926220750.pdf', 'NFAA (PDF)'),
   'wa-29965': link(NF + 'the-vegas-shoot-2026-150426164548.pdf', 'NFAA (PDF)'),
+  'ad-melville-3d-2026-10-18': link('https://www.facebook.com/profile.php?id=61561025409520', 'Bowmen of Melville (Facebook)', 'Fun shoot results posted by Bowmen of Melville on their Facebook page'),
 }
 for k, v in R.items(): v['checked'] = datetime.date.today().isoformat()
 json.dump({'note': 'Official published results only. Each entry links to its source.', 'results': R}, open('data/results.json', 'w'), indent=1, ensure_ascii=False)
