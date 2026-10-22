@@ -632,7 +632,7 @@ function vHome(){
     <div class="hero-copy"><p class="kicker">Field · 3D · Target · Indoor</p><h1>Every archery event.<br><span>One calendar.</span></h1>
       <p class="lead">${AUS() ? 'Find archery events across Australia – Archery Australia, ABA and Archery WA.' : 'Find events across WA, Australia and the world.'} Save them, get reminders before entries close, and keep track of what you've paid.</p>
       <form class="hero-search" id="heroSearch" role="search"><input type="search" id="hq" placeholder="Search an event, club or town…" aria-label="Search events"><button class="btn gold" type="submit">Find events</button></form></div>
-    ${next ? `<a class="next-card" href="#/shoot/${esc(next.id)}"><span class="kicker">Your next event</span><b class="big">${daysTo(next.start_date) <= 0 ? 'On now' : daysTo(next.start_date) + ' days'}</b>
+    ${next ? `<a class="next-card" href="#/shoot/${esc(next.id)}"><span class="kicker">Your next event</span><b class="big">${daysTo(next.start_date) <= 0 ? 'On now' : daysTo(next.start_date) + (daysTo(next.start_date) === 1 ? ' day' : ' days')}</b>
       <span class="nm">${esc(next.name)}</span><span>${esc(range(next))}</span><span class="st">${ST_TXT[ST(next.id)]}</span></a>` : ''}
   </div>${credit('mixed')}</section>
   <div class="wrap home-wrap">${spRails()}
@@ -2431,7 +2431,7 @@ function vCountryHome(code){
   const maj = up.filter(isMajor), nReg = up.filter(x => entryUrl(x)).length, orgs = [...new Set(up.map(x => x.source_name || x.org).filter(Boolean))];
   const mine = Object.keys(S.saved).map(id => BYID[id]).filter(x => x && x.country_code === code && !iPast(x)).sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
   const nx = mine[0] || maj.find(x => x.start_date);
-  const next = nx ? `<a class="next-card" href="#/shoot/${esc(encodeURIComponent(nx.id))}"><span class="kicker">${mine[0] ? 'Your next event' : 'Next major event'}</span><b class="big">${daysTo(nx.start_date) <= 0 ? 'On now' : daysTo(nx.start_date) + ' days'}</b>
+  const next = nx ? `<a class="next-card" href="#/shoot/${esc(encodeURIComponent(nx.id))}"><span class="kicker">${mine[0] ? 'Your next event' : 'Next major event'}</span><b class="big">${daysTo(nx.start_date) <= 0 ? 'On now' : daysTo(nx.start_date) + (daysTo(nx.start_date) === 1 ? ' day' : ' days')}</b>
       <span class="nm">${esc(nx.name)}</span><span>${esc(range(nx))}</span>${cdBadge(nx)}</a>` : '';
   const lead = up.length ? `${up.length} upcoming event${up.length === 1 ? '' : 's'}${orgs.length ? ` from ${esc(orgs.slice(0, 3).join(', '))}${orgs.length > 3 ? ` and ${orgs.length - 3} more` : ''}` : ''}. Save them, get reminders before entries close, and keep track of what you've paid.` : `No upcoming events listed in ${the}${esc(nm)} yet.`;
   const disc = CDISC.map(([k, lbl, re, gen]) => { const ev = up.filter(x => re.test(x.discipline || x.name || '')); return {k, lbl, n: ev.length, ph: discPhoto(code, k, gen), by: [...new Set(ev.map(x => x.org).filter(Boolean))].slice(0, 3)}; }).filter(d => d.n);
