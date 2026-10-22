@@ -2,7 +2,7 @@
    Data: public.score_entries, written only by the scoretool_save_score() function for a linked account (supabase/scoretool_scores.sql).
    Linking: #/scoretool, signed in -> create_scoretool_link() -> the secret goes back to ScoreTool on a FIXED address (no open redirect),
    and is shown to copy for installed-app users. Until the SQL is run, everything here quietly does nothing. */
-const STL = {uid: null, rows: null, missing: false, busy: false, links: null};
+const STL = {uid: null, rows: null, missing: false, busy: false, links: null, photos: {}};
 const STL_TARGETS = {demo: 'https://nfstride1-ux.github.io/scoretool-demo/', lab: 'https://nfstride1-ux.github.io/scoretool-lab/'};
 const stlMissing = e => !!e && (/PGRST20[25]|42P01|42883/.test(String(e.code || '')) || /does not exist|Could not find/i.test(String(e.message || '')));
 async function stlLoad(){
@@ -11,7 +11,12 @@ async function stlLoad(){
     const uid = AUTH.user.id, {data, error} = await AUTH.client.from('score_entries').select('id,source_id,shot_date,round_name,score,max_score,location,updated_at').order('shot_date', {ascending: true});
     if (error) { STL.missing = stlMissing(error); STL.rows = []; } else { STL.missing = false; STL.rows = data || []; }
     const L = await AUTH.client.from('scoretool_links').select('label,created_at,last_used_at').order('created_at', {ascending: false});
-    STL.links = L.error ? null : (L.data || []); STL.uid = uid;
+    STL.links = L.error ? null : (L.data || []);
+    /* score photos (supabase/score_photos.sql): thumbs only here, the full photo is fetched when opened. Missing table = no photos, quietly. */
+    STL.photos = {};
+    try { const P = await AUTH.client.from('score_photos').select('source_id,thumb,updated_at');
+      if (!P.error) for (const r of P.data || []) if (r && r.source_id && /^\/9j\/[A-Za-z0-9+/]+=*$/.test(r.thumb || '')) STL.photos[r.source_id] = r.thumb; } catch {}
+    STL.uid = uid;
   } catch { STL.rows = []; } finally { STL.busy = false; }
   if (['calendar', 'account', 'shoot'].includes(document.body.dataset.page)) { const y = scrollY; render(); scrollTo(0, y); }
 }
@@ -26,16 +31,44 @@ function stlEventFor(d, r){   // ScoreTool names the event it was tied to -> tha
 }
 const stlScore = r => `${r.score}${r.max_score ? ' / ' + r.max_score : ''}`;
 const stlDate = d => pd(d).toLocaleDateString('en-AU', {weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'});
+/* score photos (23 Oct 2026): a tiny round thumb in place of the target mark; tap = full size with a Back button */
+const stlThumb = r => r && STL.photos && STL.photos[r.source_id] || '';
+const stlMark = (r, cls) => { const t = stlThumb(r); return t ? `<img class="stl-th ${cls || ''}" alt="" src="data:image/jpeg;base64,${t}">` : '🎯'; };
+const stlPhotoBtn = r => stlThumb(r) ? `<button type="button" class="stl-phb" data-stlph="${esc(r.source_id)}" aria-label="Open the photo for ${esc(r.round_name)}"><img alt="" src="data:image/jpeg;base64,${stlThumb(r)}"></button>` : '';
+async function stlOpenPhoto(sid){
+  if (!AUTH.client || document.getElementById('stlPh')) return;
+  const ov = document.createElement('div'); ov.id = 'stlPh'; ov.className = 'stl-ph'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Score photo');
+  ov.innerHTML = `<div class="stl-ph-bar"><button type="button" class="btn" id="stlPhX">‹ Back</button></div><p class="loading">Loading photo…</p>`;
+  const close = () => { ov.remove(); removeEventListener('keydown', kd); }, kd = e => { if (e.key === 'Escape') close(); };
+  ov.addEventListener('click', e => { if (e.target.id === 'stlPhX' || e.target === ov) close(); }); addEventListener('keydown', kd);
+  document.body.appendChild(ov); $('#stlPhX').focus();
+  try { const {data, error} = await AUTH.client.from('score_photos').select('photo').eq('source_id', sid).maybeSingle();
+    const ph = !error && data && /^\/9j\/[A-Za-z0-9+/]+=*$/.test(data.photo || '') ? data.photo : '';
+    const p = ov.querySelector('.loading'); if (!p) return;
+    if (ph) p.outerHTML = `<img class="stl-ph-img" alt="Score photo" src="data:image/jpeg;base64,${ph}">`; else p.textContent = 'This photo isn’t available right now.';
+  } catch { const p = ov.querySelector('.loading'); if (p) p.textContent = 'This photo isn’t available right now.'; }
+}
+function stlBindPhotos(root){ (root || document).querySelectorAll('[data-stlph]').forEach(b => { if (b._stl) return; b._stl = 1; b.onclick = e => { e.preventDefault(); e.stopPropagation(); stlOpenPhoto(b.dataset.stlph); }; }); }
+function stlBlock(L, id, title){   // the day's own scores (with photos), shown first
+  return `<div class="stl-day" id="${id}"><h3 class="dp-sub">🎯 ${esc(title)}</h3><ul class="dp-list">${L.map(r => { const ev = stlEventFor(r.shot_date, r);
+    return `<li class="dp-row stl-row">${stlPhotoBtn(r)}<div class="dp-main"><b>${esc(r.round_name)}</b> <span class="b stl-sc">${esc(stlScore(r))}</span><div class="meta">${esc([stlDate(r.shot_date), r.location].filter(Boolean).join(' · '))}${ev ? ` · at <a href="#/shoot/${encodeURIComponent(ev.id)}?r=1">${esc(ev.name)}</a>` : ''}</div></div></li>`; }).join('')}</ul></div>`;
+}
 function stlRow(r){ const ev = stlEventFor(r.shot_date, r);
-  return `<li class="dp-row stl-row"><div class="dp-main"><b>🎯 ${esc(r.round_name)}</b> <span class="b stl-sc">${esc(stlScore(r))}</span>
+  return `<li class="dp-row stl-row">${stlThumb(r) ? stlPhotoBtn(r) : ''}<div class="dp-main"><b>${stlThumb(r) ? '' : '🎯 '}${esc(r.round_name)}</b> <span class="b stl-sc">${esc(stlScore(r))}</span>
     <div class="meta">${esc([stlDate(r.shot_date), r.location].filter(Boolean).join(' · '))}${ev ? ` · at <a href="#/shoot/${encodeURIComponent(ev.id)}?r=1">${esc(ev.name)}</a>` : ''}</div></div></li>`; }
 function stlDecorateCalendar(){
   if (!AUTH.user || !STL.rows || STL.missing) return;
   const by = stlByDay(), [y, m] = CM || [new Date().getFullYear(), new Date().getMonth()], ym = `${y}-${String(m + 1).padStart(2, '0')}`;
   document.querySelectorAll('.grid [data-day]').forEach(c => { const L = by[c.dataset.day]; if (!L || c.querySelector('.stl-dot')) return;
-    c.classList.add('stl'); c.insertAdjacentHTML('beforeend', '<span class="stl-dot" aria-hidden="true">🎯</span>');
+    const pr = L.find(stlThumb); c.classList.add('stl'); c.insertAdjacentHTML('beforeend', `<span class="stl-dot${pr ? ' stl-dot-ph' : ''}" aria-hidden="true">${pr ? stlMark(pr) : '🎯'}</span>`);
     c.setAttribute('aria-label', (c.getAttribute('aria-label') || '') + ' – score shot: ' + L.map(r => r.round_name + ' ' + stlScore(r)).join(', ')); });
   const lg = document.querySelector('#view .legend'); if (lg && !lg.querySelector('.lg-stl')) lg.insertAdjacentHTML('beforeend', '<span class="b lg-day lg-stl">🎯 score shot</span>');
+  document.querySelectorAll('.grid [data-day].stl').forEach(c => { if (c._stl) return; c._stl = 1;
+    c.addEventListener('click', () => { STL.day = c.dataset.day; }, true); });
+  const dp = document.getElementById('dayPanel'), dl = CD && by[CD];
+  if (dp && dl && !document.getElementById('stlDay')) { const hd = dp.querySelector('.dp-head');
+    const html = stlBlock(dl, 'stlDay', dl.length === 1 ? 'My score' : 'My scores');
+    hd ? hd.insertAdjacentHTML('afterend', html) : dp.insertAdjacentHTML('afterbegin', html); }
   const month = (STL.rows || []).filter(r => r.shot_date.slice(0, 7) === ym);
   if (!STL.rows.length || document.getElementById('stlBox')) return;
   let at = lg; if (at && at.nextElementSibling && at.nextElementSibling.tagName === 'P') at = at.nextElementSibling;
@@ -43,14 +76,20 @@ function stlDecorateCalendar(){
     ${month.length ? `<ul class="dp-list">${month.slice().reverse().map(stlRow).join('')}</ul>` : `<p class="note">No ScoreTool scores this month. ${STL.rows.length} in total.</p>`}
     <p class="note">From ScoreTool, when you finish a round. Only you can see these.</p></section>`;
   at ? at.insertAdjacentHTML('afterend', html) : document.querySelector('#view .wrap.narrow')?.insertAdjacentHTML('beforeend', html);
+  stlBindPhotos();
 }
 /* Event page: the archer's own ScoreTool score(s) for this event, under Results. Only they see it (signed in, RLS). */
 function stlShootPanel(){
   if (!AUTH.user || !STL.rows || !STL.rows.length || STL.missing || document.getElementById('stlShoot')) return;
   const id = decodeURIComponent((location.hash.split('?')[0].split('/')[2]) || ''), x = BYID[id]; if (!x) return;
   const L = STL.rows.filter(r => { const ev = stlEventFor(r.shot_date, r); return ev && ev.id === x.id; }); if (!L.length) return;
-  const at = document.getElementById('results'), html = `<section class="panel stl-box" id="stlShoot"><h2 class="sec">🎯 My score</h2><ul class="dp-list">${L.map(r => `<li class="dp-row stl-row"><div class="dp-main"><b>${esc(r.round_name)}</b> <span class="b stl-sc">${esc(stlScore(r))}</span><div class="meta">${esc(stlDate(r.shot_date))}</div></div></li>`).join('')}</ul><p class="note">From ScoreTool. Only you can see this.</p></section>`;
-  at ? at.insertAdjacentHTML('afterend', html) : document.querySelector('#view .wrap')?.insertAdjacentHTML('beforeend', html);
+  const first = STL.day && L.some(r => r.shot_date === STL.day); STL.day = '';
+  const at = document.getElementById('results'), html = `<section class="panel stl-box${first ? ' stl-first' : ''}" id="stlShoot"><h2 class="sec">🎯 My score</h2><ul class="dp-list">${L.map(r => `<li class="dp-row stl-row">${stlPhotoBtn(r)}<div class="dp-main"><b>${esc(r.round_name)}</b> <span class="b stl-sc">${esc(stlScore(r))}</span><div class="meta">${esc(stlDate(r.shot_date))}</div></div></li>`).join('')}</ul><p class="note">From ScoreTool. Only you can see this.</p></section>`;
+  const wrap = document.querySelector('#view .wrap');   // from a tapped past day: above Results, and scrolled to (after the ?r=1 jump to Results)
+  if (first && (at || wrap)) { at ? at.insertAdjacentHTML('beforebegin', html) : wrap.insertAdjacentHTML('afterbegin', html);
+    setTimeout(() => { const s = document.getElementById('stlShoot'); if (s) s.scrollIntoView({block: 'start'}); }, 90); }
+  else at ? at.insertAdjacentHTML('afterend', html) : wrap?.insertAdjacentHTML('beforeend', html);
+  stlBindPhotos();
 }
 function stlAccountPanel(){
   if (!AUTH.user || STL.missing || !STL.links) return;
@@ -90,7 +129,7 @@ function bindScoreToolLink(HQ){
   const p = document.body.dataset.page, h0 = location.hash || '', [, pg] = h0.split('?')[0].split('/');
   if (pg === 'scoretool') { document.body.dataset.page = 'scoretool'; const HQ = new URLSearchParams(h0.split('?')[1] || ''), v = $('#view'); v.innerHTML = vScoreToolLink(HQ); bindScoreToolLink(HQ); return; }
   if (AUTH.user && STL.uid !== AUTH.user.id && !STL.busy) stlLoad();
-  if (p === 'calendar') stlDecorateCalendar(); else if (p === 'account') stlAccountPanel(); else if (p === 'shoot') stlShootPanel(); } catch (e) {} };
+  if (p === 'calendar') { STL.day = ''; stlDecorateCalendar(); } else if (p === 'account') stlAccountPanel(); else if (p === 'shoot') stlShootPanel(); } catch (e) {} };
   setInterval(() => { const u = AUTH.user ? AUTH.user.id : null, p = document.body.dataset.page;
     if (p === 'scoretool' && (STL.seenAuth !== String(AUTH.ready) + u)) { STL.seenAuth = String(AUTH.ready) + u; render(); }
     if (u && STL.uid !== u && !STL.busy && ['calendar', 'account', 'shoot'].includes(p)) stlLoad(); }, 1500);

@@ -1031,3 +1031,19 @@ body[data-page=submit] .site-head .add-btn{outline:2px solid #fff;outline-offset
 .grid .c .stl-dot{position:absolute;left:3px;bottom:3px;font-size:11px;line-height:1}
 .stl-box .stl-sc{background:#e3ecff;color:#1d4ed8;border-color:#bcd0f5}
 .stl-code{display:block;word-break:break-all;user-select:all;background:#f4f7fb;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:14px}
+/* ScoreTool score photos (scoretool.js, supabase/score_photos.sql) */
+.grid .c .stl-dot-ph{left:2px;bottom:2px}
+.grid .c .stl-dot-ph .stl-th{width:16px;height:16px;border-radius:50%;object-fit:cover;display:block;border:1px solid #1d4ed8;background:#fff}
+.stl-row{display:flex;gap:10px;align-items:center}
+.stl-phb{flex:0 0 auto;width:52px;height:52px;padding:0;border:2px solid #d4a017;border-radius:50%;overflow:hidden;background:#0b1830;cursor:pointer}
+.stl-phb img{width:100%;height:100%;object-fit:cover;display:block}
+#stlShoot .stl-phb{width:72px;height:72px}
+.stl-day{margin:4px 0 10px;padding:8px 10px;border:1px solid #bcd0f5;border-radius:10px;background:#f4f7ff}
+.stl-day .dp-sub{margin-top:0}
+.stl-first{margin-bottom:14px}
+.stl-ph{position:fixed;inset:0;z-index:1000;background:rgba(7,10,16,.95);display:flex;flex-direction:column;align-items:center;padding:12px 12px calc(16px + env(safe-area-inset-bottom));overflow:auto}
+.stl-ph-bar{width:100%;max-width:640px;margin-bottom:8px}
+.stl-ph .loading{color:#fff}
+.stl-ph-img{max-width:100%;max-height:calc(100vh - 90px);object-fit:contain;border:2px solid #d4a017;border-radius:10px;background:#fff}
+@media print{.stl-ph{display:none!important}}
+#stlShoot{scroll-margin-top:140px}
