@@ -280,5 +280,89 @@
   "year": 2017,
   "pos": "center 40%",
   "alt": "A Mexican archer at full draw in front of Mexican flags and a packed stand at the 2017 World Archery Championships in the Zócalo, Mexico City"
+ },
+ "c_us_target": {
+  "file": "img/disc/us-target.jpg",
+  "sm": "img/disc/us-target-sm.jpg",
+  "title": "Erika Aya Eiffel Texas Shootout Archery",
+  "by": "Erika Aya Eiffel",
+  "source": "Wikimedia Commons",
+  "url": "https://commons.wikimedia.org/wiki/File:Erika_Aya_Eiffel_Texas_Shootout_Archery.jpg",
+  "license": "CC BY-SA 3.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+  "alt": "An archer at full draw at the Texas Shootout, with targets behind",
+  "pos": "center 40%"
+ },
+ "c_us_indoor": {
+  "file": "img/disc/us-indoor.jpg",
+  "sm": "img/disc/us-indoor-sm.jpg",
+  "title": "DSC 1990 (15667490953)",
+  "by": "California Department of Fish and Wildlife from Sacramento, CA, USA",
+  "source": "Wikimedia Commons",
+  "url": "https://commons.wikimedia.org/wiki/File:DSC_1990_(15667490953).jpg",
+  "license": "CC BY 2.0",
+  "license_url": "https://creativecommons.org/licenses/by/2.0/",
+  "alt": "An archer shooting at an indoor archery range in California",
+  "pos": "center 40%"
+ },
+ "c_gb_target": {
+  "file": "img/disc/gb-target.jpg",
+  "sm": "img/disc/gb-target-sm.jpg",
+  "title": "Olympics Archery at Lord's Cricket Ground (7669435690)",
+  "by": "Mark Hillary from Serra Negra, São Paulo, Brazil",
+  "source": "Wikimedia Commons",
+  "url": "https://commons.wikimedia.org/wiki/File:Olympics_Archery_at_Lord%27s_Cricket_Ground_(7669435690).jpg",
+  "license": "CC BY 2.0",
+  "license_url": "https://creativecommons.org/licenses/by/2.0/",
+  "alt": "Olympic archery at Lord's Cricket Ground, London 2012",
+  "pos": "center 40%"
+ },
+ "c_mx_target": {
+  "file": "img/disc/mx-target.jpg",
+  "sm": "img/disc/mx-target-sm.jpg",
+  "title": "Campeonato de Tiro con Arco 2017 -i---i- (37836987286)",
+  "by": "Gobierno CDMX",
+  "source": "Wikimedia Commons",
+  "url": "https://commons.wikimedia.org/wiki/File:Campeonato_de_Tiro_con_Arco_2017_-i---i-_(37836987286).jpg",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "alt": "A Mexican archer shooting in front of Mexican flags at the 2017 World Archery Championships, Mexico City",
+  "pos": "center 40%"
+ },
+ "c_tr_target": {
+  "file": "img/disc/tr-target.jpg",
+  "sm": "img/disc/tr-target-sm.jpg",
+  "title": "5. Islamic Solidarity Games 2021 Konya Men Archery Compound 20220815 1",
+  "by": "Astro medya Org. Ltd. ŞTİ.",
+  "source": "Wikimedia Commons",
+  "url": "https://commons.wikimedia.org/wiki/File:5._Islamic_Solidarity_Games_2021_Konya_Men_Archery_Compound_20220815_1.jpg",
+  "license": "CC BY 2.0",
+  "license_url": "https://creativecommons.org/licenses/by/2.0/",
+  "alt": "Compound archers on the line at the 2021 Islamic Solidarity Games in Konya, Türkiye",
+  "pos": "center 40%"
+ },
+ "c_dk_target": {
+  "file": "img/disc/dk-target.jpg",
+  "sm": "img/disc/dk-target-sm.jpg",
+  "title": "Photo: Bueskydning Danmark",
+  "by": "Bueskydning Danmark",
+  "source": "Facebook",
+  "url": null,
+  "license": null,
+  "license_url": null,
+  "alt": "A Danish archer at full draw on an outdoor range",
+  "pos": "center 35%"
+ },
+ "c_ca_target": {
+  "file": "img/disc/ca-target.jpg",
+  "sm": "img/disc/ca-target-sm.jpg",
+  "title": "Photo: Archery Canada",
+  "by": "Archery Canada",
+  "source": "Facebook",
+  "url": null,
+  "license": null,
+  "license_url": null,
+  "alt": "A Canadian para archer shooting outdoors",
+  "pos": "center 35%"
  }
 }

@@ -90,7 +90,7 @@ function showInstall(){
 function toast(t){ const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 2200); }
 
 async function boot(){
-  $('#todayLbl').textContent = today().toLocaleDateString('en-AU', {weekday:'short', day:'numeric', month:'short'});
+  $('#todayLbl').textContent = today().toLocaleDateString(LOC(), {weekday:'short', day:'numeric', month:'short'});
   const [e, o, ph, cl] = await Promise.all([fetch('data/events.json').then(r => r.json()), fetch('data/organisations.json').then(r => r.json()), fetch('img/credits.json', {cache: 'no-cache'}).then(r => r.json()).catch(() => ({})), fetch('data/clubs.json').then(r => r.json()).catch(() => ({clubs: []})), fetch('data/club_logos.json').then(r => r.json()).then(j => { LOGO = j.logos || {}; }).catch(() => {}), fetch('data/intl_countries.json').then(r => r.json()).then(j => { ICTRY = j; }).catch(() => {}), fetch('data/results.json').then(r => r.json()).then(j => { RES = j.results || {}; CSHOOT = j.club_shoots || {}; }).catch(() => {})]);
   CLUBS = cl.clubs || []; CLUBS.forEach(c => CLUB[c.id] = c);
   PH = ph; SCOPE = e.scope || 'WORLD';
@@ -111,7 +111,13 @@ async function boot(){
     navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(r => { r.update();
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') r.update().catch(() => {}); }); }).catch(() => {});
   }
-  importHandoff(); clubUpdates(); route(); Promise.all([loadLiveSubs(), loadClubApi()]).then(([n, k]) => loadOverrides().then(m => { if (n || k || m) softRender(); })); cardsLoad().catch(() => {});
+  importHandoff(); clubUpdates();
+  const bare = !location.hash || location.hash === '#';
+  if (bare && S.homeCountry && S.homeCountry !== 'AUS') history.replaceState(null, '', homeHash(S.homeCountry));
+  route(); setHomeLinks(); window.addEventListener('hashchange', () => { geoLand.moved = true; setHomeLinks(); }, {once: false});
+  { const sw = $('#ctrySw'); if (sw) sw.onclick = ctryMenu; }
+  if (bare && !S.homeCountry) geoLand().catch(() => {});
+  setTimeout(() => loadIntl().then(() => setHomeLinks()).catch(() => {}), 2500); Promise.all([loadLiveSubs(), loadClubApi()]).then(([n, k]) => loadOverrides().then(m => { if (n || k || m) softRender(); })); cardsLoad().catch(() => {});
   if (Object.keys(S.saved).concat(Object.keys(S.entries)).some(id => !BYID[id])) loadIntl().then(() => { const y = scrollY; render(); scrollTo(0, y); }).catch(() => {}); checkReminders(); setInterval(checkReminders, 60 * 60 * 1000);
   initAuth().catch(e => console.warn('auth', e));
 }
@@ -210,7 +216,7 @@ function range(x){
   if (x.book_anytime) return 'Book any time – no fixed date';
   if (!x.start_date) return 'Dates to be confirmed';
   const a = pd(x.start_date), b = pd(x.end_date || x.start_date), o = {day:'numeric', month:'short', year:'numeric'};
-  return x.start_date === x.end_date || !x.end_date ? a.toLocaleDateString('en-AU', {weekday:'short', ...o}) : `${a.toLocaleDateString('en-AU',{day:'numeric',month:'short'})} – ${b.toLocaleDateString('en-AU', o)}`;
+  return x.start_date === x.end_date || !x.end_date ? a.toLocaleDateString(LOC(), {weekday:'short', ...o}) : `${a.toLocaleDateString(LOC(),{day:'numeric',month:'short'})} – ${b.toLocaleDateString(LOC(), o)}`;
 }
 const OST = {flyer:['📄','2026 flyer out','Flyer out'], no_details:['⏳','No entry details yet','No entry details yet']};
 function orgBadge(x){
@@ -220,7 +226,7 @@ function orgBadge(x){
 }
 function entryBadge(x){
   if (isPast(x) || x.info_only) return '';
-  const c = x.entry_close_date, f = d => pd(d).toLocaleDateString('en-AU',{day:'numeric',month:'short'});
+  const c = x.entry_close_date, f = d => pd(d).toLocaleDateString(LOC(),{day:'numeric',month:'short'});
   if (c && daysTo(c) < 0) return `<span class="b closed">🔒 Entries closed ${f(c)}</span>`;
   if (x.registration_opens && daysTo(x.registration_opens) > 0) return `<span class="b tbc">◷ Entries open ${f(x.registration_opens)}</span>`;
   if (x.org_status === 'flyer' && (x.registration_url || c)) return `<span class="b open">✍ Entries open${c ? ' · close ' + f(c) : ''}</span>`;
@@ -302,15 +308,15 @@ function spCard(s, medium, content, strip){
 }
 const SP_OPEN_SPOTS = false;   // true = show the dashed "Sponsor spot open" cards again (left rail, right rail, strip)
 const spOpen = (more) => SP_OPEN_SPOTS ? `<a class="sp sp-open" href="#/advertise"><b>Sponsor spot open</b><span>Your logo + link here</span>${more ? '<em>Advertise with us →</em>' : ''}</a>` : '';
-function spRails(){
-  if (!SPONSORS.length) return '';
+function spRails(cc){
+  if (!SPONSORS.length) return ''; const sx = cc ? '_' + cc : '';
   const right = spOpen(true) + spOpen(true);
-  return `<aside class="sp-rail sp-rail-l" aria-label="Sponsors"><div class="sp-rail-in"><div class="sp-rail-h">Supported by</div>${SPONSORS.map(s => spCard(s, 'sponsor_rail', 'left_rail')).join('')}${spOpen(true)}</div></aside>
+  return `<aside class="sp-rail sp-rail-l" aria-label="Sponsors"><div class="sp-rail-in"><div class="sp-rail-h">Supported by</div>${SPONSORS.map(s => spCard(s, 'sponsor_rail', 'left_rail' + sx)).join('')}${spOpen(true)}</div></aside>
   ${right ? `<aside class="sp-rail sp-rail-r" aria-label="More sponsor spots"><div class="sp-rail-in"><div class="sp-rail-h">Sponsors</div>${right}</div></aside>` : ''}`;
 }
-function spStrip(){
+function spStrip(cc, where = 'home'){
   if (!SPONSORS.length) return '';
-  const cards = SPONSORS.map(s => spCard(s, 'sponsor_strip', 'home_strip', true)).join('') + spOpen() + spOpen(), n = SPONSORS.length + (SP_OPEN_SPOTS ? 2 : 0);
+  const cards = SPONSORS.map(s => spCard(s, 'sponsor_strip', where + '_strip' + (cc ? '_' + cc : ''), true)).join('') + spOpen() + spOpen(), n = SPONSORS.length + (SP_OPEN_SPOTS ? 2 : 0);
   return `<section class="sp-strip${n === 1 ? ' one' : ''}" aria-label="Sponsors"><div class="sp-strip-h"><span>Supported by</span>${n > 1 ? '<span aria-hidden="true">Swipe →</span>' : ''}</div>
     <div class="sp-strip-row">${cards}</div></section>`;
 }
@@ -346,7 +352,7 @@ function clubCta(compact){
 }
 function flyerLinkCard(x){
   const ex = x.flyer_extract || {}, cur = x.flyer_is_current, ly = cur ? '' : '<span class="lastyr">Last year</span>';
-  const close = ex.entry_close ? pd(ex.entry_close).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'}) + (ex.entry_close_note ? ', ' + ex.entry_close_note : '') : null;
+  const close = ex.entry_close ? pd(ex.entry_close).toLocaleDateString(LOC(),{weekday:'short',day:'numeric',month:'short',year:'numeric'}) + (ex.entry_close_note ? ', ' + ex.entry_close_note : '') : null;
   const rows = [['How to enter', ex.registration], [cur && !(ex.entry_close && daysTo(ex.entry_close) < 0) ? 'Entries close' : 'Entries closed', close], ['Fee', ex.fee], ['Rounds', ex.rounds], ['Times', ex.start_times], ['Contact', ex.contact], ['Notes', ex.notes]].filter(r => r[1]);
   const src = x.flyer_source_url;
   return `<section class="panel flyer-panel"><div class="flyer-link">
@@ -359,7 +365,7 @@ function flyerLinkCard(x){
 }
 function flyerHosted(x){
   const ex = x.flyer_extract || {}, cur = x.flyer_is_current, ly = cur ? '' : '<span class="lastyr">Last year</span>';
-  const close = ex.entry_close ? pd(ex.entry_close).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'}) + (ex.entry_close_note ? ', ' + ex.entry_close_note : '') : null;
+  const close = ex.entry_close ? pd(ex.entry_close).toLocaleDateString(LOC(),{weekday:'short',day:'numeric',month:'short',year:'numeric'}) + (ex.entry_close_note ? ', ' + ex.entry_close_note : '') : null;
   const rows = [['How to enter', ex.registration], [cur && !(ex.entry_close && daysTo(ex.entry_close) < 0) ? 'Entries close' : 'Entries closed', close], ['Fee', ex.fee], ['Rounds', ex.rounds], ['Times', ex.start_times], ['Contact', ex.contact], ['Notes', ex.notes]].filter(r => r[1]);
   const src = x.flyer_source_url, org = x.flyer_org || x.org || 'the organiser';
   const mail = `mailto:${SITE.contact}?subject=${encodeURIComponent('Flyer on Archery Calendar: ' + x.name)}`;
@@ -385,7 +391,7 @@ function flyerCard(x){
   if (SITE.flyers === 'hosted' && x.flyer_web) return flyerHosted(x);
   if (SITE.flyers !== 'local' || !x.flyer_local) return flyerLinkCard(x);
   const ex = x.flyer_extract || {}, cur = x.flyer_is_current, ly = cur ? '' : '<span class="lastyr">Last year</span>';
-  const close = ex.entry_close ? pd(ex.entry_close).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'}) + (ex.entry_close_note ? ', ' + ex.entry_close_note : '') : null;
+  const close = ex.entry_close ? pd(ex.entry_close).toLocaleDateString(LOC(),{weekday:'short',day:'numeric',month:'short',year:'numeric'}) + (ex.entry_close_note ? ', ' + ex.entry_close_note : '') : null;
   const rows = [['How to enter', ex.registration], [cur && !(ex.entry_close && daysTo(ex.entry_close) < 0) ? 'Entries close' : 'Entries closed', close], ['Fee', ex.fee], ['Rounds', ex.rounds], ['Times', ex.start_times], ['Contact', ex.contact], ['Notes', ex.notes]].filter(r => r[1]);
   return `<section class="panel flyer-panel"><div class="flyer"><a class="thumb" href="${esc(x.flyer_local)}" target="_blank" rel="noopener" aria-label="Open the full flyer"><img src="${esc(x.flyer_thumb)}" alt="Flyer page 1" loading="lazy"><span>View flyer ↗</span></a>
     <div><span class="fl-badge ${cur ? 'cur' : 'old'}">${cur ? '📄 ' + x.flyer_year + ' flyer – current' : '⚠ ' + x.flyer_year + ' flyer – last year'}</span>
@@ -632,7 +638,6 @@ function vHome(){
   <div class="wrap home-wrap">${spRails()}
     <div class="stats four"><a class="stat" href="#/calendar"><b>${up.length}</b><span>★ My events</span></a><a class="stat" href="#/entries"><b>${nEnt}</b><span>✓ Entered</span></a><a class="stat" href="#/entries"><b>${nTodo}</b><span>☐ To enter</span></a><a class="stat" href="#/entries"><b>${nPay}</b><span>$ To pay</span></a></div>
     ${lsBox()}
-    ${intlMenu()}
     ${spStrip()}
     ${pendStrip()}
     ${adSlot('banner')}
@@ -750,7 +755,7 @@ function vBrowse(){
   else if (BF.state) list = list.filter(x => x.state_code === BF.state);
   const nHiddenClub = (BF.clubId || BF.club) ? 0 : list.filter(x => !clubOk(x, Q) && (BF.past || !isPast(x))).length;
   if (!BF.clubId && !BF.club) list = list.filter(x => clubOk(x, Q));
-  const active = [BF.day && `on ${esc(pd(BF.day).toLocaleDateString('en-AU', {weekday:'short', day:'numeric', month:'short', year:'numeric'}))}`, BF.q && `search “${esc(BF.q)}”`, BF.state && (STATES.find(s => s[0] === BF.state) || [, BF.state])[1], BF.disc && `discipline ${esc(BF.disc)}`, BF.cat && CATS[BF.cat] && CATS[BF.cat][2], BF.ost && OST[BF.ost] && OST[BF.ost][2], BF.club && CLUBF[BF.club], BF.clubId && CLUB[BF.clubId] && `club: ${esc(CLUB[BF.clubId].name)}`, BF.cat === 'club' && BF.mc && 'only my clubs', qState && `state from your search: ${Q.states.join(', ')}${!grp && !BF.state && S.states.length ? ' (overrides your Settings states)' : ''}`, !grp && !BF.state && !qState && S.states.length && AUS() && `your states in Settings (${S.states.join(', ')})`].filter(Boolean);
+  const active = [BF.day && `on ${esc(pd(BF.day).toLocaleDateString(LOC(), {weekday:'short', day:'numeric', month:'short', year:'numeric'}))}`, BF.q && `search “${esc(BF.q)}”`, BF.state && (STATES.find(s => s[0] === BF.state) || [, BF.state])[1], BF.disc && `discipline ${esc(BF.disc)}`, BF.cat && CATS[BF.cat] && CATS[BF.cat][2], BF.ost && OST[BF.ost] && OST[BF.ost][2], BF.club && CLUBF[BF.club], BF.clubId && CLUB[BF.clubId] && `club: ${esc(CLUB[BF.clubId].name)}`, BF.cat === 'club' && BF.mc && 'only my clubs', qState && `state from your search: ${Q.states.join(', ')}${!grp && !BF.state && S.states.length ? ' (overrides your Settings states)' : ''}`, !grp && !BF.state && !qState && S.states.length && AUS() && `your states in Settings (${S.states.join(', ')})`].filter(Boolean);
   if (BF.day) list = list.filter(x => datable(x) && x.start_date <= BF.day && evEnd(x) >= BF.day);
   if (BF.disc) list = list.filter(x => discsOf(x).includes(BF.disc));
   const tc = typeCounts(list.filter(x => BF.past || !isPast(x)));
@@ -865,9 +870,10 @@ function vShoot(id){
       ${x.registration_url_source ? `<p class="note">Entry details from ${esc(x.registration_url_source)}.</p>` : ''}`
       : regOf(x).length ? `<p class="note">✍ See How to register below</p>` : `<div class="warn">⚠ No online entry link found yet. ${x.org_id === 'aba' ? 'ABA events are entered through the host club.' : 'Check the source page below.'}</div>`;
   const closed = !!x.entry_close_date && daysTo(x.entry_close_date) < 0 && !isPast(x) && !x.info_only;
-  const closeTxt = x.entry_close_date ? pd(x.entry_close_date).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'long',year:'numeric'}) + (x.entry_close_time ? ', ' + x.entry_close_time : '') : '';
+  const closeTxt = x.entry_close_date ? pd(x.entry_close_date).toLocaleDateString(LOC(),{weekday:'short',day:'numeric',month:'long',year:'numeric'}) + (x.entry_close_time ? ', ' + x.entry_close_time : '') : '';
   /* International events (data/intl.json): same page, plus country, venue time zone and a map link; back goes to the country page. */
-  const I = !!x._intl, back = I ? iBackHash(x) : '#/browse', tzTxt = I && x.tz ? TZ_NAME[x.tz] || x.tz : '';
+  const I = !!x._intl, back = I ? iBackHash(x) : '#/browse', AUTZ = {'Australia/Perth': 'Perth time', 'Australia/Darwin': 'Darwin time', 'Australia/Adelaide': 'Adelaide time', 'Australia/Brisbane': 'Brisbane time', 'Australia/Sydney': 'Sydney/Canberra time', 'Australia/Melbourne': 'Melbourne time', 'Australia/Hobart': 'Hobart time'},
+    tzTxt = I && x.tz ? TZ_NAME[x.tz] || x.tz : !I && evTz(x) && VTZ && !/^Australia\//.test(VTZ) ? AUTZ[evTz(x)] || '' : '';
   const where = I ? [(x.location || '').replace(/[,\s]+$/, ''), x.us_state && US_ST[x.us_state], x.country_name || x.country].filter(Boolean).filter((v, i, a) => !(i && (a[0] || '').includes(v))).join(', ') : '';
   const mapUrl = I && x.location ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(where) : '';
   const srcName = x.source_name || (() => { try { return new URL(x.source_url).hostname.replace(/^www\./, ''); } catch { return x.source_url; } })();
@@ -966,7 +972,7 @@ function myDayHtml(x, k){
   return h + `<div class="results-box">${tb}</div><p class="note">Source: <a href="${esc(r.source_url)}" target="_blank" rel="noopener">${esc(r.source_name || "Archer's Diary")} ↗</a></p></div>`;
 }
 function dayPanel(k, mineDay){
-  const d = pd(k), lbl = d.toLocaleDateString('en-AU', {weekday:'long', day:'numeric', month:'long', year:'numeric'}), fol = followed();
+  const d = pd(k), lbl = d.toLocaleDateString(LOC(), {weekday:'long', day:'numeric', month:'long', year:'numeric'}), fol = followed();
   const clubNm = x => (CLUB[x.club_id] || {}).name || folIds(x).map(id => (CLUB[id] || {}).name).filter(Boolean)[0] || x.host || x.org || '';
   const where = x => x.state || (x._intl ? x.country_name || x.country || '' : '');
   const row = x => { const on = !!S.saved[x.id]; return `<li class="dp-row"><div class="dp-main"><a href="#/shoot/${encodeURIComponent(x.id)}${isPast(x) ? '?r=1' : ''}"><b>${esc(x.name)}</b></a>${isPast(x) ? ` <a class="b res-lnk" href="#/shoot/${encodeURIComponent(x.id)}?r=1">🏆 ${resOf(x) ? (resOf(x).kind === 'full' ? 'See scores' : 'Results link') : 'Results'}</a>` : ''}<div class="meta">${esc([clubNm(x), x.start_times || (x.end_date && x.end_date !== x.start_date ? range(x) : ''), where(x)].filter(Boolean).join(' · '))}</div>${isPast(x) ? '' : entryBtn(x, 'dp-reg', false)}${S.myClubs.some(id => folIds(x).includes(id)) ? '<span class="b myclub">🏠 My club</span>' : '<span class="b watching">👁 Watching</span>'}${clubOnly(x) ? ' <span class="b members">👥 Members only</span>' : ''}</div>${x.info_only ? '' : `<button class="star dp-star" aria-pressed="${on}" aria-label="${on ? 'Remove from' : 'Add to'} my events" data-star="${esc(x.id)}">${on ? '★' : '☆'}</button>`}</li>`; };
@@ -993,10 +999,10 @@ function vCalendar(){
   setTitle('My events');
   const mine = Object.keys(S.saved).map(id => BYID[id]).filter(Boolean).sort((a, b) => (a.start_date || '9999') < (b.start_date || '9999') ? -1 : 1);
   if (!CM) { const n = mine.find(x => x.start_date && !isPast(x)); const d = n ? pd(n.start_date) : today(); CM = [d.getFullYear(), d.getMonth()]; }
-  const [y, m] = CM, first = new Date(y, m, 1), start = (first.getDay() + 6) % 7, dim = new Date(y, m + 1, 0).getDate();
+  const [y, m] = CM, sun = SUN_WEEK.includes(homeCode()), first = new Date(y, m, 1), start = sun ? first.getDay() : (first.getDay() + 6) % 7, dim = new Date(y, m + 1, 0).getDate();
   const byDay = {};
   for (const x of mine) { if (!x.start_date) continue; for (let d = pd(x.start_date); d <= pd(x.end_date || x.start_date); d.setDate(d.getDate() + 1)) (byDay[iso(d)] = byDay[iso(d)] || []).push(x); }
-  let g = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => `<div class="h">${d}</div>`).join('');
+  let g = (sun ? ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] : ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']).map(d => `<div class="h">${d}</div>`).join('');
   for (let i = 0; i < start; i++) g += `<div class="c o"></div>`;
   for (let d = 1; d <= dim; d++) { const k = iso(new Date(y, m, d)), ev = byDay[k] || [], t = k === iso(today());
     const fd = followed().length ? folOnDay(k).filter(x => !ev.some(y => y.id === x.id)).length : 0;
@@ -1042,7 +1048,7 @@ function vEntries(){
   ${clashPairsHtml()}
   <h2>☐ Still to enter (${todo.length})</h2>${todo.length ? todo.sort(byDate).map(evCard).join('') : '<p class="note">Nothing waiting. 👍</p>'}
   <h2>$ Entered – still to pay (${ent.length})</h2>${ent.length ? ent.sort(byDate).map(evCard).join('') : '<p class="note">Nothing to pay.</p>'}
-  <h2>✓$ Entered + paid (${paid.length})</h2>${paid.length ? paid.map(x => { const e = S.entries[x.id]; return evCard(x).replace('</h3>', `</h3><div class="badges"><span class="b paid">$ Paid${e.amount ? ' ' + esc(e.currency || 'AUD') + ' ' + esc(e.amount) : ''}${e.paid_date ? ' · ' + esc(pd(e.paid_date).toLocaleDateString('en-AU', {day:'numeric', month:'short'})) : ''}</span>${e.ref ? `<span class="b world"># ${esc(e.ref)}</span>` : ''}</div>`); }).join('') : '<p class="note">Tick “I’ve entered” and “I’ve paid” on any event to track it here.</p>'}</div>`;
+  <h2>✓$ Entered + paid (${paid.length})</h2>${paid.length ? paid.map(x => { const e = S.entries[x.id]; return evCard(x).replace('</h3>', `</h3><div class="badges"><span class="b paid">$ Paid${e.amount ? ' ' + esc(e.currency || 'AUD') + ' ' + esc(e.amount) : ''}${e.paid_date ? ' · ' + esc(pd(e.paid_date).toLocaleDateString(LOC(), {day:'numeric', month:'short'})) : ''}</span>${e.ref ? `<span class="b world"># ${esc(e.ref)}</span>` : ''}</div>`); }).join('') : '<p class="note">Tick “I’ve entered” and “I’ve paid” on any event to track it here.</p>'}</div>`;
 }
 
 function vSettings(){
@@ -1132,7 +1138,7 @@ function vAdvertise(){
 function vPrivacy(){
   setTitle('Privacy & disclaimer');
   return `${pageHead('Privacy &amp; disclaimer', 'Short version: your data stays in your browser.', 'mixed')}<div class="wrap narrow"><section class="panel"><h2 class="sec">Privacy</h2>
-    <ul class="ticks"><li>${AUTH.on ? 'You only need an account to submit or fix an event. If you don’t sign in, the' : 'No account, no sign-up. The'} events you save, your entries and payments, your reminder settings and your remembered club details (Submit an event) are stored only in <b>your browser on this device</b> (localStorage). They are never sent to us.</li>
+    <ul class="ticks"><li>Your country: the first time you open the home page, your browser asks Cloudflare's public trace page (cloudflare.com/cdn-cgi/trace) which country your connection is in, so we can show your country's home page. We keep only the country code, in this browser for this visit. Pick a country in the header and that choice is used instead (and saved with your settings if you sign in).</li><li>${AUTH.on ? 'You only need an account to submit or fix an event. If you don’t sign in, the' : 'No account, no sign-up. The'} events you save, your entries and payments, your reminder settings and your remembered club details (Submit an event) are stored only in <b>your browser on this device</b> (localStorage). They are never sent to us.</li>
     <li>Club details you send with an event are remembered on this device${AUTH.on ? ' (and in your account if you are signed in)' : ''} so you don't retype them. Tap “Not you? Clear” on the Submit form to wipe them.</li>
     <li>Clearing your browser data deletes them. Use <a href="#/settings">Settings → Export backup</a> to keep a copy or move to another device.</li>
     <li id="privStats"><b>Visit counts:</b> we count visits anonymously with <a href="https://www.goatcounter.com/" target="_blank" rel="noopener">GoatCounter</a>: which pages are viewed and the words typed into Find events search. <b>No cookies</b>, no advertising trackers and nothing that identifies you. Searches that look like an email address or phone number are never counted. Reminders are made on your device.</li>
@@ -1547,7 +1553,17 @@ const isStandalone = () => { try { return matchMedia('(display-mode: standalone)
 const OTP_KEY = 'archcal.otpSent';
 function setSent(em){ AUTH.sent = em || ''; try { em ? localStorage.setItem(OTP_KEY, JSON.stringify({em, t: Date.now()})) : localStorage.removeItem(OTP_KEY); } catch {} }
 function loadSent(){ try { const o = JSON.parse(localStorage.getItem(OTP_KEY) || 'null'); if (o && o.em && Date.now() - o.t < 60 * 60 * 1000) AUTH.sent = o.em; else localStorage.removeItem(OTP_KEY); } catch {} }
-function softRender(){ const a = document.activeElement; if (a && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && a.closest('#view')) return; const y = scrollY; render(); scrollTo(0, y); }
+function softRender(){ const a = document.activeElement; if (a && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && a.closest('#view')) return; keepForm(() => { const y = scrollY; render(); scrollTo(0, y); }); }
+/* A background re-render (data arriving, sign-in finishing) must never wipe what someone has typed or picked: values are put back by id. */
+function keepForm(f){
+  const pg = document.body.dataset.page, els = [...document.querySelectorAll('#view input[id], #view textarea[id], #view select[id]')].filter(i => i.type !== 'hidden' && i.type !== 'submit');
+  const vals = els.filter(i => i.type === 'file' ? i.files && i.files.length : i.type === 'checkbox' || i.type === 'radio' ? i.checked !== i.defaultChecked : i.value !== (i.tagName === 'SELECT' ? (i.querySelector('option[selected]') || i.options[0] || {}).value : i.defaultValue))
+    .map(i => [i.id, i.type, i.type === 'file' ? i.files : i.type === 'checkbox' || i.type === 'radio' ? i.checked : i.value]);
+  f();
+  if (!vals.length || document.body.dataset.page !== pg) return;
+  for (const [id, t, v] of vals) { const e = document.getElementById(id); if (!e || e.type !== t) continue;
+    try { if (t === 'file') { e.files = v; e.dispatchEvent(new Event('change', {bubbles: true})); } else if (t === 'checkbox' || t === 'radio') e.checked = v; else e.value = v; } catch {} }
+}
 // pages whose content depends on sign-in; other pages aren't re-drawn when sign-in finishes loading (no jumps mid-click)
 function authRender(){ if (['account', 'privacy', 'settings', 'submit', 'fix', 'admin'].includes(document.body.dataset.page)) softRender(); }
 function updateNav(){
@@ -1677,7 +1693,7 @@ function vAccount(){
     <button class="btn alt block" id="mergeNo">✕ No, use my account’s data only</button>
     <p class="note">“Yes” combines both; where the same event differs, the most recent change wins. “No” replaces what’s on this device with your account’s events – <button type="button" class="linkbtn" id="bk">download a backup first</button>.</p>
     <button class="linkbtn" id="so0">Sign out instead</button></section></div>`;
-  const n = AUTH.sync.pending(), when = st.lastSync ? new Date(st.lastSync).toLocaleString('en-AU', {weekday: 'short', hour: 'numeric', minute: '2-digit'}) : '';
+  const n = AUTH.sync.pending(), when = st.lastSync ? new Date(st.lastSync).toLocaleString(LOC(), {weekday: 'short', hour: 'numeric', minute: '2-digit'}) : '';
   const syncTxt = !navigator.onLine ? `⏳ Offline – ${n} change${n === 1 ? '' : 's'} saved on this device, will sync when you’re back online`
     : st.error && n ? `⚠ ${n} change${n === 1 ? '' : 's'} not synced yet (${esc(st.error)}). We’ll keep trying.` : n ? `⏳ Syncing ${n} change${n === 1 ? '' : 's'}…` : `✓ Synced${when ? ' · ' + esc(when) : ''}`;
   const stTxt = S.states.length ? S.states.join(', ') : 'All of Australia', grTxt = GROUPS.filter(g => S.groups.includes(g[0])).map(g => g[0] === 'aba' ? 'ABA' : g[0] === 'taa' ? 'TAA' : g[1]).join(', ');
@@ -1743,7 +1759,7 @@ function bindAccount(){
     await AUTH.client.auth.signOut({scope: 'local'}).catch(() => {}); AUTH.sync.unlink(clearLocal); AUTH.user = null;
     AUTH.msg = ''; toast('Your account and its data were deleted'); softRenderForce(); };
 }
-function softRenderForce(){ const y = scrollY; render(); scrollTo(0, y); }
+function softRenderForce(){ keepForm(() => { const y = scrollY; render(); scrollTo(0, y); }); }
 /* ---------- My membership cards ----------
    Archers keep photos of (or links to) their membership cards to show at the event. Stored ON THIS DEVICE in IndexedDB
    ('archcal-cards'), so they open offline at ranges with no signal. Photos are re-encoded in the browser (max 1600 px JPEG,
@@ -1984,21 +2000,23 @@ const FAN_MAX_MB = 8;
 function loadFans(){ return FANS ? Promise.resolve(FANS) : fetch('data/fans.json').then(r => r.json()).then(j => (FANS = j.photos || [])).catch(() => (FANS = [])); }
 function vFans(){
   setTitle('Fans');
-  const head = pageHead('Fans', 'Photos from the archery community: podiums, club days and events. Send us yours.', 'field');
+  const hc0 = homeCode(), head = pageHead('Fans', 'Photos from the archery community: podiums, club days and events. Send us yours.', hc0 !== 'AUS' && PH[cHero(hc0)] ? cHero(hc0) : 'field');
   if (!FANS) { loadFans().then(() => { if (document.body.dataset.page === 'fans') softRenderForce(); }); return `${head}<div class="wrap"><p class="loading">Loading photos…</p></div>`; }
   const sent = /(?:^|[?&])fsent=1/.test(location.search);
   if (sent) history.replaceState(null, '', location.pathname + '#/fans');
-const fdate = d => !d ? '' : /^\d{4}-\d{2}-\d{2}$/.test(d) ? pd(d).toLocaleDateString('en-AU', {day: 'numeric', month: 'short', year: 'numeric'}) : d;
-  const wall = FANS.map((f, i) => `<figure class="fan"><button type="button" class="fan-img" data-zoom="${i}" aria-label="Enlarge: ${esc(f.caption)}"><img src="${esc(f.sm)}" alt="${esc(f.alt || f.caption)}" loading="lazy" width="${f.w ? 480 : ''}" height="${f.w ? Math.round(480 * f.h / f.w) : ''}"><span class="zoom" aria-hidden="true">⤢ Enlarge</span></button>
+const fdate = d => !d ? '' : /^\d{4}-\d{2}-\d{2}$/.test(d) ? pd(d).toLocaleDateString(LOC(), {day: 'numeric', month: 'short', year: 'numeric'}) : d;
+  const hc = homeCode(), FW = FANS.map((f, i) => [f, i]).sort((a, b) => ((b[0].country || 'AUS') === hc) - ((a[0].country || 'AUS') === hc)), nHere = FW.filter(([f]) => (f.country || 'AUS') === hc).length;
+  const wall = FW.map(([f, i]) => `<figure class="fan"><button type="button" class="fan-img" data-zoom="${i}" aria-label="Enlarge: ${esc(f.caption)}"><img src="${esc(f.sm)}" alt="${esc(f.alt || f.caption)}" loading="lazy" width="${f.w ? 480 : ''}" height="${f.w ? Math.round(480 * f.h / f.w) : ''}"><span class="zoom" aria-hidden="true">⤢ Enlarge</span></button>
     <figcaption><b>${esc(f.caption)}</b>${[f.credit && '📷 ' + f.credit, f.event, fdate(f.date)].filter(Boolean).length ? `<span class="fan-meta">${esc([f.credit && '📷 ' + f.credit, f.event, fdate(f.date)].filter(Boolean).join(' · '))}</span>` : ''}</figcaption></figure>`).join('');
   const fld = (id, lab, inp, hint = '', req = true) => `<div class="fld" data-f="${id}"><label for="${id}">${lab}${req ? ' <span class="req" aria-hidden="true">*</span>' : ' <span class="opt">(optional)</span>'}</label>${inp}${hint ? `<p class="hint">${hint}</p>` : ''}<p class="err" id="${id}_e" role="alert"></p></div>`;
   return `${head}<div class="wrap fans">
   ${sent ? `<section class="panel thanks" id="fanThanks" tabindex="-1"><span class="thanks-mark" aria-hidden="true">✓</span><h2 class="sec">Thanks, we’ve got your photo</h2><p>We check every photo before it goes up, usually within a few days. We’ll email you if we have a question.</p></section>` : ''}
+  ${hc !== 'AUS' && !nHere ? `<p class="note fan-ctry">No fan photos from ${hc === 'WORLD' ? 'your country' : (/^(United|Netherlands)/.test(iName(hc)) ? 'the ' : '') + esc(iName(hc))} yet. Send yours below! The photos here are from Australia.</p>` : ''}
   <div class="fan-wall">${wall || '<p class="note">No photos yet – be the first!</p>'}</div>
   <p class="note fan-rm">In a photo and want it removed? Email <a href="mailto:${esc(SITE.contact)}?subject=${encodeURIComponent('Photo removal – Archery Calendar Fans page')}">${esc(SITE.contact)}</a> and we’ll take it down.</p>
   <section class="panel sub fan-send" id="send"><h2 class="sec">📷 Send us your photo</h2>
    <ul class="ticks"><li>Podiums, club days, a great shot on the course – archery photos from Australia.</li><li>Every photo is <b>reviewed before it’s posted</b>. We may crop or resize it.</li><li>Fields marked <span class="req">*</span> are required.</li></ul>
-   <form id="fanForm" class="sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate>
+   <form id="fanForm" class="sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate><input type="hidden" name="Country" value="${esc(hc === 'AUS' ? 'Australia' : hc === 'WORLD' ? 'Other' : iName(hc))}">
     <input type="hidden" name="_subject" value="Fan photo – Archery Calendar"><input type="hidden" name="_template" value="table"><input type="hidden" name="_next" value="">
     <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true"><input type="hidden" name="_captcha" value="false">
     <div class="grid2">${fld('f_name', 'Your name', `<input id="f_name" name="name" required maxlength="80" autocomplete="name">`, 'Shown as the photo credit.')}
@@ -2162,6 +2180,8 @@ function apiIntl(x, row){
 }
 const loadIntl = () => INTL ? Promise.resolve(INTL) : (INTLP = INTLP || fetch('data/intl.json').then(r => r.json()).then(j => {
   API_INTL.forEach(x => { if (!j.events.some(e => e.id === x.id)) j.events.push(x); });
+  { const m = {}; j.events.forEach(x => { const c = x.country_code; if (!c || c === 'AUS') return; const o = m[c] = m[c] || {code: c, name: x.country_name || c, iso2: x.iso2, count: 0, upcoming: 0}; o.count++; if (!iPast(x) && x.status !== 'cancelled') o.upcoming++; if (!o.iso2 && x.iso2) o.iso2 = x.iso2; });
+    const prev = ICTRY.countries.map(c => c.code); ICTRY.countries = Object.values(m).sort((a, b) => (prev.indexOf(a.code) + 1 || 999) - (prev.indexOf(b.code) + 1 || 999)); }   // country list from intl.json itself (intl_countries.json is only a first-paint summary)
   j.events.forEach(x => { x._intl = true; if (OVR[x.id]) applyOvr(x, OVR[x.id]); if (!BYID[x.id]) BYID[x.id] = x; }); return (INTL = j); }));
 /* Back from an international event page returns to the same country page, filters (IF) and scroll position. */
 const IBACK = {};
@@ -2175,7 +2195,7 @@ const US_ORG_WORDS = {'usa-archery': 'usa archery joad usat', nfaa: 'nfaa nation
   tac: 'tac total archery challenge', redding: 'redding western classic straight arrow bowhunters marked 3d', lancaster: 'lancaster classic lac', world: 'world archery international ifaa olympic'};
 const TZ_NAME = {'America/New_York': 'Eastern Time', 'America/Chicago': 'Central Time', 'America/Denver': 'Mountain Time', 'America/Phoenix': 'Arizona Time',
   'America/Los_Angeles': 'Pacific Time', 'America/Anchorage': 'Alaska Time', 'Pacific/Honolulu': 'Hawaii Time', 'America/Puerto_Rico': 'Atlantic Time', 'Europe/Copenhagen': 'Danish time', 'Asia/Kuala_Lumpur': 'Malaysia time', 'Asia/Seoul': 'Korea time', 'Pacific/Auckland': 'NZ time', 'America/Toronto': 'Eastern Time', 'America/Winnipeg': 'Central Time', 'America/Regina': 'Saskatchewan time', 'America/Edmonton': 'Mountain Time', 'America/Vancouver': 'Pacific Time'};
-const IDISC = [['Target', /target|clout|flight|para|outdoor/i], ['Indoor', /indoor/i], ['Field', /field/i], ['3D', /3d|bowhunt|trail/i]];
+const IDISC = [['Target', /target|clout|flight|para|outdoor/i], ['Indoor', /indoor/i], ['Field', /field/i], ['3D', /3d|bowhunt|trail/i], ['Clout', /clout/i], ['Flight', /\bflight\b/i], ['Run Archery', /run archery/i], ['Traditional', /traditional/i], ['Bowfishing', /bowfish/i]];
 const iPast = x => (x.end_date || x.start_date) && daysTo(x.end_date || x.start_date) < 0;
 const iEv = code => (INTL && INTL.events.find(x => x.country_code === code)) || {};
 const iName = code => code === 'WORLD' ? 'World events' : (ICTRY.countries.find(c => c.code === code) || {}).name || iEv(code).country_name || code;
@@ -2248,7 +2268,7 @@ function iMatch(x, q){
 function iStatus(x){
   if (x.status === 'dates_tba' || !x.start_date) return `<span class="b tbc">? Dates not published yet</span>`;
   if (iPast(x)) return `<span class="b past">◷ Finished</span>`;
-  if (x.entry_close_date && daysTo(x.entry_close_date) >= 0) return `<span class="b open">✍ Entries close ${esc(pd(x.entry_close_date).toLocaleDateString('en-AU', {day: 'numeric', month: 'short', year: 'numeric'}))}</span>`;
+  if (x.entry_close_date && daysTo(x.entry_close_date) >= 0) return `<span class="b open">✍ Entries close ${esc(pd(x.entry_close_date).toLocaleDateString(LOC(), {day: 'numeric', month: 'short', year: 'numeric'}))}</span>`;
   return `<span class="b open">✓ Scheduled</span>`;
 }
 function iCard(x){
@@ -2260,7 +2280,7 @@ function iCard(x){
       <div class="meta">📅 ${esc(range(x))}${x.tz ? ` <small>(local: ${esc(TZ_NAME[x.tz] || x.tz)})</small>` : ''}</div>
       <div class="meta">📍 ${esc(here)}</div>
       <div class="meta">${esc([x.discipline || 'Discipline not listed', x.org].filter(Boolean).join(' · '))}</div>
-      <div class="badges">${cdBadge(x)}${iStatus(x)}${x.category === 'seminar' ? '<span class="b sem">🎤 Seminar / workshop</span>' : ''}${(x.intl_clubs || []).some(id => followed().includes(id)) ? '<span class="b watching">👁 Watching</span>' : ''}${x.dates_confirmed === false && x.start_date && !iPast(x) ? '<span class="b tbc">? Dates TBC</span>' : ''}${x.world_major ? '<span class="b world">🏆 World major</span>' : x.world_level && x.us_org === 'world' ? '<span class="b world">🌐 World event</span>' : ''}${x.registration_opens && !iPast(x) && !(x.registration_url && /^\d{4}-/.test(x.registration_opens) && daysTo(x.registration_opens) < 0) ? `<span class="b tbc">◷ Entries open ${esc(/^\d{4}-\d\d-\d\d$/.test(x.registration_opens) ? pd(x.registration_opens).toLocaleDateString('en-AU', {day: 'numeric', month: 'short', year: 'numeric'}) : x.registration_opens)}</span>` : ''}</div>
+      <div class="badges">${cdBadge(x)}${iStatus(x)}${x.category === 'seminar' ? '<span class="b sem">🎤 Seminar / workshop</span>' : ''}${(x.intl_clubs || []).some(id => followed().includes(id)) ? '<span class="b watching">👁 Watching</span>' : ''}${x.dates_confirmed === false && x.start_date && !iPast(x) ? '<span class="b tbc">? Dates TBC</span>' : ''}${x.world_major ? '<span class="b world">🏆 World major</span>' : x.world_level && x.us_org === 'world' ? '<span class="b world">🌐 World event</span>' : ''}${x.registration_opens && !iPast(x) && !(x.registration_url && /^\d{4}-/.test(x.registration_opens) && daysTo(x.registration_opens) < 0) ? `<span class="b tbc">◷ Entries open ${esc(/^\d{4}-\d\d-\d\d$/.test(x.registration_opens) ? pd(x.registration_opens).toLocaleDateString(LOC(), {day: 'numeric', month: 'short', year: 'numeric'}) : x.registration_opens)}</span>` : ''}</div>
       ${x.notes ? `<p class="note">${esc(x.notes)}</p>` : ''}
       <p class="iacts">${entryUrl(x) ? (iPast(x) ? `<a class="btn sm alt" href="${esc(entryUrl(x))}" target="_blank" rel="noopener noreferrer">✍ Entry / event page ↗</a>` : entryBtn(x, '', false)) : '<span class="note">No entry link published yet.</span>'}
         ${x.source_url ? `<a href="${esc(x.source_url)}" target="_blank" rel="noopener">Source${x.source_name ? ': ' + esc(x.source_name) : ''} ↗</a>` : `<span class="note">Source: ${esc(x.source_name || 'organiser')}</span>`}${x.also_listed ? ` · <a href="${esc(x.also_listed)}" target="_blank" rel="noopener">Also listed ↗</a>` : ''}</p></div>
@@ -2333,6 +2353,109 @@ function iHome(code, all){
     ${sts.length ? `<h2 class="sec-h">By state</h2><div class="chips" role="group" aria-label="Events by US state">${sts.map(([s, n]) => `<button class="chip" data-ihst="${s}" aria-pressed="${IF.st === s}">${esc(US_ST[s] || s)} <small>${n}</small></button>`).join('')}</div>` : ''}</section>
     <h2 class="sec-h" id="iall">All ${esc(nm)} events</h2>`;
 }
+/* ---------- Home country (owner 22 Oct 2026): every country gets its own home page (#/home/USA), built like the Australian home.
+   Which home: the country the archer picked (S.homeCountry; synced to their account when signed in, so the profile wins on sign-in)
+   > the country detected for this visit (Cloudflare's public trace page: country code only, kept in sessionStorage) > Australia.
+   Nothing else is sent anywhere. ---------- */
+const GEO3 = 'archcal.geo3';
+function iso3of(cc){
+  cc = String(cc || '').toUpperCase(); if (!cc) return ''; if (cc === 'AU' || cc === 'AUS') return 'AUS'; if (cc === 'WORLD') return 'WORLD';
+  const c = ICTRY.countries.find(k => k.iso2 === cc || k.code === cc); if (c) return c.code;
+  const x = INTL && INTL.events.find(e => e.iso2 === cc || e.country_code === cc); return x ? x.country_code : '';
+}
+const homeCode = () => S.homeCountry || (() => { try { return sessionStorage.getItem(GEO3) || ''; } catch { return ''; } })() || 'AUS';
+const homeHash = c => !c || c === 'AUS' ? '#/home' : c === 'WORLD' ? '#/intl/WORLD' : '#/home/' + c;
+const LOC = () => ({USA: 'en-US', CAN: 'en-CA', AUS: 'en-AU', NZL: 'en-NZ'})[homeCode()] || 'en-GB';
+const SUN_WEEK = ['USA', 'CAN', 'MEX', 'JPN', 'KOR', 'BRA', 'PHI', 'TPE'];
+const VTZ = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch { return ''; } })();
+const TZ_CC = {'Pacific/Auckland': 'NZ', 'Pacific/Chatham': 'NZ', 'Europe/London': 'GB', 'Europe/Copenhagen': 'DK', 'Asia/Tokyo': 'JP', 'Europe/Paris': 'FR', 'Europe/Berlin': 'DE', 'Europe/Amsterdam': 'NL',
+  'America/Mexico_City': 'MX', 'America/Tijuana': 'MX', 'Asia/Kuala_Lumpur': 'MY', 'Asia/Seoul': 'KR', 'Europe/Istanbul': 'TR', 'Europe/Zurich': 'CH', 'America/Toronto': 'CA', 'America/Vancouver': 'CA',
+  'America/Edmonton': 'CA', 'America/Winnipeg': 'CA', 'America/Halifax': 'CA', 'America/Regina': 'CA', 'America/St_Johns': 'CA'};
+const tzCountry = () => /^Australia\//.test(VTZ) ? 'AU' : TZ_CC[VTZ] || (/^America\/(New_York|Chicago|Denver|Los_Angeles|Phoenix|Anchorage|Detroit|Boise|Indiana|Kentucky|North_Dakota|Menominee|Juneau|Sitka|Nome|Adak)|^Pacific\/Honolulu$/.test(VTZ) ? 'US' : '');
+function ctryHasHome(c){ return c === 'AUS' || (!!c && c !== 'WORLD' && iHasPage(c)); }
+/* Bare home page only (no hash), first visit this session, nothing picked: detect, then switch. Never blocks render (AU home shows meanwhile). */
+async function geoLand(){
+  if (S.homeCountry) return;
+  let c = ''; try { c = sessionStorage.getItem(GEO3) || ''; } catch {}
+  if (!c) {
+    let cc = '';
+    try { const ac = new AbortController(), t = setTimeout(() => ac.abort(), 1500);
+      const r = await fetch('https://www.cloudflare.com/cdn-cgi/trace', {signal: ac.signal, cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer'}); clearTimeout(t);
+      const m = (await r.text()).match(/^loc=([A-Z]{2})$/m); cc = m && !/^(XX|T1)$/.test(m[1]) ? m[1] : ''; } catch {}
+    if (!cc) cc = tzCountry();
+    if (!cc) return;
+    c = iso3of(cc) || 'WORLD'; if (c !== 'AUS' && c !== 'WORLD' && !ctryHasHome(c)) c = 'WORLD';
+    try { sessionStorage.setItem(GEO3, c); } catch {}
+  }
+  setHomeLinks();
+  if (c !== 'AUS' && (!location.hash || location.hash === '#' || location.hash === '#/home') && !geoLand.moved) location.replace(homeHash(c));
+}
+function setHomeLinks(){
+  const c = homeCode(), h = homeHash(c);
+  document.querySelectorAll('.nav a[data-tab=home], .site-head .logo').forEach(a => a.setAttribute('href', h));
+  const fe = $('.nav a[data-tab=browse]'); if (fe) fe.setAttribute('href', c === 'AUS' ? '#/browse' : '#/intl/' + c);
+  const b = $('#ctrySw'); if (b) { const cur = curHomePage() || c; b.innerHTML = `<span aria-hidden="true">${cur === 'AUS' ? flag('AU') : cur === 'WORLD' ? '🌐' : flag(iIso(cur))}</span><span class="pl"> ${esc(cur === 'AUS' ? 'Australia' : iName(cur))}</span> ▾`; b.setAttribute('aria-label', `Country: ${cur === 'AUS' ? 'Australia' : iName(cur)}. Change country`); }
+}
+const curHomePage = () => { const [, p, a] = (location.hash || '').split('?')[0].split('/'); return p === 'home' ? (a ? iso3of(a) || '' : 'AUS') : ''; };
+function ctryMenu(){
+  const old = $('#ctryMenu'); if (old) { old.remove(); $('#ctrySw').setAttribute('aria-expanded', 'false'); return; }
+  const b = $('#ctrySw'), r = b.getBoundingClientRect(), cur = homeCode();
+  const opts = [{code: 'AUS', name: 'Australia', iso2: 'AU'}, ...iCtryList().filter(c => c.code !== 'AUS')];
+  const m = document.createElement('div'); m.id = 'ctryMenu'; m.className = 'ctry-menu'; m.setAttribute('role', 'menu'); m.setAttribute('aria-label', 'Choose your country');
+  m.innerHTML = `<p class="cm-h">Your country</p>${opts.map(c => `<button type="button" role="menuitemradio" aria-checked="${cur === c.code}" data-cm="${esc(c.code)}"><span aria-hidden="true">${flag(c.iso2)}</span> ${esc(c.name)}${cur === c.code ? ' <b aria-hidden="true">✓</b>' : ''}</button>`).join('')}<button type="button" role="menuitemradio" aria-checked="${cur === 'WORLD'}" data-cm="WORLD"><span aria-hidden="true">🌐</span> Somewhere else (World events)</button>`;
+  document.body.appendChild(m);
+  m.style.top = (r.bottom + scrollY + 6) + 'px'; m.style.left = Math.max(8, Math.min(r.left, innerWidth - m.offsetWidth - 8)) + 'px';
+  b.setAttribute('aria-expanded', 'true'); const f = m.querySelector('[aria-checked=true]') || m.querySelector('button'); f && f.focus();
+  m.onclick = e => { const t = e.target.closest('[data-cm]'); if (!t) return; S.homeCountry = t.dataset.cm; save(); m.remove(); b.setAttribute('aria-expanded', 'false'); CM = null; setHomeLinks(); location.hash = homeHash(S.homeCountry); if (location.hash === homeHash(S.homeCountry)) softRenderForce(); };
+  m.onkeydown = e => { if (e.key === 'Escape') { m.remove(); b.setAttribute('aria-expanded', 'false'); b.focus(); } };
+  setTimeout(() => document.addEventListener('click', function off(e){ if (!m.contains(e.target) && e.target !== b && !b.contains(e.target)) { m.remove(); b.setAttribute('aria-expanded', 'false'); } if (!document.body.contains(m)) document.removeEventListener('click', off); }), 0);
+}
+/* Discipline tiles per country: photo c_<iso2>_<disc> > generic discipline photo > no photo. Names are ours unless the country's own body is cited. */
+const CDISC = [['target', 'Target', /target|outdoor|para|\b(720|1440|900)\b/i, 'target'], ['indoor', 'Indoor', /indoor|\b18 ?m\b|vegas/i, 'indoor'], ['field', 'Field', /field/i, 'aba_field'],
+  ['3d', '3D', /^(?!.*bowfish).*(\b3d\b|bowhunt)/i, '3d'], ['clout', 'Clout', /clout/i, ''], ['flight', 'Flight', /\bflight\b/i, ''], ['run', 'Run Archery', /run archery/i, ''],
+  ['trad', 'Traditional', /traditional/i, ''], ['bowfishing', 'Bowfishing', /bowfish/i, '']];
+const discPhoto = (code, k, gen) => PH['c_' + String(iIso(code) || '').toLowerCase() + '_' + k] || (gen && PH[gen]) || null;
+function vCountryHome(code){
+  const nm = iName(code), the = /^(United|Netherlands)/.test(nm) ? 'the ' : '';
+  setTitle(`Archery in ${the}${nm} · Archery Calendar`);
+  const h = PH[cHero(code)] || (code === 'USA' ? PH.us_field : PH['3d']) || photo('mixed');
+  const hero = `<section class="hero" style="--img:url('${esc(h.file)}');--pos:${esc(h.pos || 'center 35%')}"><div class="wrap hero-grid">
+    <div class="hero-copy"><p class="kicker">${flag(iIso(code))} ${esc(nm)}</p><h1>Every archery event in ${the}${esc(nm)}.<br><span>One calendar.</span></h1>
+      <p class="lead" id="chLead">${INTL ? '' : 'Loading events…'}</p>
+      <form class="hero-search" id="chSearch" role="search"><input type="search" id="chq" placeholder="Search events in ${the}${esc(nm)}…" aria-label="Search events in ${esc(nm)}"><button class="btn gold" type="submit">Find events</button></form>${h.by ? `<p class="ch-credit">Photo: ${esc(h.by)}${h.source ? ` (${esc(h.source)})` : ''} · <a href="#/credits">Credits</a></p>` : ''}</div>
+    NEXTCARD</div></section>`;
+  if (!INTL) { loadIntl().then(() => { if (curHomePage() === code) softRenderForce(); }).catch(() => {}); return hero.replace('NEXTCARD', '') + '<div class="wrap"><p class="loading">Loading events…</p></div>'; }
+  const all = INTL.events.filter(x => x.country_code === code), up = all.filter(x => !iPast(x) && x.status !== 'cancelled').sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
+  const maj = up.filter(isMajor), nReg = up.filter(x => entryUrl(x)).length, orgs = [...new Set(up.map(x => x.source_name || x.org).filter(Boolean))];
+  const mine = Object.keys(S.saved).map(id => BYID[id]).filter(x => x && x.country_code === code && !iPast(x)).sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
+  const nx = mine[0] || maj.find(x => x.start_date);
+  const next = nx ? `<a class="next-card" href="#/shoot/${esc(encodeURIComponent(nx.id))}"><span class="kicker">${mine[0] ? 'Your next event' : 'Next major event'}</span><b class="big">${daysTo(nx.start_date) <= 0 ? 'On now' : daysTo(nx.start_date) + ' days'}</b>
+      <span class="nm">${esc(nx.name)}</span><span>${esc(range(nx))}</span>${cdBadge(nx)}</a>` : '';
+  const lead = up.length ? `${up.length} upcoming event${up.length === 1 ? '' : 's'}${orgs.length ? ` from ${esc(orgs.slice(0, 3).join(', '))}${orgs.length > 3 ? ` and ${orgs.length - 3} more` : ''}` : ''}. Save them, get reminders before entries close, and keep track of what you've paid.` : `No upcoming events listed in ${the}${esc(nm)} yet.`;
+  const disc = CDISC.map(([k, lbl, re, gen]) => { const ev = up.filter(x => re.test(x.discipline || x.name || '')); return {k, lbl, n: ev.length, ph: discPhoto(code, k, gen), by: [...new Set(ev.map(x => x.org).filter(Boolean))].slice(0, 3)}; }).filter(d => d.n);
+  const sts = code === 'USA' ? Object.entries(up.reduce((a, x) => (x.us_state && (a[x.us_state] = (a[x.us_state] || 0) + 1), a), {})).sort((a, b) => b[1] - a[1]) : [];
+  const cc = String(iIso(code) || code).toLowerCase();
+  return hero.replace('NEXTCARD', next).replace('<p class="lead" id="chLead"></p>', `<p class="lead" id="chLead">${lead}</p>`) + `
+  <div class="wrap home-wrap">${spRails(cc)}
+    <div class="stats four"><a class="stat" href="#/intl/${esc(code)}"><b>${up.length}</b><span>Upcoming events</span></a><a class="stat" href="#chMaj"><b>${maj.length}</b><span>🏆 Major events</span></a><a class="stat" href="#/intl/${esc(code)}"><b>${nReg}</b><span>✍ Online entry</span></a><a class="stat" href="#/calendar"><b>${mine.length}</b><span>★ My events here</span></a></div>
+    ${spStrip(cc)}
+    ${up.length ? '' : `<section class="panel iempty"><h2 class="sec-h">No upcoming events in ${the}${esc(nm)} yet</h2><p>Run a club or tournament there? Send it in and we'll add it.</p><p class="iacts"><a class="btn gold" href="#/submit?country=OTHER">➕ Submit an event</a> <a class="btn alt" href="#/intl/WORLD">🌐 World events</a></p></section>`}
+    ${disc.length ? `<h2 class="sec-h">Pick your discipline</h2><div class="types">${disc.map(d => `<a class="type${d.ph ? '' : ' type-plain'}" href="#/intl/${esc(code)}" data-chd="${esc(d.lbl)}" style="${d.ph ? `--img:url('${esc(d.ph.sm)}');--pos:${esc(d.ph.pos || 'center')}` : ''}"><span class="type-name">${esc(d.lbl)}</span><span class="type-sub">${d.n} coming up${d.by.length ? ' · ' + esc(d.by.join(', ')) : ''}</span></a>`).join('')}</div>` : ''}
+    ${up.length ? `<div class="two"><section><h2 class="sec-h">Coming up</h2><div class="list">${up.slice(0, 4).map(iCard).join('')}</div></section>
+      <section id="chMaj"><h2 class="sec-h">🏆 Major events &amp; championships</h2>${maj.length ? `<div class="list">${maj.slice(0, 4).map(iCard).join('')}</div>` : '<p class="note">No major events listed yet.</p>'}</section></div>` : ''}
+    ${sts.length ? `<h2 class="sec-h">By state</h2><div class="chips" role="group" aria-label="Events by US state">${sts.map(([s, n]) => `<a class="chip" href="#/intl/USA" data-chst="${s}">${esc(US_ST[s] || s)} <small>${n}</small></a>`).join('')}</div>` : ''}
+    ${iClubsPanel(code)}
+    ${clubCta()}
+    <p class="center see-all"><a class="btn" href="#/intl/${esc(code)}">See all ${esc(nm)} events →</a></p>
+  </div>`;
+}
+function bindCountryHome(code){
+  const reset = o => Object.assign(IF, {code, q: '', disc: '', org: '', st: '', ctry: '', major: false, cat: '', past: false, limit: 60}, o);
+  const f = $('#chSearch'); if (f) f.onsubmit = e => { e.preventDefault(); reset({q: $('#chq').value}); location.hash = '#/intl/' + code; };
+  document.querySelectorAll('[data-chd]').forEach(a => a.onclick = () => { const d = a.dataset.chd; reset(IDISC.some(x => x[0] === d) ? {disc: d} : {q: d}); });
+  document.querySelectorAll('[data-chst]').forEach(a => a.onclick = () => reset({st: a.dataset.chst}));
+  bindClubBtns($('#view'));
+}
 function vIntl(arg){
   let code = String(decodeURIComponent(arg || 'USA')).toUpperCase();
   if (ICTRY.countries.length && code !== 'WORLD' && code !== 'USA' && !iHasPage(code) && !(INTL && INTL.events.some(x => x.country_code === code))) code = ICTRY.countries.some(c => c.code === code) ? 'WORLD' : 'USA';
@@ -2358,8 +2481,8 @@ function vIntl(arg){
   const sts = usa ? [...new Set(all.map(x => x.us_state).filter(Boolean))].sort((a, b) => US_ST[a] < US_ST[b] ? -1 : 1) : [];
   const wctr = world ? [...new Set(all.filter(x => IF.past || !iPast(x)).map(x => x.country_code).filter(Boolean))].sort((a, b) => iName(a) < iName(b) ? -1 : 1) : [];
   const active = [IF.q && `search “${esc(IF.q)}”`, IF.org && US_ORGS.find(o => o[0] === IF.org)[1], IF.st && US_ST[IF.st], world && IF.ctry && iName(IF.ctry), world && IF.major && 'World majors', IF.cat === 'seminar' ? 'Seminars & workshops' : IF.cat === 'shoots' && 'Events only', IF.disc].filter(Boolean);
-  return `${head}<div class="wrap intl-page">
-    ${iCtryStrip(code)}${world ? '' : iHome(code, all)}
+  return `${head}<div class="wrap intl-page home-wrap">${spRails(world ? 'world_intl' : String(iIso(code) || code).toLowerCase() + '_intl')}
+    ${iCtryStrip(code)}${world ? '' : iHome(code, all)}${spStrip(world ? 'world' : String(iIso(code) || code).toLowerCase(), 'intl')}
     <div class="intl-top"><label for="ictry">Country</label><select id="ictry">${intlOptions(code)}</select>
       <a class="note" href="#/browse">🇦🇺 Australian events are in Find events</a></div>
     <div class="browse"><div class="filters"><input type="search" id="iq" placeholder="${usa ? 'Search: vegas, nfaa, ibo, texas, CA…' : code === 'DEN' ? 'Search: DM, indoor, 3D, Aarhus, Taastrup…' : code === 'MAS' ? 'Search: indoor, Selangor, Kedah, seminar…' : code === 'KOR' ? 'Search: festival, trials, Jeju, workshop…' : code === 'NZL' ? 'Search: Auckland, Christchurch, 720, NZFAA, 3D…' : code === 'CAN' ? 'Search: Manitoba, BC, MICA, 18m, nationals…' : 'Search event, club, town…'}" value="${esc(IF.q)}" aria-label="Search events in ${esc(nm)}">
@@ -2444,6 +2567,7 @@ function render(){
   else if (p === 'club') { const id = decodeURIComponent(arg || ''); v.innerHTML = vClub(id); bindClub(id); }
   else if (p === 'clubs') { v.innerHTML = vClubs(); bindClubPicker(); }
   else if (p === 'intl') { v.innerHTML = vIntl(arg); bindIntl(arg); }
+  else if (p === 'home' && arg && iso3of(decodeURIComponent(arg)) && iso3of(decodeURIComponent(arg)) !== 'AUS') { const c = iso3of(decodeURIComponent(arg)); if (c === 'WORLD') { location.replace('#/intl/WORLD'); return; } v.innerHTML = vCountryHome(c); bindCountryHome(c); }
   else { const unknown = !!(p && !KNOWN_PAGES.includes(p) && h.startsWith('#/'));
     v.innerHTML = (unknown ? `<div class="wrap"><p class="nf-note" role="status" id="nfNote">⚠ Page not found: <code>${esc(decodeURIComponent(h0).slice(0, 60))}</code> – here’s the home page instead. <a href="#/browse">Find events →</a></p></div>` : '') + vHome();
     v.querySelectorAll('[data-cat]').forEach(a => a.onclick = () => { BF.cat = a.dataset.cat; BF.disc = ''; BF.scope = 'all'; });
@@ -2606,7 +2730,7 @@ function vAdmin(){
   if (location.hash.split('?')[0] === '#/admin/scores') return vAdmScores(head);
   const inst = new Map((ADM.subs || []).map(s => [String(s.email).toLowerCase(), s]));
   const reqs = (ADM.reqs || []).filter(q => q.status === 'pending' && !(inst.get(q.email) || {}).instant);
-  const reqHtml = `<section class="panel adm-reqs"><h2 class="sec">People asking to add shoots (${reqs.length})</h2>${reqs.length ? reqs.map(q => `<div class="adm-req" data-rid="${esc(q.id)}"><div><b>${esc(q.name || '(no name)')}</b>${q.role ? ' · ' + esc(q.role) : ''}<br>${esc(q.club || '')}<br><span class="note">${esc(q.email)} · ${q.source === 'email' ? '✉️ email' : '📝 form'} · ${esc(new Date(q.created_at).toLocaleDateString('en-AU'))}</span>${q.note ? `<br><span class="note">${esc(q.note)}</span>` : ''}</div>
+  const reqHtml = `<section class="panel adm-reqs"><h2 class="sec">People asking to add shoots (${reqs.length})</h2>${reqs.length ? reqs.map(q => `<div class="adm-req" data-rid="${esc(q.id)}"><div><b>${esc(q.name || '(no name)')}</b>${q.role ? ' · ' + esc(q.role) : ''}<br>${esc(q.club || '')}<br><span class="note">${esc(q.email)} · ${q.source === 'email' ? '✉️ email' : '📝 form'} · ${esc(new Date(q.created_at).toLocaleDateString(LOC()))}</span>${q.note ? `<br><span class="note">${esc(q.note)}</span>` : ''}</div>
       <div class="adm-btns row"><button class="btn gold" data-ract="approve">✓ Approve</button><button class="btn alt" data-ract="delete">✕ Delete</button></div></div>`).join('') : '<p class="note">No one waiting. 🎉</p>'}<p><a href="#/admin/approved">Approved people (${(ADM.subs || []).length}) · add someone →</a></p><p><a href="#/admin/scores">Self-reported scores · remove entries →</a></p></section>`;
   const rows = ADM.rows.filter(r => ADM.tab === 'all' || r.status === ADM.tab);
   const tabs = ['pending', 'live', 'rejected', 'all'].map(t => `<button type="button" class="btn sm ${ADM.tab === t ? 'gold' : 'alt'}" data-atab="${t}">${t[0].toUpperCase() + t.slice(1)} (${t === 'all' ? ADM.rows.length : ADM.rows.filter(r => r.status === t).length})</button>`).join(' ');
@@ -3091,10 +3215,10 @@ function bindSubmit(){
 
 /* ---------- Corrections: #/fix and #/fix/<event id> (also reachable as #/submit/fix). Emails nfshold via FormSubmit only; nothing on the site changes automatically. ---------- */
 const subTabs = on => `<nav class="sub-tabs" aria-label="What would you like to send?"><a href="#/submit" class="sub-tab" ${on === 'new' ? 'aria-current="page"' : ''}>➕ New event</a><a href="#/fix" class="sub-tab" ${on === 'fix' ? 'aria-current="page"' : ''}>✏️ Fix an existing event</a></nav>`;
-const fixLabel = x => `${x.name} – ${x.start_date ? pd(x.start_date).toLocaleDateString('en-AU', {day: 'numeric', month: 'short', year: 'numeric'}) : 'date TBC'}${x.state_code || x.state ? ' – ' + (x.state_code || x.state) : ''}`;
+const fixLabel = x => `${x.name} – ${x.start_date ? pd(x.start_date).toLocaleDateString(LOC(), {day: 'numeric', month: 'short', year: 'numeric'}) : 'date TBC'}${x.state_code || x.state ? ' – ' + (x.state_code || x.state) : ''}`;
 const fixList = () => EV.filter(x => !x.start_date || daysTo(x.end_date || x.start_date) >= -90).sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
 const fixDates = x => x ? [x.start_date, x.end_date && x.end_date !== x.start_date && x.end_date].filter(Boolean).join(' to ') : '';
-const fdate = d => d ? pd(d).toLocaleDateString('en-AU', {day: 'numeric', month: 'short', year: 'numeric'}) : '';
+const fdate = d => d ? pd(d).toLocaleDateString(LOC(), {day: 'numeric', month: 'short', year: 'numeric'}) : '';
 const fixNow = x => { if (!x) return {}; const fe = x.flyer_extract || {};
   return {dates: x.start_date ? range(x) : '', start: x.start_date || '', end: x.end_date || x.start_date || '', time: x.start_times || fe.start_time || fe.times || '', venue: x.location || '',
     rounds: x.rounds || fe.rounds || '', divs: x.divisions || fe.divisions || fe.classes || '', close: x.entry_close_date || '', register: regText(regOf(x)), enotes: x.notes || '',

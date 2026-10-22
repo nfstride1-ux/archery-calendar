@@ -1007,3 +1007,13 @@ body[data-page=submit] .site-head .add-btn{outline:2px solid #fff;outline-offset
 .b.cd.cd-live{background:#0b3d91;color:#fff;border-color:#0b3d91}
 .iempty p{max-width:62ch}
 @media (max-width:760px){.ctry-strip{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:6px;scrollbar-width:thin}.ctry-chip{flex:0 0 auto}}
+/* Country switcher + country home */
+.ctry-sw{cursor:pointer;font:inherit;white-space:nowrap}
+.ctry-menu{position:absolute;z-index:1000;background:#fff;border:2px solid var(--night);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:6px;max-height:70vh;overflow:auto;min-width:240px}
+.ctry-menu .cm-h{margin:4px 8px 6px;font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#374151}
+.ctry-menu button{display:flex;gap:8px;align-items:center;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:9px 10px;font:inherit;font-size:15px;color:var(--night);cursor:pointer;min-height:40px}
+.ctry-menu button:hover,.ctry-menu button:focus{background:#eef3fb;outline:2px solid #0b57d0}
+.ctry-menu button[aria-checked=true]{font-weight:800}
+.type.type-plain{background:linear-gradient(135deg,#0b3d91,#0d1b2a)}
+.ch-credit{margin:10px 0 0;font-size:13px;color:#e2e8f0}.ch-credit a{color:#fff}
+.fan-ctry{margin:10px 0}
