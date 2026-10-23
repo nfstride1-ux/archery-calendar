@@ -2552,8 +2552,8 @@ function vNotFound(kind, id){
 }
 function bindNotFound(){ const f = $('#nfSearch'); if (!f) return; f.onsubmit = e => { e.preventDefault(); BF.q = $('#nfq').value.trim(); BF.scope = 'all'; BF.disc = ''; BF.state = ''; location.hash = '#/browse'; }; }
 /* Friendly aliases for links people type or share. */
-const ROUTE_ALIAS = {find: '#/browse', search: '#/browse', events: '#/browse', international: '#/intl', world: '#/intl/world', 'my-events': '#/calendar', myevents: '#/calendar'};
-const KNOWN_PAGES = ['home', 'browse', 'shoot', 'calendar', 'entries', 'settings', 'advertise', 'credits', 'privacy', 'fans', 'account', 'admin', 'cards', 'fix', 'submit', 'calendars', 'club', 'clubs', 'intl', 'import'];
+const ROUTE_ALIAS = {find: '#/browse', search: '#/browse', events: '#/browse', international: '#/intl', world: '#/intl/world', 'my-events': '#/calendar', myevents: '#/calendar', 'whats-new': '#/whatsnew', news: '#/whatsnew', updates: '#/whatsnew'};
+const KNOWN_PAGES = ['home', 'browse', 'shoot', 'calendar', 'entries', 'settings', 'advertise', 'credits', 'privacy', 'fans', 'account', 'admin', 'cards', 'fix', 'submit', 'calendars', 'club', 'clubs', 'intl', 'import', 'whatsnew'];
 function route(){
   const h = location.hash || '#/home', last = route.last; route.last = h;
   if (last && last.startsWith('#/intl')) IBACK[last] = scrollY;
@@ -2586,6 +2586,7 @@ function render(){
   else if (p === 'club') { const id = decodeURIComponent(arg || ''); v.innerHTML = vClub(id); bindClub(id); }
   else if (p === 'clubs') { v.innerHTML = vClubs(); bindClubPicker(); }
   else if (p === 'intl') { v.innerHTML = vIntl(arg); bindIntl(arg); }
+  else if (p === 'whatsnew' && typeof vWhatsNew === 'function') { v.innerHTML = vWhatsNew(); if (typeof bindWhatsNew === 'function') bindWhatsNew(v); }
   else if (p === 'home' && arg && iso3of(decodeURIComponent(arg)) && iso3of(decodeURIComponent(arg)) !== 'AUS') { const c = iso3of(decodeURIComponent(arg)); if (c === 'WORLD') { location.replace('#/intl/WORLD'); return; } v.innerHTML = vCountryHome(c); bindCountryHome(c); }
   else { const unknown = !!(p && !KNOWN_PAGES.includes(p) && h.startsWith('#/'));
     v.innerHTML = (unknown ? `<div class="wrap"><p class="nf-note" role="status" id="nfNote">⚠ Page not found: <code>${esc(decodeURIComponent(h0).slice(0, 60))}</code> – here’s the home page instead. <a href="#/browse">Find events →</a></p></div>` : '') + vHome();
