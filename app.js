@@ -274,7 +274,7 @@ function evCard(x){
   return `<article class="ev th-${t}" role="link" tabindex="0" data-open="${esc(x.id)}" aria-label="${esc(x.name)}">
     <div class="ev-img ev-host">${dateBox(x)}${hostMark(x)}</div>
     <div class="body"><div class="tags">${catTag(x)}${t !== 'mixed' && isShoot(x) ? tagHtml(t) : ''}${x.flyer_local ? `<span class="tag fl">📄 ${x.flyer_is_current ? x.flyer_year + ' flyer' : 'Last year’s flyer'}</span>` : ''}${resOf(x) ? `<span class="tag res">🏆 ${resOf(x).kind === 'full' ? 'Scores' : 'Results'}</span>` : ''}</div>
-      <h3 class="name">${esc(x.name)}</h3>
+      <h3 class="name">${esc(x.name)}</h3>${tmLine(x)}
       <div class="meta">${esc([x.location, x.country_code && x.country_code !== 'AUS' ? x.country : x.state].filter(Boolean).join(' · '))}</div>
       <div class="meta">${isAba(x) ? abaLogo(32, 'org-logo') : ''}${esc([x.discipline, x.org, x.aba_branch && x.aba_branch.split(' – ')[0]].filter(Boolean).join(' · '))}</div>${badges(x, true)}
       ${entryBtn(x)}
@@ -873,7 +873,7 @@ function vShoot(id){
   const closeTxt = x.entry_close_date ? pd(x.entry_close_date).toLocaleDateString(LOC(),{weekday:'short',day:'numeric',month:'long',year:'numeric'}) + (x.entry_close_time ? ', ' + x.entry_close_time : '') : '';
   /* International events (data/intl.json): same page, plus country, venue time zone and a map link; back goes to the country page. */
   const I = !!x._intl, back = I ? iBackHash(x) : '#/browse', AUTZ = {'Australia/Perth': 'Perth time', 'Australia/Darwin': 'Darwin time', 'Australia/Adelaide': 'Adelaide time', 'Australia/Brisbane': 'Brisbane time', 'Australia/Sydney': 'Sydney/Canberra time', 'Australia/Melbourne': 'Melbourne time', 'Australia/Hobart': 'Hobart time'},
-    tzTxt = I && x.tz ? TZ_NAME[x.tz] || x.tz : !I && evTz(x) && VTZ && !/^Australia\//.test(VTZ) ? AUTZ[evTz(x)] || '' : '';
+    tzTxt = I && x.tz ? TZ_NAME[x.tz] || x.tz : !I && evTz(x) && tzDiff(evTz(x), x.start_date) ? AUTZ[evTz(x)] || '' : '';
   const where = I ? [(x.location || '').replace(/[,\s]+$/, ''), x.us_state && US_ST[x.us_state], x.country_name || x.country].filter(Boolean).filter((v, i, a) => !(i && (a[0] || '').includes(v))).join(', ') : '';
   const mapUrl = I && x.location ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(where) : '';
   const srcName = x.source_name || (() => { try { return new URL(x.source_url).hostname.replace(/^www\./, ''); } catch { return x.source_url; } })();
@@ -915,6 +915,7 @@ function vShoot(id){
     <p class="note fix-link">${isAdmin() ? `<a class="btn gold" href="#/fix/${esc(encodeURIComponent(x.id))}" id="adminEdit">✏️ Edit (admin)</a> ` : ''}<a href="#/fix/${esc(encodeURIComponent(x.id))}" id="fixLink">✏️ Something wrong? Suggest a fix</a></p>
    </div>
    <aside class="side">
+    ${isPast(x) || x.cancelled || x.status === 'cancelled' ? '' : timesBox(x)}
     <section class="panel act">${closeTxt && ST(id) === 'none' && daysTo(x.entry_close_date) >= 0 ? `<p class="closes">⏳ Entries close<br><b>${esc(closeTxt)}</b></p>` : ''}
       ${closed ? `<p class="closed-note" id="closedNote">🔒 <b>Entries closed</b><br>${esc(closeTxt)}${x.flyer_extract && /no late/i.test(x.flyer_extract.entry_close_note || '') ? ' · no late entries' : ''}</p>` : ''}
       ${regBtn}
@@ -975,7 +976,7 @@ function dayPanel(k, mineDay){
   const d = pd(k), lbl = d.toLocaleDateString(LOC(), {weekday:'long', day:'numeric', month:'long', year:'numeric'}), fol = followed();
   const clubNm = x => (CLUB[x.club_id] || {}).name || folIds(x).map(id => (CLUB[id] || {}).name).filter(Boolean)[0] || x.host || x.org || '';
   const where = x => x.state || (x._intl ? x.country_name || x.country || '' : '');
-  const row = x => { const on = !!S.saved[x.id]; return `<li class="dp-row"><div class="dp-main"><a href="#/shoot/${encodeURIComponent(x.id)}${isPast(x) ? '?r=1' : ''}"><b>${esc(x.name)}</b></a>${isPast(x) ? ` <a class="b res-lnk" href="#/shoot/${encodeURIComponent(x.id)}?r=1">🏆 ${resOf(x) ? (resOf(x).kind === 'full' ? 'See scores' : 'Results link') : 'Results'}</a>` : ''}<div class="meta">${esc([clubNm(x), x.start_times || (x.end_date && x.end_date !== x.start_date ? range(x) : ''), where(x)].filter(Boolean).join(' · '))}</div>${isPast(x) ? '' : entryBtn(x, 'dp-reg', false)}${S.myClubs.some(id => folIds(x).includes(id)) ? '<span class="b myclub">🏠 My club</span>' : '<span class="b watching">👁 Watching</span>'}${clubOnly(x) ? ' <span class="b members">👥 Members only</span>' : ''}</div>${x.info_only ? '' : `<button class="star dp-star" aria-pressed="${on}" aria-label="${on ? 'Remove from' : 'Add to'} my events" data-star="${esc(x.id)}">${on ? '★' : '☆'}</button>`}</li>`; };
+  const row = x => { const on = !!S.saved[x.id]; return `<li class="dp-row"><div class="dp-main"><a href="#/shoot/${encodeURIComponent(x.id)}${isPast(x) ? '?r=1' : ''}"><b>${esc(x.name)}</b></a>${isPast(x) ? ` <a class="b res-lnk" href="#/shoot/${encodeURIComponent(x.id)}?r=1">🏆 ${resOf(x) ? (resOf(x).kind === 'full' ? 'See scores' : 'Results link') : 'Results'}</a>` : ''}${tmLine(x, k)}<div class="meta">${esc([clubNm(x), (evTimesShort(x, k) ? '' : x.start_times) || (x.end_date && x.end_date !== x.start_date ? range(x) : ''), where(x)].filter(Boolean).join(' · '))}</div>${isPast(x) ? '' : entryBtn(x, 'dp-reg', false)}${S.myClubs.some(id => folIds(x).includes(id)) ? '<span class="b myclub">🏠 My club</span>' : '<span class="b watching">👁 Watching</span>'}${clubOnly(x) ? ' <span class="b members">👥 Members only</span>' : ''}</div>${x.info_only ? '' : `<button class="star dp-star" aria-pressed="${on}" aria-label="${on ? 'Remove from' : 'Add to'} my events" data-star="${esc(x.id)}">${on ? '★' : '☆'}</button>`}</li>`; };
   const fs = folOnDay(k).filter(x => !mineDay.some(y => y.id === x.id));
   const homeSt = (CLUB[S.homeClub] || CLUB[fol[0]] || {}).state || (S.states.length === 1 ? S.states[0] : '');
   const stCode = homeSt && (STATES.find(s => s[0] === homeSt || s[1] === homeSt) || [])[0] || '';
@@ -2278,7 +2279,7 @@ function iCard(x){
   return `<article class="ev iev th-${t}" data-iid="${esc(x.id)}" role="link" tabindex="0" data-open="${esc(x.id)}" aria-label="${esc(x.name)}">
     <div class="ev-img ev-host">${dateBox(x)}${iMark(x)}</div>
     <div class="body"><div class="tags"><span class="tag ctry">${flag(x.iso2)} ${esc(x.country_name || 'International')}</span>${catTag(x)}${t !== 'mixed' && isShoot(x) ? tagHtml(t) : ''}</div>
-      <h3 class="name"><a class="iopen" href="#/shoot/${esc(encodeURIComponent(x.id))}">${esc(x.name)}</a></h3>
+      <h3 class="name"><a class="iopen" href="#/shoot/${esc(encodeURIComponent(x.id))}">${esc(x.name)}</a></h3>${tmLine(x)}
       <div class="meta">📅 ${esc(range(x))}${x.tz ? ` <small>(local: ${esc(TZ_NAME[x.tz] || x.tz)})</small>` : ''}</div>
       <div class="meta">📍 ${esc(here)}</div>
       <div class="meta">${esc([x.discipline || 'Discipline not listed', x.org].filter(Boolean).join(' · '))}</div>
@@ -2323,24 +2324,134 @@ const dayLbl = n => n === 1 ? '1 day' : n + ' days';
 const cdSE = x => { const tz = evTz(x); return [tzMid(x.start_date, tz), tzMid(x.end_date || x.start_date, tz) + 864e5]; };
 // Big next-card number: whole days left, floor of the same remaining time the badge ticks down (badge 112d 7h → big 112 days).
 function bigText(s, e){ const n = Date.now(); if (n >= e) return 'Finished'; if (n >= s) return 'On now'; const d = Math.floor((s - n) / 864e5); return d < 1 ? 'Under 1 day' : dayLbl(d); }
-function bigCd(x){ if (!x || !/^\d{4}-\d\d-\d\d$/.test(x.start_date || '')) return '<b class="big">–</b>'; const [s, e] = cdSE(x);
-  return `<b class="big" data-cdb="${s}" data-cde="${e}">${bigText(s, e)}</b><small class="cd-cap">full days until the first day starts</small>`; }
+function bigCd(x){ if (!x || !/^\d{4}-\d\d-\d\d$/.test(x.start_date || '')) return '<b class="big">–</b>'; const [s, e] = cdSE(x), L = cdTargets(x), g = L ? L[0][0] : s;
+  return `<b class="big" data-cdb="${g}" data-cde="${e}">${bigText(g, e)}</b><small class="cd-cap">${L ? `full days until ${L[0][1] === 'Sign-in' ? 'sign-in opens' : 'the start'}` : 'full days until the first day starts'}</small>`; }
 function cdBadge(x, big){
   if (!x || !isMajor(x) || !/^\d{4}-\d\d-\d\d$/.test(x.start_date || '') || x.cancelled || x.status === 'cancelled' || x.status === 'dates_tba') return '';
   if (iPast(x)) return '';
-  const [s, e] = cdSE(x);
-  return `<span class="b cd${big ? ' cd-big' : ''}" data-cd="${s}" data-cde="${e}" title="Counts down to the start of the first day (midnight, venue time). Start times aren't shown unless the organiser publishes them.">${cdText(s, e)}</span>`;
+  const [s, e] = cdSE(x), L = cdTargets(x), tz = evTz(x);
+  const when = L && new Date(L[0][0]).toLocaleString(LOC(), {timeZone: tz || undefined, weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit'});
+  const ttl = L ? `Counts down to ${L[0][1] === 'Sign-in' ? 'sign-in' : 'the start'}: ${when}${tz ? ' ' + tzNm(tz) : ''}, from the organiser's published times.` : "Counts down to the start of the first day (midnight, venue time). Start times aren't shown unless the organiser publishes them.";
+  return `<span class="b cd${big ? ' cd-big' : ''}" data-cd="${s}" data-cde="${e}"${L ? ` data-cdt="${cdEnc(L)}"` : ''} title="${esc(ttl)}">${cdText(s, e, L)}</span>`;
 }
-function cdText(s, e){
-  const n = Date.now();
+function cdText(s, e, L){
+  const n = Date.now(), live = L ? L[L.length - 1][0] : s, nx = L ? L.find(t => t[0] > n) : null;
   if (n >= e) return '◷ Finished';
-  if (n >= s) { const tot = Math.max(1, Math.round((e - s) / 864e5)), d = Math.min(tot, Math.floor((n - s) / 864e5) + 1); return `● Live now · day ${d} of ${tot}`; }
-  const t = Math.floor((s - n) / 1000), d = Math.floor(t / 86400), h = Math.floor(t % 86400 / 3600), m = Math.floor(t % 3600 / 60), sec = t % 60;
-  return `⏱ Starts in ${d ? d + 'd ' : ''}${d || h ? h + 'h ' : ''}${m}m ${sec}s`;
+  if (n >= live) { const tot = Math.max(1, Math.round((e - s) / 864e5)), d = Math.min(tot, Math.floor((n - s) / 864e5) + 1); return `● Live now · day ${d} of ${tot}`; }
+  const t = Math.floor(((nx ? nx[0] : s) - n) / 1000), d = Math.floor(t / 86400), h = Math.floor(t % 86400 / 3600), m = Math.floor(t % 3600 / 60), sec = t % 60;
+  return `⏱ ${nx ? nx[1] : 'Starts'} in ${d ? d + 'd ' : ''}${d || h ? h + 'h ' : ''}${m}m ${sec}s`;
+}
+/* ---------- Event times (Nathe 23 Oct 2026: "Show register time and other times noted") ----------
+   The organiser's start_times text, laid out per day: sign-in/registration first (bold), then the rest in the
+   organiser's order. Every line is the source text verbatim; anything the parser can't place falls back to the raw text. */
+const TM_KIND = [['finish', /\bfinish|\bclose[sd]?\b|presentation/i], ['signin', /\bsign[\s-]?(?:in|on)\b|\bregistration\b|\bregister\b|\bcheck[\s-]?in\b/i],
+  ['practice', /practi[cs]e|warm[\s-]?up/i], ['muster', /\bmuster|\bassembly\b/i], ['start', /\bstart|ranges? open|commence|first arrow|kick[\s-]?off|\bshooting\b|\bcompetition\b|\bscoring\b|\bround\b/i]];
+const TM_TOK = /\b(\d{1,2})(?:[:.](\d\d))?\s*(am|pm|a\.m\.|p\.m\.)?(?:\s*(?:[–—-]|to|for|and)\s*(\d{1,2})(?:[:.](\d\d))?)?\s*(am|pm|a\.m\.|p\.m\.|noon)(?![a-z])|\b(noon|midday)\b/i;
+const TM_WD = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+const TM_LBL = /(^|[.;]\s+)((?:mon|tue|wed|thu|fri|sat|sun)[a-z]*\.?(?:\s+\d{1,2}(?:\s+[a-z]{3,9}\.?)?)?(?:\s*\([^)]{1,40}\))?|am|pm|(?:morning|afternoon|evening)(?:\s+(?:round|session))?|(?:session|round|day)\s+\d+(?:\s*\([^)]{1,40}\))?)\s*:\s*/gi;
+function tmTime(s){
+  const m = TM_TOK.exec(s); if (!m) return null;
+  if (m[7]) return [12, 0];
+  const mer = v => (v || '').toLowerCase().replace(/\./g, ''), m6 = mer(m[6]);
+  let h = +m[1], mi = +(m[2] || 0), md = mer(m[3]);
+  if (!md) { md = m6 === 'noon' ? 'pm' : m6; if (m[4] && md === 'pm' && h > +m[4] && +m[4] !== 12) md = 'am'; }
+  if (h > 12 || mi > 59) return null;
+  if (m6 === 'noon' && !m[4] && !m[3]) return [12, mi];
+  return [h % 12 + (md === 'pm' ? 12 : 0), mi];
+}
+function tmSplit(body){   // top-level commas/semicolons and sentence stops; pieces without a time join the previous piece (source text kept exactly)
+  const cut = [], n = body.length; let dep = 0, st = 0;
+  for (let i = 0; i < n; i++) { const c = body[i];
+    if (c === '(') dep++; else if (c === ')') dep = Math.max(0, dep - 1);
+    else if (!dep && (c === ',' || c === ';' || (c === '.' && (i === n - 1 || /\s/.test(body[i + 1])) && !/[ap]\.m$/i.test(body.slice(Math.max(0, i - 3), i))))) { cut.push([st, i]); st = i + 1; } }
+  cut.push([st, n]);
+  const out = [];
+  cut.forEach(([a, b]) => { const t = body.slice(a, b).trim(); if (!t) return;
+    if (out.length && !TM_TOK.test(t) && !/^and\b/i.test(t)) { out[out.length - 1].b = b; return; }
+    if (out.length && !TM_TOK.test(out[out.length - 1].t())) { out[out.length - 1].b = b; return; }
+    out.push({a, b, t(){ return body.slice(this.a, this.b).trim().replace(/[\s,;]+$/, ''); }}); });
+  return out.map(o => o.t()).filter(Boolean);
+}
+function tmDate(x, wd){   // a weekday label → the event date with that weekday (or the matching pre-day within the week before)
+  const s = x.start_date, e = x.end_date || s; if (!/^\d{4}-\d\d-\d\d$/.test(s || '')) return '';
+  const D = k => { const d = pd(s); d.setDate(d.getDate() + k); return iso(d); };
+  for (let k = 0; k < 14; k++) { const d = D(k); if (d > e) break; if (pd(d).getDay() === wd) return d; }
+  for (let k = 1; k <= 6; k++) { const d = D(-k); if (pd(d).getDay() === wd) return d; }
+  return '';
+}
+function evTimes(x){
+  const raw = String(x && x.start_times || '').replace(/\s+/g, ' ').trim(); if (!raw) return null;
+  if (x._tmc && x._tmc.raw === raw) return x._tmc;
+  const T = {raw, days: [], ok: false}; Object.defineProperty(x, '_tmc', {value: T, writable: true, configurable: true, enumerable: false});
+  if (/\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/.test(raw) || !TM_TOK.test(raw)) return T;
+  const segs = []; let m, last = 0, lab = null; TM_LBL.lastIndex = 0;
+  while ((m = TM_LBL.exec(raw))) { const at = m.index + m[1].length;
+    if (at > last || lab !== null) segs.push({lab, body: raw.slice(last, at)}); lab = m[2].trim(); last = TM_LBL.lastIndex; }
+  segs.push({lab, body: raw.slice(last)});
+  const multi = (x.end_date || x.start_date) !== x.start_date;
+  segs.forEach(g => { const items = tmSplit(g.body).map((text, i) => { const k = TM_KIND.find(([, re]) => re.test(text)), kw = k ? (text.match(k[1]) || [''])[0] : '';
+      return {text, i, kind: k ? k[0] : '', kw, t: tmTime(text)}; });
+    if (!items.length) return;
+    const w = g.lab && TM_WD.indexOf(g.lab.slice(0, 3).toLowerCase()), date = g.lab && w >= 0 ? tmDate(x, w) : (!g.lab || !multi ? x.start_date : '');
+    const head = g.lab ? (w >= 0 && date ? pd(date).toLocaleDateString(LOC(), {weekday: 'short', day: 'numeric', month: 'short'}) + ((g.lab.match(/\([^)]*\)/) || [''])[0] ? ' ' + g.lab.match(/\([^)]*\)/)[0] : '') : g.lab) : '';
+    items.sort((a, b) => (a.kind === 'signin' ? 0 : 1) - (b.kind === 'signin' ? 0 : 1) || a.i - b.i);
+    T.days.push({lab: g.lab, head, date, items}); });
+  const all = T.days.flatMap(d => d.items);
+  T.ok = all.length > 0 && all.filter(i => i.t).length * 2 >= all.length;
+  return T;
+}
+function tzAt(d, h, mi, tz){   // venue-local wall time → epoch ms (generalises tzMid)
+  const [y, m, dd] = d.split('-').map(Number), g = Date.UTC(y, m - 1, dd, h, mi);
+  if (!tz) return new Date(y, m - 1, dd, h, mi).getTime();
+  try { const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', {timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric'}).formatToParts(new Date(g)).map(o => [o.type, o.value]));
+    const off = Date.UTC(+p.year, p.month - 1, +p.day, +p.hour % 24, +p.minute) - g; return g - off; } catch { return new Date(y, m - 1, dd, h, mi).getTime(); }
+}
+const AUTZ_NM = {'Australia/Perth': 'Perth time', 'Australia/Darwin': 'Darwin time', 'Australia/Adelaide': 'Adelaide time', 'Australia/Brisbane': 'Brisbane time', 'Australia/Sydney': 'Sydney/Canberra time', 'Australia/Melbourne': 'Melbourne time', 'Australia/Hobart': 'Hobart time'};
+const tzNm = tz => AUTZ_NM[tz] || TZ_NAME[tz] || tz;
+// True when the viewer's clock differs from the venue's on that date (same offset under another name counts as the same).
+const tzDiff = (tz, d) => { if (!tz || !VTZ || tz === VTZ) return false; const k = d || iso(new Date()); return tzMid(k, tz) !== tzMid(k, VTZ); };
+const fmt12 = ([h, m]) => `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`;
+const capF = s => s ? s[0].toUpperCase() + s.slice(1) : s;
+// Countdown targets: the first sign-in of each day up to day 1 (else day 1's first start time). Last entry = when it goes live.
+function cdTargets(x){
+  const T = evTimes(x); if (!T || !T.ok) return null; const tz = evTz(x), s = x.start_date;
+  const pick = k => T.days.filter(d => d.date && d.date <= s).map(d => { const it = d.items.find(i => i.kind === k && i.t); return it ? [tzAt(d.date, it.t[0], it.t[1], tz), k === 'signin' ? 'Sign-in' : 'Starts', d.date] : null; }).filter(Boolean).sort((a, b) => a[0] - b[0]);
+  const one = A => A.filter((t, i) => !A.slice(0, i).some(u => u[2] === t[2]));   // AM/PM sessions: only a day's first time counts
+  let L = one(pick('signin')); if (!L.length) L = one(pick('start')); if (!L.length) return null;
+  if (L[L.length - 1][2] !== s) L.push([tzMid(s, tz), 'Starts', s]);
+  return L;
+}
+const cdEnc = L => L ? L.map(t => t[0] + '~' + t[1]).join(',') : '';
+const cdDec = v => v ? v.split(',').map(t => { const [a, b] = t.split('~'); return [+a, b]; }) : null;
+// Compact line for cards and the day panel: e.g. "Sign-in 10:00 am" (that day's, or the first one). '' when nothing parses.
+function evTimesShort(x, day){
+  const T = evTimes(x); if (!T || !T.ok) return '';
+  const ds = T.days.filter(d => d.items.some(i => i.t)); if (!ds.length) return '';
+  let d, it;
+  if (day) { d = ds.find(g => g.date === day) || (ds.length === 1 && !ds[0].date ? ds[0] : null) || ds.find(g => !g.date && !g.lab); if (!d) return ''; }
+  const fromDay = g => g.items.find(i => i.kind === 'signin' && i.t) || g.items.find(i => i.kind === 'start' && i.t) || g.items.find(i => i.t);
+  if (d) it = fromDay(d);
+  else { const si = ds.map(g => [g, g.items.find(i => i.kind === 'signin' && i.t)]).filter(p => p[1]).sort((a, b) => (a[0].date || '9') < (b[0].date || '9') ? -1 : 1)[0];
+    [d, it] = si || [ds[0], fromDay(ds[0])]; }
+  if (!it) return '';
+  // The organiser's words, trimmed after the first time when long ("night sign-on 6-9 pm at the Bat Cave…" → "night sign-on 6-9 pm").
+  const tk = TM_TOK.exec(it.text), cut = tk ? it.text.slice(0, tk.index + tk[0].length) : it.text;
+  let txt = capF(it.text.length <= 34 ? it.text : it.kw && cut.toLowerCase().includes(it.kw.toLowerCase()) || !it.kind ? cut : capF(it.kw.toLowerCase()) + ' ' + fmt12(it.t));
+  if (!day && d.date && d.date !== x.start_date) txt = pd(d.date).toLocaleDateString(LOC(), {weekday: 'short'}) + ': ' + txt;
+  const tz = evTz(x); if (tzDiff(tz, x.start_date)) txt += ' (' + tzNm(tz) + ')';
+  return txt;
+}
+const tmLine = (x, day) => { if ((x._intl ? iPast(x) : isPast(x)) || x.cancelled) return ''; const t = evTimesShort(x, day); return t ? `<div class="meta tm-line">◷ <b>${esc(t)}</b></div>` : ''; };
+function timesBox(x){
+  const T = evTimes(x); if (!T) return '';
+  const tz = evTz(x), src = x.field_sources && x.field_sources.start_times, note = tzDiff(tz, x.start_date) ? `<p class="note tm-tz">All times are ${esc(tzNm(tz))}, local to the venue.</p>` : '';
+  const li = i => `<li class="tm-${i.kind || 'other'}">${i.kind === 'signin' ? `<b>${esc(i.text)}</b>` : esc(i.text)}</li>`;
+  const body = T.ok ? T.days.map(d => `<div class="tm-day">${d.head ? `<h3>${esc(d.head)}</h3>` : ''}<ul>${d.items.map(li).join('')}</ul></div>`).join('') : `<p class="tm-raw">${esc(T.raw)}</p>`;
+  return `<section class="panel ev-times" id="evTimes"><h2 class="sec">◷ Times</h2>${body}${note}${src ? `<p class="note tm-src">${esc(capF(srcTxt(src)))}</p>` : ''}</section>`;
 }
 // One shared 1-second ticker for every countdown on the page (badges, next-card big number, livestream box); paused while the tab is hidden.
 const TICKS = [TICKS_LS, () => {
-  document.querySelectorAll('[data-cd]').forEach(el => { const t = cdText(+el.dataset.cd, +el.dataset.cde); if (el.textContent !== t) el.textContent = t; el.classList.toggle('cd-live', t.startsWith('●')); });
+  document.querySelectorAll('[data-cd]').forEach(el => { const t = cdText(+el.dataset.cd, +el.dataset.cde, cdDec(el.dataset.cdt)); if (el.textContent !== t) el.textContent = t; el.classList.toggle('cd-live', t.startsWith('●')); });
   document.querySelectorAll('[data-cdb]').forEach(el => { const t = bigText(+el.dataset.cdb, +el.dataset.cde); if (el.textContent !== t) el.textContent = t; });
 }];
 const tickAll = () => { if (!document.hidden) TICKS.forEach(f => { try { f(); } catch (_) {} }); };

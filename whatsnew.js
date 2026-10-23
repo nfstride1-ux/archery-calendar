@@ -1,7 +1,9 @@
 /* What's new: plain-English release notes for Archery Calendar, newest first. Every item comes from a real commit (hashes listed). */
 window.CAL_WHATSNEW = [
   {d: '2026-10-23', label: 'Fri 23 Oct 2026', items: [
-    ['What’s new page', 'This page. Every update now gets a short note here, and Help has new answers to match.', ['this release']],
+    ['Event times at the top', 'Event pages now show the organiser’s times near the top, day by day, with sign-in or registration first in bold. Event cards and the day panel show the first one, like “Sign-in 10:00–11:00 am”. Times are the venue’s local time, and we say which zone when yours is different.', ['this release']],
+    ['Countdown to sign-in', 'Major event countdowns now count down to the first sign-in or registration time when the organiser has published one, or to the start time. Before, they counted to midnight. They use the venue’s time zone, so they’re right wherever you are.', ['this release']],
+    ['What’s new page', 'This page. Every update now gets a short note here, and Help has new answers to match.', ['f2fe7fb']],
     ['Your round photo (switching on soon)', 'Photos you add to a finished round in ScoreTool will show as a small picture on your calendar day and under My score on the event page. Only you see it. It switches on once we finish the server set-up.', ['8d2cab9']],
     ['My score on event pages', 'Signed in and linked to ScoreTool? Your own score shows under Results on the event you shot. Only you see it.', ['afdd835']],
     ['Benchmark Classic schedule', 'The full weekend schedule for Benchmark Classic 2026 is on its event page.', ['4e088c8']],

@@ -229,6 +229,8 @@ dl.kv.fx dd{font-weight:500}
  .detail .main{width:100%}
  .side{display:contents}
  .side .act{order:-1;margin-top:16px}
+ .side .ev-times{order:-1;margin-top:16px;width:100%;box-sizing:border-box}
+ .side .ev-times + .act{margin-top:0}
  .side .ad-side{order:2;margin-bottom:10px}
 }
 @media (max-width:720px){
@@ -1065,3 +1067,17 @@ body[data-page=submit] .site-head .add-btn{outline:2px solid #fff;outline-offset
 .wn-list b{color:var(--ink);font-size:17px}.wn-list span{color:var(--ink2);line-height:1.45}
 .wn-c{color:var(--muted);font-size:12px;font-family:ui-monospace,monospace}
 @media print{body[data-page=whatsnew] .wn-back,#hbBtn,#hbBox{display:none!important}.wn-day{break-inside:avoid;background:#fff;box-shadow:none}}
+/* Event times block (23 Oct 2026): organiser's times per day, sign-in first and bold; plus the compact card/day-panel line */
+.ev-times h2.sec{margin-bottom:8px}
+.ev-times .tm-day{border-left:4px solid var(--gold);padding:2px 0 2px 12px;margin:0 0 12px}
+.ev-times .tm-day:last-of-type{margin-bottom:4px}
+.ev-times .tm-day h3{font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;margin:0 0 4px;color:var(--ink)}
+.ev-times ul{list-style:none;margin:0;padding:0;display:grid;gap:3px}
+.ev-times li{font-size:15px;line-height:1.4;color:var(--ink2);overflow-wrap:anywhere}
+.ev-times li::first-letter{text-transform:uppercase}
+.ev-times li.tm-signin{color:var(--ink);background:var(--blue-bg);border-radius:8px;padding:5px 9px;margin:0 0 2px -9px}
+.ev-times li.tm-signin b{font-size:16px;font-weight:800}
+.ev-times .tm-raw{margin:0;font-size:15px;color:var(--ink);overflow-wrap:anywhere}
+.ev-times .note{margin:8px 0 0;font-size:13px}
+.meta.tm-line{color:var(--ink)}.meta.tm-line b{font-weight:700}
+.meta.tm-line::first-letter{text-transform:none}
