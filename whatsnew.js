@@ -1,5 +1,7 @@
 /* What's new: plain-English release notes for Archery Calendar, newest first. Every item comes from a real commit (hashes listed). */
 window.CAL_WHATSNEW = [
+  {d: '2026-10-25', label: 'Sun 25 Oct 2026', items: [
+    ['My score card is readable again', 'On an event that is still on (like day two of a state titles), the My score card on the event page showed only your numbers, because the words were white on the white card. It now shows the round name, Score, the date and where you shot, in dark text. A round that was not fully scored says so. The target emoji is now a plain line icon. Display only, no scores were changed.', ['this release']]]},
   {d: '2026-10-24', label: 'Sat 24 Oct 2026', items: [
     ['Replay link for the National Championships finals', 'The finals live stream box on the home page stays up after the stream ends, now as a Watch the replay link with no timer. The same link is on the event page.', ['this release']]]},
   {d: '2026-10-23', label: 'Fri 23 Oct 2026', items: [

@@ -3,6 +3,7 @@
    Linking: #/scoretool, signed in -> create_scoretool_link() -> the secret goes back to ScoreTool on a FIXED address (no open redirect),
    and is shown to copy for installed-app users. Until the SQL is run, everything here quietly does nothing. */
 const STL = {uid: null, rows: null, missing: false, busy: false, links: null, photos: {}};
+const STL_ICO = '<svg class="stl-ico" viewBox="0 0 24 24" width="1.1em" height="1.1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>';   // plain line icon, no emoji
 const STL_TARGETS = {demo: 'https://nfstride1-ux.github.io/scoretool-demo/', lab: 'https://nfstride1-ux.github.io/scoretool-lab/'};
 const stlMissing = e => !!e && (/PGRST20[25]|42P01|42883/.test(String(e.code || '')) || /does not exist|Could not find/i.test(String(e.message || '')));
 async function stlLoad(){
@@ -33,7 +34,7 @@ const stlScore = r => `${r.score}${r.max_score ? ' / ' + r.max_score : ''}`;
 const stlDate = d => pd(d).toLocaleDateString('en-AU', {weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'});
 /* score photos (23 Oct 2026): a tiny round thumb in place of the target mark; tap = full size with a Back button */
 const stlThumb = r => r && STL.photos && STL.photos[r.source_id] || '';
-const stlMark = (r, cls) => { const t = stlThumb(r); return t ? `<img class="stl-th ${cls || ''}" alt="" src="data:image/jpeg;base64,${t}">` : '🎯'; };
+const stlMark = (r, cls) => { const t = stlThumb(r); return t ? `<img class="stl-th ${cls || ''}" alt="" src="data:image/jpeg;base64,${t}">` : STL_ICO; };
 const stlPhotoBtn = r => stlThumb(r) ? `<button type="button" class="stl-phb" data-stlph="${esc(r.source_id)}" aria-label="Open the photo for ${esc(r.round_name)}"><img alt="" src="data:image/jpeg;base64,${stlThumb(r)}"></button>` : '';
 async function stlOpenPhoto(sid){
   if (!AUTH.client || document.getElementById('stlPh')) return;
@@ -50,19 +51,19 @@ async function stlOpenPhoto(sid){
 }
 function stlBindPhotos(root){ (root || document).querySelectorAll('[data-stlph]').forEach(b => { if (b._stl) return; b._stl = 1; b.onclick = e => { e.preventDefault(); e.stopPropagation(); stlOpenPhoto(b.dataset.stlph); }; }); }
 function stlBlock(L, id, title){   // the day's own scores (with photos), shown first
-  return `<div class="stl-day" id="${id}"><h3 class="dp-sub">🎯 ${esc(title)}</h3><ul class="dp-list">${L.map(r => { const ev = stlEventFor(r.shot_date, r);
-    return `<li class="dp-row stl-row">${stlPhotoBtn(r)}<div class="dp-main"><b>${esc(r.round_name)}</b> <span class="b stl-sc">${esc(stlScore(r))}</span><div class="meta">${esc([stlDate(r.shot_date), r.location].filter(Boolean).join(' · '))}${ev ? ` · at <a href="#/shoot/${encodeURIComponent(ev.id)}?r=1">${esc(ev.name)}</a>` : ''}</div></div></li>`; }).join('')}</ul></div>`;
+  return `<div class="stl-day" id="${id}"><h3 class="dp-sub">${STL_ICO} ${esc(title)}</h3><ul class="dp-list">${L.map(r => { const ev = stlEventFor(r.shot_date, r);
+    return `<li class="dp-row stl-row">${stlPhotoBtn(r)}<div class="dp-main"><b>${esc(r.round_name || "ScoreTool round")}</b> <span class="b stl-sc">${esc(stlScore(r))}</span><div class="meta">${esc([stlDate(r.shot_date), r.location].filter(Boolean).join(' · '))}${ev ? ` · at <a href="#/shoot/${encodeURIComponent(ev.id)}?r=1">${esc(ev.name)}</a>` : ''}</div></div></li>`; }).join('')}</ul></div>`;
 }
 function stlRow(r){ const ev = stlEventFor(r.shot_date, r);
-  return `<li class="dp-row stl-row">${stlThumb(r) ? stlPhotoBtn(r) : ''}<div class="dp-main"><b>${stlThumb(r) ? '' : '🎯 '}${esc(r.round_name)}</b> <span class="b stl-sc">${esc(stlScore(r))}</span>
+  return `<li class="dp-row stl-row">${stlThumb(r) ? stlPhotoBtn(r) : ''}<div class="dp-main"><b>${stlThumb(r) ? '' : STL_ICO + ' '}${esc(r.round_name || 'ScoreTool round')}</b> <span class="b stl-sc">${esc(stlScore(r))}</span>
     <div class="meta">${esc([stlDate(r.shot_date), r.location].filter(Boolean).join(' · '))}${ev ? ` · at <a href="#/shoot/${encodeURIComponent(ev.id)}?r=1">${esc(ev.name)}</a>` : ''}</div></div></li>`; }
 function stlDecorateCalendar(){
   if (!AUTH.user || !STL.rows || STL.missing) return;
   const by = stlByDay(), [y, m] = CM || [new Date().getFullYear(), new Date().getMonth()], ym = `${y}-${String(m + 1).padStart(2, '0')}`;
   document.querySelectorAll('.grid [data-day]').forEach(c => { const L = by[c.dataset.day]; if (!L || c.querySelector('.stl-dot')) return;
-    const pr = L.find(stlThumb); c.classList.add('stl'); c.insertAdjacentHTML('beforeend', `<span class="stl-dot${pr ? ' stl-dot-ph' : ''}" aria-hidden="true">${pr ? stlMark(pr) : '🎯'}</span>`);
+    const pr = L.find(stlThumb); c.classList.add('stl'); c.insertAdjacentHTML('beforeend', `<span class="stl-dot${pr ? ' stl-dot-ph' : ''}" aria-hidden="true">${pr ? stlMark(pr) : STL_ICO}</span>`);
     c.setAttribute('aria-label', (c.getAttribute('aria-label') || '') + ' – score shot: ' + L.map(r => r.round_name + ' ' + stlScore(r)).join(', ')); });
-  const lg = document.querySelector('#view .legend'); if (lg && !lg.querySelector('.lg-stl')) lg.insertAdjacentHTML('beforeend', '<span class="b lg-day lg-stl">🎯 score shot</span>');
+  const lg = document.querySelector('#view .legend'); if (lg && !lg.querySelector('.lg-stl')) lg.insertAdjacentHTML('beforeend', `<span class="b lg-day lg-stl">${STL_ICO} score shot</span>`);
   document.querySelectorAll('.grid [data-day].stl').forEach(c => { if (c._stl) return; c._stl = 1;
     c.addEventListener('click', () => { STL.day = c.dataset.day; }, true); });
   const dp = document.getElementById('dayPanel'), dl = CD && by[CD];
@@ -72,7 +73,7 @@ function stlDecorateCalendar(){
   const month = (STL.rows || []).filter(r => r.shot_date.slice(0, 7) === ym);
   if (!STL.rows.length || document.getElementById('stlBox')) return;
   let at = lg; if (at && at.nextElementSibling && at.nextElementSibling.tagName === 'P') at = at.nextElementSibling;
-  const html = `<section class="panel stl-box" id="stlBox" aria-labelledby="stlH"><h2 class="sec" id="stlH">🎯 Scores I shot in ${MONL[m]} ${y}</h2>
+  const html = `<section class="panel stl-box" id="stlBox" aria-labelledby="stlH"><h2 class="sec" id="stlH">${STL_ICO} Scores I shot in ${MONL[m]} ${y}</h2>
     ${month.length ? `<ul class="dp-list">${month.slice().reverse().map(stlRow).join('')}</ul>` : `<p class="note">No ScoreTool scores this month. ${STL.rows.length} in total.</p>`}
     <p class="note">From ScoreTool, when you finish a round. Only you can see these.</p></section>`;
   at ? at.insertAdjacentHTML('afterend', html) : document.querySelector('#view .wrap.narrow')?.insertAdjacentHTML('beforeend', html);
@@ -84,18 +85,21 @@ function stlShootPanel(){
   const id = decodeURIComponent((location.hash.split('?')[0].split('/')[2]) || ''), x = BYID[id]; if (!x) return;
   const L = STL.rows.filter(r => { const ev = stlEventFor(r.shot_date, r); return ev && ev.id === x.id; }); if (!L.length) return;
   const first = STL.day && L.some(r => r.shot_date === STL.day); STL.day = '';
-  const at = document.getElementById('results'), html = `<section class="panel stl-box${first ? ' stl-first' : ''}" id="stlShoot"><h2 class="sec">🎯 My score</h2><ul class="dp-list">${L.map(r => `<li class="dp-row stl-row">${stlPhotoBtn(r)}<div class="dp-main"><b>${esc(r.round_name)}</b> <span class="b stl-sc">${esc(stlScore(r))}</span><div class="meta">${esc(stlDate(r.shot_date))}</div></div></li>`).join('')}</ul><p class="note">From ScoreTool. Only you can see this.</p></section>`;
-  const wrap = document.querySelector('#view .wrap');   // from a tapped past day: above Results, and scrolled to (after the ?r=1 jump to Results)
-  if (first && (at || wrap)) { at ? at.insertAdjacentHTML('beforebegin', html) : wrap.insertAdjacentHTML('afterbegin', html);
+  const at = document.getElementById('results'), n = L.length;
+  const row = r => { const mx = r.max_score ? ` <span class="stl-of">out of ${esc(r.max_score)}</span>` : '', part = r.max_score ? '' : '<div class="stl-part">Total of the arrows scored. Not a full round.</div>';
+    return `<li class="dp-row stl-row">${stlPhotoBtn(r)}<div class="dp-main"><b class="stl-rn">${esc(r.round_name || 'ScoreTool round')}</b><div class="stl-line"><span class="stl-lbl">Score</span> <span class="b stl-sc">${esc(r.score)}</span>${mx}</div><div class="meta stl-meta">${esc([stlDate(r.shot_date), r.location].filter(Boolean).join(' · '))}</div>${part}</div></li>`; };
+  const html = `<section class="panel stl-box${first ? ' stl-first' : ''}" id="stlShoot"><h2 class="sec">${STL_ICO} My score${n > 1 ? 's' : ''}</h2><ul class="dp-list">${L.map(row).join('')}</ul><p class="note">From ScoreTool. Only you can see this.</p></section>`;
+  const wrap = document.querySelector('#view .detail .main') || document.querySelector('#view .detail');   // the page body, not the dark title banner (its text is white)
+  if (first && (at || wrap)) { at ? at.insertAdjacentHTML('beforebegin', html) : wrap.insertAdjacentHTML('afterbegin', html);   // from a tapped past day: above Results, and scrolled to (after the ?r=1 jump to Results)
     setTimeout(() => { const s = document.getElementById('stlShoot'); if (s) s.scrollIntoView({block: 'start'}); }, 90); }
-  else at ? at.insertAdjacentHTML('afterend', html) : wrap?.insertAdjacentHTML('beforeend', html);
+  else at ? at.insertAdjacentHTML('afterend', html) : wrap?.insertAdjacentHTML('afterbegin', html);
   stlBindPhotos();
 }
 function stlAccountPanel(){
   if (!AUTH.user || STL.missing || !STL.links) return;
   const w = document.querySelector('#view .wrap.narrow'); if (!w || document.getElementById('stlAcct')) return;
   const n = STL.links.length;
-  w.insertAdjacentHTML('beforeend', `<section class="panel" id="stlAcct"><h2 class="sec">🎯 ScoreTool</h2>
+  w.insertAdjacentHTML('beforeend', `<section class="panel" id="stlAcct"><h2 class="sec">${STL_ICO} ScoreTool</h2>
     <p>${n ? `Linked on ${n} phone${n === 1 ? '' : 's'}. Finished rounds show in <a href="#/calendar">My events</a>.` : 'Not linked. Link it and finished ScoreTool rounds show in <a href="#/calendar">My events</a>.'}</p>
     <div class="row">${n ? '<button class="btn" id="stlUnlink">Unlink ScoreTool</button>' : ''}<a class="btn alt" href="#/scoretool">Link ScoreTool</a></div></section>`);
   const u = $('#stlUnlink'); if (u) u.onclick = async () => { if (!confirm('Unlink ScoreTool? Scores already added stay in My events.')) return;

@@ -1081,3 +1081,13 @@ body[data-page=submit] .site-head .add-btn{outline:2px solid #fff;outline-offset
 .ev-times .note{margin:8px 0 0;font-size:13px}
 .meta.tm-line{color:var(--ink)}.meta.tm-line b{font-weight:700}
 .meta.tm-line::first-letter{text-transform:none}
+/* ScoreTool "My score" card (25 Oct 2026): always dark text on the white card, light or dark phone; line icon, labelled numbers */
+.stl-ico{display:inline-block;vertical-align:-.15em;color:var(--night,#0b1830);flex:0 0 auto}
+.grid .c .stl-dot .stl-ico{width:12px;height:12px;color:#1d4ed8}
+.stl-box{color-scheme:light;background:#fff;color:#0f172a}
+.stl-box .sec,.stl-box .stl-rn,.stl-box .stl-lbl{color:#0f172a}
+.stl-box .meta,.stl-box .stl-meta,.stl-box .stl-part,.stl-box .stl-of,.stl-box .note{color:#334155}
+.stl-box .stl-rn{display:block;font-size:16px}
+.stl-line{display:flex;align-items:center;gap:8px;margin:2px 0;font-size:15px}.stl-lbl{font-weight:700}
+.stl-box .stl-sc{font-size:18px;padding:2px 12px;color:#1d4ed8;background:#e3ecff;border-color:#bcd0f5}
+.stl-part{font-size:13px}
