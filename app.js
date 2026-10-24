@@ -576,8 +576,8 @@ function checkReminders(){
 }
 
 /* ---------- views ---------- */
-// Live stream countdown – Archery Australia National Target & Para Championships finals (Hobart, 24 Oct 2026, 9am AEDT). Shows to target, LIVE NOW for 10 h, then hides itself.
-const LS = {id: 'aa-2026-4', title: 'Watch live: AA National Target & Para Champs finals 2026', start: Date.parse('2026-10-24T09:00:00+11:00'), hrs: 10, watch: 'https://archery.org.au/videos/', post: 'https://www.facebook.com/share/19ufdj2yVj/'};
+// Live stream countdown – Archery Australia National Target & Para Championships finals (Hobart, 24 Oct 2026, 9am AEDT). Shows to target, LIVE NOW for 10 h, then turns into a replay link (no timer).
+const LS = {id: 'aa-2026-4', title: 'Watch live: AA National Target & Para Champs finals 2026', start: Date.parse('2026-10-24T09:00:00+11:00'), hrs: 10, watch: 'https://archery.org.au/videos/', post: 'https://www.facebook.com/share/19ufdj2yVj/', replay: 'Watch the replay: AA National Target & Para Champs finals 2026'};
 function lsZone(d){
   const nm = loc => { try { return (new Intl.DateTimeFormat(loc, {timeZoneName: 'short'}).formatToParts(d).find(x => x.type === 'timeZoneName') || {}).value || ''; } catch (e) { return ''; } };
   const tries = ['en-AU', 'en-US', 'en-GB', 'en-NZ', 'en-IN', navigator.language || 'en'].map(nm);
@@ -597,7 +597,21 @@ function lsCount(ms){
 }
 function lsState(now = Date.now()){ return now < LS.start ? 'soon' : now < LS.start + LS.hrs * 3600e3 ? 'live' : 'over'; }
 function lsBox(){
-  const st = lsState(); if (st === 'over') return '';
+  const st = lsState();
+  if (st === 'over') {   // finals are over: same box, no timer, just the replay link
+    const gr = `data-gc="watch-replay/${esc(LS.id)}" data-gc-t="${esc(LS.replay)}"`;
+    return `<aside class="ls-box rp" id="lsBox" aria-label="Replay: National Target and Para Championships finals">
+    <a class="ls-thumb" href="${LS.watch}" ${gr} target="_blank" rel="noopener" tabindex="-1" aria-hidden="true"><picture><source type="image/webp" srcset="img/aa-target-para-2026-stream.webp"><img src="img/aa-target-para-2026-stream.jpg" alt="" width="440" height="550" loading="lazy"></picture></a>
+    <div class="ls-body">
+      <p class="ls-tag">▶ Replay</p>
+      <h2 class="ls-h">${esc(LS.replay)}</h2>
+      <p class="ls-when">Finals streamed from Hobart on Sat 24 Oct 2026<small>Archery Australia</small></p>
+    </div>
+    <div class="ls-links"><a class="btn gold ls-watch" href="${LS.watch}" ${gr} target="_blank" rel="noopener">▶ Watch the replay</a>
+      <a class="ls-url" href="${LS.watch}" ${gr} target="_blank" rel="noopener">archery.org.au/videos</a>
+      <a class="ls-post" href="${LS.post}" target="_blank" rel="noopener">Archery Australia post ↗</a></div>
+  </aside>`;
+  }
   const gw = `data-gc="watch-live/${esc(LS.id)}" data-gc-t="${esc(LS.title)}"`;   // click counted in GoatCounter (gcClicks)
   const live = st === 'live';
   return `<aside class="ls-box${live ? ' on' : ''}" id="lsBox" aria-label="Live stream: National Target and Para Championships finals">
@@ -616,7 +630,8 @@ function lsBox(){
 function TICKS_LS(){
   const b = document.getElementById('lsBox'); if (!b) return;
   const st = lsState(), on = b.classList.contains('on');
-  if (st === 'over' || (st === 'live') !== on) { const t = document.createElement('div'); t.innerHTML = lsBox(); b.replaceWith(...t.childNodes); return; }
+  if (st === 'over') { if (!b.classList.contains('rp')) { const t = document.createElement('div'); t.innerHTML = lsBox(); b.replaceWith(...t.childNodes); } return; }
+  if ((st === 'live') !== on) { const t = document.createElement('div'); t.innerHTML = lsBox(); b.replaceWith(...t.childNodes); return; }
   const c = document.getElementById('lsCount'); if (c) c.innerHTML = lsCount(LS.start - Date.now());
 }
 function vHome(){
@@ -888,6 +903,7 @@ function vShoot(id){
    <div class="main">
     ${x.date_note ? `<div class="warn date-note" id="dateNote">⚠ <b>Check the dates:</b> ${esc(x.date_note)}</div>` : ''}
     ${clashBox(x)}
+    ${x.id === LS.id && lsState() === 'over' ? `<section class="panel" id="replayBox"><h2 class="sec">Finals replay</h2><p class="note">Watch the replay of the finals, streamed from Hobart on Sat 24 Oct 2026.</p><a class="btn gold block" href="${LS.watch}" data-gc="watch-replay/${esc(LS.id)}" data-gc-t="${esc(LS.replay)}" target="_blank" rel="noopener">▶ Watch the replay</a></section>` : ''}
     ${resultsBox(x)}
     ${typeof selfBox === 'function' ? selfBox(x) : ''}
     ${flyerCard(x)}
