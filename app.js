@@ -2812,12 +2812,21 @@ async function loadOverrides(){
 /* Flyer-only live (owner 20 Oct 2026, supabase/flyer_only_publishing.sql): approved flyers with no name/date yet are live with
    details_pending = true. They show in the "New flyers, details coming" strip, never as dated events. FLYQ.ok = the SQL is live. */
 const FLYQ = {ok: false, rows: []};
+/* Country/state corrections for named live submissions (owner 26 Oct 2026): data/submission_overrides.json, keyed by submission id.
+   Only country (2 letters) and state (2-3 letters) are read; unknown ids and any other field are ignored. Applied before routing, display only. */
+async function subFixes(rows){
+  try { const r = await fetch('data/submission_overrides.json', {cache: 'no-cache'}); if (!r.ok) return; const o = (await r.json() || {}).overrides || {};
+    rows.forEach(row => { const f = Object.prototype.hasOwnProperty.call(o, row.id) && o[row.id]; if (!f || typeof f !== 'object') return;
+      if (typeof f.country === 'string' && /^[A-Za-z]{2}$/.test(f.country)) row.country = f.country.toUpperCase();
+      if (typeof f.state === 'string' && /^[A-Za-z]{2,3}$/.test(f.state)) row.state = f.state.toUpperCase(); }); } catch {}
+}
 async function loadLiveSubs(){
   if (!AUTH.configured) return 0;
   try { const base = SB_URL.replace(/\/$/, '') + '/rest/v1/live_events?order=start_date.asc.nullslast&select=', hd = {headers: {apikey: SB_KEY}};
     let r = await fetch(base + '*,details_pending', hd); FLYQ.ok = r.ok;
     if (!r.ok) r = await fetch(base + '*', hd);   // before flyer_only_publishing.sql: same as before
     if (!r.ok) return 0; const rows = await r.json(); let n = 0;
+    await subFixes(rows);   // data/submission_overrides.json: country/state corrections for named live submissions
     FLYQ.rows = rows.filter(row => row.details_pending || !row.start_date); n += FLYQ.rows.length;
     rows.filter(row => !(row.details_pending || !row.start_date)).forEach(row => { const x = subToEv(row);
       if (row.country && !/^(AU|AUS|Australia)$/i.test(row.country)) { const us = /^(US|USA)$/i.test(row.country); if (us && US_ST[row.state]) x.us_state = row.state; apiIntl(x, row); if (us) Object.assign(x, {country_code: 'USA', country_name: 'United States', iso2: 'US'}); return; }   // overseas submission: that country's page, not Find events

@@ -1,0 +1,6 @@
+{
+  "_comment": "Country/state corrections for live club submissions, keyed by submission id (public.submitted_events.id). Only 'country' (2 letters) and 'state' (2-3 letters) are applied by app.js; unknown ids and other fields are ignored. Remove an entry once the database row itself is corrected.",
+  "overrides": {
+    "5a15e5ef-a921-48a5-89b0-f2fc2b72e66e": {"country": "US", "state": "WA", "note": "Skookum Archers, SCARE THE $HIT OUT OF CANCER ARCHERY TOURNAMENT, 11209 Shaw Rd E, Puyallup WA 98374; saved as AU with no state"}
+  }
+}
