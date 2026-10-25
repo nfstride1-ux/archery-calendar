@@ -1119,3 +1119,6 @@ body[data-page=submit] .site-head .add-btn{outline:2px solid #fff;outline-offset
 .avp video{display:block;margin:0 auto;height:min(46vh,340px);width:auto;max-width:100%;aspect-ratio:9/16;background:#0d1b2a;border-radius:12px;border:2px solid var(--gold)}
 .avp-x{position:absolute;right:10px;top:10px;width:44px;height:44px;border-radius:50%;border:2px solid var(--night);background:#fff;font-size:1.1em;cursor:pointer}
 .avp-btns{display:flex;gap:10px;margin-top:12px}.avp-btns .btn{flex:1;justify-content:center;text-align:center}
+
+/* Help: how-to video inside the home-screen answer (25 Oct 2026) */
+.hb-vid{display:block;margin:6px auto 10px;height:min(42vh,320px);width:auto;max-width:100%;aspect-ratio:9/16;background:#0d1b2a;border-radius:12px;border:2px solid var(--gold)}
