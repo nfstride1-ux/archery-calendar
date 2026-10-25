@@ -1091,3 +1091,9 @@ body[data-page=submit] .site-head .add-btn{outline:2px solid #fff;outline-offset
 .stl-line{display:flex;align-items:center;gap:8px;margin:2px 0;font-size:15px}.stl-lbl{font-weight:700}
 .stl-box .stl-sc{font-size:18px;padding:2px 12px;color:#1d4ed8;background:#e3ecff;border-color:#bcd0f5}
 .stl-part{font-size:13px}
+/* Wide group photo (ABA 3D banner): sits under the heading at the full width of the page, shown whole (16:7), on phones too */
+.split-row:has(.split-img.wide){grid-template-columns:1fr;gap:16px}
+.split-img.wide{width:100%;max-width:none;justify-self:stretch}
+.split-img.wide img{aspect-ratio:16/7}
+.phead.split.wide .split-img{display:block}
+.dhero.split .split-img.wide{max-width:none}
