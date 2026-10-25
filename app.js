@@ -2819,7 +2819,9 @@ async function loadLiveSubs(){
     if (!r.ok) r = await fetch(base + '*', hd);   // before flyer_only_publishing.sql: same as before
     if (!r.ok) return 0; const rows = await r.json(); let n = 0;
     FLYQ.rows = rows.filter(row => row.details_pending || !row.start_date); n += FLYQ.rows.length;
-    rows.filter(row => !(row.details_pending || !row.start_date)).forEach(row => { const x = subToEv(row); if (!BYID[x.id]) { EV.push(x); n++; } BYID[x.id] = Object.assign(BYID[x.id] || {}, x); });
+    rows.filter(row => !(row.details_pending || !row.start_date)).forEach(row => { const x = subToEv(row);
+      if (row.country && !/^(AU|AUS|Australia)$/i.test(row.country)) { const us = /^(US|USA)$/i.test(row.country); if (us && US_ST[row.state]) x.us_state = row.state; apiIntl(x, row); if (us) Object.assign(x, {country_code: 'USA', country_name: 'United States', iso2: 'US'}); return; }   // overseas submission: that country's page, not Find events
+      if (!BYID[x.id]) { EV.push(x); n++; } BYID[x.id] = Object.assign(BYID[x.id] || {}, x); });
     if (n) EV.sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
     return n; } catch { return 0; }
 }
