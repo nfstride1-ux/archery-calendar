@@ -658,7 +658,7 @@ function vHome(){
   <section class="hero" style="--img:url('${esc(h.file)}');--pos:${esc(h.pos || 'center 35%')}"><div class="wrap hero-grid">
     <div class="hero-copy"><p class="kicker">Field · 3D · Target · Indoor</p><h1>Every archery event.<br><span>One calendar.</span></h1>
       <p class="lead">${AUS() ? 'Find archery events across Australia – Archery Australia, ABA and Archery WA.' : 'Find events across WA, Australia and the world.'} Save them, get reminders before entries close, and keep track of what you've paid.</p>
-      <form class="hero-search" id="heroSearch" role="search"><input type="search" id="hq" placeholder="Search an event, club or town…" aria-label="Search events"><button class="btn gold" type="submit">Find events</button></form></div>
+      <form class="hero-search" id="heroSearch" role="search"><input type="search" id="hq" placeholder="Search an event, club or town…" aria-label="Search events"><button class="btn gold" type="submit">Find events</button></form><p class="hero-near"><a class="nm-hero-btn" href="#/near"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>Find clubs near me</a></p></div>
     ${next ? `<a class="next-card" href="#/shoot/${esc(next.id)}"><span class="kicker">Your next event</span>${bigCd(next)}
       <span class="nm">${esc(next.name)}</span><span>${esc(range(next))}</span><span class="st">${ST_TXT[ST(next.id)]}</span></a>` : ''}
   </div>${credit('mixed')}</section>
@@ -1169,6 +1169,7 @@ function vPrivacy(){
   setTitle('Privacy & disclaimer');
   return `${pageHead('Privacy &amp; disclaimer', 'Short version: your data stays in your browser.', 'mixed')}<div class="wrap narrow"><section class="panel"><h2 class="sec">Privacy</h2>
     <ul class="ticks"><li>Your country: the first time you open the home page, your browser asks Cloudflare's public trace page (cloudflare.com/cdn-cgi/trace) which country your connection is in, so we can show your country's home page. We keep only the country code, in this browser for this visit. Pick a country in the header and that choice is used instead (and saved with your settings if you sign in).</li><li>${AUTH.on ? 'You only need an account to submit or fix an event. If you don’t sign in, the' : 'No account, no sign-up. The'} events you save, your entries and payments, your reminder settings and your remembered club details (Submit an event) are stored only in <b>your browser on this device</b> (localStorage). They are never sent to us.</li>
+    <li><b>Near me:</b> if you tap “Find clubs near me”, your browser asks your permission and gives your location to this page only. The distances are worked out on your phone. Your location is not sent to us or anyone else, and it is not saved: it is forgotten when you close or reload the page. If you type a suburb or postcode instead, it is looked up in a list that loads into your browser, so it is not sent anywhere either. We only keep your choice of km or miles on this device.</li>
     <li>Club details you send with an event are remembered on this device${AUTH.on ? ' (and in your account if you are signed in)' : ''} so you don't retype them. Tap “Not you? Clear” on the Submit form to wipe them.</li>
     <li>Clearing your browser data deletes them. Use <a href="#/settings">Settings → Export backup</a> to keep a copy or move to another device.</li>
     <li id="privStats"><b>Visit counts:</b> we count visits anonymously with <a href="https://www.goatcounter.com/" target="_blank" rel="noopener">GoatCounter</a>: which pages are viewed and the words typed into Find events search. <b>No cookies</b>, no advertising trackers and nothing that identifies you. Searches that look like an email address or phone number are never counted. Reminders are made on your device.</li>
@@ -1189,6 +1190,7 @@ function vPrivacy(){
 function vCredits(){
   setTitle('Credits');
   return `${pageHead('Photo &amp; font credits', 'Thanks to the photographers who share their work under open licences, and to the clubs and archery associations named below, whose photos are used with credit.', 'mixed')}<div class="wrap narrow"><section class="panel"><ul class="credits">${Object.entries(PH).filter(([k], i, all) => PH[k].file && all.findIndex(([, q]) => q.file === PH[k].file) === i).map(([k, p]) => `<li><img src="${esc(p.sm)}" alt="" loading="lazy"><div><b>${esc(p.title)}</b><br>${esc([p.by, p.source].filter(Boolean).join(' · '))}${p.url ? ` · <a href="${esc(p.url)}" target="_blank" rel="noopener">source</a>` : ''}${p.license ? `<br>${p.license_url ? `<a href="${esc(p.license_url)}" target="_blank" rel="noopener">${esc(p.license)}</a>` : esc(p.license)}. Resized for this site.` : ''}</div></li>`).join('')}</ul>
+  <p class="note">Near me: club and event locations are placed using OpenStreetMap data (© OpenStreetMap contributors, <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">ODbL</a>, via Nominatim). Suburb, town and postcode lists are from <a href="https://www.geonames.org/" target="_blank" rel="noopener">GeoNames</a> (CC BY 4.0).</p>
   <p class="note">Fonts: Inter and Barlow Condensed, SIL Open Font License 1.1, self-hosted. Event flyers belong to their organisers${SITE.flyers === 'local' ? ' and are shown for private testing only' : ' – we link to them at the source and do not host copies'}.</p></section></div>`;
 }
 
@@ -2601,7 +2603,7 @@ function vCountryHome(code){
   const hero = `<section class="hero" style="--img:url('${esc(h.file)}');--pos:${esc(h.pos || 'center 35%')}"><div class="wrap hero-grid">
     <div class="hero-copy"><p class="kicker">${flag(iIso(code))} ${esc(nm)}</p><h1>Every archery event in ${the}${esc(nm)}.<br><span>One calendar.</span></h1>
       <p class="lead" id="chLead">${INTL ? '' : 'Loading events…'}</p>
-      <form class="hero-search" id="chSearch" role="search"><input type="search" id="chq" placeholder="Search events in ${the}${esc(nm)}…" aria-label="Search events in ${esc(nm)}"><button class="btn gold" type="submit">Find events</button></form>${h.by ? `<p class="ch-credit">Photo: ${esc(h.by)}${h.source ? ` (${esc(h.source)})` : ''} · <a href="#/credits">Credits</a></p>` : ''}</div>
+      <form class="hero-search" id="chSearch" role="search"><input type="search" id="chq" placeholder="Search events in ${the}${esc(nm)}…" aria-label="Search events in ${esc(nm)}"><button class="btn gold" type="submit">Find events</button></form><p class="hero-near"><a class="nm-hero-btn" href="#/near"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>Find clubs near me</a></p>${h.by ? `<p class="ch-credit">Photo: ${esc(h.by)}${h.source ? ` (${esc(h.source)})` : ''} · <a href="#/credits">Credits</a></p>` : ''}</div>
     NEXTCARD</div></section>`;
   if (!INTL) { loadIntl().then(() => { if (curHomePage() === code) softRenderForce(); }).catch(() => {}); return hero.replace('NEXTCARD', '') + '<div class="wrap"><p class="loading">Loading events…</p></div>'; }
   const all = INTL.events.filter(x => x.country_code === code), up = all.filter(x => !iPast(x) && x.status !== 'cancelled').sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
@@ -2714,8 +2716,8 @@ function vNotFound(kind, id){
 }
 function bindNotFound(){ const f = $('#nfSearch'); if (!f) return; f.onsubmit = e => { e.preventDefault(); BF.q = $('#nfq').value.trim(); BF.scope = 'all'; BF.disc = ''; BF.state = ''; location.hash = '#/browse'; }; }
 /* Friendly aliases for links people type or share. */
-const ROUTE_ALIAS = {find: '#/browse', search: '#/browse', events: '#/browse', international: '#/intl', world: '#/intl/world', 'my-events': '#/calendar', myevents: '#/calendar', 'whats-new': '#/whatsnew', news: '#/whatsnew', updates: '#/whatsnew'};
-const KNOWN_PAGES = ['home', 'browse', 'shoot', 'calendar', 'entries', 'settings', 'advertise', 'credits', 'privacy', 'fans', 'account', 'admin', 'cards', 'fix', 'submit', 'calendars', 'club', 'clubs', 'intl', 'import', 'whatsnew'];
+const ROUTE_ALIAS = {find: '#/browse', search: '#/browse', events: '#/browse', international: '#/intl', world: '#/intl/world', 'my-events': '#/calendar', myevents: '#/calendar', 'whats-new': '#/whatsnew', news: '#/whatsnew', updates: '#/whatsnew', nearme: '#/near', 'near-me': '#/near', nearby: '#/near', 'clubs-near-me': '#/near'};
+const KNOWN_PAGES = ['home', 'browse', 'shoot', 'calendar', 'entries', 'settings', 'advertise', 'credits', 'privacy', 'fans', 'account', 'admin', 'cards', 'fix', 'submit', 'calendars', 'club', 'clubs', 'intl', 'import', 'whatsnew', 'near'];
 function route(){
   const h = location.hash || '#/home', last = route.last; route.last = h;
   if (last && last.startsWith('#/intl')) IBACK[last] = scrollY;
@@ -2748,6 +2750,7 @@ function render(){
   else if (p === 'club') { const id = decodeURIComponent(arg || ''); v.innerHTML = vClub(id); bindClub(id); }
   else if (p === 'clubs') { v.innerHTML = vClubs(); bindClubPicker(); }
   else if (p === 'intl') { v.innerHTML = vIntl(arg); bindIntl(arg); }
+  else if (p === 'near' && typeof nmView === 'function') { v.innerHTML = nmView(); nmBind(); }
   else if (p === 'whatsnew' && typeof vWhatsNew === 'function') { v.innerHTML = vWhatsNew(); if (typeof bindWhatsNew === 'function') bindWhatsNew(v); }
   else if (p === 'home' && arg && iso3of(decodeURIComponent(arg)) && iso3of(decodeURIComponent(arg)) !== 'AUS') { const c = iso3of(decodeURIComponent(arg)); if (c === 'WORLD') { location.replace('#/intl/WORLD'); return; } v.innerHTML = vCountryHome(c); bindCountryHome(c); }
   else { const unknown = !!(p && !KNOWN_PAGES.includes(p) && h.startsWith('#/'));
