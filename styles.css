@@ -1097,3 +1097,25 @@ body[data-page=submit] .site-head .add-btn{outline:2px solid #fff;outline-offset
 .split-img.wide img{aspect-ratio:16/7}
 .phead.split.wide .split-img{display:block}
 .dhero.split .split-img.wide{max-width:none}
+
+/* How-to video: put the site on your phone like an app (25 Oct 2026) */
+.appvid{display:flex;gap:28px;align-items:center;justify-content:space-between;background:var(--night);color:#fff;border-radius:var(--r);padding:24px 28px;margin:22px 0;box-shadow:var(--shadow);border-top:4px solid var(--gold)}
+.appvid .kicker{color:var(--gold)}
+.av-copy{flex:1;min-width:0;max-width:560px}
+.av-h{font-size:clamp(26px,3.4vw,36px);margin:4px 0 8px;color:#fff}
+.av-copy p{margin:0 0 12px;color:#e2e8f0}
+.av-vid{flex:0 0 auto;width:200px}
+.av-vid video{display:block;width:100%;height:auto;aspect-ratio:9/16;max-height:360px;object-fit:contain;background:#0d1b2a;border-radius:12px;border:2px solid var(--gold)}
+.av-steps{margin-top:6px;font-size:15px}
+.av-steps summary{cursor:pointer;color:var(--gold);font-weight:600;padding:6px 0}
+.av-steps h3{font-family:var(--body);font-size:15px;letter-spacing:0;margin:10px 0 2px;color:#fff}
+.av-steps ol{margin:0;padding-left:22px;color:#e2e8f0}
+@media(max-width:640px){.appvid{flex-direction:column;align-items:stretch;gap:16px;padding:20px 18px}.av-vid{width:200px;align-self:center}}
+
+.avp-wrap{position:fixed;inset:0;background:rgba(10,16,30,.55);display:flex;align-items:flex-end;justify-content:center;z-index:210}
+.avp{background:#fff;color:var(--night);border-radius:16px 16px 0 0;padding:18px 18px 16px;width:min(460px,100%);position:relative;max-height:92vh;overflow:auto;border-top:4px solid var(--gold)}
+.avp h2{margin:0 44px 4px 0;font-size:26px}
+.avp .note{margin:0 0 10px}
+.avp video{display:block;margin:0 auto;height:min(46vh,340px);width:auto;max-width:100%;aspect-ratio:9/16;background:#0d1b2a;border-radius:12px;border:2px solid var(--gold)}
+.avp-x{position:absolute;right:10px;top:10px;width:44px;height:44px;border-radius:50%;border:2px solid var(--night);background:#fff;font-size:1.1em;cursor:pointer}
+.avp-btns{display:flex;gap:10px;margin-top:12px}.avp-btns .btn{flex:1;justify-content:center;text-align:center}

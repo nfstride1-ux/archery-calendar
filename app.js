@@ -634,6 +634,18 @@ function TICKS_LS(){
   if ((st === 'live') !== on) { const t = document.createElement('div'); t.innerHTML = lsBox(); b.replaceWith(...t.childNodes); return; }
   const c = document.getElementById('lsCount'); if (c) c.innerHTML = lsCount(LS.start - Date.now());
 }
+function appVideoBox(){
+  if ((window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone) return '';   // already installed: hide
+  return `<section class="appvid" id="appVid" aria-labelledby="appVidH"><div class="av-copy"><span class="kicker">Free, no app store</span>
+    <h2 class="av-h" id="appVidH">Put Archery Calendar on your phone like an app</h2>
+    <p>Watch how, it takes 30 seconds. Works on iPhone and Samsung, no app store.</p>
+    <details class="av-steps"><summary>Prefer to read the steps?</summary>
+      <h3>iPhone (Chrome)</h3><ol><li>Open archerycalendars.com in Chrome.</li><li>Tap the Share icon.</li><li>Tap Add to Home Screen, then Add.</li></ol>
+      <h3>Samsung (Chrome)</h3><ol><li>Open archerycalendars.com in Chrome.</li><li>Tap the three dots menu.</li><li>Tap Add to Home screen or Install app, then Install.</li></ol>
+    </details></div>
+    <div class="av-vid"><video controls preload="none" playsinline poster="img/howto-app-poster.jpg" width="540" height="960" aria-label="How to put Archery Calendar on your phone like an app"><source src="media/add-to-home-screen.mp4" type="video/mp4">Your browser can't play this video.</video></div>
+  </section>`;
+}
 function vHome(){
   setTitle('Archery Calendar');
   const mine = Object.keys(S.saved).map(id => BYID[id]).filter(Boolean);
@@ -667,6 +679,7 @@ function vHome(){
       <section><h2 class="sec-h">Coming up in my events</h2>
       ${up.length ? `<div class="list">${up.slice(0, 4).map(evCard).join('')}</div>` : `<div class="empty">No events yet. Tap ☆ on any event in <a href="#/browse">Find events</a>.</div>`}</section>
     </div>
+    ${appVideoBox()}
     ${clubCta()}
     <p class="center see-all"><a class="btn" href="#/browse" id="seeAll">See all events →</a></p>
   </div>`;
@@ -1680,6 +1693,27 @@ function vSubGate(fix){
 function bindSubGate(){ const h = location.hash || '#/submit'; document.querySelectorAll('[data-gate]').forEach(a => a.onclick = () => setAfter(h)); }
 const acctHidden = () => `<input type="hidden" name="account_email" value="${esc(AUTH.user ? AUTH.user.email || '' : '')}"><input type="hidden" name="account_user_id" value="${esc(AUTH.user ? AUTH.user.id : '')}">`;
 const counts = () => ({saved: Object.keys(S.saved).length, ent: Object.keys(S.entries).length});
+/* First visit to the sign-in page on a phone: small dismissible sheet with the how-to video (once only; not on desktop; not when already installed). */
+function appVidPopup(){
+  const K = 'archcal.appVidSeen';
+  try { if (localStorage.getItem(K)) return; } catch { return; }
+  if (!matchMedia('(max-width:640px)').matches || !(navigator.maxTouchPoints > 0 || matchMedia('(pointer:coarse)').matches)) return;
+  if (matchMedia('(display-mode: standalone)').matches || navigator.standalone || AUTH.user || $('#appVidPop')) return;
+  try { localStorage.setItem(K, '1'); } catch {}      // closing counts as seen
+  const d = document.createElement('div'); d.className = 'avp-wrap'; d.id = 'appVidPop';
+  d.innerHTML = `<div class="avp" role="dialog" aria-modal="true" aria-labelledby="avpT"><button type="button" class="avp-x" id="avpX" aria-label="Close">✕</button>
+    <h2 id="avpT">Put Archery Calendar on your phone like an app</h2>
+    <p class="note">Watch how, it takes 30 seconds. iPhone and Samsung, no app store.</p>
+    <video controls preload="none" playsinline poster="img/howto-app-poster.jpg" width="540" height="960" aria-label="How to put Archery Calendar on your phone like an app"><source src="media/add-to-home-screen.mp4" type="video/mp4"></video>
+    <div class="avp-btns"><button type="button" class="btn gold" id="avpClose">Close</button><button type="button" class="btn alt" id="avpNever">Don't show again</button></div></div>`;
+  document.body.appendChild(d);
+  const close = () => { const v = d.querySelector('video'); if (v) v.pause(); d.remove(); };
+  d.onclick = e => { if (e.target === d) close(); };
+  ['avpX', 'avpClose', 'avpNever'].forEach(i => d.querySelector('#' + i).onclick = close);
+  d.querySelector('#avpClose').focus();
+}
+window.addEventListener('hashchange', () => { const d = $('#appVidPop'); if (d) d.remove(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { const d = $('#appVidPop'); if (d) d.remove(); } });
 function vAccount(){
   setTitle(AUTH.user ? 'Account' : 'Sign in');
   const head = pageHead(AUTH.user ? 'Your account' : 'Sign in', 'Optional. Keep your events, entries and settings on all your devices.', 'mixed');   // short banner: the form stays above the fold on small phones
@@ -2590,6 +2624,7 @@ function vCountryHome(code){
       <section id="chMaj"><h2 class="sec-h">🏆 Major events &amp; championships</h2>${maj.length ? `<div class="list">${maj.slice(0, 4).map(iCard).join('')}</div>` : '<p class="note">No major events listed yet.</p>'}</section></div>` : ''}
     ${sts.length ? `<h2 class="sec-h">By state</h2><div class="chips" role="group" aria-label="Events by US state">${sts.map(([s, n]) => `<a class="chip" href="#/intl/USA" data-chst="${s}">${esc(US_ST[s] || s)} <small>${n}</small></a>`).join('')}</div>` : ''}
     ${iClubsPanel(code)}
+    ${appVideoBox()}
     ${clubCta()}
     <p class="center see-all"><a class="btn" href="#/intl/${esc(code)}">See all ${esc(nm)} events →</a></p>
   </div>`;
@@ -2703,7 +2738,7 @@ function render(){
   else if (p === 'privacy') v.innerHTML = vPrivacy();
   else if (p === 'fans') { v.innerHTML = vFans(); bindFans(); }
   else if (p === 'account') { v.innerHTML = vAccount(); const aw = v.querySelector('.wrap.narrow'), ap = aw && AUTH.user ? aw.querySelector('section.panel') : null;
-    if (aw) aw.insertAdjacentHTML('afterbegin', cardsAcctPanel()); bindAccount(); }
+    if (aw) aw.insertAdjacentHTML('afterbegin', cardsAcctPanel()); bindAccount(); setTimeout(appVidPopup, 700); }
   else if (p === 'admin') { v.innerHTML = vAdmin(); bindAdmin(); if (location.hash.split('?')[0] === '#/admin/scores') bindAdmScores(); }
   else if (p === 'cards') { v.innerHTML = vCards(); bindMCards(); }
   else if ((p === 'fix' || p === 'submit') && !/(?:^|[?&])f?sent=1/.test(location.search) && !(p === 'submit' && SUBDONE.sid) && subGate()) { v.innerHTML = vSubGate(p === 'fix' || arg === 'fix'); bindSubGate(); }
