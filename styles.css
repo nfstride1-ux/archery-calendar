@@ -1176,3 +1176,12 @@ body[data-page=submit] .site-head .add-btn{outline:2px solid #fff;outline-offset
 .nm-evb a{color:var(--blue);font-weight:600;overflow-wrap:anywhere}
 .nm-src{margin-top:24px}
 @media(max-width:640px){.nm-form{grid-template-columns:1fr}.nm-card{padding:12px;gap:12px}.nm-dist{width:64px;min-height:64px}.nm-dist b{font-size:24px}}
+/* Search everywhere */
+.gs-form{max-width:640px;margin:14px 0 6px}
+.gs-list{list-style:none;margin:6px 0 14px;padding:0;display:grid;gap:8px}
+.gs-list a{display:block;padding:12px 14px;border:1px solid #d6dde8;border-radius:12px;background:#fff;color:#0f1b2d;text-decoration:none;min-height:44px}
+.gs-list a:hover{border-color:#0f1b2d}
+.gs-list .note{display:block;margin-top:2px}
+.gs-ctry small{font-size:.6em;font-weight:600;color:#5b6676;margin-left:6px}
+.gs-hint{margin:6px 0 0}.gs-hint a,.qcount .gs-all{color:#1d4ed8;font-weight:600;text-decoration:none}
+.qcount .gs-all{display:inline-block;margin-left:8px}

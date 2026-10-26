@@ -117,7 +117,7 @@ async function boot(){
   route(); setHomeLinks(); window.addEventListener('hashchange', () => { geoLand.moved = true; setHomeLinks(); }, {once: false});
   { const sw = $('#ctrySw'); if (sw) sw.onclick = ctryMenu; }
   if (!S.homeCountry) geoLand().catch(() => {});   // deep links too (e.g. #/fans), so country-aware pages follow the visitor's country
-  setTimeout(() => loadIntl().then(() => setHomeLinks()).catch(() => {}), 2500); Promise.all([loadLiveSubs(), loadClubApi()]).then(([n, k]) => loadOverrides().then(m => { if (n || k || m) softRender(); })); cardsLoad().catch(() => {});
+  setTimeout(() => loadIntl().then(() => setHomeLinks()).catch(() => {}), 2500); window.LIVEP = Promise.all([loadLiveSubs(), loadClubApi()]).then(([n, k]) => loadOverrides().then(m => { if (n || k || m) softRender(); })); cardsLoad().catch(() => {});
   if (Object.keys(S.saved).concat(Object.keys(S.entries)).some(id => !BYID[id])) loadIntl().then(() => { const y = scrollY; render(); scrollTo(0, y); }).catch(() => {}); checkReminders(); setInterval(checkReminders, 60 * 60 * 1000);
   initAuth().catch(e => console.warn('auth', e));
 }
@@ -275,7 +275,7 @@ function evCard(x){
     <div class="ev-img ev-host">${dateBox(x)}${hostMark(x)}</div>
     <div class="body"><div class="tags">${catTag(x)}${t !== 'mixed' && isShoot(x) ? tagHtml(t) : ''}${x.flyer_local ? `<span class="tag fl">📄 ${x.flyer_is_current ? x.flyer_year + ' flyer' : 'Last year’s flyer'}</span>` : ''}${resOf(x) ? `<span class="tag res">🏆 ${resOf(x).kind === 'full' ? 'Scores' : 'Results'}</span>` : ''}</div>
       <h3 class="name">${esc(x.name)}</h3>${tmLine(x)}
-      <div class="meta">${esc([x.location, x.country_code && x.country_code !== 'AUS' ? x.country : x.state].filter(Boolean).join(' · '))}</div>
+      <div class="meta">${esc([x.location, x.country_code && x.country_code !== 'AUS' ? [x.country_code === 'USA' && x.us_state && US_ST[x.us_state] && !String(x.location || '').includes(US_ST[x.us_state]) ? US_ST[x.us_state] : '', x.country_name || x.country].filter(Boolean).join(', ') : x.state].filter(Boolean).join(' · '))}</div>
       <div class="meta">${isAba(x) ? abaLogo(32, 'org-logo') : ''}${esc([x.discipline, x.org, x.aba_branch && x.aba_branch.split(' – ')[0]].filter(Boolean).join(' · '))}</div>${badges(x, true)}
       ${entryBtn(x)}
       ${x.info_only ? '' : statusToggles(x)}</div>
@@ -770,7 +770,7 @@ function vBrowse(){
   // Picking a state on this page overrides 'My states' from Settings.
   const Q = BF.q ? parseQuery(BF.q) : null, qState = !!(Q && Q.states.length);
   // A state named in the search (e.g. 'target sa') also overrides 'My states' from Settings.
-  const vis = grp ? EV.filter(x => inGrp(x, grp)) : EV.filter(x => visible(x, !!BF.state || qState));
+  const vis = grp ? EV.filter(x => inGrp(x, grp)) : Q ? EV.slice() : EV.filter(x => visible(x, !!BF.state || qState));   // a typed search looks at every event, whatever Settings hide
   const scopes = AUS() ? [['all','All Australia'], ...GROUPS.map(g => ['g:' + g[0], {aa:'Archery Australia', aba:'ABA', awa:'Archery WA', taa:'TAA'}[g[0]]])] : [['all','All'], ['world','🌐 World'], ...S.countries.map(c => [c, CMAP[c] || c]), ...S.orgs.map(o => [o, (ORGS.find(x => x.id === o) || {}).name?.replace(/\s*\(.*\)/,'') || o])];
   const discs = [...new Set(vis.filter(x => (BF.past || !isPast(x)) && isShoot(x) && !/^(meeting|judging|coaching)/i.test(x.discipline || '')).flatMap(discsOf))].sort();   // only disciplines with events to show
   if (BF.disc && !discs.includes(BF.disc)) discs.push(BF.disc);   // never hide an active filter behind 'All disciplines'
@@ -781,8 +781,8 @@ function vBrowse(){
   if (BF.clubId) list = EV.filter(x => x.club_id === BF.clubId);
   else if (BF.club) list = (BF.state ? EV.filter(x => x.state_code === BF.state) : EV).filter(clubFilter(BF.club));
   else if (BF.state) list = list.filter(x => x.state_code === BF.state);
-  const nHiddenClub = (BF.clubId || BF.club) ? 0 : list.filter(x => !clubOk(x, Q) && (BF.past || !isPast(x))).length;
-  if (!BF.clubId && !BF.club) list = list.filter(x => clubOk(x, Q));
+  const nHiddenClub = (BF.clubId || BF.club || Q) ? 0 : list.filter(x => !clubOk(x, Q) && (BF.past || !isPast(x))).length;
+  if (!BF.clubId && !BF.club && !Q) list = list.filter(x => clubOk(x, Q));
   const active = [BF.day && `on ${esc(pd(BF.day).toLocaleDateString(LOC(), {weekday:'short', day:'numeric', month:'short', year:'numeric'}))}`, BF.q && `search “${esc(BF.q)}”`, BF.state && (STATES.find(s => s[0] === BF.state) || [, BF.state])[1], BF.disc && `discipline ${esc(BF.disc)}`, BF.cat && CATS[BF.cat] && CATS[BF.cat][2], BF.ost && OST[BF.ost] && OST[BF.ost][2], BF.club && CLUBF[BF.club], BF.clubId && CLUB[BF.clubId] && `club: ${esc(CLUB[BF.clubId].name)}`, BF.cat === 'club' && BF.mc && 'only my clubs', qState && `state from your search: ${Q.states.join(', ')}${!grp && !BF.state && S.states.length ? ' (overrides your Settings states)' : ''}`, !grp && !BF.state && !qState && S.states.length && AUS() && `your states in Settings (${S.states.join(', ')})`].filter(Boolean);
   if (BF.day) list = list.filter(x => datable(x) && x.start_date <= BF.day && evEnd(x) >= BF.day);
   if (BF.disc) list = list.filter(x => discsOf(x).includes(BF.disc));
@@ -809,7 +809,7 @@ function vBrowse(){
   list.sort((a, b) => sk(a) < sk(b) ? -1 : 1);
   const total = list.length; list = list.slice(0, BF.limit);
   let html = `${pageHead('Find an event', 'Field, 3D, Target and Indoor events from the calendars you follow.', BF.cat === 'youth' && BF.scope !== 'g:aba' && PH.youth ? 'youth' : BF.cat === 'come_try' && PH.come_try ? 'come_try' : BF.scope === 'g:aba' ? abaKey(BF.disc === '3D' ? '3d' : 'field') : BF.disc === 'Field' && !['g:aa', 'g:awa'].includes(BF.scope) ? 'aba_field' : {Field:'field','3D':'3d',Target:'target',Indoor:'indoor'}[BF.disc] || 'mixed')}<div class="wrap">${clubNotice()}${typeSel(BF.cat, tc)}${BF.cat === 'club' ? clubDrop(BF, x => !isPast(x) || BF.past) : ''}</div><div class="wrap browse"><div class="filters"><input type="search" id="q" placeholder="Search event, club, town…" value="${esc(BF.q)}" aria-label="Search events" enterkeyhint="search">
-  ${Q ? `<p class="qcount" id="qCount" aria-live="polite">${total ? `<a href="#qres" id="qGo">${total} event${total !== 1 ? 's' : ''} match “${esc(BF.q.trim())}” ↓</a>` : `No events match “${esc(BF.q.trim())}”.`}</p>` : ''}
+  ${Q ? `<p class="qcount" id="qCount" aria-live="polite">${total ? `<a href="#qres" id="qGo">${total} event${total !== 1 ? 's' : ''} match “${esc(BF.q.trim())}” ↓</a>` : `No events match “${esc(BF.q.trim())}”.`} <a href="#/search?q=${esc(encodeURIComponent(BF.q.trim()))}" class="gs-all">Search every country, club and organisation →</a></p>` : ''}
   <div class="chips" role="group" aria-label="Show">${scopes.map(([k, l]) => `<button class="chip" data-scope="${esc(k)}" aria-pressed="${BF.scope === k && !BF.club}">${k === 'g:aba' ? abaLogo(32, 'chip-logo') : ''}${esc(l)}</button>`).join('')}</div>
   ${AUS() ? `<label for="st" class="sr">State</label><select id="st" aria-label="State"><option value="">All states &amp; territories</option>${STATES.map(([c, n]) => `<option value="${c}" ${BF.state === c ? 'selected' : ''}>${n}</option>`).join('')}</select>` : ''}
   <label for="ost" class="sr">Organisation status</label><select id="ost" aria-label="Organisation status"><option value="">All – any status</option>${Object.entries(OST).map(([k, v]) => `<option value="${k}" ${BF.ost === k ? 'selected' : ''}>${v[0]} ${v[2]}</option>`).join('')}</select>
@@ -2633,7 +2633,7 @@ function vCountryHome(code){
 }
 function bindCountryHome(code){
   const reset = o => Object.assign(IF, {code, q: '', disc: '', org: '', st: '', ctry: '', major: false, cat: '', past: false, limit: 60}, o);
-  const f = $('#chSearch'); if (f) f.onsubmit = e => { e.preventDefault(); reset({q: $('#chq').value}); location.hash = '#/intl/' + code; };
+  const f = $('#chSearch'); if (f) f.onsubmit = e => { e.preventDefault(); gsGo($('#chq').value); };   // free-text search is global, not limited to this country
   document.querySelectorAll('[data-chd]').forEach(a => a.onclick = () => { const d = a.dataset.chd; reset(IDISC.some(x => x[0] === d) ? {disc: d} : {q: d}); });
   document.querySelectorAll('[data-chst]').forEach(a => a.onclick = () => reset({st: a.dataset.chst}));
   bindClubBtns($('#view'));
@@ -2668,7 +2668,7 @@ function vIntl(arg){
       <form id="intlForm" class="intl-form"><label for="intlSel">Country</label><select id="intlSel">${intlOptions(code)}</select><button class="btn" type="submit">Show events →</button>
       <a class="note" href="#/browse">🇦🇺 Australian events are in Find events</a></form>${iCtryStrip(code)}</section>
     ${world ? '' : iHome(code, all)}${spStrip(world ? 'world' : String(iIso(code) || code).toLowerCase(), 'intl')}
-    <div class="browse"><div class="filters"><input type="search" id="iq" placeholder="${usa ? 'Search: vegas, nfaa, ibo, texas, CA…' : code === 'DEN' ? 'Search: DM, indoor, 3D, Aarhus, Taastrup…' : code === 'MAS' ? 'Search: indoor, Selangor, Kedah, seminar…' : code === 'KOR' ? 'Search: festival, trials, Jeju, workshop…' : code === 'NZL' ? 'Search: Auckland, Christchurch, 720, NZFAA, 3D…' : code === 'CAN' ? 'Search: Manitoba, BC, MICA, 18m, nationals…' : 'Search event, club, town…'}" value="${esc(IF.q)}" aria-label="Search events in ${esc(nm)}">
+    <div class="browse"><div class="filters"><input type="search" id="iq" placeholder="${usa ? 'Search: vegas, nfaa, ibo, texas, CA…' : code === 'DEN' ? 'Search: DM, indoor, 3D, Aarhus, Taastrup…' : code === 'MAS' ? 'Search: indoor, Selangor, Kedah, seminar…' : code === 'KOR' ? 'Search: festival, trials, Jeju, workshop…' : code === 'NZL' ? 'Search: Auckland, Christchurch, 720, NZFAA, 3D…' : code === 'CAN' ? 'Search: Manitoba, BC, MICA, 18m, nationals…' : 'Search event, club, town…'}" value="${esc(IF.q)}" aria-label="Search events in ${esc(nm)}">${IF.q.trim() ? `<p class="note gs-hint">Showing ${world ? 'world' : esc(nm)} events only. <a href="#/search?q=${esc(encodeURIComponent(IF.q.trim()))}">Search every country for “${esc(IF.q.trim())}” →</a></p>` : ''}
       ${world ? `<label for="ictr2" class="sr">Country</label><select id="ictr2" aria-label="Country"><option value="">All countries</option>${wctr.map(c => `<option value="${c}" ${IF.ctry === c ? 'selected' : ''}>${flag(iIso(c))} ${esc(iName(c))}</option>`).join('')}</select>` : ''}
       ${usa ? `<label for="ist" class="sr">State</label><select id="ist" aria-label="US state"><option value="">All states</option>${sts.map(c => `<option value="${c}" ${IF.st === c ? 'selected' : ''}>${esc(US_ST[c])} (${c})</option>`).join('')}</select>` : ''}
       <label for="idisc" class="sr">Discipline</label><select id="idisc" aria-label="Discipline"><option value="">All disciplines</option>${IDISC.map(([d]) => `<option ${IF.disc === d ? 'selected' : ''}>${d}</option>`).join('')}</select>
@@ -2690,7 +2690,8 @@ function vIntl(arg){
 function bindIntl(){
   const rer = sel => { const y = scrollY; render(); scrollTo(0, y); const e = sel && $(sel); if (e) { e.focus({preventScroll: true}); if (e.type === 'search' || e.type === 'text') e.setSelectionRange(e.value.length, e.value.length); } };
   bindIntlMenu(); const c = $('#intlSel'); if (c) c.onchange = () => { location.hash = '#/intl/' + c.value; };
-  const q = $('#iq'); if (q) q.oninput = () => { IF.q = q.value; IF.limit = 60; clearTimeout(bindIntl.t); bindIntl.t = setTimeout(() => { rer('#iq'); gcSearch(IF.q); }, 250); };
+  const q = $('#iq'); if (q) q.onkeydown = e => { if (e.key === 'Enter' && q.value.trim()) { e.preventDefault(); gsGo(q.value); } };
+  if (q) q.oninput = () => { IF.q = q.value; IF.limit = 60; clearTimeout(bindIntl.t); bindIntl.t = setTimeout(() => { rer('#iq'); gcSearch(IF.q); }, 250); };
   const st = $('#ist'); if (st) st.onchange = () => { IF.st = st.value; rer('#ist'); };
   const c2 = $('#ictr2'); if (c2) c2.onchange = () => { IF.ctry = c2.value; IF.limit = 60; rer('#ictr2'); };
   const d = $('#idisc'); if (d) d.onchange = () => { IF.disc = d.value; rer('#idisc'); };
@@ -2714,10 +2715,10 @@ function vNotFound(kind, id){
     <form class="nf-search" id="nfSearch" role="search"><label class="sr" for="nfq">Search events</label><input id="nfq" type="search" value="${esc(nfWords(id))}" placeholder="Search an event, club or town…" autocomplete="off"><button class="btn gold" type="submit">Search</button></form>
     <div class="nf-links"><a class="btn alt" href="#/browse">← Find events</a><a class="btn alt" href="#/intl">🌐 International</a><a class="btn alt" href="#/home">Home</a></div></section></div>`;
 }
-function bindNotFound(){ const f = $('#nfSearch'); if (!f) return; f.onsubmit = e => { e.preventDefault(); BF.q = $('#nfq').value.trim(); BF.scope = 'all'; BF.disc = ''; BF.state = ''; location.hash = '#/browse'; }; }
+function bindNotFound(){ const f = $('#nfSearch'); if (!f) return; f.onsubmit = e => { e.preventDefault(); gsGo($('#nfq').value); }; }
 /* Friendly aliases for links people type or share. */
-const ROUTE_ALIAS = {find: '#/browse', search: '#/browse', events: '#/browse', international: '#/intl', world: '#/intl/world', 'my-events': '#/calendar', myevents: '#/calendar', 'whats-new': '#/whatsnew', news: '#/whatsnew', updates: '#/whatsnew', nearme: '#/near', 'near-me': '#/near', nearby: '#/near', 'clubs-near-me': '#/near'};
-const KNOWN_PAGES = ['home', 'browse', 'shoot', 'calendar', 'entries', 'settings', 'advertise', 'credits', 'privacy', 'fans', 'account', 'admin', 'cards', 'fix', 'submit', 'calendars', 'club', 'clubs', 'intl', 'import', 'whatsnew', 'near'];
+const ROUTE_ALIAS = {find: '#/browse', events: '#/browse', international: '#/intl', world: '#/intl/world', 'my-events': '#/calendar', myevents: '#/calendar', 'whats-new': '#/whatsnew', news: '#/whatsnew', updates: '#/whatsnew', nearme: '#/near', 'near-me': '#/near', nearby: '#/near', 'clubs-near-me': '#/near'};
+const KNOWN_PAGES = ['home', 'browse', 'shoot', 'calendar', 'entries', 'settings', 'advertise', 'credits', 'privacy', 'fans', 'account', 'admin', 'cards', 'fix', 'submit', 'calendars', 'club', 'clubs', 'intl', 'import', 'whatsnew', 'near', 'search'];
 function route(){
   const h = location.hash || '#/home', last = route.last; route.last = h;
   if (last && last.startsWith('#/intl')) IBACK[last] = scrollY;
@@ -2750,6 +2751,7 @@ function render(){
   else if (p === 'club') { const id = decodeURIComponent(arg || ''); v.innerHTML = vClub(id); bindClub(id); }
   else if (p === 'clubs') { v.innerHTML = vClubs(); bindClubPicker(); }
   else if (p === 'intl') { v.innerHTML = vIntl(arg); bindIntl(arg); }
+  else if (p === 'search' && typeof gsView === 'function') { const sq = HQ.get('q') || ''; v.innerHTML = gsView(sq); gsBind(sq); }
   else if (p === 'near' && typeof nmView === 'function') { v.innerHTML = nmView(); nmBind(); }
   else if (p === 'whatsnew' && typeof vWhatsNew === 'function') { v.innerHTML = vWhatsNew(); if (typeof bindWhatsNew === 'function') bindWhatsNew(v); }
   else if (p === 'home' && arg && iso3of(decodeURIComponent(arg)) && iso3of(decodeURIComponent(arg)) !== 'AUS') { const c = iso3of(decodeURIComponent(arg)); if (c === 'WORLD') { location.replace('#/intl/WORLD'); return; } v.innerHTML = vCountryHome(c); bindCountryHome(c); }
@@ -2758,7 +2760,7 @@ function render(){
     v.querySelectorAll('[data-cat]').forEach(a => a.onclick = () => { BF.cat = a.dataset.cat; BF.disc = ''; BF.scope = 'all'; });
     v.querySelectorAll('[data-th]').forEach(a => a.onclick = () => { BF.cat = ''; BF.disc = {field:'Field','3d':'3D',target:'Target',indoor:'Indoor'}[a.dataset.th]; BF.scope = 'all'; });
     bindIntlMenu(); bindClubNotice(); const ya = $('#ycAll'); if (ya) ya.onclick = () => { Object.assign(BF, {club: S.myClubs.length ? 'mine' : 'watch', q: '', cat: '', disc: '', state: '', limit: 60}); };
-    $('#heroSearch').onsubmit = e => { e.preventDefault(); BF.q = $('#hq').value; BF.scope = 'all'; location.hash = '#/browse'; }; }
+    $('#heroSearch').onsubmit = e => { e.preventDefault(); gsGo($('#hq').value); }; }
   bindNotFound(); bindCards(v); updateNav(); updateCardsNav();
 }
 /* ---------- instant publishing (owner 14 Oct 2026) ----------
