@@ -382,6 +382,16 @@
    "source_type": "organisation's own website",
    "kind": "org",
    "retrieved": "2026-10-10"
+  },
+  "southern-vales-archery-club": {
+   "name": "Southern Vales Archery Club",
+   "file": "img/clubs/southern-vales-archery-club.webp",
+   "sm": "img/clubs/southern-vales-archery-club-sm.webp",
+   "source_url": "Supplied by the club: 'SVAC Logo.png', emailed by the club's Events and Tournaments contact on 26 Oct 2026",
+   "source_page": "http://www.southernvalesarchery.org.au",
+   "source_type": "club-supplied logo (emailed by the club)",
+   "kind": "club",
+   "retrieved": "2026-10-26"
   }
  }
 }
