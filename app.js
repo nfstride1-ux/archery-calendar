@@ -2327,7 +2327,7 @@ function iStatus(x){
   return `<span class="b open">✓ Scheduled</span>`;
 }
 function iCard(x){
-  const t = theme(x), here = [x.location || 'Venue not published yet', x.us_state && US_ST[x.us_state]].filter(Boolean).join(' · ');
+  const t = theme(x), here = [x.location || 'Venue not published yet', x.us_state && US_ST[x.us_state] && !String(x.location || '').includes(US_ST[x.us_state]) && US_ST[x.us_state]].filter(Boolean).join(' · ');
   return `<article class="ev iev th-${t}" data-iid="${esc(x.id)}" role="link" tabindex="0" data-open="${esc(x.id)}" aria-label="${esc(x.name)}">
     <div class="ev-img ev-host">${dateBox(x)}${iMark(x)}</div>
     <div class="body"><div class="tags"><span class="tag ctry">${flag(x.iso2)} ${esc(x.country_name || 'International')}</span>${catTag(x)}${t !== 'mixed' && isShoot(x) ? tagHtml(t) : ''}</div>
@@ -2512,7 +2512,7 @@ document.addEventListener('visibilitychange', tickAll);
 /* Country home: intro from the data itself, next events, majors, US states, then the full list (vIntl). */
 function iMini(x){
   const u = entryUrl(x);
-  return `<li class="imini"><a class="imini-n" href="#/shoot/${esc(encodeURIComponent(x.id))}">${esc(x.name)}</a><span class="imini-m">📅 ${esc(range(x))} · 📍 ${esc([x.location || 'Venue not published yet', x.us_state && US_ST[x.us_state]].filter(Boolean).join(', '))}</span>
+  return `<li class="imini"><a class="imini-n" href="#/shoot/${esc(encodeURIComponent(x.id))}">${esc(x.name)}</a><span class="imini-m">📅 ${esc(range(x))} · 📍 ${esc([x.location || 'Venue not published yet', x.us_state && US_ST[x.us_state] && !String(x.location || '').includes(US_ST[x.us_state]) && US_ST[x.us_state]].filter(Boolean).join(', '))}</span>
     <span class="badges">${cdBadge(x)}${iStatus(x)}</span>${u ? entryBtn(x, 'imini-reg', false) : ''}</li>`;
 }
 function iHome(code, all){
