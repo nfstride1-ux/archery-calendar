@@ -1175,6 +1175,7 @@ function vPrivacy(){
     <li id="privStats"><b>Visit counts:</b> we count visits anonymously with <a href="https://www.goatcounter.com/" target="_blank" rel="noopener">GoatCounter</a>: which pages are viewed and the words typed into Find events search. <b>No cookies</b>, no advertising trackers and nothing that identifies you. Searches that look like an email address or phone number are never counted. Reminders are made on your device.</li>
     <li>"Register / enter" and email links go straight to the organiser. Anything you send them is between you and the organiser.</li>
     <li><b>Submit an event form:</b> what a club sends us (contact name, email, phone, event details and flyer, plus the email and ID of the signed-in account that sent it) is emailed to us at ${esc(SITE.contact)} via the form service FormSubmit (formsubmit.co). When you’re signed in, the event, flyer and your details are also saved to your account on Supabase so we can review and publish it; only the event details and flyer are shown publicly once it’s live. We use it only to check and list the event. Contact details aren't published unless they're on your flyer. Ask us any time to correct or delete them.</li>
+    <li><b>Marketing emails:</b> when you sign up, there is an optional tick box to agree to marketing emails. It is never ticked for you. If you tick it, we record that you agreed, and when, with your account. You can unsubscribe at any time.</li>
     <li><b>Fans photos:</b> if you send us a photo, your name, email, the photo and its details are emailed to us via FormSubmit. We publish only approved photos with the caption and your name as credit – never your email. In a photo and want it removed? Email ${esc(SITE.contact)}.</li>
     <li><b>Membership cards:</b> photos of your membership cards, card names, member numbers and links you add in <a href="#/cards">My membership cards</a> are stored only in this browser on this device. They’re never uploaded, published or sent to us${window.SUPABASE_CARD_SYNC ? ', unless you turn on the private backup to your account (private storage only you can open)' : ''}. Photos are shrunk and saved without their hidden location data. Delete them any time on that page.</li>
     <li>The site is hosted on GitHub Pages, which keeps standard server logs (e.g. IP address) – see GitHub's privacy statement.</li></ul>
@@ -1716,6 +1717,119 @@ function appVidPopup(){
 }
 window.addEventListener('hashchange', () => { const d = $('#appVidPop'); if (d) d.remove(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { const d = $('#appVidPop'); if (d) d.remove(); } });
+/* ---------- First-visit sign-up pop-up (owner 27 Oct 2026; copy and layout from the approved mockup, timing from Marketing) ----------
+   Only for visitors who are NOT signed in. Never on first load: about 30 seconds in, or when they open a second event page.
+   Phone: bottom sheet. Desktop: centred card. One screen: email, unticked marketing-email tick box, "Not now, just browse".
+   Sign-in itself is unchanged: the same signInWithOtp call as the account page, then the account page shows the code box.
+   Shown once; dismissed (Not now / X / Esc) = quiet for 14 days, then at most one more time; started sign-up = never again.
+   State lives in localStorage 'archreg.popup.v1'. The tick box is only recorded as auth user metadata (marketing_opt_in), nothing is sent. */
+const SP = {K: 'archreg.popup.v1', EV: 'archreg.popup.ev', el: null, shown: false, timeAt: Date.now() + 30000, evAt: 0, inert: [], prev: null};
+const spLoad = () => { try { const o = JSON.parse(localStorage.getItem(SP.K) || 'null'); return o && typeof o === 'object' ? o : {n: 0}; } catch { return {n: 0}; } };
+const spSave = o => { try { localStorage.setItem(SP.K, JSON.stringify(o)); return true; } catch { return false; } };
+function spEligible(){
+  try { localStorage.setItem(SP.K + '.t', '1'); localStorage.removeItem(SP.K + '.t'); } catch { return false; }   // can't remember the choice, so don't show
+  const o = spLoad(), n = +o.n || 0;
+  if (o.state === 'started' || o.startedAt || n >= 2) return false;
+  if (n === 0) return true;
+  return Date.now() - Math.max(+o.dismissedAt || 0, +o.shownAt || 0) >= 14 * 864e5;      // second and last chance, 14 days after the first
+}
+function spBlocked(){
+  if (!AUTH.on || !AUTH.ready || !AUTH.client || AUTH.user || AUTH.sent || AUTH.ask || document.hidden) return true;
+  if (['account', 'submit', 'fix', 'admin', 'cards', 'import'].includes(document.body.dataset.page)) return true;   // sign-in page itself, forms, admin
+  if (document.querySelector('#clubPop,#appVidPop,#flb,.flb,#stlPh,.stl-ph,[aria-modal="true"]:not(#spPop *),#hbBox:not([hidden]),.ctry-menu')) return true;   // another dialog or menu is open
+  if (document.querySelector('#view button:disabled')) return true;                       // something is being sent
+  const a = document.activeElement; if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && !a.closest('#spPop')) return true;   // typing
+  return false;
+}
+function spNav(){      // called after every page change
+  if (document.body.dataset.page !== 'shoot') { SP.evAt = 0; return; }
+  let ids = []; try { ids = JSON.parse(sessionStorage.getItem(SP.EV) || '[]'); } catch {}
+  const id = decodeURIComponent((location.hash || '').split('?')[0].split('/')[2] || '');
+  if (id && !ids.includes(id)) { ids.push(id); try { sessionStorage.setItem(SP.EV, JSON.stringify(ids.slice(-10))); } catch {} if (ids.length === 2) SP.evAt = Date.now() + 1500; }
+}
+setInterval(() => {
+  if (SP.shown || SP.el) return;
+  const now = Date.now(); if (!((SP.timeAt && now >= SP.timeAt) || (SP.evAt && now >= SP.evAt && document.body.dataset.page === 'shoot'))) return;
+  if (!spEligible()) { SP.timeAt = SP.evAt = 0; return; }
+  if (!spBlocked()) spShow();
+}, 1000);
+const SP_IC = {
+  cal: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/><path d="M12 12.6l1.1 2.2 2.4.35-1.75 1.7.4 2.4L12 18l-2.15 1.25.4-2.4-1.75-1.7 2.4-.35z"/></svg>',
+  pin: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
+  rec: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M8.5 13l2.3 2.3 4.7-4.8"/></svg>',
+  plan: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17M8 14h2M14 14h2M8 17.5h2"/></svg>',
+  mail: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7.5l8.5 6 8.5-6"/></svg>',
+  x: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>'};
+function spShow(){
+  if ($('#spPop')) return;
+  const o = spLoad(); SP.shown = true;
+  spSave(Object.assign(o, {n: (+o.n || 0) + 1, state: 'shown', shownAt: Date.now()}));
+  gc({path: 'popup/shown', title: 'Sign-up pop-up shown', event: true});
+  SP.prev = document.activeElement;
+  const d = document.createElement('div'); d.id = 'spPop'; d.className = 'sp-wrap';
+  d.innerHTML = `<div class="sp-card" role="dialog" aria-modal="true" aria-labelledby="spT" tabindex="-1">
+    <div class="sp-grab" aria-hidden="true"></div>
+    <button type="button" class="sp-x" id="spX" aria-label="Close">${SP_IC.x}</button>
+    <div class="sp-brand" aria-hidden="true"><span class="logo-mark"></span>Archery <b>Calendar</b></div>
+    <h2 id="spT">Never miss a <em>shoot</em></h2>
+    <p class="sp-lead">Make an account in under a minute. No password.</p>
+    <ul class="sp-ben">
+      <li><span class="sp-ic">${SP_IC.cal}</span>Your own calendar of the events you care about</li>
+      <li><span class="sp-ic">${SP_IC.pin}</span>Events near you, and wherever you travel</li>
+      <li><span class="sp-ic">${SP_IC.rec}</span>A record of your entries and what you spend</li>
+      <li><span class="sp-ic">${SP_IC.plan}</span>A plan for your whole year of shoots</li></ul>
+    <p class="sp-voice">Always know what's coming up, all in one place.</p>
+    <form id="spF" novalidate>
+      <label class="sr" for="spEm">Your email</label>
+      <input id="spEm" class="sp-in" type="email" autocomplete="email" inputmode="email" placeholder="Your email" required>
+      <p class="sp-err" id="spErr" role="alert" hidden></p>
+      <button type="submit" class="sp-btn" id="spGo">${SP_IC.mail}<span>Email me a sign-in code</span></button>
+      <label class="sp-consent"><input type="checkbox" id="spMk"><span><b>I agree to receive marketing emails</b><small>You can unsubscribe at any time.</small></span></label>
+      <p class="sp-note">We'll email you a code. No password needed.</p></form>
+    <div class="sp-later"><button type="button" class="sp-skip" id="spSkip">Not now, just browse</button><small>Looking at events never needs an account.</small></div></div>`;
+  document.body.appendChild(d); SP.el = d;
+  const sbw = innerWidth - document.documentElement.clientWidth; document.documentElement.classList.add('sp-lock'); if (sbw > 0) document.body.style.paddingRight = sbw + 'px';
+  SP.inert = [...document.body.children].filter(e => e !== d && e.id !== 'toast' && e.tagName !== 'SCRIPT'); SP.inert.forEach(e => { e.inert = true; });
+  d.onclick = e => { if (e.target === d) spClose('dismissed'); };
+  $('#spX').onclick = () => spClose('dismissed'); $('#spSkip').onclick = () => spClose('dismissed');
+  $('#spF').onsubmit = spSubmit;
+  d.addEventListener('keydown', e => {
+    if (e.key !== 'Tab') return;
+    const f = [...d.querySelectorAll('button:not([disabled]),input:not([disabled]),a[href]')].filter(x => x.offsetParent !== null || x === document.activeElement);
+    if (!f.length) return; const first = f[0], last = f[f.length - 1], c = d.querySelector('.sp-card');
+    if (e.shiftKey && (document.activeElement === first || document.activeElement === c)) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); } });
+  const card = d.querySelector('.sp-card');
+  if (matchMedia('(hover: hover) and (pointer: fine)').matches) $('#spEm').focus({preventScroll: true}); else card.focus({preventScroll: true});   // a phone keyboard would cover the sheet
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && SP.el) { e.preventDefault(); e.stopImmediatePropagation(); spClose('dismissed'); } }, true);   // Esc closes it wherever focus is
+function spClose(why){
+  const d = SP.el; if (!d) return; SP.el = null;
+  d.remove(); document.documentElement.classList.remove('sp-lock'); document.body.style.paddingRight = '';
+  SP.inert.forEach(e => { e.inert = false; }); SP.inert = [];
+  if (why === 'dismissed') { spSave(Object.assign(spLoad(), {state: 'dismissed', dismissedAt: Date.now()})); gc({path: 'popup/dismissed', title: 'Sign-up pop-up dismissed', event: true}); }
+  const p = SP.prev; SP.prev = null; if (why !== 'started' && p && p.isConnected && p.focus) { try { p.focus({preventScroll: true}); } catch {} }
+}
+async function spSubmit(e){
+  e.preventDefault();
+  const em = $('#spEm').value.trim(), err = $('#spErr'), b = $('#spGo'), say = t => { err.textContent = t; err.hidden = !t; };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { say('Please enter a valid email address.'); $('#spEm').focus(); return; }
+  if (!AUTH.client) { say('Sign-in is not available right now. Please try again in a moment.'); return; }
+  say(''); b.disabled = true; const lbl = b.querySelector('span'); lbl.textContent = 'Sending…';
+  const data = {marketing_opt_in: $('#spMk').checked, marketing_opt_in_at: new Date().toISOString()};      // consent record only; no marketing email is sent
+  let error = null;
+  try { ({error} = await AUTH.client.auth.signInWithOtp({email: em, options: {emailRedirectTo: redirectUrl(), shouldCreateUser: true, data}})); } catch (x) { error = x || new Error('Could not send the email.'); }
+  if (!SP.el) return;
+  if (error) { say(/rate|seconds/i.test(error.message || '') ? 'Too many sign-in emails – please wait a minute and try again.' : (error.message || 'Could not send the email. Please try again.')); b.disabled = false; lbl.textContent = 'Email me a sign-in code'; return; }
+  setSent(em); AUTH.msg = '';
+  spSave(Object.assign(spLoad(), {state: 'started', startedAt: Date.now()}));
+  gc({path: 'popup/signup-started', title: 'Sign-up pop-up: sign-up started', event: true});
+  const back = location.hash || '#/home'; if (!back.startsWith('#/account')) setAfter(back);      // after signing in, come back to the page they were on
+  spClose('started'); toast('Sign-in email sent. Check your inbox.');
+  if (!(location.hash || '').startsWith('#/account')) location.hash = '#/account'; else render();
+  setTimeout(() => { const o = $('#otp'); if (o) { o.scrollIntoView({block: 'center'}); o.focus({preventScroll: true}); } }, 300);
+}
+window.addEventListener('hashchange', () => spClose('left'));
 function vAccount(){
   setTitle(AUTH.user ? 'Account' : 'Sign in');
   const head = pageHead(AUTH.user ? 'Your account' : 'Sign in', 'Optional. Keep your events, entries and settings on all your devices.', 'mixed');   // short banner: the form stays above the fold on small phones
@@ -2723,7 +2837,7 @@ function route(){
   const h = location.hash || '#/home', last = route.last; route.last = h;
   if (last && last.startsWith('#/intl')) IBACK[last] = scrollY;
   render();
-  window.scrollTo(0, h.startsWith('#/intl') && last && last.startsWith('#/shoot/') && IBACK[h] ? IBACK[h] : 0); gcPage(); }
+  window.scrollTo(0, h.startsWith('#/intl') && last && last.startsWith('#/shoot/') && IBACK[h] ? IBACK[h] : 0); gcPage(); spNav(); }
 function render(){
   const h0 = location.hash || '#/home', h = h0.split('?')[0], HQ = new URLSearchParams(h0.split('?')[1] || ''), [, p, arg] = h.split('/'), v = $('#view');
   if (ROUTE_ALIAS[p]) { location.replace(ROUTE_ALIAS[p] + (h0.includes('?') ? '?' + h0.split('?')[1] : '')); return; }
