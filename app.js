@@ -1680,12 +1680,12 @@ const AFTER_KEY = 'archcal.after';
 function setAfter(h){ try { localStorage.setItem(AFTER_KEY, JSON.stringify({h, t: Date.now()})); } catch {} }
 function takeAfter(){ try { const o = JSON.parse(localStorage.getItem(AFTER_KEY) || 'null'); localStorage.removeItem(AFTER_KEY); return o && o.h && Date.now() - o.t < 60 * 60 * 1000 ? o.h : ''; } catch { return ''; } }
 const subGate = () => AUTH.configured && window.SUPABASE_ENABLED === true && !AUTH.user;
-function vSubGate(fix){
-  setTitle(fix ? 'Fix an event' : 'Submit an event');
-  const head = pageHead(fix ? 'Fix an existing event' : 'Submit an event', 'Sign in first – it takes a minute and it’s free.', '3d');
+function vSubGate(fix, bulk){
+  setTitle(bulk ? 'Bulk upload' : fix ? 'Fix an event' : 'Submit an event');
+  const head = pageHead(bulk ? 'Bulk upload' : fix ? 'Fix an existing event' : 'Submit an event', 'Sign in first – it takes a minute and it’s free.', '3d');
   if (!AUTH.ready) return `${head}<div class="wrap narrow"><p class="loading">Checking sign-in…</p></div>`;
   return `${head}<div class="wrap narrow sub"><section class="panel sub-gate" aria-labelledby="gateH">
-    <h2 class="sec" id="gateH">🔒 Please sign in to ${fix ? 'send a correction' : 'submit an event'}</h2>
+    <h2 class="sec" id="gateH">🔒 Please sign in to ${bulk ? 'upload events' : fix ? 'send a correction' : 'submit an event'}</h2>
     <p>Looking at events never needs an account. To ${fix ? 'send a correction' : 'send an event'}, we ask you to sign in, so we know who it’s from. Events from people we already know get <b>approved faster</b>.</p>
     <ul class="ticks"><li><b>Free</b>, quick sign up – no password. We email you a code.</li><li>Your name, club and email are filled in for you next time.</li><li>We never publish your email.</li></ul>
     ${AUTH.msg ? `<p class="err" role="alert">${esc(AUTH.msg)}</p>` : ''}
@@ -2744,7 +2744,8 @@ function render(){
     if (aw) aw.insertAdjacentHTML('afterbegin', cardsAcctPanel()); bindAccount(); setTimeout(appVidPopup, 700); }
   else if (p === 'admin') { v.innerHTML = vAdmin(); bindAdmin(); if (location.hash.split('?')[0] === '#/admin/scores') bindAdmScores(); }
   else if (p === 'cards') { v.innerHTML = vCards(); bindMCards(); }
-  else if ((p === 'fix' || p === 'submit') && !/(?:^|[?&])f?sent=1/.test(location.search) && !(p === 'submit' && SUBDONE.sid) && subGate()) { v.innerHTML = vSubGate(p === 'fix' || arg === 'fix'); bindSubGate(); }
+  else if ((p === 'fix' || p === 'submit') && !/(?:^|[?&])f?sent=1/.test(location.search) && !(p === 'submit' && SUBDONE.sid) && subGate()) { v.innerHTML = vSubGate(p === 'fix' || arg === 'fix', p === 'submit' && arg === 'bulk'); bindSubGate(); }
+  else if (p === 'submit' && arg === 'bulk' && typeof bulkView === 'function') { v.innerHTML = bulkView(); bulkBind(); }
   else if (p === 'fix' || (p === 'submit' && arg === 'fix')) { v.innerHTML = vFix(decodeURIComponent(p === 'fix' ? (arg || '') : (h.split('/')[3] || ''))); bindFix(); }
   else if (p === 'submit') { v.innerHTML = vSubmit(HQ.get('country')); bindSubmit(); }
   else if (p === 'calendars') { v.innerHTML = vCals(arg); bindCals(); }
@@ -3412,7 +3413,7 @@ function bindSubmit(){
 }
 
 /* ---------- Corrections: #/fix and #/fix/<event id> (also reachable as #/submit/fix). Emails nfshold via FormSubmit only; nothing on the site changes automatically. ---------- */
-const subTabs = on => `<nav class="sub-tabs" aria-label="What would you like to send?"><a href="#/submit" class="sub-tab" ${on === 'new' ? 'aria-current="page"' : ''}>➕ New event</a><a href="#/fix" class="sub-tab" ${on === 'fix' ? 'aria-current="page"' : ''}>✏️ Fix an existing event</a></nav>`;
+const subTabs = on => `<nav class="sub-tabs" aria-label="What would you like to send?"><a href="#/submit" class="sub-tab" ${on === 'new' ? 'aria-current="page"' : ''}>➕ New event</a><a href="#/fix" class="sub-tab" ${on === 'fix' ? 'aria-current="page"' : ''}>✏️ Fix an existing event</a><a href="#/submit/bulk" class="sub-tab" ${on === 'bulk' ? 'aria-current="page"' : ''}>Bulk upload</a></nav>`;
 const fixLabel = x => `${x.name} – ${x.start_date ? pd(x.start_date).toLocaleDateString(LOC(), {day: 'numeric', month: 'short', year: 'numeric'}) : 'date TBC'}${x.state_code || x.state ? ' – ' + (x.state_code || x.state) : ''}`;
 const fixList = () => EV.filter(x => !x.start_date || daysTo(x.end_date || x.start_date) >= -90).sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
 const fixDates = x => x ? [x.start_date, x.end_date && x.end_date !== x.start_date && x.end_date].filter(Boolean).join(' to ') : '';
