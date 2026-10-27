@@ -864,12 +864,12 @@ body.hb-open #hbBtn{display:none}
  .ls-watch{min-height:40px;padding:8px 14px}
 }
 @media (min-width:1900px){
- .ls-box{position:absolute;top:44px;left:calc(100% + 4px);width:min(380px,calc((100vw - 1248px) / 2));margin:0;grid-template-columns:88px minmax(0,1fr);align-items:start;gap:12px 14px;padding:14px;z-index:3}
- .ls-thumb img{width:88px;height:auto;aspect-ratio:440/550;object-position:center}
- .ls-h{font-size:20px}
- .ls-count{gap:5px}.ls-u{flex:1;min-width:0}.ls-u b{font-size:20px}
- .ls-links{grid-column:1/-1;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px 14px}
- .ls-post{flex-basis:100%}
+ .home-wrap:not(:has(> .news-col)) .ls-box{position:absolute;top:44px;left:calc(100% + 4px);width:min(380px,calc((100vw - 1248px) / 2));margin:0;grid-template-columns:88px minmax(0,1fr);align-items:start;gap:12px 14px;padding:14px;z-index:3}
+ .home-wrap:not(:has(> .news-col)) .ls-thumb img{width:88px;height:auto;aspect-ratio:440/550;object-position:center}
+ .home-wrap:not(:has(> .news-col)) .ls-h{font-size:20px}
+ .home-wrap:not(:has(> .news-col)) .ls-count{gap:5px}.home-wrap:not(:has(> .news-col)) .ls-u{flex:1;min-width:0}.home-wrap:not(:has(> .news-col)) .ls-u b{font-size:20px}
+ .home-wrap:not(:has(> .news-col)) .ls-links{grid-column:1/-1;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px 14px}
+ .home-wrap:not(:has(> .news-col)) .ls-post{flex-basis:100%}
 }
 /* Add event (20 Oct 2026): gold "+ Add event" in the header on every screen; on phones also a round + bottom-right (not on #/submit or #/fix). */
 .site-head .add-btn{display:inline-flex;align-items:center;gap:4px}
@@ -1286,7 +1286,6 @@ html.sp-lock{overflow:hidden}
 .nl-body .btn{white-space:normal;text-align:center}
 .nl-cta{margin:22px 0 14px;padding:16px;border-radius:12px;background:#fff8e1;border:1px solid var(--gold)}
 .nl-cta p{margin:0 0 10px}.nl-cta p:last-child{margin:0}
-.nl-sign{margin-top:18px!important;color:var(--ink2)}
 .nl-list{list-style:none;margin:0;padding:0}
 .nl-item{display:flex;gap:14px;align-items:center;color:var(--ink);text-decoration:none;padding:12px}
 .nl-item:hover{border-color:var(--night)}
@@ -1322,14 +1321,30 @@ html.sp-lock{overflow:hidden}
  .phead:has(> .sp-hero){padding-bottom:62px}
 }
 @media print{.sp-hero{display:none!important}}
-@media (min-width:1760px){
- .news-rail{display:block;position:absolute;top:0;bottom:0;width:min(380px,calc((100vw - 1248px) / 2));right:calc(100% + 4px)}
- .news-rail .sp-rail-in{width:100%;padding-top:20px;gap:14px}
- .news-rail .sp-rail-h{font-size:17px;padding-top:26px}
+/* 29 Oct 2026 (28 Oct request): two tall newsletter columns in the side space of the home pages, 1280px and up (Yankton left, Hobart right, real article text).
+   They sit in the page flow's side space and scroll with the page. Below 1280px and on phones the stacked Latest news cards stay as they were. */
+.news-col{display:none}
+@media (min-width:1280px){
+ .home-wrap:has(> .news-col){--nc-w:clamp(250px,calc(250px + (100vw - 1280px) * .3),340px);max-width:min(1200px,calc(100vw - 2 * (var(--nc-w) + 16px)))}
  .home-wrap .news-card.nc-main{display:none}
- .news-card.nc-side{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin:0;padding:16px 16px 14px;background:#fff8e1;border-color:var(--gold);border-left-width:6px;min-height:48px}
- .news-card.nc-side .nc-t{white-space:normal;overflow:visible;text-overflow:clip;font-size:18px;line-height:1.3;font-weight:800;color:var(--night)}
- .news-card.nc-side .nc-go{font-size:15px;color:var(--blue);padding-top:2px}
- .news-card.nc-side:focus-visible{outline:2px solid var(--night);outline-offset:2px}
+ .news-col{display:block;position:absolute;top:32px;bottom:20px;width:var(--nc-w);background:var(--card);border:1px solid var(--line);border-top:4px solid var(--gold);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+ .nc-l{right:100%}.nc-r{left:100%}
+ .nc-in{height:100%;display:flex;flex-direction:column;padding:18px 18px 16px}
+ .nc-kick{margin:0 0 8px;font:700 13px/1.2 var(--disp);letter-spacing:.14em;text-transform:uppercase;color:var(--amber)}
+ .nc-h{margin:0 0 6px;font-size:clamp(24px,calc(18px + .5vw),30px);font-weight:800;line-height:1.08;text-transform:uppercase;color:var(--night)}
+ .nc-h a{color:inherit;text-decoration:none}.nc-h a:hover{text-decoration:underline;text-decoration-color:var(--gold);text-decoration-thickness:3px}
+ .nc-date{margin:0 0 12px;padding-bottom:12px;border-bottom:2px solid var(--line);font-size:14px;font-weight:600;color:var(--muted)}
+ .nc-body{flex:1 1 0;min-height:0;overflow:hidden;font-size:15px;line-height:1.55;color:var(--ink2)}
+ .nc-body p{margin:0 0 11px;overflow-wrap:anywhere}
+ .nc-body a{color:var(--blue)}
+ .nc-body b{color:var(--ink)}
+ .nc-sub{margin:16px 0 6px;padding-top:8px;border-top:1px solid var(--line);font-size:19px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:var(--night)}
+ .nc-body .nc-note{margin:-2px 0 8px;font-size:13.5px;color:var(--muted)}
+ .nc-body .nc-li{padding:6px 0 6px 10px;margin:0;border-left:3px solid var(--gold);border-top:1px solid var(--line)}
+ .nc-body .nc-sub + .nc-li,.nc-body .nc-note + .nc-li{border-top:0}
+ .nc-body .nc-li + p{margin-top:11px}
+ .nc-more{flex:none;margin:12px 0 0;padding-top:12px;border-top:2px solid var(--line);display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
+ .nc-more .btn{min-height:44px;padding:8px 16px;font-size:15px;white-space:normal}
+ .nc-all{font-weight:700;font-size:14px}
 }
-@media print{.news-rail{display:none!important}}
+@media print{.news-col{display:none!important}}
