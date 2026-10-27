@@ -1236,6 +1236,9 @@ html.sp-lock{overflow:hidden}
 #spPop .sp-later small{display:block;font-size:12.5px;color:var(--muted)}
 @media (prefers-reduced-motion:no-preference){#spPop.sp-wrap{animation:spFade .2s ease-out}#spPop .sp-card{animation:spUp .28s ease-out}}
 @keyframes spFade{from{opacity:0}}@keyframes spUp{from{transform:translateY(40px);opacity:0}}
+/* Desktop centres the card with a transform, so its rise keyframe must carry that transform or the card sweeps in from the page centre point. */
+@keyframes spUpC{from{transform:translate(-50%,calc(-50% + 40px));opacity:0}}
+@media (prefers-reduced-motion:no-preference) and (min-width:721px){#spPop .sp-card{animation-name:spUpC}}
 @media (min-width:721px){
  #spPop .sp-card{left:50%;right:auto;top:50%;bottom:auto;transform:translate(-50%,-50%);width:580px;max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);border-radius:22px;box-shadow:0 24px 70px rgba(0,0,0,.45);padding:0 40px 16px}
  #spPop .sp-card::before{content:"";display:block;height:6px;background:var(--gold);margin:0 -40px}
