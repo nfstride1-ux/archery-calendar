@@ -668,7 +668,6 @@ function vHome(){
   <div class="wrap home-wrap">${spRails()}
     <div class="stats four"><a class="stat" href="#/calendar"><b>${up.length}</b><span>★ My events</span></a><a class="stat" href="#/entries"><b>${nEnt}</b><span>✓ Entered</span></a><a class="stat" href="#/entries"><b>${nTodo}</b><span>☐ To enter</span></a><a class="stat" href="#/entries"><b>${nPay}</b><span>$ To pay</span></a></div>
     ${newsCard()}
-    ${lsBox()}
     ${spStrip()}
     ${pendStrip()}
     ${adSlot('banner')}
