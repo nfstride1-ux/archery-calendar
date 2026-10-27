@@ -308,11 +308,18 @@ function spCard(s, medium, content, strip){
 }
 const SP_OPEN_SPOTS = false;   // true = show the dashed "Sponsor spot open" cards again (left rail, right rail, strip)
 const spOpen = (more) => SP_OPEN_SPOTS ? `<a class="sp sp-open" href="#/advertise"><b>Sponsor spot open</b><span>Your logo + link here</span>${more ? '<em>Advertise with us →</em>' : ''}</a>` : '';
-function spRails(cc){
-  if (!SPONSORS.length) return ''; const sx = cc ? '_' + cc : '';
-  const right = spOpen(true) + spOpen(true);
-  return `<aside class="sp-rail sp-rail-l" aria-label="Sponsors"><div class="sp-rail-in"><div class="sp-rail-h">Supported by</div>${SPONSORS.map(s => spCard(s, 'sponsor_rail', 'left_rail' + sx)).join('')}${spOpen(true)}</div></aside>
-  ${right ? `<aside class="sp-rail sp-rail-r" aria-label="More sponsor spots"><div class="sp-rail-in"><div class="sp-rail-h">Sponsors</div>${right}</div></aside>` : ''}`;
+/* RamRods inside the page banner ("poster") on desktop: a footer strip along the bottom of the hero photo, white logo blended into the artwork.
+   Phone and narrow screens (720px and under) keep the swipeable strip below (spStrip); the strip is hidden on desktop. */
+function spHero(cc, where = 'home'){
+  if (!SPONSORS.length) return '';
+  const s = SPONSORS[0];
+  return `<div class="sp-hero" aria-label="Sponsor"><div class="wrap"><a class="sp-hero-link" href="${esc(spUrl(s, 'sponsor_hero', where + '_hero' + (cc ? '_' + cc : '')))}" target="_blank" rel="sponsored noopener" data-sp="${esc(s.id)}" data-gc="sponsor/${esc(s.id)}/${esc(where + '_hero' + (cc ? '_' + cc : ''))}" data-gc-t="${esc(s.name)} sponsor click (${esc((where + ' hero').replace(/_/g, ' '))})" aria-label="${esc(s.name)}${s.founding ? ', founding sponsor' : ''} (opens ${esc(s.url.replace(/^https?:\/\/|\/$/g, ''))} in a new tab)"><span class="sp-hero-by">Supported by</span><img src="${esc(s.logo)}" alt="" width="${s.w}" height="${s.h}" decoding="async"></a></div></div>`;
+}
+/* Side rail (wide desktops only, 1760px and up): the Latest news cards sit in the empty left margin instead of stacked under the stats row.
+   Below that width, and on phones, the cards stay stacked in the main column as before (newsCard). */
+function spRails(cc, newsCode){
+  const side = newsCode ? newsRail(newsCode) : '', right = spOpen(true) + spOpen(true);
+  return `${side}${right ? `<aside class="sp-rail sp-rail-r" aria-label="More sponsor spots"><div class="sp-rail-in"><div class="sp-rail-h">Sponsors</div>${right}</div></aside>` : ''}`;
 }
 function spStrip(cc, where = 'home'){
   if (!SPONSORS.length) return '';
@@ -652,7 +659,24 @@ const NEWS = [
   {url: 'newsletter/yankton-world-championships-2026/', title: 'Yankton world championships wrap-up: who won in South Dakota, Aussie gold, and where to watch', where: ['AUS', 'USA', 'GER', 'FRA', 'DEN', 'GBR', 'ITA', 'SWE', 'SLO', 'AUT', 'ESP']}  /* the countries in the article; SWE has no country page yet, so it shows once one exists */,
   {url: 'newsletter/hobart-nationals-2026/', title: 'Hobart nationals wrap-up: who won, the Para world records, and where to watch', where: ['AUS']}
 ];
-const newsCard = code => NEWS.filter(n => n.where.includes(code || 'AUS')).map(n => `<a class="news-card" href="${esc(n.url)}" data-gc="home-card/newsletter" data-gc-t="Latest news card (home)"><span class="nc-tag">Latest news</span><span class="nc-t">${esc(n.title)}</span><span class="nc-go" aria-hidden="true">&rarr;</span></a>`).join('');
+const newsItems = code => NEWS.filter(n => n.where.includes(code || 'AUS'));
+const newsCard = code => newsItems(code).map(n => `<a class="news-card nc-main" href="${esc(n.url)}" data-gc="home-card/newsletter" data-gc-t="Latest news card (home)"><span class="nc-tag">Latest news</span><span class="nc-t">${esc(n.title)}</span><span class="nc-go" aria-hidden="true">&rarr;</span></a>`).join('');
+const newsRail = code => newsItems(code).length ? `<aside class="sp-rail sp-rail-l news-rail" aria-label="Latest news"><div class="sp-rail-in"><div class="sp-rail-h">Latest news</div>${newsItems(code).map(n => `<a class="news-card nc-side" href="${esc(n.url)}" data-gc="home-card/newsletter-side" data-gc-t="Latest news card (side)"><span class="nc-t">${esc(n.title)}</span><span class="nc-go" aria-hidden="true">Read &rarr;</span></a>`).join('')}</div></aside>` : '';
+/* Help panel "What is Archery Calendar?" text: names the country the visitor is viewing (country home / international page), else their home country.
+   Organisations are only ones the site really lists for that country (from data/intl.json sources); countries with none listed get the plain country line. Australia keeps its own text (in help.js). */
+const HELP_ORGS = {USA: 'USA Archery, NFAA, IBO and the Archery Shooters Association', DEN: 'Bueskydning Danmark', NZL: 'Archery New Zealand, NZ Field Archery Association, the NZ Bowhunters Society and ArcheryOSA',
+  GBR: 'Archery GB', CAN: 'Archery Canada and Archery Manitoba', AUT: 'the Österreichischer Bogensportverband', SUI: 'Swiss Archery', MAS: 'NAAM', KOR: 'the Korea Archery Association', NED: 'IFAA',
+  TUR: 'the Turkish Archery Federation', FRA: 'the FFTA', IRL: 'Archery Ireland', LUX: "the Fédération Luxembourgeoise de Tir à l'Arc", ITA: 'the Italian Archery Federation', SVK: 'the Slovak Archery Association',
+  BEL: 'the Belgian Archery Federation', GER: 'IFAA', HUN: 'IFAA'};
+function helpAbout(){
+  let c = ''; try { const [, p, a] = (location.hash || '').split('?')[0].split('/'); if (p === 'home' && !a) return ''; if ((p === 'home' || p === 'intl') && a) c = iso3of(decodeURIComponent(a)) || ''; } catch {}
+  if (!c) { try { c = homeCode(); } catch {} }
+  if (!c || c === 'AUS') return '';
+  if (c === 'WORLD') return `<p>Archery Calendar puts archery events from around the world in one place, from World Archery and national federations. It's free.</p><p>Tap any event for dates, venue, entry details and the flyer.</p>`;
+  let nm = ''; try { nm = iName(c); } catch {} if (!nm || nm === c) return '';
+  const the = /^(United|Netherlands)/.test(nm) ? 'the ' : '', o = HELP_ORGS[c];
+  return `<p>Archery Calendar puts archery events from around ${the}${esc(nm)} (and overseas) in one place${o ? `, including events from ${esc(o)}` : ''}. It's free.</p><p>Tap any event for dates, venue, entry details and the flyer.</p>`;
+}
 function vHome(){
   setTitle('Archery Calendar');
   const mine = Object.keys(S.saved).map(id => BYID[id]).filter(Boolean);
@@ -668,8 +692,8 @@ function vHome(){
       <form class="hero-search" id="heroSearch" role="search"><input type="search" id="hq" placeholder="Search an event, club or town…" aria-label="Search events"><button class="btn gold" type="submit">Find events</button></form><p class="hero-near"><a class="nm-hero-btn" href="#/near"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>Find clubs near me</a></p></div>
     ${next ? `<a class="next-card" href="#/shoot/${esc(next.id)}"><span class="kicker">Your next event</span>${bigCd(next)}
       <span class="nm">${esc(next.name)}</span><span>${esc(range(next))}</span><span class="st">${ST_TXT[ST(next.id)]}</span></a>` : ''}
-  </div>${credit('mixed')}</section>
-  <div class="wrap home-wrap">${spRails()}
+  </div>${credit('mixed')}${spHero('', 'home')}</section>
+  <div class="wrap home-wrap">${spRails('', 'AUS')}
     <div class="stats four"><a class="stat" href="#/calendar"><b>${up.length}</b><span>★ My events</span></a><a class="stat" href="#/entries"><b>${nEnt}</b><span>✓ Entered</span></a><a class="stat" href="#/entries"><b>${nTodo}</b><span>☐ To enter</span></a><a class="stat" href="#/entries"><b>${nPay}</b><span>$ To pay</span></a></div>
     ${newsCard('AUS')}
     ${spStrip()}
@@ -2725,8 +2749,8 @@ function vCountryHome(code){
     <div class="hero-copy"><p class="kicker">${flag(iIso(code))} ${esc(nm)}</p><h1>Every archery event in ${the}${esc(nm)}.<br><span>One calendar.</span></h1>
       <p class="lead" id="chLead">${INTL ? '' : 'Loading events…'}</p>
       <form class="hero-search" id="chSearch" role="search"><input type="search" id="chq" placeholder="Search events in ${the}${esc(nm)}…" aria-label="Search events in ${esc(nm)}"><button class="btn gold" type="submit">Find events</button></form><p class="hero-near"><a class="nm-hero-btn" href="#/near"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>Find clubs near me</a></p>${h.by ? `<p class="ch-credit">Photo: ${esc(h.by)}${h.source ? ` (${esc(h.source)})` : ''} · <a href="#/credits">Credits</a></p>` : ''}</div>
-    NEXTCARD</div></section>`;
-  if (!INTL) { loadIntl().then(() => { if (curHomePage() === code) softRenderForce(); }).catch(() => {}); return hero.replace('NEXTCARD', '') + '<div class="wrap"><p class="loading">Loading events…</p></div>'; }
+    NEXTCARD</div>SPHERO</section>`;
+  if (!INTL) { loadIntl().then(() => { if (curHomePage() === code) softRenderForce(); }).catch(() => {}); return hero.replace('NEXTCARD', '').replace('SPHERO', spHero(String(iIso(code) || code).toLowerCase(), 'home')) + '<div class="wrap"><p class="loading">Loading events…</p></div>'; }
   const all = INTL.events.filter(x => x.country_code === code), up = all.filter(x => !iPast(x) && x.status !== 'cancelled').sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
   const maj = up.filter(isMajor), nReg = up.filter(x => entryUrl(x)).length, orgs = [...new Set(up.map(x => x.source_name || x.org).filter(Boolean))];
   const mine = Object.keys(S.saved).map(id => BYID[id]).filter(x => x && x.country_code === code && !iPast(x)).sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
@@ -2737,8 +2761,8 @@ function vCountryHome(code){
   const disc = CDISC.map(([k, lbl, re, gen]) => { const ev = up.filter(x => re.test(x.discipline || x.name || '')); return {k, lbl, n: ev.length, ph: discPhoto(code, k, gen), by: [...new Set(ev.map(x => x.org).filter(Boolean))].slice(0, 3)}; }).filter(d => d.n);
   const sts = code === 'USA' ? Object.entries(up.reduce((a, x) => (x.us_state && (a[x.us_state] = (a[x.us_state] || 0) + 1), a), {})).sort((a, b) => b[1] - a[1]) : [];
   const cc = String(iIso(code) || code).toLowerCase();
-  return hero.replace('NEXTCARD', next).replace('<p class="lead" id="chLead"></p>', `<p class="lead" id="chLead">${lead}</p>`) + `
-  <div class="wrap home-wrap">${spRails(cc)}
+  return hero.replace('NEXTCARD', next).replace('SPHERO', spHero(cc, 'home')).replace('<p class="lead" id="chLead"></p>', `<p class="lead" id="chLead">${lead}</p>`) + `
+  <div class="wrap home-wrap">${spRails(cc, code)}
     <div class="stats four"><a class="stat" href="#/intl/${esc(code)}"><b>${up.length}</b><span>Upcoming events</span></a><a class="stat" href="#chMaj"><b>${maj.length}</b><span>🏆 Major events</span></a><a class="stat" href="#/intl/${esc(code)}"><b>${nReg}</b><span>✍ Online entry</span></a><a class="stat" href="#/calendar"><b>${mine.length}</b><span>★ My events here</span></a></div>
     ${newsCard(code)}
     ${spStrip(cc)}
@@ -2769,7 +2793,7 @@ function vIntl(arg){
     world ? 'World majors – Hyundai Archery World Cup, World Championships, World Masters Games, LA28 Olympics and Paralympics – plus 3D and bowhunter events, IFAA and continental championships, and seminars & workshops. Dates are local to each venue.'
       : `Archery events in ${esc(nm)}${usa ? ' – USA Archery, NFAA, ASA, IBO, TAC, Redding, Lancaster and The Vegas Shoot' : code === 'DEN' ? " – every event on Bueskydning Danmark's calendar: indoor, target, field and 3D, including the Danish championships (DM)" : code === 'MAS' ? " – events on NAAM's national calendar (Persatuan Memanah Kebangsaan Malaysia) and club seminars & workshops" : code === 'KOR' ? ' – events on the Korea Archery Association calendar (대한양궁협회) and the World Archery calendar' : code === 'NZL' ? ' – Archery NZ club tournaments (ArcheryOSA), NZ Field Archery Association field and 3D events, and NZ Bowhunters Society events' : code === 'GBR' ? ' – Archery GB national events: the National Tour, British and national championships and the Run Archery series' : code === 'CAN' ? ' – the Canadian Outdoor Championships, Archery Canada registered club events (ianseo) and provincial events such as the Canada Winter Games trials' : ' – 3D events and majors'}. Dates are local to each venue.`, world ? '3d' : PH[cHero(code)] ? cHero(code) : usa ? 'us_field' : '3d');
   setTitle(`Archery events in ${nm}`);
-  head = head.replace(/(<\/h1>(?:<p>[\s\S]*?<\/p>)?)/, `$1<p class="intl-add"><a class="btn gold sm" id="iAdd" href="#/submit?country=${usa ? 'US' : 'OTHER'}">➕ Add your club's event</a> <span>Clubs add their own events (free account) – we check every event before it goes live.</span></p>`);
+  head = head.replace(/<\/section>\s*$/, m => spHero(world ? 'world_intl' : String(iIso(code) || code).toLowerCase() + '_intl', 'intl') + m).replace(/(<\/h1>(?:<p>[\s\S]*?<\/p>)?)/, `$1<p class="intl-add"><a class="btn gold sm" id="iAdd" href="#/submit?country=${usa ? 'US' : 'OTHER'}">➕ Add your club's event</a> <span>Clubs add their own events (free account) – we check every event before it goes live.</span></p>`);
   if (!INTL) { loadIntl().then(() => { if ((location.hash || '').startsWith('#/intl')) { const y = scrollY; render(); scrollTo(0, y); } }).catch(() => {}); return `${head}<div class="wrap"><p class="note" id="icount">Loading events…</p></div>`; }
   const all = INTL.events.filter(x => world ? (x.country_code !== 'USA' && x.world_page !== false) || x.world_major : x.country_code === code);
   let list = all.filter(x => IF.past || !iPast(x));
