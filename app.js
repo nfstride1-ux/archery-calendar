@@ -646,9 +646,13 @@ function appVideoBox(){
     <div class="av-vid"><video controls preload="none" playsinline poster="img/howto-app-poster.jpg" width="540" height="960" aria-label="How to put Archery Calendar on your phone like an app"><source src="media/add-to-home-screen.mp4" type="video/mp4">Your browser can't play this video.</video></div>
   </section>`;
 }
-// Latest news: one-line card linking to the newest newsletter issue (static page under /newsletter/); update NEWS when a new issue goes up.
-const NEWS = {url: 'newsletter/hobart-nationals-2026/', title: 'Hobart nationals wrap-up: who won, the Para world records, and where to watch'};
-const newsCard = () => `<a class="news-card" href="${esc(NEWS.url)}" data-gc="home-card/newsletter" data-gc-t="Latest news card (home)"><span class="nc-tag">Latest news</span><span class="nc-t">${esc(NEWS.title)}</span><span class="nc-go" aria-hidden="true">&rarr;</span></a>`;
+// Latest news: one-line cards linking to newsletter issues (static pages under /newsletter/), newest first. Update NEWS when a new issue goes up.
+// where: which home pages show the card (AUS = Australian home, otherwise the country's home page by code).
+const NEWS = [
+  {url: 'newsletter/yankton-world-championships-2026/', title: 'Yankton world championships wrap-up: who won in South Dakota, Aussie gold, and where to watch', where: ['AUS', 'USA', 'GER', 'FRA', 'DEN', 'GBR', 'ITA', 'SWE', 'SLO', 'AUT', 'ESP']}  /* the countries in the article; SWE has no country page yet, so it shows once one exists */,
+  {url: 'newsletter/hobart-nationals-2026/', title: 'Hobart nationals wrap-up: who won, the Para world records, and where to watch', where: ['AUS']}
+];
+const newsCard = code => NEWS.filter(n => n.where.includes(code || 'AUS')).map(n => `<a class="news-card" href="${esc(n.url)}" data-gc="home-card/newsletter" data-gc-t="Latest news card (home)"><span class="nc-tag">Latest news</span><span class="nc-t">${esc(n.title)}</span><span class="nc-go" aria-hidden="true">&rarr;</span></a>`).join('');
 function vHome(){
   setTitle('Archery Calendar');
   const mine = Object.keys(S.saved).map(id => BYID[id]).filter(Boolean);
@@ -667,7 +671,7 @@ function vHome(){
   </div>${credit('mixed')}</section>
   <div class="wrap home-wrap">${spRails()}
     <div class="stats four"><a class="stat" href="#/calendar"><b>${up.length}</b><span>★ My events</span></a><a class="stat" href="#/entries"><b>${nEnt}</b><span>✓ Entered</span></a><a class="stat" href="#/entries"><b>${nTodo}</b><span>☐ To enter</span></a><a class="stat" href="#/entries"><b>${nPay}</b><span>$ To pay</span></a></div>
-    ${newsCard()}
+    ${newsCard('AUS')}
     ${spStrip()}
     ${pendStrip()}
     ${adSlot('banner')}
@@ -2736,6 +2740,7 @@ function vCountryHome(code){
   return hero.replace('NEXTCARD', next).replace('<p class="lead" id="chLead"></p>', `<p class="lead" id="chLead">${lead}</p>`) + `
   <div class="wrap home-wrap">${spRails(cc)}
     <div class="stats four"><a class="stat" href="#/intl/${esc(code)}"><b>${up.length}</b><span>Upcoming events</span></a><a class="stat" href="#chMaj"><b>${maj.length}</b><span>🏆 Major events</span></a><a class="stat" href="#/intl/${esc(code)}"><b>${nReg}</b><span>✍ Online entry</span></a><a class="stat" href="#/calendar"><b>${mine.length}</b><span>★ My events here</span></a></div>
+    ${newsCard(code)}
     ${spStrip(cc)}
     ${up.length ? '' : `<section class="panel iempty"><h2 class="sec-h">No upcoming events in ${the}${esc(nm)} yet</h2><p>Run a club or tournament there? Send it in and we'll add it.</p><p class="iacts"><a class="btn gold" href="#/submit?country=OTHER">➕ Submit an event</a> <a class="btn alt" href="#/intl/WORLD">🌐 World events</a></p></section>`}
     ${disc.length ? `<h2 class="sec-h">Pick your discipline</h2><div class="types">${disc.map(d => `<a class="type${d.ph ? '' : ' type-plain'}" href="#/intl/${esc(code)}" data-chd="${esc(d.lbl)}" style="${d.ph ? `--img:url('${esc(d.ph.sm)}');--pos:${esc(d.ph.pos || 'center')}` : ''}"><span class="type-name">${esc(d.lbl)}</span><span class="type-sub">${d.n} coming up${d.by.length ? ' · ' + esc(d.by.join(', ')) : ''}</span></a>`).join('')}</div>` : ''}
