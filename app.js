@@ -646,6 +646,9 @@ function appVideoBox(){
     <div class="av-vid"><video controls preload="none" playsinline poster="img/howto-app-poster.jpg" width="540" height="960" aria-label="How to put Archery Calendar on your phone like an app"><source src="media/add-to-home-screen.mp4" type="video/mp4">Your browser can't play this video.</video></div>
   </section>`;
 }
+// Latest news: one-line card linking to the newest newsletter issue (static page under /newsletter/); update NEWS when a new issue goes up.
+const NEWS = {url: 'newsletter/hobart-nationals-2026/', title: 'Hobart nationals wrap-up: who won, the Para world records, and where to watch'};
+const newsCard = () => `<a class="news-card" href="${esc(NEWS.url)}" data-gc="home-card/newsletter" data-gc-t="Latest news card (home)"><span class="nc-tag">Latest news</span><span class="nc-t">${esc(NEWS.title)}</span><span class="nc-go" aria-hidden="true">&rarr;</span></a>`;
 function vHome(){
   setTitle('Archery Calendar');
   const mine = Object.keys(S.saved).map(id => BYID[id]).filter(Boolean);
@@ -664,6 +667,7 @@ function vHome(){
   </div>${credit('mixed')}</section>
   <div class="wrap home-wrap">${spRails()}
     <div class="stats four"><a class="stat" href="#/calendar"><b>${up.length}</b><span>★ My events</span></a><a class="stat" href="#/entries"><b>${nEnt}</b><span>✓ Entered</span></a><a class="stat" href="#/entries"><b>${nTodo}</b><span>☐ To enter</span></a><a class="stat" href="#/entries"><b>${nPay}</b><span>$ To pay</span></a></div>
+    ${newsCard()}
     ${lsBox()}
     ${spStrip()}
     ${pendStrip()}

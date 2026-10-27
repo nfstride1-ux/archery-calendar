@@ -1,6 +1,7 @@
 /* What's new: plain-English release notes for Archery Calendar, newest first. Every item comes from a real commit (hashes listed). */
 window.CAL_WHATSNEW = [
   {d: '2026-10-27', label: 'Tue 27 Oct 2026', items: [
+    ['Newsletter', 'There is now a Newsletter page at archerycalendars.com/newsletter, with every issue listed and each issue on its own page you can share. The first issue is the Hobart nationals wrap-up: the champions, the Para results, and where to watch the finals replay. A Latest news link sits on the home page under the numbers, and the Newsletter link is in the footer. Looking at events still never needs an account.', ['this release']],
     ['Sign-up box for new visitors', 'If you are not signed in, a friendly sign-up box now appears once you have been browsing for about 30 seconds, or when you open a second event. It is one screen: type your email, tap Email me a sign-in code, and the code box opens straight away. There is also an optional tick box for marketing emails, which is never ticked for you. Tap Not now, just browse to close it and it stays away for 14 days. It will not appear if you are signed in, on the sign-in page, or while you are filling in a form. Looking at events still never needs an account.', ['a2f3967']],
   ]},
   {d: '2026-10-26', label: 'Mon 26 Oct 2026', items: [

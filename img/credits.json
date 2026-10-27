@@ -125,7 +125,7 @@
   "layout": "split",
   "shape": "wide",
   "pos": "center"
-},
+ },
  "youth": {
   "file": "img/youth-aa-juniors-2026.jpg",
   "sm": "img/youth-aa-juniors-2026-sm.jpg",
@@ -369,5 +369,19 @@
   "license_url": null,
   "alt": "A Canadian para archer shooting outdoors",
   "pos": "center 35%"
+ },
+ "newsletter_range": {
+  "file": "img/newsletter-archery-range-galston-gorge-2022.jpg",
+  "sm": "img/newsletter-archery-range-galston-gorge-2022-sm.jpg",
+  "title": "Outdoor target archery range at Galston Gorge, NSW (file photo in the Hobart nationals newsletter)",
+  "alt": "An outdoor archery range at dusk with four round target faces on stands on a lawn, gum trees behind",
+  "by": "43MZrinyiII",
+  "source": "Wikimedia Commons",
+  "url": "https://commons.wikimedia.org/wiki/File:Archery_Range_CRU_Galston_Gorge_2022.jpg",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+  "date": "2022-08-13",
+  "year": 2026,
+  "used_for": "Newsletter page (not a banner)"
  }
 }
