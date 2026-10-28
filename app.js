@@ -1235,6 +1235,7 @@ function vPrivacy(){
     <li id="privStats"><b>Visit counts:</b> we count visits anonymously with <a href="https://www.goatcounter.com/" target="_blank" rel="noopener">GoatCounter</a>: which pages are viewed and the words typed into Find events search. <b>No cookies</b>, no advertising trackers and nothing that identifies you. Searches that look like an email address or phone number are never counted. Reminders are made on your device.</li>
     <li>"Register / enter" and email links go straight to the organiser. Anything you send them is between you and the organiser.</li>
     <li><b>Submit an event form:</b> what a club sends us (contact name, email, phone, event details and flyer, plus the email and ID of the signed-in account that sent it) is emailed to us at ${esc(SITE.contact)} via the form service FormSubmit (formsubmit.co). When you’re signed in, the event, flyer and your details are also saved to your account on Supabase so we can review and publish it; only the event details and flyer are shown publicly once it’s live. We use it only to check and list the event. Contact details aren't published unless they're on your flyer. Ask us any time to correct or delete them.</li>
+    <li><b>Send us your calendar:</b> when you send a calendar (a file, photo, link or pasted text), it is saved privately to your account on Supabase, not emailed. Only we can open it, and only to put your events on the calendar. We email ourselves a short note with a link and a count, never the contents. We publish event details only (name, date, place, club and entry link), never personal contact details or the names of anyone under 16. Your files are deleted once your events are published or turned down, and in any case after 30 days. The email address you are signed in with is kept with the upload so we can tell you when your events are live.</li>
     <li><b>Marketing emails:</b> when you sign up, there is an optional tick box to agree to marketing emails. It is never ticked for you. If you tick it, we record that you agreed, and when, with your account. You can unsubscribe at any time.</li>
     <li><b>Fans photos:</b> if you send us a photo, your name, email, the photo and its details are emailed to us via FormSubmit. We publish only approved photos with the caption and your name as credit – never your email. In a photo and want it removed? Email ${esc(SITE.contact)}.</li>
     <li><b>Membership cards:</b> photos of your membership cards, card names, member numbers and links you add in <a href="#/cards">My membership cards</a> are stored only in this browser on this device. They’re never uploaded, published or sent to us${window.SUPABASE_CARD_SYNC ? ', unless you turn on the private backup to your account (private storage only you can open)' : ''}. Photos are shrunk and saved without their hidden location data. Delete them any time on that page.</li>
@@ -1742,11 +1743,11 @@ function setAfter(h){ try { localStorage.setItem(AFTER_KEY, JSON.stringify({h, t
 function takeAfter(){ try { const o = JSON.parse(localStorage.getItem(AFTER_KEY) || 'null'); localStorage.removeItem(AFTER_KEY); return o && o.h && Date.now() - o.t < 60 * 60 * 1000 ? o.h : ''; } catch { return ''; } }
 const subGate = () => AUTH.configured && window.SUPABASE_ENABLED === true && !AUTH.user;
 function vSubGate(fix, bulk){
-  setTitle(bulk ? 'Bulk upload' : fix ? 'Fix an event' : 'Submit an event');
-  const head = pageHead(bulk ? 'Bulk upload' : fix ? 'Fix an existing event' : 'Submit an event', 'Sign in first – it takes a minute and it’s free.', '3d');
+  setTitle(bulk ? 'Send us your calendar' : fix ? 'Fix an event' : 'Submit an event');
+  const head = pageHead(bulk ? 'Send us your calendar' : fix ? 'Fix an existing event' : 'Submit an event', 'Sign in first – it takes a minute and it’s free.', '3d');
   if (!AUTH.ready) return `${head}<div class="wrap narrow"><p class="loading">Checking sign-in…</p></div>`;
   return `${head}<div class="wrap narrow sub"><section class="panel sub-gate" aria-labelledby="gateH">
-    <h2 class="sec" id="gateH">🔒 Please sign in to ${bulk ? 'upload events' : fix ? 'send a correction' : 'submit an event'}</h2>
+    <h2 class="sec" id="gateH">🔒 Please sign in to ${bulk ? 'send your calendar' : fix ? 'send a correction' : 'submit an event'}</h2>
     <p>Looking at events never needs an account. To ${fix ? 'send a correction' : 'send an event'}, we ask you to sign in, so we know who it’s from. Events from people we already know get <b>approved faster</b>.</p>
     <ul class="ticks"><li><b>Free</b>, quick sign up – no password. We email you a code.</li><li>Your name, club and email are filled in for you next time.</li><li>We never publish your email.</li></ul>
     ${AUTH.msg ? `<p class="err" role="alert">${esc(AUTH.msg)}</p>` : ''}
@@ -1935,7 +1936,7 @@ function vAccount(){
    <section class="panel"><h2 class="sec">Sync</h2><p class="sync-st" id="syncSt">${syncTxt}</p>
     <p class="note">${c.saved} saved event${c.saved === 1 ? '' : 's'} · ${c.ent} entr${c.ent === 1 ? 'y' : 'ies'}. Changes save on this device straight away and sync in the background, also after being offline.</p>
     <button class="btn alt" id="syncNow">↻ Sync now</button></section>
-   ${isAdmin() || ADMNAV.ok ? `<section class="panel"><h2 class="sec">🛡 Admin</h2><p>You’re an Archery Calendar admin.${ADMNAV.n ? ` <b>${ADMNAV.n} waiting for approval.</b>` : ''}</p><p class="row"><a class="btn gold" href="#/admin">Requests &amp; submissions</a><a class="btn alt" href="#/admin/approved">Approved people</a><a class="btn alt" href="#/admin/scores">Self-reported scores</a></p></section>` : ''}
+   ${isAdmin() || ADMNAV.ok ? `<section class="panel"><h2 class="sec">🛡 Admin</h2><p>You’re an Archery Calendar admin.${ADMNAV.n ? ` <b>${ADMNAV.n} waiting for approval.</b>` : ''}</p><p class="row"><a class="btn gold" href="#/admin">Requests &amp; submissions</a><a class="btn alt" href="#/admin/approved">Approved people</a><a class="btn alt" href="#/admin/scores">Self-reported scores</a><a class="btn alt" href="#/admin/calendars">Calendar uploads</a></p></section>` : ''}
    <section class="panel"><h2 class="sec">Sign out</h2>
     <button class="btn alt block" id="so">Sign out (keep my events on this device)</button>
     <button class="btn alt block" id="soClear">Sign out and remove my events from this device</button>
@@ -2917,7 +2918,7 @@ function render(){
   else if (p === 'fans') { v.innerHTML = vFans(); bindFans(); }
   else if (p === 'account') { v.innerHTML = vAccount(); const aw = v.querySelector('.wrap.narrow'), ap = aw && AUTH.user ? aw.querySelector('section.panel') : null;
     if (aw) aw.insertAdjacentHTML('afterbegin', cardsAcctPanel()); bindAccount(); setTimeout(appVidPopup, 700); }
-  else if (p === 'admin') { v.innerHTML = vAdmin(); bindAdmin(); if (location.hash.split('?')[0] === '#/admin/scores') bindAdmScores(); }
+  else if (p === 'admin') { v.innerHTML = vAdmin(); bindAdmin(); if (location.hash.split('?')[0] === '#/admin/scores') bindAdmScores(); if (location.hash.split('?')[0] === '#/admin/calendars' && typeof bulkAdminBind === 'function') bulkAdminBind(); }
   else if (p === 'cards') { v.innerHTML = vCards(); bindMCards(); }
   else if ((p === 'fix' || p === 'submit') && !/(?:^|[?&])f?sent=1/.test(location.search) && !(p === 'submit' && SUBDONE.sid) && subGate()) { v.innerHTML = vSubGate(p === 'fix' || arg === 'fix', p === 'submit' && arg === 'bulk'); bindSubGate(); }
   else if (p === 'submit' && arg === 'bulk' && typeof bulkView === 'function') { v.innerHTML = bulkView(); bulkBind(); }
@@ -3099,6 +3100,7 @@ function vAdmin(){
   const head = pageHead('Admin', 'Club submissions', 'mixed');
   if (!AUTH.ready) return `${head}<div class="wrap"><p class="loading">Checking sign-in…</p></div>`;
   if (!isAdmin()) return `${head}<div class="wrap narrow"><section class="panel"><p>This page is only for Archery Calendar admins. <a href="#/account">Sign in</a></p></section></div>`;
+  if (location.hash.split('?')[0] === '#/admin/calendars' && typeof bulkAdminView === 'function') return bulkAdminView();
   if (!ADM.rows) { admLoad(); return `${head}<div class="wrap"><p class="loading">Loading submissions…</p></div>`; }
   if (location.hash.split('?')[0] === '#/admin/approved') return vAdmApproved(head);
   if (location.hash.split('?')[0] === '#/admin/scores') return vAdmScores(head);
@@ -3588,7 +3590,7 @@ function bindSubmit(){
 }
 
 /* ---------- Corrections: #/fix and #/fix/<event id> (also reachable as #/submit/fix). Emails nfshold via FormSubmit only; nothing on the site changes automatically. ---------- */
-const subTabs = on => `<nav class="sub-tabs" aria-label="What would you like to send?"><a href="#/submit" class="sub-tab" ${on === 'new' ? 'aria-current="page"' : ''}>➕ New event</a><a href="#/fix" class="sub-tab" ${on === 'fix' ? 'aria-current="page"' : ''}>✏️ Fix an existing event</a><a href="#/submit/bulk" class="sub-tab" ${on === 'bulk' ? 'aria-current="page"' : ''}>Bulk upload</a></nav>`;
+const subTabs = on => `<nav class="sub-tabs" aria-label="What would you like to send?"><a href="#/submit" class="sub-tab" ${on === 'new' ? 'aria-current="page"' : ''}>➕ New event</a><a href="#/fix" class="sub-tab" ${on === 'fix' ? 'aria-current="page"' : ''}>✏️ Fix an existing event</a><a href="#/submit/bulk" class="sub-tab" ${on === 'bulk' ? 'aria-current="page"' : ''}>Send your calendar</a></nav>`;
 const fixLabel = x => `${x.name} – ${x.start_date ? pd(x.start_date).toLocaleDateString(LOC(), {day: 'numeric', month: 'short', year: 'numeric'}) : 'date TBC'}${x.state_code || x.state ? ' – ' + (x.state_code || x.state) : ''}`;
 const fixList = () => EV.filter(x => !x.start_date || daysTo(x.end_date || x.start_date) >= -90).sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
 const fixDates = x => x ? [x.start_date, x.end_date && x.end_date !== x.start_date && x.end_date].filter(Boolean).join(' to ') : '';
