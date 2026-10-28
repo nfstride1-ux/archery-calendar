@@ -1309,16 +1309,26 @@ html.sp-lock{overflow:hidden}
 .sp-hero{display:none}
 @media (min-width:721px){
  .sp-strip{display:none}
- .sp-hero{display:block;position:absolute;left:0;right:0;bottom:0;padding:26px 0 10px;background:linear-gradient(to top,rgba(9,18,30,.78),rgba(9,18,30,0));pointer-events:none;z-index:1}
- .sp-hero .wrap{display:flex;justify-content:flex-end}
- .sp-hero-link{pointer-events:auto;display:inline-flex;align-items:center;gap:12px;min-height:44px;padding:4px 6px;border-radius:8px;color:#e5e7eb;text-decoration:none}
- .sp-hero-by{font:700 12px/1 var(--disp);letter-spacing:.16em;text-transform:uppercase;color:#e5e7eb}
- .sp-hero-link img{height:40px;width:auto;display:block;filter:brightness(0) invert(1);opacity:.92}
- .sp-hero-link:hover img,.sp-hero-link:focus-visible img{opacity:1}
+ .sp-hero{display:block;position:absolute;left:0;right:0;bottom:28px;padding:0;background:rgba(9,18,30,.74);border-top:1px solid rgba(255,255,255,.16);overflow:hidden;z-index:1}
+ .sp-hero-link{display:block;color:#fff;text-decoration:none;-webkit-mask-image:linear-gradient(to right,transparent,#000 5%,#000 95%,transparent);mask-image:linear-gradient(to right,transparent,#000 5%,#000 95%,transparent)}
+ .sp-tk{display:flex;width:max-content;animation:sp-tick 36s linear infinite;will-change:transform}
+ .sp-hero:hover .sp-tk,.sp-hero-link:focus-visible .sp-tk{animation-play-state:paused}
+ .sp-tk-g{display:flex;flex:none}
+ .sp-tk-i{display:flex;align-items:center;gap:14px;flex:none;height:52px;padding-right:64px}
+ .sp-hero-by{font:700 12px/1 var(--disp);letter-spacing:.16em;text-transform:uppercase;color:#fff;white-space:nowrap}
+ .sp-tk-i img{height:32px;width:auto;display:block;filter:brightness(0) invert(1);opacity:1}
  .sp-hero-link:hover .sp-hero-by,.sp-hero-link:focus-visible .sp-hero-by{color:var(--gold)}
- .sp-hero-link:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
- .hero{padding-bottom:84px}
- .phead:has(> .sp-hero){padding-bottom:62px}
+ .sp-hero-link:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+ @keyframes sp-tick{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+ @media (prefers-reduced-motion:reduce){
+  .sp-tk{animation:none;width:auto;justify-content:center}
+  .sp-tk-g:nth-child(2),.sp-tk-g .sp-tk-i:nth-child(n+2){display:none}
+  .sp-tk-i{height:68px;padding-right:0;gap:18px}
+  .sp-tk-i img{height:48px}
+  .sp-hero-link{-webkit-mask-image:none;mask-image:none}
+ }
+ .hero{padding-bottom:112px}   /* +28px: the stat cards overlap the banner's bottom edge by 28px, so the ticker bar sits just above them */
+ .phead:has(> .sp-hero){padding-bottom:90px}
 }
 @media print{.sp-hero{display:none!important}}
 /* 29 Oct 2026 (28 Oct request): two tall newsletter columns in the side space of the home pages, 1280px and up (Yankton left, Hobart right, real article text).

@@ -312,8 +312,11 @@ const spOpen = (more) => SP_OPEN_SPOTS ? `<a class="sp sp-open" href="#/advertis
    Phone and narrow screens (720px and under) keep the swipeable strip below (spStrip); the strip is hidden on desktop. */
 function spHero(cc, where = 'home'){
   if (!SPONSORS.length) return '';
-  const s = SPONSORS[0];
-  return `<div class="sp-hero" aria-label="Sponsor"><div class="wrap"><a class="sp-hero-link" href="${esc(spUrl(s, 'sponsor_hero', where + '_hero' + (cc ? '_' + cc : '')))}" target="_blank" rel="sponsored noopener" data-sp="${esc(s.id)}" data-gc="sponsor/${esc(s.id)}/${esc(where + '_hero' + (cc ? '_' + cc : ''))}" data-gc-t="${esc(s.name)} sponsor click (${esc((where + ' hero').replace(/_/g, ' '))})" aria-label="${esc(s.name)}${s.founding ? ', founding sponsor' : ''} (opens ${esc(s.url.replace(/^https?:\/\/|\/$/g, ''))} in a new tab)"><span class="sp-hero-by">Supported by</span><img src="${esc(s.logo)}" alt="" width="${s.w}" height="${s.h}" decoding="async"></a></div></div>`;
+  const s = SPONSORS[0], c = esc(where + '_hero' + (cc ? '_' + cc : ''));
+  /* Desktop ticker: one group of "Supported by + logo" repeated, and an identical hidden copy, so the CSS loop (translateX) has no jump. */
+  const item = `<span class="sp-tk-i"><span class="sp-hero-by">Supported by</span><img src="${esc(s.logo)}" alt="" width="${s.w}" height="${s.h}" decoding="async"></span>`;
+  const grp = (hid) => `<span class="sp-tk-g"${hid ? ' aria-hidden="true"' : ''}>${item.repeat(8)}</span>`;
+  return `<div class="sp-hero" aria-label="Sponsor"><a class="sp-hero-link" href="${esc(spUrl(s, 'sponsor_hero', where + '_hero' + (cc ? '_' + cc : '')))}" target="_blank" rel="sponsored noopener" data-sp="${esc(s.id)}" data-gc="sponsor/${esc(s.id)}/${c}" data-gc-t="${esc(s.name)} sponsor click (${esc((where + ' hero').replace(/_/g, ' '))})" aria-label="${esc(s.name)}${s.founding ? ', founding sponsor' : ''} (opens ${esc(s.url.replace(/^https?:\/\/|\/$/g, ''))} in a new tab)"><span class="sp-tk">${grp(false)}${grp(true)}</span></a></div>`;
 }
 /* Right-hand sponsor rail (empty while SP_OPEN_SPOTS is off). The newsletter columns are newsCols (below). */
 function spRails(cc, newsCode){
