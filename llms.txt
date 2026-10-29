@@ -1,0 +1,18 @@
+# Archery Calendar
+
+> Archery Calendar (archerycalendars.com) is a free calendar of archery events and competitions: field, 3D, target and indoor. It covers Australia (Archery Australia, the Australian Bowhunters Association (ABA), Archery WA, the state archery associations and club shoots in every state and territory) plus the USA, Denmark, New Zealand, Canada, Great Britain and many other countries, and world events such as the World Cup and World Championships. Made by an archer, for archers.
+
+Each event shows its dates, venue, discipline and organiser, with a link to the organiser's entry page and flyer. Event details come from organisers' public calendars, flyers and club submissions. Always confirm dates and entry details with the organiser. The site does not publish archers' personal contact details.
+
+## Main pages
+
+- [Archery Calendar](https://archerycalendars.com/): the calendar app. Search and filter events by country, state, discipline and organiser, save events, get reminders before entries close, find clubs near you, and score rounds with ScoreTool.
+- [Newsletter](https://archerycalendars.com/newsletter/): event news and results round-ups
+- [Hobart nationals wrap-up](https://archerycalendars.com/newsletter/hobart-nationals-2026/): the 2026 National Target and Para Championships in Hobart
+- [Yankton world championships wrap-up](https://archerycalendars.com/newsletter/yankton-world-championships-2026/): World Archery Field and 3D Championships 2026, Yankton, South Dakota
+
+## Notes for AI and search tools
+
+- The calendar is a JavaScript app. Event listings appear after the page runs its scripts; the raw home page holds a short plain-text summary.
+- Event times are local to the venue.
+- Clubs and organisers can add or correct an event with "Submit an event" in the app, or send their whole calendar in any format (PDF, photo, spreadsheet, Word file, link or text).

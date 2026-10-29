@@ -1,7 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://archerycalendars.com/</loc><lastmod>2026-10-12</lastmod><changefreq>daily</changefreq></url>
-  <url><loc>https://archerycalendars.com/newsletter/</loc><lastmod>2026-10-27</lastmod><changefreq>weekly</changefreq></url>
-  <url><loc>https://archerycalendars.com/newsletter/yankton-world-championships-2026/</loc><lastmod>2026-10-27</lastmod><changefreq>monthly</changefreq></url>
-  <url><loc>https://archerycalendars.com/newsletter/hobart-nationals-2026/</loc><lastmod>2026-10-27</lastmod><changefreq>monthly</changefreq></url>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <url>
+    <loc>https://archerycalendars.com/</loc>
+    <lastmod>2026-10-29</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <image:image><image:loc>https://archerycalendars.com/img/target-face.jpg</image:loc></image:image>
+    <image:image><image:loc>https://archerycalendars.com/img/hero-aus-archery-australia.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://archerycalendars.com/newsletter/</loc>
+    <lastmod>2026-10-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <image:image><image:loc>https://archerycalendars.com/img/newsletter-archery-range-galston-gorge-2022.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://archerycalendars.com/newsletter/yankton-world-championships-2026/</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <image:image><image:loc>https://archerycalendars.com/img/newsletter-archery-range-galston-gorge-2022.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://archerycalendars.com/newsletter/hobart-nationals-2026/</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <image:image><image:loc>https://archerycalendars.com/img/newsletter-archery-range-galston-gorge-2022.jpg</image:loc></image:image>
+  </url>
 </urlset>

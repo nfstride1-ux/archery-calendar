@@ -1369,3 +1369,7 @@ html.sp-lock{overflow:hidden}
  .nc-all{font-weight:700;font-size:14px}
 }
 @media print{.news-col{display:none!important}}
+
+/* Home page text for search engines and AI tools: in the raw HTML only; the app replaces #view when it renders. Shown when JavaScript is off (noscript in index.html). */
+.seo-static{display:none}
+.seo-static h1{font-size:28px;margin:0 0 12px}.seo-static p{max-width:820px;line-height:1.55}
