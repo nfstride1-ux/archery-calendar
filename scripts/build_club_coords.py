@@ -46,6 +46,32 @@ MANUAL = {'Circle E Guest Ranch, 1 Circle E Lane, Belvidere TN 37306': {'lat': 3
           'Sporting Club at the Farm, 4939 River Rd, New Albany IN': {'lat': 38.21642, 'lng': -85.86791, 'p': 'v', 'q': 'Sporting Club at the Farm, River Rd, New Albany IN'},
           'Crystal Mountain Resort, 12500 Crystal Mountain Dr, Thompsonville MI': {'lat': 44.51903, 'lng': -85.99044, 'p': 'v', 'q': '12500 Crystal Mountain Dr, Thompsonville MI'}}
 
+# Venues checked by hand against the venue's own page or the event's official listing, applied to every place string that names them
+# (the geocoder put these at a suburb or town centre, or at the wrong town). None = no pin at all.
+MANUAL_MATCH = [
+    (r'Jules Steiner|International Shooting Complex|Archery Park,? ?WA|Archery Park Whiteman|WA Archery Centre',
+     {'lat': -31.80537, 'lng': 115.92349, 'p': 'v', 'q': 'WA Archery Centre, Jules Steiner Memorial Dr, Whiteman WA'}),   # OSM sports_centre, Archery WA address
+    (r'Hobart Archers', {'lat': -42.89419, 'lng': 147.49488, 'p': 'v', 'q': '195 Roches Beach Rd, Lauderdale TAS'}),          # hobartarchers.org/location
+    (r'Capital Sports (Center|Complex)', {'lat': 38.66153, 'lng': -121.39171, 'p': 'v', 'q': '5209 Luce Ave, McClellan CA'}),  # usarchery.org event 51091
+    (r'^Armadale Bowls Club', {'lat': -32.15783, 'lng': 116.00427, 'p': 'v', 'q': 'Armadale Bowling Club, Millman Way, Armadale WA'}),
+    (r'^\s*Shot at your own club', None),
+    (r'Easton Archery Center of Excellence|Chula Vista (Olympic|Elite Athlete) Training Center',
+     {'lat': 32.63035, 'lng': -116.93723, 'p': 'v', 'q': 'Chula Vista Elite Athlete Training Center, 2800 Olympic Pkwy'}),   # OSM, 2800 Olympic Parkway
+    (r'Easton Salt Lake Archery Center|Salt Lake Easton Archery Center',
+     {'lat': 40.78071, 'lng': -112.03723, 'p': 'v', 'q': 'Easton Salt Lake Archery Center, 575 John Glenn Rd'}),
+    (r'Lancaster Archery (Academy|Supply)', {'lat': 40.04121, 'lng': -76.22694, 'p': 'v', 'q': 'Lancaster Archery Supply, 2195 Old Philadelphia Pike'}),
+    (r'Ben Avery Shooting Facility', {'lat': 33.81459, 'lng': -112.16097, 'p': 'v', 'q': 'Ben Avery Shooting Facility, Phoenix AZ'}),
+    (r'Easton Newberry Archery Center', {'lat': 29.64635, 'lng': -82.6065, 'p': 't', 'q': 'Newberry, Florida'}),   # street address not in OSM; town only, never Gainesville
+]
+MANUAL_CLUBS = {'hobart-archers': {'lat': -42.89419, 'lng': 147.49488, 'p': 'v', 'q': '195 Roches Beach Rd, Lauderdale TAS'},
+                'whiteman-park-archers': {'lat': -31.80537, 'lng': 115.92349, 'p': 'v', 'q': 'WA Archery Centre, Jules Steiner Memorial Dr, Whiteman WA'}}
+def apply_manual(places, clubs):
+    for loc in list(places):
+        for rx, v in MANUAL_MATCH:
+            if re.search(rx, loc, re.I): places[loc] = dict(v) if v else None; break
+    for k, v in MANUAL_CLUBS.items():
+        if k in clubs: clubs[k] = dict(v)
+
 VENUE_TYPES = {'amenity', 'leisure', 'building', 'highway', 'shop', 'tourism', 'office', 'sport', 'club', 'man_made', 'landuse', 'railway'}
 def precision(r, lvl=0):
     """'v' = a specific venue / street, 't' = only a suburb, town or city."""
@@ -163,6 +189,7 @@ def main():
         print('intl', loc[:60], '->', r and (r['p'], r['q'][:60])); sys.stdout.flush()
     for loc, v in MANUAL.items():   # venues Nominatim misses from the full address, checked by hand against OpenStreetMap
         if loc in out['places']: out['places'][loc] = v
+    apply_manual(out['places'], out['clubs'])
     n_c = sum(1 for v in out['clubs'].values() if v)
     res = {'generated': datetime.date.today().isoformat(),
            'note': 'Coordinates for clubs and event venues, geocoded only from addresses and place names already in the calendar data (OpenStreetMap Nominatim, (c) OpenStreetMap contributors, ODbL). p: v = a venue or street, t = only a suburb, town or city. null = no reliable location, never guessed.',

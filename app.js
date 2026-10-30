@@ -945,9 +945,13 @@ function clubShootsHtml(k){
    (globe/globe.js + globe.gl + textures + Leaflet load only on that tap; never precached). No point but a real address: the old
    Google Maps link. Placeholder or unreliable locations (TBA, online, "see listing", club names with no address in Australia): no link. */
 let GCO = null, GCOP = null, GLP = null;
-const MAP_PH = /^\s*(see |tba|tbc|venue not|venue to be confirmed|host city to be confirmed|various|online|postal)|listing/i;   // 884a155's check, plus locations that are only "to be confirmed"
+const MAP_PH = /^\s*(see |tba|tbc|venue not|venue to be confirmed|host city to be confirmed|various|online|postal|shot at your own|at your own club)|listing/i;   // 884a155's check, plus locations that are only "to be confirmed"
 const loadCoords = () => GCO ? Promise.resolve(GCO) : (GCOP = GCOP || fetch('data/club_coords.json').then(r => r.json()).then(j => (GCO = j)).catch(() => { GCOP = null; return null; }));
-const evPt = x => { if (!GCO || !x || !x.location || MAP_PH.test(x.location) || /to be confirmed/i.test(x.location)) return null; /* venue still to be confirmed: old Google Maps link, no pin */ const c = GCO.places[x.location] || (x.club_id && GCO.clubs[x.club_id]); return c && isFinite(c.lat) && isFinite(c.lng) ? c : null; };
+// The club's own ground stands in for an event only when the event's location names that club; otherwise the club point would send the globe
+// and Directions to the club's home range while the panel names another venue.
+const MAPCLUB_GENERIC = new Set('archers archery club bowmen bowman bowhunters field target association society inc incorporated the and of sports sporting club range park'.split(' '));
+const locNamesClub = x => { const cb = CLUB[x.club_id]; if (!cb) return false; const l = ' ' + snorm(x.location) + ' '; return [cb.name, ...(cb.aliases || [])].filter(Boolean).some(n => { const nn = snorm(n); if (nn && l.includes(' ' + nn + ' ')) return true; return nn.split(/\s+/).some(w => w.length >= 4 && !MAPCLUB_GENERIC.has(w) && l.includes(' ' + w + ' ')); }); };
+const evPt = x => { if (!GCO || !x || !x.location || MAP_PH.test(x.location) || /to be confirmed/i.test(x.location)) return null; /* venue still to be confirmed: old Google Maps link, no pin */ const c = GCO.places[x.location] || (x.club_id && locNamesClub(x) && GCO.clubs[x.club_id]); return c && isFinite(c.lat) && isFinite(c.lng) ? c : null; };
 const mapWhere = x => { const l = (x.location || '').replace(/[,\s]+$/, ''); return (x._intl ? [l, x.us_state && US_ST[x.us_state], x.country_name || x.country] : [l, x.state, 'Australia']).filter(Boolean).filter((v, i, a) => !(i && (a[0] || '').includes(v))).join(', '); };
 function mapLinkHtml(x){
   const l = x.location || ''; if (!l || MAP_PH.test(l)) return '';

@@ -242,10 +242,10 @@
 "q":"River Ave, Heybridge TAS 7316, Tasmania"
 },
 "hobart-archers":{
-"lat":-42.88251,
-"lng":147.32812,
-"p":"t",
-"q":"Hobart, Tasmania"
+"lat":-42.89419,
+"lng":147.49488,
+"p":"v",
+"q":"195 Roches Beach Rd, Lauderdale TAS"
 },
 "paringa-archers":null,
 "van-diemen-archers":null,
@@ -344,10 +344,10 @@
 },
 "western-plains-archers":null,
 "whiteman-park-archers":{
-"lat":-31.83714,
-"lng":115.94775,
-"p":"t",
-"q":"Whiteman, Western Australia"
+"lat":-31.80537,
+"lng":115.92349,
+"p":"v",
+"q":"WA Archery Centre, Jules Steiner Memorial Dr, Whiteman WA"
 },
 "yokine-archery-club":{
 "lat":-31.90081,
@@ -393,9 +393,9 @@
 "Venue TBA":null,
 "Tasmania":null,
 "Archery Park, 111A Jules Steiner Memorial Drive, Whiteman WA (access via Hennessey Road)":{
-"lat":-31.83714,
-"lng":115.94775,
-"p":"t"
+"lat":-31.80537,
+"lng":115.92349,
+"p":"v"
 },
 "Gosnells Archers range, Huntingdale Community Centre, Lot 1645 (200) Holmes Street, Huntingdale WA":{
 "lat":-32.08313,
@@ -461,7 +461,11 @@
 "lng":153.05422,
 "p":"v"
 },
-"Archery Park Whiteman":null,
+"Archery Park Whiteman":{
+"lat":-31.80537,
+"lng":115.92349,
+"p":"v"
+},
 "Peats Ridge Rd, Somersby NSW 2250":{
 "lat":-33.35856,
 "lng":151.29407,
@@ -530,9 +534,9 @@
 },
 "Border Bowmen":null,
 "Hobart Archers, Hobart":{
-"lat":-42.88251,
-"lng":147.32812,
-"p":"t"
+"lat":-42.89419,
+"lng":147.49488,
+"p":"v"
 },
 "Tuggeranong, Canberra":null,
 "Hunter Bowmen":null,
@@ -624,15 +628,19 @@
 "p":"t"
 },
 "Eurobodalla Archery Club":null,
-"Whiteman Park International Shooting Complex (Archery Park, 111a Jules Steiner Memorial Drive, Whiteman – access via Hennessey Road)":null,
+"Whiteman Park International Shooting Complex (Archery Park, 111a Jules Steiner Memorial Drive, Whiteman – access via Hennessey Road)":{
+"lat":-31.80537,
+"lng":115.92349,
+"p":"v"
+},
 "Swan Hill Archers":null,
 "Burnie Archery Club, Tasmania":null,
 "North Queensland":null,
 "Sydney Olympic Park Archery Centre, NSW":null,
 "Archery WA, 111A Jules Steiner Memorial Drive, Whiteman WA (access via Hennessey Road)":{
-"lat":-31.83714,
-"lng":115.94775,
-"p":"t"
+"lat":-31.80537,
+"lng":115.92349,
+"p":"v"
 },
 "Paringa Archers Target Range Trevallyn, Tasmania":null,
 "Troy Adams Archery Field, Lot 31 Werrington Road, Werrington NSW 2747 (enter via Colonial Golf Course)":{
@@ -670,9 +678,9 @@
 },
 "Southern Vales Archery Club, SA":null,
 "Archery Park Whiteman, 111A Jules Steiner Memorial Dr, Whiteman WA":{
-"lat":-31.83714,
-"lng":115.94775,
-"p":"t"
+"lat":-31.80537,
+"lng":115.92349,
+"p":"v"
 },
 "Cut Hill Reserve, Cut Hill Rd, Cobbitty NSW":{
 "lat":-34.01042,
@@ -724,9 +732,9 @@
 "p":"v"
 },
 "Hobart Archers, Hobart, Tasmania":{
-"lat":-42.88251,
-"lng":147.32812,
-"p":"t"
+"lat":-42.89419,
+"lng":147.49488,
+"p":"v"
 },
 "Centenary Archers Club, 427 Wacol Station Rd, Sumner QLD 4074":{
 "lat":-27.56402,
@@ -760,9 +768,9 @@
 "Campbelltown District Field Archers":null,
 "Weston Valley Archery Club, Dixon Dr & Streeton Dr, Weston Creek ACT 2611":null,
 "Archery Park WA, Whiteman Park":{
-"lat":-31.8359,
-"lng":115.96454,
-"p":"t"
+"lat":-31.80537,
+"lng":115.92349,
+"p":"v"
 },
 "Playford District Field Archers":null,
 "Central Coast Indoor Archery Club, NSW":null,
@@ -807,9 +815,9 @@
 "p":"t"
 },
 "Archery Park Whiteman, 111A Jules Steiner Memorial Dr, Whiteman WA 6068":{
-"lat":-31.83714,
-"lng":115.94775,
-"p":"t"
+"lat":-31.80537,
+"lng":115.92349,
+"p":"v"
 },
 "Venue TBA (not in SA)":null,
 "Various registered locations (incl. Archery SA State Indoor)":null,
@@ -921,9 +929,9 @@
 },
 "Paringa Archers, TAS":null,
 "Hobart Archers, Hobart TAS":{
-"lat":-42.78253,
-"lng":147.56605,
-"p":"t"
+"lat":-42.89419,
+"lng":147.49488,
+"p":"v"
 },
 "Burnie Archery Club, Burnie TAS":{
 "lat":-41.05302,
@@ -978,7 +986,11 @@
 "lng":150.86693,
 "p":"t"
 },
-"Armadale Bowls Club, Armadale WA (venue still marked TBA on the club's RSVP form)":null,
+"Armadale Bowls Club, Armadale WA (venue still marked TBA on the club's RSVP form)":{
+"lat":-32.15783,
+"lng":116.00427,
+"p":"v"
+},
 "Ipswich Field Archery Club, cnr Ripley Rd & Bowles Rd, South Ripley QLD 4306":{
 "lat":-27.72137,
 "lng":152.81842,
@@ -1045,9 +1057,9 @@
 "p":"t"
 },
 "Easton Archery Center of Excellence, Chula Vista, CA":{
-"lat":32.64005,
-"lng":-117.08419,
-"p":"t"
+"lat":32.63035,
+"lng":-116.93723,
+"p":"v"
 },
 "Eastern Washington University, Cheney, WA":{
 "lat":47.49101,
@@ -1076,9 +1088,9 @@
 "p":"v"
 },
 "Ben Avery Shooting Facility Indoor Range, Phoenix, Arizona":{
-"lat":33.44844,
-"lng":-112.07414,
-"p":"t"
+"lat":33.81459,
+"lng":-112.16097,
+"p":"v"
 },
 "Rockford Community Center, Rockford, Minnesota":{
 "lat":45.0883,
@@ -1157,9 +1169,9 @@
 "p":"t"
 },
 "Lancaster Archery Academy, Lancaster, PA":{
-"lat":40.038,
-"lng":-76.30567,
-"p":"t"
+"lat":40.04121,
+"lng":-76.22694,
+"p":"v"
 },
 "DuPage Events Center & Fairgrounds, Wheaton, IL":{
 "lat":41.8647,
@@ -1222,9 +1234,9 @@
 "p":"t"
 },
 "Easton Archery Center of Excellence, Chula Vista, California":{
-"lat":32.64005,
-"lng":-117.08419,
-"p":"t"
+"lat":32.63035,
+"lng":-116.93723,
+"p":"v"
 },
 "Big Wood, Exmouth":{
 "lat":50.64812,
@@ -1255,8 +1267,8 @@
 "p":"t"
 },
 "Chula Vista Elite Athlete Training Center, Chula Vista, CA":{
-"lat":32.62633,
-"lng":-116.9358,
+"lat":32.63035,
+"lng":-116.93723,
 "p":"v"
 },
 "Conejo Valley Archers, Simi Valley, California":{
@@ -1287,9 +1299,9 @@
 "p":"t"
 },
 "Salt Lake Easton Archery Center, Salt Lake City, Utah":{
-"lat":40.75962,
-"lng":-111.8868,
-"p":"t"
+"lat":40.78071,
+"lng":-112.03723,
+"p":"v"
 },
 "Schloss Riedegg 1, 4211 Alberndorf":{
 "lat":48.36792,
@@ -1531,9 +1543,9 @@
 "p":"v"
 },
 "Chula Vista Olympic Training Center, Chula Vista, California":{
-"lat":32.64005,
-"lng":-117.08419,
-"p":"t"
+"lat":32.63035,
+"lng":-116.93723,
+"p":"v"
 },
 "Melbyvej 134, 3370 Melby":{
 "lat":55.99395,
@@ -1705,7 +1717,11 @@
 "lng":-149.44676,
 "p":"t"
 },
-"Easton Newberry Archery Center, 24880 NW 16th Ave Newberry, FL 32669":null,
+"Easton Newberry Archery Center, 24880 NW 16th Ave Newberry, FL 32669":{
+"lat":29.64635,
+"lng":-82.6065,
+"p":"t"
+},
 "Evolution Archery Range and Shop, 8408 Gulf View Drive B Soddy-Daisy, Tennessee 37379":null,
 "Tipp City, OH":{
 "lat":39.96133,
@@ -1854,9 +1870,9 @@
 "Trident Archery, 1050 East Dominguez Street Unit P Carson, California 90746":null,
 "Your home range – shoot locally, compete nationally":null,
 "Capital Sports Center, 5209 Luce Ave, McClellan, California, 95652":{
-"lat":38.67503,
-"lng":-121.3912,
-"p":"t"
+"lat":38.66153,
+"lng":-121.39171,
+"p":"v"
 },
 "Indiana Convention Center, Indianapolis IN":{
 "lat":39.76365,
@@ -1864,14 +1880,14 @@
 "p":"t"
 },
 "Capital Sports Center, McClellan, California":{
-"lat":33.12755,
-"lng":-117.2814,
-"p":"t"
+"lat":38.66153,
+"lng":-121.39171,
+"p":"v"
 },
 "Capital Sports Complex, McClellan, California":{
-"lat":33.12755,
-"lng":-117.2814,
-"p":"t"
+"lat":38.66153,
+"lng":-121.39171,
+"p":"v"
 },
 "HotShots Archery Academy, 2750-B Indian Ripple Road Dayton, Ohio 45440":null,
 "NFAA Easton Yankton Archery Center, 800 Archery Lane Yankton, South Dakota 57078":null,
@@ -1921,19 +1937,19 @@
 "p":"t"
 },
 "Easton Archery Center of Excellence, 2800 Olympic Parkway, Bldg 2000, Chula Vista, California, 91915":{
-"lat":32.72182,
-"lng":-117.16248,
-"p":"t"
+"lat":32.63035,
+"lng":-116.93723,
+"p":"v"
 },
 "Lancaster Archery Academy JOAD, 2195-A Old Philadelphia Pike, Lancaster, Pennsylvania, 17602":{
-"lat":39.98223,
-"lng":-76.16062,
-"p":"t"
+"lat":40.04121,
+"lng":-76.22694,
+"p":"v"
 },
 "Easton Salt Lake Archery Center, 575 N John Glenn Road, Salt Lake City, Utah, 84116":{
-"lat":40.76281,
-"lng":-111.83687,
-"p":"t"
+"lat":40.78071,
+"lng":-112.03723,
+"p":"v"
 },
 "Baunevej 11, 8464 Galten":{
 "lat":56.15376,
@@ -1956,8 +1972,8 @@
 "p":"t"
 },
 "Easton Newberry Archery Center, 24880 NW 16 Ave, Newberry, Florida, 32669":{
-"lat":29.64119,
-"lng":-82.35623,
+"lat":29.64635,
+"lng":-82.6065,
 "p":"t"
 },
 "Arizona Archery Club, 1115 West Deer Valley Road Phoenix, Arizona 85027":{
@@ -2017,9 +2033,9 @@
 "p":"v"
 },
 "Lancaster Archery Academy, 2195A Old Philadelphia Pike Lancaster, Pennsylvania 17602":{
-"lat":40.04024,
-"lng":-76.2595,
-"p":"t"
+"lat":40.04121,
+"lng":-76.22694,
+"p":"v"
 },
 "Gilroy, CA":{
 "lat":37.00651,
@@ -2078,7 +2094,7 @@
 "Easton Archery Center of Excellence, 2800 Olympic Parkway Chula Vista, California 91915":{
 "lat":32.63035,
 "lng":-116.93723,
-"p":"t"
+"p":"v"
 },
 "Horseshoe Las Vegas, Paris Las Vegas & Planet Hollywood, Las Vegas NV":null,
 "Crossville Shooting Sports Park, 772 Albert Frye Rd, Crossville TN 38571":null,
@@ -2209,8 +2225,8 @@
 "p":"t"
 },
 "Chula Vista Elite Athlete Training Center, Chula Vista, California":{
-"lat":32.62633,
-"lng":-116.9358,
+"lat":32.63035,
+"lng":-116.93723,
 "p":"v"
 },
 "Dublin, Ohio":{
@@ -2354,7 +2370,11 @@
 "lng":-98.34441,
 "p":"v"
 },
-"Circle E Guest Ranch, 1 Circle E Lane, Belvidere TN 37306":{"lat":35.09339,"lng":-86.09888,"p":"v"},
+"Circle E Guest Ranch, 1 Circle E Lane, Belvidere TN 37306":{
+"lat":35.09339,
+"lng":-86.09888,
+"p":"v"
+},
 "Red Lodge Mountain, 305 Ski Run Rd, Red Lodge MT 59068":{
 "lat":45.19075,
 "lng":-109.33687,
