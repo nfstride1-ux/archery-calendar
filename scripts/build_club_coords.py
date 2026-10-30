@@ -41,7 +41,8 @@ def nominatim(q, cc):
 # Venues checked by hand where the geocoder misses or lands on the town or the wrong stretch of road (TAC venues, Oct 2026):
 # Circle E Guest Ranch = OSM way 1068182925; Red Lodge Mountain base area = OSM (TAC lists Red Lodge Mountain, 305 Ski Run Rd);
 # Sporting Club at the Farm sits on River Rd by the Ohio River (the club's own map listing); Crystal Mountain = US Census match for the street address.
-MANUAL = {'Circle E Guest Ranch, 1 Circle E Lane, Belvidere TN 37306': {'lat': 35.09339, 'lng': -86.09888, 'p': 'v', 'q': 'Circle E Guest Ranch, Tennessee'},
+MANUAL = {'Huanglong Sports Centre, Hangzhou, China': {'lat': 30.26836, 'lng': 120.12791, 'p': 'v', 'q': 'Huanglong Sports Center stadium, Hangzhou (OSM)'},
+          'Circle E Guest Ranch, 1 Circle E Lane, Belvidere TN 37306': {'lat': 35.09339, 'lng': -86.09888, 'p': 'v', 'q': 'Circle E Guest Ranch, Tennessee'},
           'Red Lodge Mountain, 305 Ski Run Rd, Red Lodge MT 59068': {'lat': 45.19075, 'lng': -109.33687, 'p': 'v', 'q': 'Red Lodge Mountain, 305 Ski Run Rd, Red Lodge MT'},
           'Sporting Club at the Farm, 4939 River Rd, New Albany IN': {'lat': 38.21642, 'lng': -85.86791, 'p': 'v', 'q': 'Sporting Club at the Farm, River Rd, New Albany IN'},
           'Crystal Mountain Resort, 12500 Crystal Mountain Dr, Thompsonville MI': {'lat': 44.51903, 'lng': -85.99044, 'p': 'v', 'q': '12500 Crystal Mountain Dr, Thompsonville MI'},

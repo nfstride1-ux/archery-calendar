@@ -109,7 +109,8 @@ async function boot(){
       const last = +sessionStorage.getItem('swReloadedAt') || 0;
       if (!busy && Date.now() - last > 15000) { sessionStorage.setItem('swReloadedAt', Date.now()); location.reload(); return; }
       showUpdateBar(); });
-    navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(r => { r.update();
+    navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(r => { r.update().catch(() => {});   // offline or mid-deploy: try again on the next foreground
+
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') r.update().catch(() => {}); }); }).catch(() => {});
   }
   importHandoff(); clubUpdates();
