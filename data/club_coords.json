@@ -28,7 +28,12 @@
 "p":"t",
 "q":"Cobbitty, New South Wales"
 },
-"campbelltown-district-field-archers":null,
+"campbelltown-district-field-archers":{
+"lat":-34.14204,
+"lng":150.6633,
+"p":"t",
+"q":"Mount Hercules Rd, Razorback NSW (road)"
+},
 "capital-field-archers":{
 "lat":-35.56747,
 "lng":149.07937,
@@ -60,7 +65,12 @@
 "p":"t",
 "q":"Rookhurst NSW (locality)"
 },
-"hunter-bowmen":null,
+"hunter-bowmen":{
+"lat":-32.59386,
+"lng":151.37663,
+"p":"t",
+"q":"465 Cranky Corner Rd South, Elderslie NSW (road)"
+},
 "illawarra-archers":{
 "lat":-34.41067,
 "lng":150.85381,
@@ -68,21 +78,36 @@
 "q":"330 Mount Keira Rd, Mount Keira NSW 2500, New South Wales"
 },
 "lismore-city-archers":null,
-"lithgow-valley-archers":null,
+"lithgow-valley-archers":{
+"lat":-33.49625,
+"lng":150.17956,
+"p":"t",
+"q":"Doctors Gap, Hartley Valley Rd, Hartley NSW (place listing)"
+},
 "liverpool-city-archers":{
 "lat":-33.93639,
 "lng":150.92356,
 "p":"v",
 "q":"Helles Ave, Moorebank NSW 2170, New South Wales"
 },
-"macleay-valley-archers":null,
+"macleay-valley-archers":{
+"lat":-30.93113,
+"lng":152.84192,
+"p":"t",
+"q":"Brentons Rd, Tamban State Forest, Collombatti NSW (road)"
+},
 "manly-warringah-field-archers":{
 "lat":-33.68275,
 "lng":151.22769,
 "p":"t",
 "q":"Terrey Hills, New South Wales"
 },
-"manning-district-bowhunters":null,
+"manning-district-bowhunters":{
+"lat":-32.03788,
+"lng":152.42569,
+"p":"t",
+"q":"Joe's Cutting Rd, Possum Brush NSW (playsport listing)"
+},
 "namoi-valley-archers":null,
 "northern-tablelands-archers":{
 "lat":-30.64143,
@@ -114,7 +139,12 @@
 "p":"v",
 "q":"Snowy Mountains Hwy, Cooma NSW"
 },
-"south-west-slopes-sporting-field-archers":null,
+"south-west-slopes-sporting-field-archers":{
+"lat":-35.29587,
+"lng":148.22327,
+"p":"t",
+"q":"Kurrajong Reserve, Wee Jasper Rd, Tumut NSW (road)"
+},
 "sopa":{
 "lat":-33.84434,
 "lng":151.07589,
@@ -164,7 +194,12 @@
 "p":"v",
 "q":"69 Willims Rd, Cranley QLD"
 },
-"emerald-archery-club":null,
+"emerald-archery-club":{
+"lat":-23.6602,
+"lng":148.07507,
+"p":"t",
+"q":"Fairbairn Dam Rd, Gindie QLD (road)"
+},
 "full-boar-archers":{
 "lat":-19.35409,
 "lng":146.49683,
@@ -244,7 +279,12 @@
 "p":"t",
 "q":"Swanbank, Queensland"
 },
-"roma-and-district-bowmen":null,
+"roma-and-district-bowmen":{
+"lat":-26.41757,
+"lng":148.84887,
+"p":"t",
+"q":"Carnarvon Hwy, Euthulla QLD (locality)"
+},
 "samford-valley-target-archers":{
 "lat":-27.36244,
 "lng":152.88675,
@@ -308,7 +348,12 @@
 "p":"t",
 "q":"Mount Gambier SA, South Australia"
 },
-"border-bowmen":null,
+"border-bowmen":{
+"lat":-36.28179,
+"lng":140.78448,
+"p":"t",
+"q":"off Winter Rd, Bordertown SA (road)"
+},
 "cressy-archers":{
 "lat":-34.84239,
 "lng":138.60443,
@@ -477,7 +522,12 @@
 "p":"v",
 "q":"100 Asher Rd, Lovely Banks VIC"
 },
-"geelong-trophy-bowhunters":null,
+"geelong-trophy-bowhunters":{
+"lat":-38.32955,
+"lng":144.03765,
+"p":"t",
+"q":"440 Wensleydale Station Rd, Wensleydale VIC (road)"
+},
 "greater-hamilton-archers":null,
 "horsham-company-of-archers":null,
 "kew-city-bowmen":null,
@@ -500,7 +550,12 @@
 "p":"v",
 "q":"Moorabbin Archery Club"
 },
-"mt-clay-archers":null,
+"mt-clay-archers":{
+"lat":-38.17169,
+"lng":141.69755,
+"p":"t",
+"q":"Mount Clay Rd, Heywood VIC (road)"
+},
 "north-eastern-archers":null,
 "orion-archers":null,
 "peninsular-target-archers":null,
@@ -1509,7 +1564,11 @@
 "lng":-78.19181,
 "p":"t"
 },
-"Dracut, Massachusetts, Kestrel Archery":null,
+"Dracut, Massachusetts, Kestrel Archery":{
+"lat":42.66451,
+"lng":-71.32384,
+"p":"v"
+},
 "Auten Road Intermediate School, Hillsborough, NJ":{
 "lat":40.52142,
 "lng":-74.66193,
@@ -1645,7 +1704,11 @@
 "lng":-78.86888,
 "p":"t"
 },
-"Carraig Woods, Banbridge":null,
+"Carraig Woods, Banbridge":{
+"lat":54.36774,
+"lng":-6.18865,
+"p":"t"
+},
 "HSV Wals, Matzingweg 16, 5300 Hallwang":{
 "lat":47.84067,
 "lng":13.10056,
@@ -1761,7 +1824,11 @@
 "lng":6.09635,
 "p":"t"
 },
-"Georgia Southern University MC Anderson Park, Stateboro, Georgia":null,
+"Georgia Southern University MC Anderson Park, Stateboro, Georgia":{
+"lat":32.4174,
+"lng":-81.79225,
+"p":"t"
+},
 "Saint Gertrude Outdoor Athletic Center, Henrico, Virginia":{
 "lat":37.65018,
 "lng":-77.443,
@@ -1842,7 +1909,11 @@
 "lng":-76.65914,
 "p":"t"
 },
-"Ballands Bowmen":null,
+"Ballands Bowmen":{
+"lat":51.08413,
+"lng":-2.3435,
+"p":"t"
+},
 "Schilpario (BG)":{
 "lat":46.0218,
 "lng":10.18848,
@@ -1858,7 +1929,11 @@
 "lng":17.03834,
 "p":"t"
 },
-"ASKÖ BSV Zurndorf, Untere Hauptstraße":null,
+"ASKÖ BSV Zurndorf, Untere Hauptstraße":{
+"lat":47.96937,
+"lng":17.01259,
+"p":"v"
+},
 "Buffalo Field Archery Club, Houston, Texas":{
 "lat":29.82269,
 "lng":-95.58692,
@@ -1874,7 +1949,11 @@
 "lng":-93.40632,
 "p":"v"
 },
-"Pioneer Sportsmen Inc, 2026 USA Archery New Hampshire State and JOAD Outd":null,
+"Pioneer Sportsmen Inc, 2026 USA Archery New Hampshire State and JOAD Outd":{
+"lat":43.15387,
+"lng":-71.62238,
+"p":"v"
+},
 "Discovery Park, Sacramento, California":{
 "lat":38.60138,
 "lng":-121.50722,
@@ -1981,7 +2060,11 @@
 "lng":12.51535,
 "p":"t"
 },
-"Andeok-myeon Stadium (안덕면운동장), Jeju":null,
+"Andeok-myeon Stadium (안덕면운동장), Jeju":{
+"lat":33.25739,
+"lng":126.33114,
+"p":"t"
+},
 "Kapiti Coast Archery Club, 128 Mahaki Road, Nikau Valley, Paraparaumu":{
 "lat":-40.91574,
 "lng":175.03236,
@@ -2184,7 +2267,11 @@
 "lng":8.48824,
 "p":"t"
 },
-"Mt Tiger Archers":null,
+"Mt Tiger Archers":{
+"lat":-35.66183,
+"lng":174.42822,
+"p":"v"
+},
 "Westfield, IN":{
 "lat":40.04282,
 "lng":-86.12749,
@@ -2503,7 +2590,11 @@
 "lng":-96.26909,
 "p":"v"
 },
-"Franklin County Archers":null,
+"Franklin County Archers":{
+"lat":-37.16907,
+"lng":174.991,
+"p":"v"
+},
 "Esbjerg Archery, Esbjerg (venue to be confirmed)":null,
 "Antalya Spor Salonu, Sakıp Sabancı Bulvarı, Meltem Mahallesi, 07030 Muratpaşa, Antalya, Türkiye":{
 "lat":36.88657,
@@ -2586,7 +2677,11 @@
 "lng":103.32192,
 "p":"t"
 },
-"Whitford Forest Archers":null,
+"Whitford Forest Archers":{
+"lat":-36.91419,
+"lng":175.00629,
+"p":"v"
+},
 "Bueklubben.dk – Sydfyn (venue to be confirmed)":null,
 "Phoenix, Arizona":{
 "lat":33.44844,
@@ -2784,7 +2879,11 @@
 "lng":10.18848,
 "p":"t"
 },
-"Vordingborg Bueskyttelaug, Vordingborg":null,
+"Vordingborg Bueskyttelaug, Vordingborg":{
+"lat":55.04807,
+"lng":11.91415,
+"p":"v"
+},
 "Medellín, Colombia (venue to be confirmed)":{
 "lat":6.26973,
 "lng":-75.60256,
@@ -2936,7 +3035,11 @@
 "lng":-89.62959,
 "p":"v"
 },
-"Sulaymaniyah Sport club, Sulaymaniyah":null,
+"Sulaymaniyah Sport club, Sulaymaniyah":{
+"lat":35.5498,
+"lng":45.4289,
+"p":"t"
+},
 "SAT Football Stadium, Bangkok":{
 "lat":13.75543,
 "lng":100.62216,

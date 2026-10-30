@@ -123,6 +123,18 @@ MANUAL_MATCH = [
     (r'^Loxley Archers', {'lat': -41.08322, 'lng': 145.91221, 'p': 'v', 'q': 'Havenview Primary School, Marriott St, Burnie TAS'}),   # place listing
     (r'^Van Diemen Archers', {'lat': -42.94371, 'lng': 147.31326, 'p': 'v', 'q': 'The Lea Scout Centre, Gilwell Dr, Kingston TAS'}),   # OSM building
     (r'^Central Coast Indoor Archery Club', {'lat': -33.41384, 'lng': 151.34125, 'p': 'v', 'q': 'Gosford Showground, NSW'}),   # OSM
+    (r'^Dracut, Massachusetts, Kestrel Archery', {'lat': 42.66451, 'lng': -71.32384, 'p': 'v', 'q': 'Kestrel Archery, 80 Pleasant St, Dracut MA'}),   # kestrelarchery.org address, place listing
+    (r'^Pioneer Sportsmen Inc', {'lat': 43.15387, 'lng': -71.62238, 'p': 'v', 'q': 'Pioneer Sportsmen, 1046 Clinton St, Dunbarton NH'}),   # club driving-directions page GPS (Farrington Rd parking lot)
+    (r'^Mt Tiger Archers$', {'lat': -35.66183, 'lng': 174.42822, 'p': 'v', 'q': 'Mt Tiger Archers outdoor range, 248 Ngunguru Ford Rd, Whangarei'}),   # club outdoor page, place listing
+    (r'^Franklin County Archers$', {'lat': -37.16907, 'lng': 174.991, 'p': 'v', 'q': 'Franklin County Archers outdoor range, Stone Rd, Bombay'}),   # club ranges page (field courses at Bombay), place listing
+    (r'^Whitford Forest Archers$', {'lat': -36.91419, 'lng': 175.00629, 'p': 'v', 'q': 'Whitford Forrest Archers, 593 Whitford-Maraetai Rd, Whitford'}),   # club safety rules page address, playsport listing coords
+    (r'^Vordingborg Bueskyttelaug', {'lat': 55.04807, 'lng': 11.91415, 'p': 'v', 'q': 'Vordingborg Bueskyttelaug, Mosegaardsvej 20, Vordingborg'}),   # club page address, OSM house number
+    (r'^ASK. BSV Zurndorf', {'lat': 47.96937, 'lng': 17.01259, 'p': 'v', 'q': 'Bogensportplatz Zurndorf, Untere Hauptstrasse'}),   # place listing, next to Untere Hauptstrasse (OSM)
+    (r'^Carraig Woods, Banbridge', {'lat': 54.36774, 'lng': -6.18865, 'p': 't', 'q': 'Carraig Woods, Kilmacrew Rd, Banbridge BT32 3TB'}),   # HL Tournament Diary address; postcode centroid
+    (r'^Ballands Bowmen$', {'lat': 51.08413, 'lng': -2.3435, 'p': 't', 'q': 'Ballands Bowmen, Pear Ash Farm, Pen Selwood BA9 8LX'}),   # club location page; postcode centroid
+    (r'^Georgia Southern University MC Anderson Park', {'lat': 32.4174, 'lng': -81.79225, 'p': 't', 'q': 'M.C. Anderson Park, 2687 Bunny Akins Blvd, Statesboro GA'}),   # GSU parks page address (Recreation Activity Center, park beside it)
+    (r'^Andeok-myeon Stadium', {'lat': 33.25739, 'lng': 126.33114, 'p': 't', 'q': 'Andeok-myeon Stadium, 59 Hwasunseoseo-ro, Andeok-myeon, Seogwipo'}),   # facility register address; place listing beside the stadium
+    (r'^Sulaymaniyah Sport club', {'lat': 35.5498, 'lng': 45.4289, 'p': 't', 'q': 'Sulaymaniyah Stadium (Sulaymaniyah SC home ground)'}),   # Wikipedia coords of the club's stadium; archery field not published
     (r'Easton Newberry Archery Center', {'lat': 29.64635, 'lng': -82.6065, 'p': 't', 'q': 'Newberry, Florida'}),   # street address not in OSM; town only, never Gainesville
 ]
 MANUAL_CLUBS = {'hobart-archers': {'lat': -42.89419, 'lng': 147.49488, 'p': 'v', 'q': '195 Roches Beach Rd, Lauderdale TAS'},
@@ -184,6 +196,18 @@ MANUAL_CLUBS = {'hobart-archers': {'lat': -42.89419, 'lng': 147.49488, 'p': 'v',
                 'southern-yorke-archers': {'lat': -34.72095, 'lng': 137.58578, 'p': 't', 'q': 'Southern Yorke Archers, Minlaton SA'},
                 'gloucester-district-archers': {'lat': -31.8975, 'lng': 151.87915, 'p': 't', 'q': 'Rookhurst NSW (locality)'},
                 'central-coast-moonterra-archers': {'lat': -33.19739, 'lng': 151.42566, 'p': 't', 'q': 'Woods Rd, Jilliby NSW (road)'},
+                # 30 Oct 2026, second pass: ABA host clubs whose events name only the club (range directions from club / directory pages)
+                'lithgow-valley-archers': {'lat': -33.49625, 'lng': 150.17956, 'p': 't', 'q': 'Doctors Gap, Hartley Valley Rd, Hartley NSW (place listing)'},
+                'manning-district-bowhunters': {'lat': -32.03788, 'lng': 152.42569, 'p': 't', 'q': "Joe's Cutting Rd, Possum Brush NSW (playsport listing)"},
+                'hunter-bowmen': {'lat': -32.59386, 'lng': 151.37663, 'p': 't', 'q': '465 Cranky Corner Rd South, Elderslie NSW (road)'},
+                'border-bowmen': {'lat': -36.28179, 'lng': 140.78448, 'p': 't', 'q': 'off Winter Rd, Bordertown SA (road)'},
+                'macleay-valley-archers': {'lat': -30.93113, 'lng': 152.84192, 'p': 't', 'q': 'Brentons Rd, Tamban State Forest, Collombatti NSW (road)'},
+                'south-west-slopes-sporting-field-archers': {'lat': -35.29587, 'lng': 148.22327, 'p': 't', 'q': 'Kurrajong Reserve, Wee Jasper Rd, Tumut NSW (road)'},
+                'geelong-trophy-bowhunters': {'lat': -38.32955, 'lng': 144.03765, 'p': 't', 'q': '440 Wensleydale Station Rd, Wensleydale VIC (road)'},
+                'emerald-archery-club': {'lat': -23.6602, 'lng': 148.07507, 'p': 't', 'q': 'Fairbairn Dam Rd, Gindie QLD (road)'},
+                'roma-and-district-bowmen': {'lat': -26.41757, 'lng': 148.84887, 'p': 't', 'q': 'Carnarvon Hwy, Euthulla QLD (locality)'},
+                'campbelltown-district-field-archers': {'lat': -34.14204, 'lng': 150.6633, 'p': 't', 'q': 'Mount Hercules Rd, Razorback NSW (road)'},
+                'mt-clay-archers': {'lat': -38.17169, 'lng': 141.69755, 'p': 't', 'q': 'Mount Clay Rd, Heywood VIC (road)'},
 }
 def apply_manual(places, clubs):
     for loc in list(places):
