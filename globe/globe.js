@@ -81,9 +81,9 @@ function openOverlay(t,from){
 }
 /* Never close or go blank on a failure: show the flat satellite map of the venue with Directions instead. */
 /* Google Maps links always use the map point's coordinates: a bare name ("Red Lodge") can resolve to the wrong place or nowhere.
-   Overseas from Perth there is no driving route, so the button opens the pinned spot itself; Google Maps' own Directions is one tap from there. */
+   Directions for every event, overseas too (no travelmode, Google picks). */
 function ll(t){return t.lat.toFixed(6)+','+t.lng.toFixed(6)}
-function dirUrl(t){return t.overseas?'https://www.google.com/maps/search/?api=1&query='+ll(t):'https://www.google.com/maps/dir/?api=1&destination='+ll(t)}
+function dirUrl(t){return 'https://www.google.com/maps/dir/?api=1&destination='+ll(t)}
 function fallback(t){
   if(!t||S.phase==='fallback'||!$('gov').classList.contains('open'))return;
   var tok=++S.tok;S.phase='fallback';cancelAnimationFrame(S.raf);msg('');
