@@ -2099,9 +2099,9 @@
 },
 "Otter Creek Outdoor Recreation Area, 850 Otter Creek Park Rd, Brandenburg KY 40108":null,
 "Sporting Club at the Farm, 4939 River Rd, New Albany IN":{
-"lat":38.26296,
-"lng":-85.84538,
-"p":"t"
+"lat":38.21642,
+"lng":-85.86791,
+"p":"v"
 },
 "Shanghai, China (venue to be confirmed)":{
 "lat":31.23127,
@@ -2164,9 +2164,9 @@
 },
 "Two Mile Run County Park, 471 Beach Rd, Franklin PA 16323":null,
 "Crystal Mountain Resort, 12500 Crystal Mountain Dr, Thompsonville MI":{
-"lat":44.51931,
-"lng":-85.99069,
-"p":"t"
+"lat":44.51903,
+"lng":-85.99044,
+"p":"v"
 },
 "Kastellet, Fredericia":{
 "lat":55.55942,
@@ -2355,10 +2355,10 @@
 "p":"v"
 },
 "Circle E Guest Ranch, 1 Circle E Lane, Belvidere TN 37306":{"lat":35.09339,"lng":-86.09888,"p":"v"},
-"Red Lodge, Montana":{
-"lat":45.1859,
-"lng":-109.24706,
-"p":"t"
+"Red Lodge Mountain, 305 Ski Run Rd, Red Lodge MT 59068":{
+"lat":45.19075,
+"lng":-109.33687,
+"p":"v"
 },
 "Hangzhou, China":null,
 "Dakar":{

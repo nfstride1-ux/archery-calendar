@@ -486,7 +486,7 @@ function arrive(tok){
   var approx=t.prec==='approx';
   var q=t.lat.toFixed(6)+','+t.lng.toFixed(6);
   setBar(t.venue||t.name,(t.where?t.where+'. ':'')+(S.trip?'From '+S.trip.from+': '+flightTxt(S.trip.km)+'. ':'')+(approx?'Map point is the town or park area, not the exact range.':'Drag to look around. Pinch or scroll to zoom.'),[
-    {t:'Directions',gold:true,href:'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(approx?(t.where||q):q)},
+    {t:'Directions',gold:true,href:'https://www.google.com/maps/dir/?api=1&destination='+q},
     {t:'Back to globe',fn:backToGlobe}
   ]);
 }

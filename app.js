@@ -953,11 +953,12 @@ function mapLinkHtml(x){
   const l = x.location || ''; if (!l || MAP_PH.test(l)) return '';
   const ext = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(mapWhere(x));
   if (!GCO) { loadCoords().then(fillMapSlot); return ''; }
-  if (evPt(x)) return `<br><a href="${esc(ext)}" id="mapLink" data-globe="1" aria-haspopup="dialog">📍 Map</a>`;
+  const c = evPt(x);   // with a point, every Google Maps link uses its coordinates (a bare place name can land on the wrong spot)
+  if (c) return `<br><a href="${esc('https://www.google.com/maps/search/?api=1&query=' + c.lat.toFixed(5) + ',' + c.lng.toFixed(5))}" id="mapLink" data-globe="1" aria-haspopup="dialog">📍 Map</a>`;
   return x._intl || /\d|,/.test(l) ? `<br><a href="${esc(ext)}" target="_blank" rel="noopener" id="mapLink">📍 Map ↗</a>` : '';
 }
 function fillMapSlot(){ const el = document.getElementById('mapSlot'), x = el && BYID[el.dataset.ev]; if (x && GCO) el.innerHTML = mapLinkHtml(x); }
-const loadGlobe = () => GLP || (GLP = new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = 'globe/globe.js?v=globe1030b';
+const loadGlobe = () => GLP || (GLP = new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = 'globe/globe.js?v=globe1030c';
   sc.onload = () => window.ACGlobe ? res(window.ACGlobe) : rej(new Error('globe')); sc.onerror = () => { GLP = null; sc.remove(); rej(new Error('globe')); }; document.head.appendChild(sc); }));
 function globePins(){   // gold circles: upcoming events (Australia + overseas) with a map point, one per spot (the soonest)
   return loadIntl().catch(() => null).then(() => { const seen = {}, out = [];
@@ -972,7 +973,7 @@ function openGlobe(x, a){
   const h = location.hash; a.setAttribute('aria-busy', 'true');
   loadGlobe().then(G => {
     a.removeAttribute('aria-busy'); if (location.hash !== h) { if (window.SW_PENDING) { window.SW_PENDING = false; showUpdateBar(); } return; }
-    G.open({id: x.id, name: x.name, when: range(x), venue: (x.location || '').split(',')[0].trim() || x.name, where: mapWhere(x), lat: c.lat, lng: c.lng, prec: c.p === 'v' ? 'venue' : 'approx'},
+    G.open({id: x.id, name: x.name, when: range(x), venue: (x.location || '').split(',')[0].trim() || x.name, where: mapWhere(x), lat: c.lat, lng: c.lng, prec: c.p === 'v' ? 'venue' : 'approx', overseas: !!x._intl && !/^(AU|AUS)$/.test(x.iso2 || x.country_code || '')},
       {pins: globePins(), from: a, onClose: silent => { if (!silent && history.state && history.state.globe) history.back(); if (window.SW_PENDING) { window.SW_PENDING = false; setTimeout(showUpdateBar, 600); } }});
     try { history.pushState({globe: 1}, '', location.href); } catch (e) {}   // the phone's back gesture closes the globe, not the page
   }).catch(() => { a.removeAttribute('aria-busy'); location.assign(a.href); });
