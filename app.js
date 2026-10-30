@@ -104,6 +104,7 @@ async function boot(){
     const hadSW = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!hadSW) return;
+      if (globeBusy()) { window.SW_PENDING = true; return; }   // never reload under an open or loading globe; offer the refresh after it closes
       const busy = /^#\/(submit|fix|account|settings)/.test(location.hash) && [...document.querySelectorAll('#view input:not([type=hidden]),#view textarea')].some(i => i.type === 'checkbox' ? false : i.value && i.value !== i.defaultValue);
       const last = +sessionStorage.getItem('swReloadedAt') || 0;
       if (!busy && Date.now() - last > 15000) { sessionStorage.setItem('swReloadedAt', Date.now()); location.reload(); return; }
@@ -956,7 +957,7 @@ function mapLinkHtml(x){
   return x._intl || /\d|,/.test(l) ? `<br><a href="${esc(ext)}" target="_blank" rel="noopener" id="mapLink">📍 Map ↗</a>` : '';
 }
 function fillMapSlot(){ const el = document.getElementById('mapSlot'), x = el && BYID[el.dataset.ev]; if (x && GCO) el.innerHTML = mapLinkHtml(x); }
-const loadGlobe = () => GLP || (GLP = new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = 'globe/globe.js?v=globe1030a';
+const loadGlobe = () => GLP || (GLP = new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = 'globe/globe.js?v=globe1030b';
   sc.onload = () => window.ACGlobe ? res(window.ACGlobe) : rej(new Error('globe')); sc.onerror = () => { GLP = null; sc.remove(); rej(new Error('globe')); }; document.head.appendChild(sc); }));
 function globePins(){   // gold circles: upcoming events (Australia + overseas) with a map point, one per spot (the soonest)
   return loadIntl().catch(() => null).then(() => { const seen = {}, out = [];
@@ -965,13 +966,14 @@ function globePins(){   // gold circles: upcoming events (Australia + overseas) 
       out.push({id: e.id, name: e.name, place: (e.location || '').split(',')[0].trim(), country: e._intl ? (e.country_name || e.country || '') : 'Australia', date: range(e), lat: c.lat, lng: c.lng, p: c.p}); });
     return out; });
 }
+function globeBusy(){ return !!((window.ACGlobe && ACGlobe.isOpen()) || document.querySelector('#mapLink[aria-busy]')); }
 function openGlobe(x, a){
   const c = evPt(x); if (!c) return;
   const h = location.hash; a.setAttribute('aria-busy', 'true');
   loadGlobe().then(G => {
-    a.removeAttribute('aria-busy'); if (location.hash !== h) return;
+    a.removeAttribute('aria-busy'); if (location.hash !== h) { if (window.SW_PENDING) { window.SW_PENDING = false; showUpdateBar(); } return; }
     G.open({id: x.id, name: x.name, when: range(x), venue: (x.location || '').split(',')[0].trim() || x.name, where: mapWhere(x), lat: c.lat, lng: c.lng, prec: c.p === 'v' ? 'venue' : 'approx'},
-      {pins: globePins(), from: a, onClose: silent => { if (!silent && history.state && history.state.globe) history.back(); }});
+      {pins: globePins(), from: a, onClose: silent => { if (!silent && history.state && history.state.globe) history.back(); if (window.SW_PENDING) { window.SW_PENDING = false; setTimeout(showUpdateBar, 600); } }});
     try { history.pushState({globe: 1}, '', location.href); } catch (e) {}   // the phone's back gesture closes the globe, not the page
   }).catch(() => { a.removeAttribute('aria-busy'); location.assign(a.href); });
 }
@@ -1846,7 +1848,7 @@ function spEligible(){
 function spBlocked(){
   if (!AUTH.on || !AUTH.ready || !AUTH.client || AUTH.user || AUTH.sent || AUTH.ask || document.hidden) return true;
   if (['account', 'submit', 'fix', 'admin', 'cards', 'import'].includes(document.body.dataset.page)) return true;   // sign-in page itself, forms, admin
-  if (document.querySelector('#clubPop,#appVidPop,#flb,.flb,#stlPh,.stl-ph,[aria-modal="true"]:not(#spPop *),#hbBox:not([hidden]),.ctry-menu')) return true;   // another dialog or menu is open
+  if (document.querySelector('#clubPop,#appVidPop,#flb,.flb,#stlPh,.stl-ph,[aria-modal="true"]:not(#spPop *):not(#gov),#gov.open,#hbBox:not([hidden]),.ctry-menu')) return true;   // another dialog or menu is open
   if (document.querySelector('#view button:disabled')) return true;                       // something is being sent
   const a = document.activeElement; if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && !a.closest('#spPop')) return true;   // typing
   return false;

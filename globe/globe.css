@@ -57,3 +57,5 @@
  #gbtns .gbtn{flex:1 1 40%;padding:10px 12px;font-size:17px}
 }
 @media (prefers-reduced-motion:reduce){#gov .mk.sel .ring{animation:none;opacity:.8}}
+#gov .mk .dot{display:block;width:16px;height:16px;border-radius:50%;background:#ffc629;border:2px solid #fff;box-shadow:0 0 0 1.5px #5c4300}
+#gstage.nogl canvas{visibility:hidden}

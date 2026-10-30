@@ -38,6 +38,9 @@ def nominatim(q, cc):
     json.dump(cache, open(CACHE_F, 'w'))
     return out
 
+# Venue name searched on OpenStreetMap by hand when the street address finds nothing (OSM way 1068182925).
+MANUAL = {'Circle E Guest Ranch, 1 Circle E Lane, Belvidere TN 37306': {'lat': 35.09339, 'lng': -86.09888, 'p': 'v', 'q': 'Circle E Guest Ranch, Tennessee'}}
+
 VENUE_TYPES = {'amenity', 'leisure', 'building', 'highway', 'shop', 'tourism', 'office', 'sport', 'club', 'man_made', 'landuse', 'railway'}
 def precision(r, lvl=0):
     """'v' = a specific venue / street, 't' = only a suburb, town or city."""
@@ -153,6 +156,8 @@ def main():
         r = geocode_intl(loc, x.get('iso2') or '', x.get('us_state'))
         out['places'][loc] = r
         print('intl', loc[:60], '->', r and (r['p'], r['q'][:60])); sys.stdout.flush()
+    for loc, v in MANUAL.items():   # venues Nominatim misses from the full address, checked by hand against OpenStreetMap
+        if loc in out['places'] and not out['places'][loc]: out['places'][loc] = v
     n_c = sum(1 for v in out['clubs'].values() if v)
     res = {'generated': datetime.date.today().isoformat(),
            'note': 'Coordinates for clubs and event venues, geocoded only from addresses and place names already in the calendar data (OpenStreetMap Nominatim, (c) OpenStreetMap contributors, ODbL). p: v = a venue or street, t = only a suburb, town or city. null = no reliable location, never guessed.',

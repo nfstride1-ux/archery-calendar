@@ -13,7 +13,7 @@ var D={pins:[]}, OPTS={};
   var l=document.createElement('link');l.rel='stylesheet';l.href=BASE+'globe.css';document.head.appendChild(l);
   var w=document.createElement('div');w.innerHTML="<div id=\"gov\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"gtitle\" aria-hidden=\"true\">\n <div id=\"gdlg\">\n  <div id=\"ghead\"><div id=\"gtitle\"></div><button type=\"button\" class=\"gbtn\" id=\"gclose\">Close</button></div>\n  <div id=\"gstage\">\n    <div id=\"gmount\"></div>\n    <div id=\"gsat\" aria-label=\"Satellite view of the venue\"></div>\n    <div id=\"gmsg\" role=\"status\"></div>\n    <svg id=\"gpath\" aria-hidden=\"true\"><polyline id=\"gpath0\" fill=\"none\"/><polyline id=\"gpath1\" fill=\"none\"/></svg>\n    <div id=\"gplane\" aria-hidden=\"true\"><svg viewBox=\"0 0 60 24\" width=\"30\" height=\"12\"><path d=\"M2 5 L12 12 L2 19 L8 19 L18 12 L8 5 Z\" fill=\"#22d3ff\" stroke=\"#fff\" stroke-width=\"1.2\" stroke-linejoin=\"round\"/><path d=\"M9 5 L19 12 L9 19\" fill=\"none\" stroke=\"#e11d48\" stroke-width=\"2.4\" stroke-linejoin=\"round\"/><rect x=\"8\" y=\"10\" width=\"40\" height=\"4\" rx=\"1.6\" fill=\"#fff\" stroke=\"#0d1b2a\" stroke-width=\".8\"/><path d=\"M60 12 L45 4.5 L48 12 L45 19.5 Z\" fill=\"#cbd5e1\" stroke=\"#0d1b2a\" stroke-width=\"1.2\" stroke-linejoin=\"round\"/></svg></div>\n    <button type=\"button\" id=\"ginfo\" aria-label=\"Map credits\" aria-expanded=\"false\" aria-controls=\"gcredit\">i</button>\n    <div id=\"gcredit\" role=\"note\">Satellite imagery: Esri, Maxar, Earthstar Geographics and the GIS User Community. Globe: NASA Blue Marble and NASA Visible Earth. Map: Leaflet.</div>\n    <div id=\"gbar\"><div id=\"gchip\"><b id=\"gchipn\"></b><span id=\"gchips\"></span><button type=\"button\" class=\"gbtn gold\" id=\"gchipgo\">Fly here</button></div><div id=\"gstatus\" aria-live=\"polite\"></div><div id=\"gsub\"></div><div id=\"gbtns\"></div></div>\n  </div>\n </div>\n</div>";document.body.appendChild(w.firstElementChild);
 })();
-var G=null, libP=null, S={tok:0,phase:'idle',start:null,target:null,raf:0}, focusBack=null;
+var GL_LOST=false, G=null, libP=null, S={tok:0,phase:'idle',start:null,target:null,raf:0}, focusBack=null;
 
 function loadLib(){
   if(libP)return libP;
@@ -74,12 +74,21 @@ function openOverlay(t,from){
   $('gclose').focus();
   var tok=++S.tok;S.phase='loading';
   msg('Loading the globe...');setBar('','',[]);
-  if(!webglOK()){fallback(t);return}
+  var oid=S.oid=(S.oid||0)+1;
+  setTimeout(function(){ if(S.oid===oid&&$('gov').classList.contains('open')&&/^(loading|spin|flight|zoom)$/.test(S.phase)){if(window.console)console.warn('globe: stalled in '+S.phase);fallback(S.target)} },30000);
+  if(GL_LOST||!webglOK()){fallback(t);return}
   loadLib().then(function(){ if(tok!==S.tok)return; return startGlobe(t,tok)}).catch(function(e){if(window.console)console.error('globe failed',e&&e.stack||e);if(tok===S.tok)fallback(t,e)});
 }
+/* Never close or go blank on a failure: show the flat satellite map of the venue with Directions instead. */
+function dirUrl(t){var q=t.lat.toFixed(6)+','+t.lng.toFixed(6);return 'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(t.prec==='approx'?(t.where||q):q)}
 function fallback(t){
-  S.phase='fallback';msg('');
-  setBar('The 3D globe is not available on this device.',t.where||t.place||'',[{t:'Open in Google Maps',gold:true,href:gm(t.lat+','+t.lng)}]);
+  if(!t||S.phase==='fallback'||!$('gov').classList.contains('open'))return;
+  var tok=++S.tok;S.phase='fallback';cancelAnimationFrame(S.raf);msg('');
+  if(G){try{G.pauseAnimation()}catch(e){}}
+  try{clearTrail()}catch(e){}var pl=$('gplane');if(pl)pl.style.display='none';
+  var st=$('gstage');if(st)st.classList.add('nogl');
+  setBar(t.venue||t.name,(t.where?t.where+'. ':'')+'Showing the satellite map.',[{t:'Directions',gold:true,href:dirUrl(t)}]);
+  showSat(t,tok).catch(function(){msg('The map could not load. Directions still works.')});
 }
 function closeOverlay(silent){
   if(!$('gov').classList.contains('open'))return;
@@ -92,7 +101,8 @@ function closeOverlay(silent){
 $('gclose').addEventListener('click',function(){closeOverlay()});
 $('ginfo').addEventListener('click',function(){var c=$('gcredit'),on=!c.classList.contains('show');c.classList.toggle('show',on);this.setAttribute('aria-expanded',on?'true':'false')});
 /* size the overlay to the visible part of the screen (iPhone Safari toolbars) */
-function fitVV(){var v=window.visualViewport,r=document.documentElement.style;if(v){r.setProperty('--vvh',v.height+'px');r.setProperty('--vvt',v.offsetTop+'px')}else{r.setProperty('--vvh',window.innerHeight+'px')}if(G)sizeGlobe()}
+function fitVV(){var v=window.visualViewport,r=document.documentElement.style,h=v&&v.height>=200?v.height:(window.innerHeight||document.documentElement.clientHeight);r.setProperty('--vvh',h+'px');r.setProperty('--vvt',(v&&v.height>=200?v.offsetTop:0)+'px');if(G)sizeGlobe()}
+window.addEventListener('orientationchange',function(){setTimeout(fitVV,300)});window.addEventListener('resize',fitVV);
 if(window.visualViewport){visualViewport.addEventListener('resize',fitVV);visualViewport.addEventListener('scroll',fitVV)}
 window.addEventListener('orientationchange',function(){setTimeout(fitVV,300)});fitVV();
 $('gov').addEventListener('mousedown',function(e){if(e.target===$('gov'))closeOverlay()});
@@ -127,10 +137,13 @@ function pt(t,A,B,peak){var p=slerp(A,B,t);p.alt=peak*Math.sin(Math.PI*t);return
 var SVG_DIAMOND='<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="9.5" fill="#5c4300"/><circle cx="11" cy="11" r="8" fill="#ffc629" stroke="#fff" stroke-width="1.6"/></svg>';
 var SVG_PIN='<svg width="40" height="52" viewBox="0 0 40 52" aria-hidden="true"><path d="M20 50C20 50 3 31 3 19a17 17 0 0 1 34 0C37 31 20 50 20 50z" fill="#ffc629" stroke="#fff" stroke-width="3"/><circle cx="20" cy="19" r="6.500" fill="#0d1b2a"/></svg>';
 var SVG_YOU='<svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="10" fill="none" stroke="#22d3ff" stroke-width="3"/><circle cx="13" cy="13" r="4" fill="#22d3ff"/></svg>';
+/* Phones (iOS Safari especially, tighter still as a home-screen app) get a 2K earth, fewer and lighter markers. */
+var MOB=(function(){try{return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)||matchMedia('(pointer:coarse)').matches||Math.min(screen.width,screen.height)<700}catch(e){return false}})();
+var MOB_PINS=90;
 function mkEl(d){
   var b=document.createElement(d.kind==='pin'?'button':'div');b.className='mk '+d.kind;
   if(d.kind==='pin'){
-    b.type='button';b.innerHTML=SVG_DIAMOND;b.setAttribute('aria-label','Event: '+d.name+', '+d.place);
+    b.type='button';b.innerHTML=MOB?'<span class="dot"></span>':SVG_DIAMOND;b.setAttribute('aria-label','Event: '+d.name+', '+d.place);
     b.addEventListener('click',function(ev){ev.stopPropagation();pickPin(d)});
   }else if(d.kind==='sel'){
     b.innerHTML='<span class="ring"></span>'+SVG_PIN+'<span class="lbl">'+esc(d.label)+'</span>';b.style.pointerEvents='none';
@@ -141,7 +154,9 @@ function mkEl(d){
 }
 function markers(){
   var t=S.target,out=[];
-  (D.pins||[]).forEach(function(p){ if(t&&p.id===t.id)return; out.push({kind:'pin',id:p.id,name:p.name,place:p.place,country:p.country,date:p.date,lat:p.lat,lng:p.lng,p:p.p,cc:p.cc}) });
+  var ps=(D.pins||[]).filter(function(p){return !(t&&p.id===t.id)});
+  if(MOB&&t&&ps.length>MOB_PINS){ps=ps.map(function(p){return [angDist(t,p),p]}).sort(function(a,b){return a[0]-b[0]}).slice(0,MOB_PINS).map(function(a){return a[1]})}
+  ps.forEach(function(p){ out.push({kind:'pin',id:p.id,name:p.name,place:p.place,country:p.country,date:p.date,lat:p.lat,lng:p.lng,p:p.p,cc:p.cc}) });
   if(t)out.push({kind:'sel',lat:t.lat,lng:t.lng,label:t.venue||t.place||t.name});
   if(S.start&&S.showStart)out.push({kind:'start',lat:S.start.lat,lng:S.start.lng,label:S.start.name});
   return out;
@@ -162,14 +177,14 @@ $('gchipgo').addEventListener('click',function(){
 });
 
 /* ---------- globe ---------- */
-function sizeGlobe(){var st=$('gstage');if(G){G.width(st.clientWidth).height(st.clientHeight)}}
+function sizeGlobe(){var st=$('gstage');if(G&&st.clientWidth>0&&st.clientHeight>0){G.width(st.clientWidth).height(st.clientHeight)}if(SM){try{SM.invalidateSize()}catch(e){}}}
 window.addEventListener('resize',sizeGlobe);
 function makeGlobe(){
   var st=$('gmount');
   G=Globe({animateIn:false,rendererConfig:{antialias:true,powerPreference:'high-performance'}})(st)
     .width(st.clientWidth).height(st.clientHeight)
     .backgroundColor('rgba(0,0,0,0)')
-    .globeImageUrl(BASE+'img/earth-day-clouds-4096.jpg').bumpImageUrl(BASE+'img/earth-bump-2048.jpg')
+    .globeImageUrl(BASE+(MOB?'img/earth-day-clouds-2048.jpg':'img/earth-day-clouds-4096.jpg')).bumpImageUrl(BASE+'img/earth-bump-2048.jpg')
     .showAtmosphere(true).atmosphereColor('#8ec5ff').atmosphereAltitude(0.18)
     .htmlLat('lat').htmlLng('lng').htmlAltitude(0.0001).htmlTransitionDuration(0)
     .htmlElement(mkEl)
@@ -177,6 +192,7 @@ function makeGlobe(){
   try{G.htmlElementVisibilityModifier(function(el,vis){var low=G&&G.pointOfView().altitude<0.1;el.style.visibility=(vis||(low&&el.classList.contains('sel')))?'visible':'hidden'})}catch(e){}
   realism();
   try{G.renderer().setPixelRatio(Math.min(window.devicePixelRatio||1,2))}catch(e){}
+  try{G.renderer().domElement.addEventListener('webglcontextlost',function(e){e.preventDefault();GL_LOST=true;if(window.console)console.warn('globe: WebGL context lost');if(S.target&&$('gov').classList.contains('open')&&!S.sat)fallback(S.target)},false)}catch(e){}
   var cam=G.camera();cam.near=0.004;cam.far=1500;cam.updateProjectionMatrix();
   var c=G.controls();c.minDistance=100.06;c.maxDistance=600;c.enablePan=false;c.enableDamping=true;c.dampingFactor=0.08;c.autoRotateSpeed=0.6;
   // lift the Earth a little (default lighting is a touch dim)
@@ -212,6 +228,7 @@ function rpov(){var p=G.pointOfView();return {lat:p.lat,lng:p.lng,altitude:unsca
 function getStart(tok){return Promise.resolve(Object.assign({real:false},PRESETS.perth))}
 
 function startGlobe(t,tok){
+  var st0=$('gstage');if(st0)st0.classList.remove('nogl');
   if(!G){makeGlobe()}else{G.resumeAnimation();sizeGlobe()}
   S.showStart=false;S.start=null;S.chip=null;
   refreshMarkers();
@@ -347,8 +364,7 @@ function arrive(tok){
   var approx=t.prec==='approx';
   var q=t.lat.toFixed(6)+','+t.lng.toFixed(6);
   setBar(t.venue||t.name,(t.where?t.where+'. ':'')+(S.trip?'From '+S.trip.from+': '+flightTxt(S.trip.km)+'. ':'')+(approx?'Map point is the town or park area, not the exact range.':'Drag to look around. Pinch or scroll to zoom.'),[
-    {t:'Open in Google Maps',gold:true,href:gm(approx?(t.where||q):q)},
-    {t:'Directions',href:'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(q)},
+    {t:'Directions',gold:true,href:dirUrl(t)},
     {t:'Back to globe',fn:backToGlobe}
   ]);
 }
