@@ -41,14 +41,21 @@
 #gsub{font:500 16px/1.4 var(--body);color:#e2e8f0}
 #gbtns{display:flex;flex-wrap:wrap;gap:10px}
 #gcredit{position:absolute;right:8px;top:6px;font:500 12px/1.3 var(--body);color:#e5e7eb;background:rgba(0,0,0,.55);padding:3px 8px;border-radius:6px;pointer-events:none;max-width:70%;text-align:right}
-#gchip{position:absolute;left:12px;top:12px;max-width:min(420px,calc(100% - 24px));background:rgba(5,11,24,.94);border:2px solid #22d3ff;border-radius:14px;padding:12px 14px;display:none;flex-direction:column;gap:8px}
+#gchip{position:static;max-width:min(460px,100%);background:rgba(5,11,24,.94);border:2px solid #22d3ff;border-radius:14px;padding:12px 14px;display:none;flex-direction:column;gap:8px}
 #gchip.show{display:flex}
+#gsat{position:absolute;inset:0;z-index:0;opacity:0;transition:opacity .6s;pointer-events:none;background:#000}
+#gsat.on{opacity:1;pointer-events:auto}
+#gsat .leaflet-control-attribution{display:none}
+.satpin{position:relative;width:40px;height:52px;filter:drop-shadow(0 2px 3px #000)}
+.satpin svg{display:block}
+.satpin .lbl{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:2px;white-space:nowrap;font:700 16px/1.2 var(--body);color:#fff;text-shadow:0 0 4px #000,0 0 8px #000,0 1px 2px #000}
+#gmount{z-index:0}
 #gchip b{font:700 18px/1.25 var(--body)}
 #gchip span{font:500 15px/1.35 var(--body);color:#e2e8f0}
 /* markers */
-.mk{position:relative;width:44px;height:44px;margin:-22px 0 0 -22px;display:flex;align-items:center;justify-content:center;background:none;border:0;padding:0;cursor:pointer;pointer-events:auto}
+.mk{position:relative;width:44px;height:44px;margin:0;display:flex;align-items:center;justify-content:center;background:none;border:0;padding:0;cursor:pointer;pointer-events:auto}
 .mk svg{filter:drop-shadow(0 0 4px rgba(34,211,255,.9));display:block}
-.mk.sel{margin-top:-52px}
+.mk.sel{margin-top:-24px}
 .mk.sel svg{filter:drop-shadow(0 0 8px rgba(255,198,41,.95)) drop-shadow(0 2px 3px #000)}
 .mk .lbl{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:-2px;white-space:nowrap;font:700 16px/1.2 var(--body);color:#fff;text-shadow:0 0 4px #000,0 0 8px #000,0 1px 2px #000;pointer-events:none}
 .mk.start{cursor:default}
@@ -57,8 +64,8 @@
 @keyframes ping{0%{transform:scale(.4);opacity:1}100%{transform:scale(1.5);opacity:0}}
 #gplane{position:absolute;left:0;top:0;width:56px;height:56px;margin:-28px 0 0 -28px;pointer-events:none;display:none;filter:drop-shadow(0 0 6px #22d3ff) drop-shadow(0 2px 3px #000)}
 @media (max-width:640px){
- #gov{background:#02050c}
- #gdlg{width:100vw;height:100dvh;height:100vh;border-radius:0;border:0}
+ #gov{background:#02050c;align-items:stretch;justify-content:stretch}
+ #gdlg{width:100%;height:100%;max-height:100dvh;border-radius:0;border:0}
  #gtitle{font-size:18px}
  #gstatus{font-size:19px}
  #gbtns .gbtn{flex:1 1 100%}
@@ -87,12 +94,12 @@
   <div id="ghead"><div id="gtitle"></div><button type="button" class="gbtn" id="gclose">Close</button></div>
   <div id="gstage">
     <div id="gmount"></div>
+    <div id="gsat" aria-label="Satellite view of the venue"></div>
     <div id="gmsg" role="status"></div>
     <svg id="gpath" aria-hidden="true"><polyline id="gpath0" fill="none"/><polyline id="gpath1" fill="none"/></svg>
     <div id="gplane" aria-hidden="true"><svg viewBox="0 0 64 64" width="56" height="56"><path d="M60 32c0 2.2-1.8 3.6-4 3.6H40L28 54h-6l5-18.4H14l-5 7H4l3-11.2L4 20.2h5l5 7h13L22 9h6l12 18.4h16c2.200 0 4 1.400 4 3.600z" fill="#fff" stroke="#22d3ff" stroke-width="2.5" stroke-linejoin="round" transform="translate(0 0.4)"/></svg></div>
-    <div id="gchip"><b id="gchipn"></b><span id="gchips"></span><button type="button" class="gbtn gold" id="gchipgo">Fly here</button></div>
     <div id="gcredit">Imagery: Esri, Maxar, Earthstar Geographics and the GIS User Community. Base: NASA Blue Marble.</div>
-    <div id="gbar"><div id="gstatus" aria-live="polite"></div><div id="gsub"></div><div id="gbtns"></div></div>
+    <div id="gbar"><div id="gchip"><b id="gchipn"></b><span id="gchips"></span><button type="button" class="gbtn gold" id="gchipgo">Fly here</button></div><div id="gstatus" aria-live="polite"></div><div id="gsub"></div><div id="gbtns"></div></div>
   </div>
  </div>
 </div>
@@ -141,6 +148,35 @@ function loadLib(){
   });
   return libP;
 }
+var leafP=null,SM=null,SL=null,SP=null;
+function loadLeaflet(){
+  if(leafP)return leafP;
+  leafP=new Promise(function(res,rej){
+    var l=document.createElement('link');l.rel='stylesheet';l.href='lib/leaflet.css';document.head.appendChild(l);
+    var s=document.createElement('script');s.src='lib/leaflet.js';s.onload=res;s.onerror=function(){leafP=null;rej(new Error('leaflet'))};document.head.appendChild(s);
+  });
+  return leafP;
+}
+/* The arrival view is a flat satellite map (Esri World Imagery, the same tiles the globe uses) shown in place.
+   The globe's own high-zoom tiles stayed blurry on iPhone Safari, so the close-up no longer depends on WebGL. */
+function showSat(t,tok){
+  return loadLeaflet().then(function(){
+    if(tok!==S.tok)return;
+    var z=t.prec==='approx'?15:17;
+    if(!SM){
+      SM=L.map('gsat',{zoomControl:false,attributionControl:false,minZoom:3,maxZoom:19,zoomSnap:1,fadeAnimation:true,inertia:true});
+      SL=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxNativeZoom:18,maxZoom:19,detectRetina:false,crossOrigin:true,keepBuffer:2}).addTo(SM);
+    }
+    SM.invalidateSize();SM.setView([t.lat,t.lng],z,{animate:false});
+    if(SP)SP.remove();
+    SP=L.marker([t.lat,t.lng],{interactive:false,keyboard:false,icon:L.divIcon({className:'',iconSize:[40,52],iconAnchor:[20,50],html:'<div class="satpin">'+SVG_PIN+'<span class="lbl">'+esc(t.venue||t.name)+'</span></div>'})}).addTo(SM);
+    return new Promise(function(res){
+      var done=false;function go(){if(done)return;done=true;if(tok===S.tok){$('gsat').classList.add('on');S.sat=true;setTimeout(function(){if(S.sat&&G)G.htmlElementsData([])},650)}res()}
+      SL.once('load',go);setTimeout(go,2500);
+    });
+  });
+}
+function hideSat(){var was=S.sat;$('gsat').classList.remove('on');S.sat=false;if(was)refreshMarkers()}
 function webglOK(){try{var c=document.createElement('canvas');return !!(window.WebGLRenderingContext&&(c.getContext('webgl2')||c.getContext('webgl')))}catch(e){return false}}
 function gm(url){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(url)}
 function setBar(status,sub,btns){
@@ -172,7 +208,7 @@ function fallback(t){
   setBar('The 3D globe is not available on this device.',t.where||t.place||'',[{t:'Open in Google Maps',gold:true,href:gm(t.lat+','+t.lng)}]);
 }
 function closeOverlay(){
-  S.tok++;cancelAnimationFrame(S.raf);S.phase='idle';
+  S.tok++;cancelAnimationFrame(S.raf);S.phase='idle';hideSat();
   if(G){try{G.pauseAnimation()}catch(e){}}
   $('gov').classList.remove('open');$('gov').setAttribute('aria-hidden','true');document.body.style.overflow='';
   if(focusBack&&focusBack.focus)focusBack.focus();
@@ -232,7 +268,7 @@ function markers(){
 function refreshMarkers(){if(G)G.htmlElementsData(markers())}
 
 function pickPin(d){
-  if(S.phase!=='spin'&&S.phase!=='arrived'&&S.phase!=='globe')return;
+  if(S.sat||(S.phase!=='spin'&&S.phase!=='arrived'&&S.phase!=='globe'))return;
   S.chip=d;$('gchipn').textContent=d.name;
   $('gchips').textContent=d.date+' - '+d.place+', '+d.country+(d.p==='t'?' (town-level map point)':'');
   $('gchip').classList.add('show');
@@ -255,17 +291,18 @@ function makeGlobe(){
     .globeImageUrl('img/earth-blue-marble-2048.jpg')
     .showAtmosphere(true).atmosphereColor('#7ab8ff').atmosphereAltitude(0.2)
     .globeTileEngineUrl(function(x,y,l){return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/'+l+'/'+y+'/'+x})
-    .globeTileEngineMaxLevel(17)
+    .globeTileEngineMaxLevel(14)
     .htmlLat('lat').htmlLng('lng').htmlAltitude(0.0001).htmlTransitionDuration(0)
     .htmlElement(mkEl)
     ;
   try{G.htmlElementVisibilityModifier(function(el,vis){var low=G&&G.pointOfView().altitude<0.1;el.style.visibility=(vis||(low&&el.classList.contains('sel')))?'visible':'hidden'})}catch(e){}
+  try{G.renderer().setPixelRatio(Math.min(window.devicePixelRatio||1,2))}catch(e){}
   var cam=G.camera();cam.near=0.004;cam.far=1500;cam.updateProjectionMatrix();
   var c=G.controls();c.minDistance=100.06;c.maxDistance=600;c.enablePan=false;c.enableDamping=true;c.dampingFactor=0.08;c.autoRotateSpeed=0.6;
   // lift the Earth a little (default lighting is a touch dim)
   try{G.scene().traverse(function(o){if(o.isAmbientLight){o.intensity=1.5}})}catch(e){}
 }
-function setUserControl(on){var c=G.controls();c.enabled=!!on}
+function setUserControl(on){var c=G.controls();c.enabled=!!on;c.enableDamping=!!on;if(!on){try{c.update()}catch(e){}}}
 function fitK(){var st=$('gstage'),a=st.clientWidth/Math.max(1,st.clientHeight);return a<1?Math.max(1,0.9/a):1}
 // On a tall, narrow phone screen the camera sits further back so the whole globe fits the width.
 function scaled(alt){var k=fitK();if(k<=1)return alt;var x=Math.max(0,Math.min(1,(alt-0.02)/0.6));return alt*(1+(k-1)*x*x*(3-2*x))}
@@ -313,7 +350,7 @@ function beginTrip(tok,fresh){
   var t=S.target;
   if(!S.start){S.start=Object.assign({real:false},PRESETS.perth)}
   var st=S.start;
-  S.phase='spin';cancelAnimationFrame(S.raf);G.controls().autoRotate=false;setUserControl(false);
+  hideSat();S.phase='spin';cancelAnimationFrame(S.raf);G.controls().autoRotate=false;setUserControl(false);
   $('gchip').classList.remove('show');
   var km=kmBetween(st,t);
   var fromTxt=st.real?'your location':(st.denied?'Perth (location not shared)':st.name);
@@ -354,7 +391,7 @@ function clearTrail(){$('gpath0').setAttribute('points','');$('gpath1').setAttri
 function fly(tok){
   var A=S.start,B=S.target,d=angDist(A,B),peak=0.04+0.22*(d/Math.PI);
   var path=[];for(var i=0;i<=64;i++){var q=pt(i/64,A,B,peak);path.push([q.lat,q.lng,q.alt])}
-  var plane=$('gplane');plane.style.display='block';
+  var plane=$('gplane');plane.style.display='block';plane.style.opacity=1;
   var dur=3600,t0=performance.now();S.phase='flight';
   var last={x:0,y:0};
   (function step(now){
@@ -369,33 +406,42 @@ function fly(tok){
       plane.style.transform='translate('+s1.x+'px,'+s1.y+'px) rotate('+(s2&&(Math.abs(s2.x-s1.x)+Math.abs(s2.y-s1.y)>0.01)?Math.atan2(s2.y-s1.y,s2.x-s1.x)*180/Math.PI:0)+'deg)';
     }
     if(u<1){S.raf=requestAnimationFrame(step)}
-    else{plane.style.display='none';zoomIn(tok,false)}
+    else{parkPlane(1);pov(B.lat,B.lng,alt,0);zoomIn(tok,false)}
   })(performance.now());
 }
 
+/* keep the plane sitting on the venue pin (the camera is centred on it from touchdown on) */
+function parkPlane(op){
+  var t=S.target,plane=$('gplane'),sc=G.getScreenCoords(t.lat,t.lng,0);
+  if(!sc||op<=0){plane.style.display='none';return}
+  plane.style.display='block';plane.style.opacity=op;
+  var r=(plane.style.transform.match(/rotate\(([-\d.e]+)deg\)/)||[0,0])[1];
+  plane.style.transform='translate('+sc.x+'px,'+sc.y+'px) rotate('+r+'deg)';
+}
 function zoomIn(tok,quick){
   var t=S.target;S.phase='zoom';cancelAnimationFrame(S.raf);
-  $('gplane').style.display='none';
+  loadLeaflet().catch(function(){});
   S.showStart=false;
   var from=rpov();
   var dur=(quick||reduce())?900:3000,t0=performance.now();
   var a0=Math.max(from.altitude,0.02),a1=VENUE_ALT;
-  setBar('Zooming in to '+(t.venue||t.name),'',quick?[]:[{t:'Skip',fn:function(){S.tok++;var k=S.tok;cancelAnimationFrame(S.raf);pov(t.lat,t.lng,VENUE_ALT,0);arrive(k)}}]);
+  setBar('Zooming in to '+(t.venue||t.name),'',quick?[]:[{t:'Skip',fn:function(){S.tok++;var k=S.tok;cancelAnimationFrame(S.raf);pov(t.lat,t.lng,VENUE_ALT,0);parkPlane(0);arrive(k)}}]);
   var pathCleared=false;
   (function step(now){
     if(tok!==S.tok)return;
     var u=Math.min(1,(now-t0)/dur),e=ease(u);
-    var la=lerp(from.lat,t.lat,e),ln=from.lng;var dl=((t.lng-from.lng+540)%360)-180;ln=from.lng+dl*e;
     var alt=Math.exp(lerp(Math.log(a0),Math.log(a1),e));
-    pov(la,ln,alt,0);
+    pov(t.lat,t.lng,alt,0);
+    parkPlane(quick?0:1-Math.min(1,u/0.6));
     if(!pathCleared){pathCleared=true;clearTrail()}
-    if(u<1)S.raf=requestAnimationFrame(step);else{clearTrail();arrive(tok)}
+    if(u<1)S.raf=requestAnimationFrame(step);else{clearTrail();parkPlane(0);arrive(tok)}
   })(performance.now());
 }
 
 function arrive(tok){
   if(tok!==S.tok)return;
-  var t=S.target;S.phase='arrived';clearTrail();
+  var t=S.target;S.phase='arrived';clearTrail();$('gplane').style.display='none';
+  showSat(t,tok).catch(function(){});
   setUserControl(true);G.controls().autoRotate=false;
   var approx=t.prec==='approx';
   var q=t.lat.toFixed(6)+','+t.lng.toFixed(6);
@@ -407,7 +453,8 @@ function arrive(tok){
 }
 
 function backToGlobe(){
-  var tok=++S.tok;cancelAnimationFrame(S.raf);setUserControl(false);S.phase='back';
+  var tok=++S.tok;cancelAnimationFrame(S.raf);setUserControl(false);S.phase='back';hideSat();
+  var t=S.target;pov(t.lat,t.lng,VENUE_ALT,0);
   var from=rpov(),t=S.target,t0=performance.now(),dur=reduce()?500:1800;
   setBar('Back to the globe','Tap a diamond to see an event, then Fly here.',[{t:'Replay flight',gold:true,fn:function(){S.tok++;var k=S.tok;cancelAnimationFrame(S.raf);beginTrip(k)}}]);
   (function step(now){
@@ -421,7 +468,7 @@ function backToGlobe(){
 }
 
 // for the test scripts
-window.__demo={state:function(){return {phase:S.phase,pov:G&&G.pointOfView(),start:S.start}},open:function(i){showCard(D.cards[i]);$('mapLink').click()}};
+window.__demo={state:function(){return {phase:S.phase,pov:G&&G.pointOfView(),start:S.start,sat:!!S.sat,satZoom:SM&&SM.getZoom()}},look:function(la,ln){if(G){G.controls().autoRotate=false;pov(la,ln,1.6,0)}},open:function(i){showCard(D.cards[i]);$('mapLink').click()}};
 })();
 </script>
 </body>
