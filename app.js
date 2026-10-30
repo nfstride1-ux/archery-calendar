@@ -844,6 +844,10 @@ function vBrowse(){
   const nHiddenClub = (BF.clubId || BF.club || Q) ? 0 : list.filter(x => !clubOk(x, Q) && (BF.past || !isPast(x))).length;
   if (!BF.clubId && !BF.club && !Q) list = list.filter(x => clubOk(x, Q));
   const active = [BF.day && `on ${esc(pd(BF.day).toLocaleDateString(LOC(), {weekday:'short', day:'numeric', month:'short', year:'numeric'}))}`, BF.q && `search “${esc(BF.q)}”`, BF.state && (STATES.find(s => s[0] === BF.state) || [, BF.state])[1], BF.disc && `discipline ${esc(BF.disc)}`, BF.cat && CATS[BF.cat] && CATS[BF.cat][2], BF.ost && OST[BF.ost] && OST[BF.ost][2], BF.club && CLUBF[BF.club], BF.clubId && CLUB[BF.clubId] && `club: ${esc(CLUB[BF.clubId].name)}`, BF.cat === 'club' && BF.mc && 'only my clubs', qState && `state from your search: ${Q.states.join(', ')}${!grp && !BF.state && S.states.length ? ' (overrides your Settings states)' : ''}`, !grp && !BF.state && !qState && S.states.length && AUS() && `your states in Settings (${S.states.join(', ')})`].filter(Boolean);
+  // Search results first (owner 30 Oct 2026): on phones, a search or filter puts the count, Clear and matching events above the filter panel.
+  // Desktop already shows them at the top beside the filters. Not while typing in the box, so the box doesn't jump.
+  const bfOn = !BF.typing && !!(BF.day || BF.q || BF.state || BF.disc || BF.cat || BF.ost || BF.club || BF.clubId || BF.scope !== 'all');
+  const actTop = [BF.scope !== 'all' && !BF.club && !BF.clubId && (scopes.find(([k]) => k === BF.scope) || [])[1], ...active.filter(a => !/^your states in Settings/.test(a))].filter(Boolean);
   if (BF.day) list = list.filter(x => datable(x) && x.start_date <= BF.day && evEnd(x) >= BF.day);
   if (BF.disc) list = list.filter(x => discsOf(x).includes(BF.disc));
   const tc = typeCounts(list.filter(x => BF.past || !isPast(x)));
@@ -853,7 +857,7 @@ function vBrowse(){
   if (Q) list = list.filter(x => matchQ(x, Q));
   // A search covers every shoot everywhere: overseas events (data/intl.json) join the results unless a state/club/group filter narrows to Australia.
   if (Q && !grp && !BF.state && !qState && !BF.clubId && !BF.club && !BF.scope.startsWith('g:')) {
-    if (!INTL) loadIntl().then(() => { if ((location.hash || '').startsWith('#/browse') && BF.q) { const y = scrollY, a = document.activeElement && document.activeElement.id; render(); scrollTo(0, y); const e = a && $('#' + a); if (e && e.setSelectionRange) { e.focus(); e.setSelectionRange(e.value.length, e.value.length); } } }).catch(() => {});
+    if (!INTL) loadIntl().then(() => { if ((location.hash || '').startsWith('#/browse') && BF.q) { const y = scrollY, a = document.activeElement && document.activeElement.id; BF.typing = a === 'q'; render(); BF.typing = false; scrollTo(0, y); const e = a && $('#' + a); if (e && e.setSelectionRange) { e.focus(); e.setSelectionRange(e.value.length, e.value.length); } } }).catch(() => {});
     else { const have = new Set(list.map(x => x.id)); let ix = INTL.events.filter(x => !have.has(x.id) && matchQ(x, Q));
       if (BF.day) ix = ix.filter(x => datable(x) && x.start_date <= BF.day && evEnd(x) >= BF.day);
       if (BF.disc) ix = ix.filter(x => discsOf(x).includes(BF.disc));
@@ -868,7 +872,7 @@ function vBrowse(){
   const sk = x => x.book_anytime ? '9999-99' : x.start_date || '9999';
   list.sort((a, b) => sk(a) < sk(b) ? -1 : 1);
   const total = list.length; list = list.slice(0, BF.limit);
-  let html = `${pageHead('Find an event', 'Field, 3D, Target and Indoor events from the calendars you follow.', BF.cat === 'youth' && BF.scope !== 'g:aba' && PH.youth ? 'youth' : BF.cat === 'come_try' && PH.come_try ? 'come_try' : BF.scope === 'g:aba' ? abaKey(BF.disc === '3D' ? '3d' : 'field') : BF.disc === 'Field' && !['g:aa', 'g:awa'].includes(BF.scope) ? 'aba_field' : {Field:'field','3D':'3d',Target:'target',Indoor:'indoor'}[BF.disc] || 'mixed')}<div class="wrap">${clubNotice()}${typeSel(BF.cat, tc)}${BF.cat === 'club' ? clubDrop(BF, x => !isPast(x) || BF.past) : ''}</div><div class="wrap browse"><div class="filters"><input type="search" id="q" placeholder="Search event, club, town…" value="${esc(BF.q)}" aria-label="Search events" enterkeyhint="search">
+  let html = `${pageHead('Find an event', 'Field, 3D, Target and Indoor events from the calendars you follow.', BF.cat === 'youth' && BF.scope !== 'g:aba' && PH.youth ? 'youth' : BF.cat === 'come_try' && PH.come_try ? 'come_try' : BF.scope === 'g:aba' ? abaKey(BF.disc === '3D' ? '3d' : 'field') : BF.disc === 'Field' && !['g:aa', 'g:awa'].includes(BF.scope) ? 'aba_field' : {Field:'field','3D':'3d',Target:'target',Indoor:'indoor'}[BF.disc] || 'mixed')}<div class="wrap">${clubNotice()}${typeSel(BF.cat, tc)}${BF.cat === 'club' ? clubDrop(BF, x => !isPast(x) || BF.past) : ''}</div><div class="wrap browse${bfOn ? ' res-first' : ''}"><div class="filters"><input type="search" id="q" placeholder="Search event, club, town…" value="${esc(BF.q)}" aria-label="Search events" enterkeyhint="search">
   ${Q ? `<p class="qcount" id="qCount" aria-live="polite">${total ? `<a href="#qres" id="qGo">${total} event${total !== 1 ? 's' : ''} match “${esc(BF.q.trim())}” ↓</a>` : `No events match “${esc(BF.q.trim())}”.`} <a href="#/search?q=${esc(encodeURIComponent(BF.q.trim()))}" class="gs-all">Search every country, club and organisation →</a></p>` : ''}
   <div class="chips" role="group" aria-label="Show">${scopes.map(([k, l]) => `<button class="chip" data-scope="${esc(k)}" aria-pressed="${BF.scope === k && !BF.club}">${k === 'g:aba' ? abaLogo(32, 'chip-logo') : ''}${esc(l)}</button>`).join('')}</div>
   ${AUS() ? `<label for="st" class="sr">State</label><select id="st" aria-label="State"><option value="">All states &amp; territories</option>${STATES.map(([c, n]) => `<option value="${c}" ${BF.state === c ? 'selected' : ''}>${n}</option>`).join('')}</select>` : ''}
@@ -879,7 +883,7 @@ function vBrowse(){
   ${showPastNote ? `<p class="note" id="pastNote">◷ No upcoming events match – showing finished events.</p>` : ''}
   ${BF.clubId && CLUB[BF.clubId] ? `<p class="club-filter"><button type="button" class="chip" id="clubChipX" aria-pressed="true" aria-label="Remove club filter ${esc(CLUB[BF.clubId].name)}">Club: ${esc(CLUB[BF.clubId].name)} ✕</button></p>` : ''}
   ${active.length && total ? `<p class="note" id="activeF">Filtered by: ${active.join(' · ')} <button class="linkbtn" id="clearF2">✕ Clear</button></p>` : ''}
-  <p class="note" id="countNote">${total} event${total !== 1 ? 's' : ''}. Change ${AUS() ? 'states &amp; organisations' : 'countries &amp; bodies'} in <a href="#/settings">Settings</a>.${nHiddenClub ? ` <span id="clubOnlyNote">${nHiddenClub} club-only event${nHiddenClub !== 1 ? 's' : ''} (club championships, members only) hidden – add your club in <a href="#/clubs">My clubs</a> to see them.</span>` : ''}</p></div><div class="results" id="qres">`;
+  <p class="note" id="countNote">${total} event${total !== 1 ? 's' : ''}. Change ${AUS() ? 'states &amp; organisations' : 'countries &amp; bodies'} in <a href="#/settings">Settings</a>.${nHiddenClub ? ` <span id="clubOnlyNote">${nHiddenClub} club-only event${nHiddenClub !== 1 ? 's' : ''} (club championships, members only) hidden – add your club in <a href="#/clubs">My clubs</a> to see them.</span>` : ''}</p></div><div class="results" id="qres">${bfOn ? `<p class="note res-top" id="resTop">${total} event${total !== 1 ? 's' : ''}${actTop.length ? ' · ' + actTop.join(' · ') : ''} <button class="linkbtn" id="clearF3">✕ Clear</button></p>` : ''}`;
   let m = '', n = 0;
   for (const x of list) { const k = x.book_anytime ? 'ANY' : x.start_date ? x.start_date.slice(0, 7) : 'TBC'; if (k !== m) { m = k; html += `<div class="month">${k === 'ANY' ? '📞 Book any time' : k === 'TBC' ? 'Dates to be confirmed' : MONL[+k.slice(5) - 1] + ' ' + k.slice(0, 4)}</div>`; } html += evCard(x); if (++n % 10 === 0 && n < list.length) html += adSlot('feed'); }
   if (!total) html += `<div class="empty">No events match${active.length ? ': ' + active.join(' · ') : ''}. ${active.length ? '<button class="btn alt" id="clearF">✕ Clear filters</button>' : `Try another filter${AUS() ? '' : ' or add countries in Settings'}.`}</div>`;
@@ -890,12 +894,13 @@ function bindBrowse(){
   const toRes = () => { const r = $('#qres'); if (r) r.scrollIntoView({block: 'start', behavior: 'smooth'}); };
   const qg = $('#qGo'); if (qg) qg.onclick = e => { e.preventDefault(); toRes(); };
   const q = $('#q'); q.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(bindBrowse.t); BF.q = q.value; BF.limit = 60; render(); const n = $('#q'); if (n) n.blur(); toRes(); } };
-  q.oninput = () => { BF.q = q.value; gcSearch(q.value); BF.limit = 60; clearTimeout(bindBrowse.t); bindBrowse.t = setTimeout(() => { if (!(location.hash || '').startsWith('#/browse')) return; render(); const n = $('#q'); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }, 250); };
+  q.oninput = () => { BF.q = q.value; gcSearch(q.value); BF.limit = 60; clearTimeout(bindBrowse.t); bindBrowse.t = setTimeout(() => { if (!(location.hash || '').startsWith('#/browse')) return; BF.typing = true; render(); BF.typing = false; const n = $('#q'); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }, 250); };
   document.querySelectorAll('[data-scope]').forEach(b => b.onclick = () => { BF.scope = b.dataset.scope; BF.club = ''; BF.clubId = ''; BF.disc = ''; BF.limit = 60; render(); });
   document.querySelectorAll('[data-clubf]').forEach(b => b.onclick = () => { BF.club = BF.club === b.dataset.clubf ? '' : b.dataset.clubf; BF.limit = 60; render(); });
   bindClubNotice();
   const clr = () => { Object.assign(BF, {day:'', q:'', disc:'', cat:'', ost:'', state:'', club:'', clubId:'', mc:false, limit:60}); if (S.states.length) { S.states = []; save(); } render(); };
   ['#clearF', '#clearF2'].forEach(s => { const b = $(s); if (b) b.onclick = clr; });
+  const c3 = $('#clearF3'); if (c3) c3.onclick = () => { Object.assign(BF, {day:'', q:'', disc:'', cat:'', ost:'', state:'', club:'', clubId:'', mc:false, scope:'all', limit:60}); render(); };
   const cx = $('#clubChipX'); if (cx) cx.onclick = () => { BF.clubId = ''; BF.limit = 60; render(); };
   $('#disc').onchange = e => { BF.disc = e.target.value; render(); };
   document.querySelectorAll('[data-tcat]').forEach(b => b.onclick = () => { BF.cat = b.dataset.tcat; BF.limit = 60; render(); });
@@ -2839,7 +2844,14 @@ function vIntl(arg){
   const sts = usa ? [...new Set(all.map(x => x.us_state).filter(Boolean))].sort((a, b) => US_ST[a] < US_ST[b] ? -1 : 1) : [];
   const wctr = world ? [...new Set(all.filter(x => IF.past || !iPast(x)).map(x => x.country_code).filter(Boolean))].sort((a, b) => iName(a) < iName(b) ? -1 : 1) : [];
   const active = [IF.q && `search “${esc(IF.q)}”`, IF.org && US_ORGS.find(o => o[0] === IF.org)[1], IF.st && US_ST[IF.st], world && IF.ctry && iName(IF.ctry), world && IF.major && 'World majors', IF.cat === 'seminar' ? 'Seminars & workshops' : IF.cat === 'shoots' && 'Events only', IF.disc].filter(Boolean);
+  // Search results first (owner 30 Oct 2026): with a search or filter on, the count, Clear and matching events sit straight under the header;
+  // the country panels and filters follow. While typing in this page's box the layout stays put so the box doesn't jump.
+  const first = active.length > 0 && !IF.typing;
+  const cnt = `<p class="note" id="icount">${list.length} event${list.length === 1 ? '' : 's'}${active.length ? ' · ' + active.join(' · ') + ' <button class="linkbtn" id="iclr">✕ Clear</button>' : ''}.</p>`;
+  const res = `<div class="results">${list.slice(0, IF.limit).map(iCard).join('') || `<div class="empty">No events match${active.length ? ': ' + active.join(' · ') : ''}.</div>`}</div>
+    ${list.length > IF.limit ? `<p class="center"><button class="btn alt" id="imore">Show more (${list.length - IF.limit})</button></p>` : ''}`;
   return `${head}<div class="wrap intl-page home-wrap">${spRails(world ? 'world_intl' : String(iIso(code) || code).toLowerCase() + '_intl')}
+    ${first ? `<section class="i-first" id="ifirst" aria-label="Matching events">${cnt}${res}</section>` : ''}
     <section class="panel intl-menu intl-panel" aria-labelledby="intlH"><h2 class="sec-h" id="intlH">🌐 International</h2>
       <form id="intlForm" class="intl-form"><label for="intlSel">Country</label><select id="intlSel">${intlOptions(code)}</select><button class="btn" type="submit">Show events →</button>
       <a class="note" href="#/browse">🇦🇺 Australian events are in Find events</a></form>${iCtryStrip(code)}</section>
@@ -2852,9 +2864,8 @@ function vIntl(arg){
       <label class="chk"><input type="checkbox" id="ipast" ${IF.past ? 'checked' : ''}> Include finished</label></div>
     ${usa ? `<div class="chips" role="group" aria-label="Organisation"><button class="chip" data-iorg="" aria-pressed="${!IF.org}">All USA</button>${US_ORGS.map(([k, l]) => `<button class="chip" data-iorg="${k}" aria-pressed="${IF.org === k}">${esc(l)} <small>${all.filter(x => x.us_org === k && (IF.past || !iPast(x))).length}</small></button>`).join('')}</div>` : ''}
     ${nSem ? `<div class="chips" role="group" aria-label="Type of event"><button class="chip" data-icat="" aria-pressed="${!IF.cat}">All</button><button class="chip" data-icat="shoots" aria-pressed="${IF.cat === 'shoots'}">🏹 Events</button><button class="chip" data-icat="seminar" aria-pressed="${IF.cat === 'seminar'}">🎤 Seminars &amp; workshops <small>${nSem}</small></button></div>` : ''}
-    <p class="note" id="icount">${list.length} event${list.length === 1 ? '' : 's'}${active.length ? ' · ' + active.join(' · ') + ' <button class="linkbtn" id="iclr">✕ Clear</button>' : ''}.</p></div>
-    <div class="results">${list.slice(0, IF.limit).map(iCard).join('') || `<div class="empty">No events match${active.length ? ': ' + active.join(' · ') : ''}.</div>`}</div>
-    ${list.length > IF.limit ? `<p class="center"><button class="btn alt" id="imore">Show more (${list.length - IF.limit})</button></p>` : ''}
+    ${first ? '' : cnt}</div>
+    ${first ? '' : res}
     ${code === 'DEN' ? `<p class="note bd-src">${LOGO['intl-bueskydning-dk'] ? `<img src="${esc(LOGO['intl-bueskydning-dk'].sm)}" alt="Bueskydning Danmark logo" width="32" height="32" style="vertical-align:middle;margin-right:.4em">` : ''}Source: <a href="https://bueskydningdanmark.dk/kalender/" target="_blank" rel="noopener">Bueskydning Danmark's calendar ↗</a> (the national body for archery in Denmark), checked 10 Oct 2026. Event names are as published in Danish; the discipline is given in English. Venues not published yet are marked “to be confirmed”.</p>` : ''}
     ${code === 'MAS' ? iClubsPanel('MAS') : ''}
     ${code === 'MAS' ? `<p class="note my-src">Sources: <a href="https://mareos.masarchery.org/v2/takwim.php" target="_blank" rel="noopener">NAAM's national calendar (Takwim Memanah Kebangsaan 2026, MAREOS) ↗</a>, updated 18 Sep 2026 and checked 10 Oct 2026, and the organising club's own flyer for seminars. Event names are as published; organisers are shown only where NAAM lists them. The 2027 national calendar isn't out yet. World Archery's calendar has no upcoming events in Malaysia.</p>` : ''}
@@ -2864,10 +2875,11 @@ function vIntl(arg){
     <p class="note">${code === 'DEN' ? "Entry details are on each event's Bueskydning Danmark page. Where World Archery's calendar shows different dates, the event page says so – check with the organiser." : !usa ? "Sources: the World Archery calendar (World Cup, World Championships and 3D events registered by each national federation), LA28 (Olympic and Paralympic schedules), World Masters Games 2027 Kansai, World Archery Europe's 2027 events and the IFAA tournament calendar. Outside the USA we list world majors, 3D events and IFAA / continental championships. Details not published yet are left blank or marked TBC, not guessed. Archery is not on the Glasgow 2026 Commonwealth Games programme and is not yet confirmed for 2030." : "Sources: USA Archery's 2027 calendar, the World Archery calendar, and each organiser's official site (NFAA, The Vegas Event, ASA, IBO, TAC, Straight Arrow Bowhunters, Lancaster Archery, and Pro Line Archery Lanes for its seminar). Details not published yet are left blank, not guessed."}</p></div>`;
 }
 function bindIntl(){
-  const rer = sel => { const y = scrollY; render(); scrollTo(0, y); const e = sel && $(sel); if (e) { e.focus({preventScroll: true}); if (e.type === 'search' || e.type === 'text') e.setSelectionRange(e.value.length, e.value.length); } };
+  const rer = sel => { const y = scrollY, was = !!$('#ifirst'); render(); scrollTo(0, y); const e = sel && $(sel); if (e) { e.focus({preventScroll: true}); if (e.type === 'search' || e.type === 'text') e.setSelectionRange(e.value.length, e.value.length); }
+    const now = $('#ifirst'); if (!!now !== was) { const t = now || e || $('#iall'); if (t) t.scrollIntoView({block: now ? 'start' : 'center'}); } };   // results moved to/from the top: follow them
   bindIntlMenu(); const c = $('#intlSel'); if (c) c.onchange = () => { location.hash = '#/intl/' + c.value; };
   const q = $('#iq'); if (q) q.onkeydown = e => { if (e.key === 'Enter' && q.value.trim()) { e.preventDefault(); gsGo(q.value); } };
-  if (q) q.oninput = () => { IF.q = q.value; IF.limit = 60; clearTimeout(bindIntl.t); bindIntl.t = setTimeout(() => { rer('#iq'); gcSearch(IF.q); }, 250); };
+  if (q) q.oninput = () => { IF.q = q.value; IF.limit = 60; clearTimeout(bindIntl.t); bindIntl.t = setTimeout(() => { IF.typing = true; rer('#iq'); IF.typing = false; gcSearch(IF.q); }, 250); };
   const st = $('#ist'); if (st) st.onchange = () => { IF.st = st.value; rer('#ist'); };
   const c2 = $('#ictr2'); if (c2) c2.onchange = () => { IF.ctry = c2.value; IF.limit = 60; rer('#ictr2'); };
   const d = $('#idisc'); if (d) d.onchange = () => { IF.disc = d.value; rer('#idisc'); };
@@ -2878,7 +2890,7 @@ function bindIntl(){
   document.querySelectorAll('[data-iorg]').forEach(b => b.onclick = () => { IF.org = b.dataset.iorg; IF.limit = 60; rer(); });
   const cl = $('#iclr'); if (cl) cl.onclick = () => { Object.assign(IF, {q: '', disc: '', org: '', st: '', ctry: '', major: false, cat: '', limit: 60}); rer('#iq'); };
   const m = $('#imore'); if (m) m.onclick = () => { IF.limit += 60; rer(); };
-  document.querySelectorAll('[data-ihst]').forEach(b => b.onclick = () => { IF.st = IF.st === b.dataset.ihst ? '' : b.dataset.ihst; IF.limit = 60; rer(); const a = $('#iall'); if (a) a.scrollIntoView({block: 'start'}); });
+  document.querySelectorAll('[data-ihst]').forEach(b => b.onclick = () => { IF.st = IF.st === b.dataset.ihst ? '' : b.dataset.ihst; IF.limit = 60; rer(); const a = $('#ifirst') || $('#iall'); if (a) a.scrollIntoView({block: 'start'}); });
 }
 /* Not found: missing event (old/renamed link) or unknown page. Back link + search pre-filled from the link's words. */
 function nfWords(id){ return String(id || '').replace(/^(sub|wa|ad|aba|awa|ian|nfaa|nast|kaa|bd|agb|aa)-/i, '').replace(/[-_+.]+/g, ' ').replace(/\b(19|20)\d\d\b/g, ' ').replace(/\b\d{1,2}\b/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60); }

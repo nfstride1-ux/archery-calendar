@@ -1,5 +1,7 @@
 /* What's new: plain-English release notes for Archery Calendar, newest first. Every item comes from a real commit (hashes listed). */
 window.CAL_WHATSNEW = [
+  {d: '2026-10-30', label: 'Fri 30 Oct 2026', items: [
+    ['Search results at the top', 'Search results now show at the top of the page.', ['this release']]]},
   {d: '2026-10-28', label: 'Wed 28 Oct 2026', items: [
     ['Send us your calendar, in any form', 'The Bulk upload tab is now Send your calendar. There is no template to fill in any more. Choose a PDF, a photo or screenshot, an Excel, Word or CSV file, paste a link to your calendar page, or paste the dates, and send it. We read it and put the events on the calendar for you. We check the events from new clubs ourselves, usually within 24 hours, and we let you know when they are live. Clubs we already know see their own preview and confirm it themselves. Your files are kept private, used only for this, and deleted afterwards. The New event form and the event push API work as before.', ['this release']],
     ['RamRods banner now scrolls across the top', 'On a computer, the RamRods sponsor logo is now bigger and clearer. It scrolls slowly across a slim bar at the bottom of the photo banner on each home page, left to right, and comes around again, like a news ticker. Hover over it to pause it, and click it to visit RamRods. If your device is set to reduce motion, it stays still as a single larger logo. Phones look exactly as before.', ['e4d6328']],
