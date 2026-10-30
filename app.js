@@ -2979,7 +2979,7 @@ function render(){
     if (aw) aw.insertAdjacentHTML('afterbegin', cardsAcctPanel()); bindAccount(); setTimeout(appVidPopup, 700); }
   else if (p === 'admin') { v.innerHTML = vAdmin(); bindAdmin(); if (location.hash.split('?')[0] === '#/admin/scores') bindAdmScores(); if (location.hash.split('?')[0] === '#/admin/calendars' && typeof bulkAdminBind === 'function') bulkAdminBind(); }
   else if (p === 'cards') { v.innerHTML = vCards(); bindMCards(); }
-  else if ((p === 'fix' || p === 'submit') && !/(?:^|[?&])f?sent=1/.test(location.search) && !(p === 'submit' && SUBDONE.sid) && subGate()) { v.innerHTML = vSubGate(p === 'fix' || arg === 'fix', p === 'submit' && arg === 'bulk'); bindSubGate(); }
+  else if ((p === 'fix' || p === 'submit') && !/(?:^|[?&])f?sent=1/.test(location.search) && !(p === 'submit' && (SUBDONE.sid || SUBDONE.upd)) && subGate()) { v.innerHTML = vSubGate(p === 'fix' || arg === 'fix', p === 'submit' && arg === 'bulk'); bindSubGate(); }
   else if (p === 'submit' && arg === 'bulk' && typeof bulkView === 'function') { v.innerHTML = bulkView(); bulkBind(); }
   else if (p === 'fix' || (p === 'submit' && arg === 'fix')) { v.innerHTML = vFix(decodeURIComponent(p === 'fix' ? (arg || '') : (h.split('/')[3] || ''))); bindFix(); }
   else if (p === 'submit') { v.innerHTML = vSubmit(HQ.get('country')); bindSubmit(); }
@@ -3005,8 +3005,8 @@ function render(){
    public.live_events view (no emails/phones) and merged into the calendar, so it works without anyone running a script.
    Flyers go to the public 'event-flyers' bucket (images/PDF, 10 MB). The FormSubmit email still goes out for every submission.
    Needs supabase/instant_publishing.sql. If the table isn't there yet, submissions are email-only exactly as before. */
-const SUBDONE = {sid: '', html: ''};
-document.addEventListener('click', e => { const a = e.target.closest && e.target.closest('#subThanks a[href="#/submit"]'); if (a) { SUBDONE.sid = SUBDONE.html = ''; e.preventDefault(); location.hash === '#/submit' ? render() : (location.hash = '#/submit'); } });
+const SUBDONE = {sid: '', html: '', upd: null};
+document.addEventListener('click', e => { const a = e.target.closest && e.target.closest('#subThanks a[href="#/submit"]'); if (a) { SUBDONE.sid = SUBDONE.html = ''; SUBDONE.upd = null; e.preventDefault(); location.hash === '#/submit' ? render() : (location.hash = '#/submit'); } });
 const ADMIN_EMAILS = ['nfshold@gmail.com', 'nfstride1@gmail.com'];   // UI only – the database checks public.admins
 const isAdmin = () => !!(AUTH.user && ADMIN_EMAILS.includes(String(AUTH.user.email || '').toLowerCase()));
 const FLY_BUCKET = 'event-flyers', FLY_MAX = 10 * 1048576;
@@ -3036,9 +3036,9 @@ function clubDefaults(ev){
 /* Public read of live club submissions – plain REST with the publishable key, no library needed. */
 /* Admin live edits: public.event_overrides (supabase/event_overrides.sql) merged over events.json / intl.json. */
 const OVR = {};
-const OVR_KEYS = ['start_date', 'end_date', 'start_times', 'location', 'rounds', 'divisions', 'entry_close_date', 'contact', 'register', 'bank_account_name', 'bank_bsb', 'bank_account', 'bank_reference', 'registration_url', 'registration_url_kind', 'cancelled', 'notes',
+const OVR_KEYS = ['name', 'discipline', 'start_date', 'end_date', 'start_times', 'location', 'rounds', 'divisions', 'entry_close_date', 'contact', 'register', 'bank_account_name', 'bank_bsb', 'bank_account', 'bank_reference', 'registration_url', 'registration_url_kind', 'cancelled', 'notes',
   'flyer_url', 'flyer_web', 'flyer_web_sm', 'flyer_is_pdf', 'flyer_label', 'flyer_year', 'flyer_is_current', 'flyer_source_name', 'org_status', 'last_checked'];
-function applyOvr(x, f){ OVR_KEYS.forEach(k => { if (f && k in f) x[k] = f[k]; }); x._ovr = true; return x; }
+function applyOvr(x, f){ OVR_KEYS.forEach(k => { if (f && k in f && !((k === 'name' || k === 'start_date') && !f[k])) x[k] = f[k]; }); delete x._hay; x._ovr = true; return x; }   // never blanks a name or start date
 async function loadOverrides(){
   if (!AUTH.configured) return 0;
   try { const r = await fetch(SB_URL.replace(/\/$/, '') + '/rest/v1/event_overrides?select=event_id,fields', {headers: {apikey: SB_KEY}, cache: 'no-cache'});
@@ -3169,14 +3169,16 @@ function vAdmin(){
       <div class="adm-btns row"><button class="btn gold" data-ract="approve">✓ Approve</button><button class="btn alt" data-ract="delete">✕ Delete</button></div></div>`).join('') : '<p class="note">No one waiting. 🎉</p>'}<p><a href="#/admin/approved">Approved people (${(ADM.subs || []).length}) · add someone →</a></p><p><a href="#/admin/scores">Self-reported scores · remove entries →</a></p></section>`;
   const rows = ADM.rows.filter(r => ADM.tab === 'all' || r.status === ADM.tab);
   const tabs = ['pending', 'live', 'rejected', 'all'].map(t => `<button type="button" class="btn sm ${ADM.tab === t ? 'gold' : 'alt'}" data-atab="${t}">${t[0].toUpperCase() + t.slice(1)} (${t === 'all' ? ADM.rows.length : ADM.rows.filter(r => r.status === t).length})</button>`).join(' ');
-  const one = r => { const em = String(r.submitter_email || '').toLowerCase(), s = inst.get(em), pdf = /\.pdf/i.test(r.flyer_url || '');
+  const one = r => { const em = String(r.submitter_email || '').toLowerCase(), s = inst.get(em), pdf = /\.pdf/i.test(r.flyer_url || ''), uid = r.updates_event_id, ut = uid && BYID[uid];
+    const uHtml = !uid ? '' : `<p class="adm-upd"><b>Update to a listed event:</b> <a href="#/shoot/${esc(encodeURIComponent(uid))}">${esc(ut ? ut.name : uid)}</a>${r.applied_at ? ` <span class="note">(applied ${esc(new Date(r.applied_at).toLocaleString('en-AU'))})</span>` : ''}</p>
+      <ul class="adm-chg">${Object.entries(r.merge_fields || {}).filter(([k]) => !/^(flyer_(?!web$)|bank_|last_checked|registration_url_kind|org_status)/.test(k)).map(([k, v]) => `<li><b>${esc(k === 'flyer_web' ? 'flyer' : k)}</b>: ${esc(Array.isArray(v) ? regText(v).replace(/\n/g, ' · ') : String(v))}</li>`).join('')}</ul>`;
     return `<article class="panel adm-row" data-id="${esc(r.id)}"><div class="adm-fl">${r.flyer_url ? `<a href="${esc(r.flyer_url)}" target="_blank" rel="noopener">${pdf ? '📄 PDF flyer ↗' : `<img src="${esc(r.flyer_url)}" alt="Flyer" loading="lazy">`}</a>` : r.flyer_link ? `<a href="${esc(r.flyer_link)}" target="_blank" rel="noopener">🔗 Flyer link ↗</a>` : '<span class="note">No flyer</span>'}</div>
       <div class="adm-body"><p><span class="tag st-${esc(r.status)}">${esc(r.status)}</span> <span class="note">${esc(new Date(r.created_at).toLocaleString('en-AU'))}</span></p>
-      <h3>${esc(r.name)}${r.details_pending ? ' <span class="tag pend-tag">Details coming</span>' : ''}</h3><p>${r.start_date ? esc(r.start_date) : 'No date yet'}${r.end_date && r.end_date !== r.start_date ? ' to ' + esc(r.end_date) : ''} · ${esc(r.venue || '')} · ${esc(r.discipline || '')}</p>
+      ${uHtml}<h3>${esc(r.name)}${r.details_pending ? ' <span class="tag pend-tag">Details coming</span>' : ''}</h3><p>${r.start_date ? esc(r.start_date) : 'No date yet'}${r.end_date && r.end_date !== r.start_date ? ' to ' + esc(r.end_date) : ''} · ${esc(r.venue || '')} · ${esc(r.discipline || '')}</p>
       <p><b>${esc(r.club)}</b> (${esc([r.state, r.country].filter(Boolean).join(', '))}) – ${esc(r.organisation_type || '')}</p>
       <p>From <b>${esc(r.submitter_name || '')}</b>, ${esc(r.role || '')} · ${esc(r.submitter_email || '')}${r.contact_email && r.contact_email !== r.submitter_email ? ' · contact ' + esc(r.contact_email) : ''}</p>
       ${safeHttp(r.registration_url) ? `<p>Entry: <a href="${esc(safeHttp(r.registration_url))}" target="_blank" rel="noopener">${esc(r.registration_url)}</a></p>` : ''}${r.notes ? `<p class="note">${esc(r.notes)}</p>` : ''}
-      <div class="row adm-btns">${r.status !== 'live' ? `<button class="btn gold sm" data-act="live">✓ Approve</button>` : `<a class="btn alt sm" href="#/shoot/sub-${esc(r.id)}">View live</a>`}${r.status !== 'rejected' ? `<button class="btn alt sm" data-act="rejected">✕ Reject</button>` : ''}<button class="btn alt sm" data-act="edit">✏️ Edit</button><button class="btn alt sm" data-act="delete">🗑 Delete</button>
+      <div class="row adm-btns">${r.status !== 'live' ? `<button class="btn gold sm" data-act="live">${uid ? '✓ Approve update' : '✓ Approve'}</button>` : `<a class="btn alt sm" href="#/shoot/${uid ? esc(encodeURIComponent(uid)) : 'sub-' + esc(r.id)}">${uid ? 'View event' : 'View live'}</a>`}${uid && r.applied_at && r.status === 'live' ? `<button class="btn alt sm" data-act="undo">↩ Undo update</button>` : r.status !== 'rejected' ? `<button class="btn alt sm" data-act="rejected">✕ Reject</button>` : ''}${uid ? '' : `<button class="btn alt sm" data-act="edit">✏️ Edit</button>`}<button class="btn alt sm" data-act="delete">🗑 Delete</button>
       <label class="chk adm-inst"><input type="checkbox" data-inst="${esc(em)}" data-club="${esc(r.club)}" data-name="${esc(r.submitter_name || '')}" ${s && s.instant ? 'checked' : ''}> Instant-approve ${esc(em)}</label></div></div></article>`; };
   return `${head}<div class="wrap adm"><section class="panel"><p>${tabs} <button type="button" class="btn sm alt" id="admReload">↻ Reload</button></p>${ADM.err ? `<p class="err" role="alert">${esc(ADM.err)}</p>` : ''}</section>
     ${reqHtml}<h2 class="sec">Shoots sent in</h2>
@@ -3212,14 +3214,20 @@ function bindAdmin(){
       if (error) { toast('Not deleted: ' + error.message); b.disabled = false; return; }
       ADM.rows = ADM.rows.filter(x => x.id !== id); FLYQ.rows = FLYQ.rows.filter(x => x.id !== id); EV = EV.filter(x => x.id !== 'sub-' + id); delete BYID['sub-' + id];
       toast('Deleted'); softRenderForce(); return; }
+    if (act === 'undo') { if (!confirm('Undo this update to “' + ((BYID[r.updates_event_id] || r).name) + '”? The event goes back to how it was just before it. Any later fixes to that event are undone too.')) return; b.disabled = true;
+      const prev = r.prev_fields || {}, q = Object.keys(prev).length ? await AUTH.client.from('event_overrides').upsert({event_id: r.updates_event_id, fields: prev}, {onConflict: 'event_id'}) : await AUTH.client.from('event_overrides').delete().eq('event_id', r.updates_event_id);
+      if (q.error) { toast('Not undone: ' + q.error.message); b.disabled = false; return; }
+      const u = await AUTH.client.from('submitted_events').update({status: 'rejected'}).eq('id', id).select('*').single(); if (!u.error) Object.assign(r, u.data); else r.status = 'rejected';
+      if (Object.keys(prev).length) OVR[r.updates_event_id] = prev; else delete OVR[r.updates_event_id];
+      toast('Update undone. Reload the page to see the event as it was.'); softRenderForce(); return; }
     if (act === 'edit') { const f = [['club', 'Club'], ['name', 'Event name'], ['start_date', 'Start date (YYYY-MM-DD)'], ['end_date', 'End date (YYYY-MM-DD)'], ['venue', 'Venue'], ['discipline', 'Type'], ['registration_url', 'Entry link'], ['notes', 'Notes']];
       patch = {}; for (const [k, l] of f) { const nv = prompt(l, r[k] || ''); if (nv === null) return; if (nv !== (r[k] || '')) patch[k] = nv || null; } if (!Object.keys(patch).length) return; }
     else patch = {status: act};
     b.disabled = true;
     const {data, error} = await AUTH.client.from('submitted_events').update(patch).eq('id', id).select('*').single();
     if (error) { toast('Not saved: ' + error.message); b.disabled = false; return; }
-    Object.assign(r, data); FLYQ.rows = FLYQ.rows.filter(x => x.id !== id); if (data.status === 'live' && (data.details_pending || !data.start_date)) FLYQ.rows.unshift(data); else if (data.status === 'live') { const x = subToEv(data); if (!BYID[x.id]) EV.push(x); BYID[x.id] = x; } else if (BYID['sub-' + id]) { EV = EV.filter(x => x.id !== 'sub-' + id); delete BYID['sub-' + id]; }
-    toast(act === 'live' ? 'Approved – it’s live' : act === 'rejected' ? 'Rejected' : 'Saved'); softRenderForce(); });
+    Object.assign(r, data); FLYQ.rows = FLYQ.rows.filter(x => x.id !== id); if (data.status === 'live' && (data.details_pending || !data.start_date)) FLYQ.rows.unshift(data); else if (data.status === 'live' && data.updates_event_id) loadOverrides().then(softRenderForce, () => {}); else if (data.status === 'live') { const x = subToEv(data); if (!BYID[x.id]) EV.push(x); BYID[x.id] = x; } else if (BYID['sub-' + id]) { EV = EV.filter(x => x.id !== 'sub-' + id); delete BYID['sub-' + id]; }
+    toast(act === 'live' && data.updates_event_id ? 'Approved – the listed event is updated' : act === 'live' ? 'Approved – it’s live' : act === 'rejected' ? 'Rejected' : 'Saved'); softRenderForce(); });
   v.querySelectorAll('[data-ract]').forEach(b => b.onclick = async () => {
     const el = b.closest('.adm-req'), id = el.dataset.rid, q = (ADM.reqs || []).find(x => x.id === id); el.querySelectorAll('button').forEach(x => x.disabled = true);
     const {error} = b.dataset.ract === 'approve' ? await AUTH.client.rpc('approve_request', {p_id: id}) : await AUTH.client.from('submitter_requests').update({status: 'deleted', decided_at: new Date().toISOString()}).eq('id', id);
@@ -3338,6 +3346,7 @@ const fpSure = k => FP.ok[k] || (FP.conf[k] || 0) >= 0.8;
 const fpPanel = () => `<section class="fp" id="s_prev" hidden aria-labelledby="fp_h">
     <h3 class="fp-h" id="fp_h">Check your event before it goes live</h3>
     <p class="fp-status" id="fp_status" role="status" aria-live="polite"></p>
+    <div class="fp-match" id="fp_match" hidden></div>
     <div class="fp-grid"><figure class="fp-fly" id="fp_fly"></figure>
       <div class="fp-right"><p class="fp-lbl">How it will look on the calendar</p><div class="fp-card" id="fp_card" inert></div>
         <ul class="fp-list" id="fp_list"></ul><div class="fp-extra" id="fp_extra" inert></div></div></div>
@@ -3364,13 +3373,70 @@ async function fpRead(file){
     if (!r.ok) return {err: 'fail'}; const j = await r.json(); return j && j.fields ? j : {err: 'fail'};
   } catch { return {err: 'fail'}; }
 }
+/* ---------- Known club -> state, and "is this already on the calendar?" (owner 30 Oct 2026) ----------
+   A known club's state comes from data/clubs.json, never from the state remembered from an earlier submission (that made a
+   Baldivis WA flyer show as "Rockingham - VIC (Melbourne time)"). With no club match, a state written in the venue
+   (", WA", "Perth", a postcode at the end) is used. */
+const clubNames = k => [k.name, ...(k.aliases || [])].map(snorm).filter(Boolean);
+function clubRec(club, venue){
+  const n = snorm(club), v = ' ' + snorm(venue) + ' ';
+  if (n) { const k = CLUBS.find(c => clubNames(c).includes(n)); if (k) return k;
+    let best = null, bl = 0;   // "Baldivis Archery Club Inc" -> Baldivis Archery Club (longest whole-word name inside, 8+ letters)
+    CLUBS.forEach(c => clubNames(c).forEach(a => { if (a.length >= 8 && a.length > bl && (' ' + n + ' ').includes(' ' + a + ' ')) { best = c; bl = a.length; } }));
+    if (best) return best; }
+  if (v.trim()) { let best = null, bl = 0;   // the venue names the club: "Baldivis Archery Club, Ennis Ave"
+    CLUBS.forEach(c => clubNames(c).forEach(a => { if (a.includes(' ') && a.length >= 10 && a.length > bl && v.includes(' ' + a + ' ')) { best = c; bl = a.length; } }));
+    if (best) return best; }
+  return null;
+}
+const AU_PC = pc => { const n = +pc; return n >= 800 && n <= 999 ? 'NT' : (n >= 2600 && n <= 2618) || (n >= 2900 && n <= 2920) ? 'ACT' : n >= 1000 && n <= 2999 ? 'NSW' : n >= 3000 && n <= 3999 ? 'VIC'
+  : n >= 4000 && n <= 4999 ? 'QLD' : n >= 5000 && n <= 5999 ? 'SA' : n >= 6000 && n <= 6999 ? 'WA' : n >= 7000 && n <= 7999 ? 'TAS' : ''; };
+function venueState(venue){
+  const t = String(venue || ''); if (!t.trim()) return '';
+  const m = t.match(/\b(WA|NSW|VIC|QLD|SA|TAS|ACT|NT)\b(?:\s+(\d{4}))?/); if (m) return m[1];
+  const pc = t.match(/\b(\d{4})\s*(?:,?\s*(?:Australia|AUS?))?\s*$/i); if (pc && AU_PC(pc[1])) return AU_PC(pc[1]);
+  const w = ' ' + snorm(t) + ' ';
+  for (const [k, st] of Object.entries(STATE_ALIASES)) if (k.length > 3 && w.includes(' ' + k + ' ')) return st;
+  const c = CLUBS.find(k => !k.country && k.suburb && k.state && w.includes(' ' + snorm(k.suburb) + ' ')); return c ? c.state : '';
+}
+/* Listed events that look like the same shoot: dates overlap AND (same club, or the venue shares a real place word) AND the names
+   share a word (or the listed name is generic, e.g. "Club shoot"). Best first, at most 4. */
+const M_STOP = new Set(('the and of for a at in on club clubs archery archers archer bowmen bowhunters field archers inc tournament tournaments shoot shoots event events open annual ' +
+  'day days round rounds comp competition championship championships cup series round road rd street st ave avenue drive dr reserve oval range park grounds see flyer').split(' '));
+const mWords = s => new Set(snorm(s).split(' ').filter(w => w.length > 2 && !M_STOP.has(w) && !/^\d+$/.test(w)));
+const stCode = s => String(s || '').trim().split(/[\s(/]/)[0].toUpperCase();
+function listedMatches(x, k){
+  if (!x || !/^\d{4}-\d{2}-\d{2}$/.test(x.start_date || '')) return [];
+  const xe = x.end_date || x.start_date, xn = mWords(x.name), xv = mWords(x.location), xs = stCode(x.state), out = [];
+  const seen = new Set();
+  Object.values(BYID).forEach(y => {
+    if (!y || seen.has(y.id) || y.id === 'preview' || !y.start_date || y.info_only) return; seen.add(y.id);
+    const ye = evEnd(y); if (!(x.start_date <= ye && y.start_date <= xe)) return;
+    const txt = ' ' + snorm([y.name, y.location, y.club_name, y.host].join(' ')) + ' ';
+    const club = !!k && (y.club_id === k.id || clubNames(k).some(a => (a.length >= 6 || a.includes(' ')) && txt.includes(' ' + a + ' ')));
+    const yv = mWords(y.location), vHit = [...xv].filter(w => yv.has(w)).length;
+    const ys = stCode(y.state_code || y.state); if (!club && xs && ys && xs !== ys) return;
+    if (!club && !vHit) return;
+    const yn = mWords(y.name); const nHit = [...xn].filter(w => yn.has(w)).length;
+    if (!nHit && yn.size && xn.size) return;
+    out.push({y, s: (club ? 4 : 0) + Math.min(vHit, 2) + nHit * 2 + (y.start_date === x.start_date ? 2 : 0)});
+  });
+  return out.sort((a, b) => b.s - a.s).slice(0, 4).map(o => o.y);
+}
 function vSubmit(country){
   setTitle('Submit an event');
   const C = subCtry(country), K = SUB_CTRY[C];
   const sent = /(?:^|[?&])sent=1/.test(location.search), sid = new URLSearchParams(location.search).get('sid') || (sent ? '' : SUBDONE.sid);
-  if (sent) { SUBDONE.sid = sid || ''; history.replaceState(null, '', location.pathname + '#/submit'); }
+  const qs = new URLSearchParams(location.search), updId = sent && qs.get('upd');
+  if (sent) { SUBDONE.sid = sid || ''; SUBDONE.upd = updId ? {id: updId, st: qs.get('us') || ''} : null; history.replaceState(null, '', location.pathname + '#/submit'); }
   if (sent && sid) { SUBDONE.html = '<p class="loading">Checking your event…</p>'; setTimeout(() => subDoneLoad(sid), 0); }
   const head = pageHead('Submit an event', 'Just send your flyer — we read it and build your event card for you.', '3d');
+  if (SUBDONE.upd) { const u = SUBDONE.upd, y = BYID[u.id], nm = y ? `<b>${esc(y.name)}</b>` : 'the listed event', live = u.st === 'live';
+    return `${head}<div class="wrap narrow"><section class="panel thanks" id="subThanks" tabindex="-1"><span class="thanks-mark" aria-hidden="true">✓</span>
+      <h2 class="sec">${live ? 'The listed event is updated' : 'Thanks, your update is in'}</h2>
+      <p>${live ? `${nm} now has the details from your flyer.` : `We’ll check it and update ${nm}, usually within 48 hours.`} It keeps the same link, so anyone who saved it still has it in My events.</p>
+      ${y && live ? `<div class="live-card">${evCard(y)}</div>` : ''}
+      <div class="row">${y ? `<a class="btn gold" href="#/shoot/${esc(encodeURIComponent(u.id))}">Open the event</a>` : ''}<a class="btn alt" href="#/submit">Send another event</a></div></section></div>`; }
   if (SUBDONE.sid && SUBDONE.html) return `${head}<div class="wrap narrow"><section class="panel thanks" id="subThanks" tabindex="-1">${SUBDONE.html}</section></div>`;
   if (sent) return `${head}<div class="wrap narrow"><section class="panel thanks" id="subThanks" tabindex="-1">
     <span class="thanks-mark" aria-hidden="true">✓</span><h2 class="sec">Thanks, your flyer is in</h2>
@@ -3524,22 +3590,88 @@ function bindSubmit(){
     if (fpVal('start_time')) x.start_times = fpVal('start_time');
     return x; };
   const fpStatus = t => { const s = g('fp_status'); if (s) s.textContent = t; };
+  /* ---- State from the club record (or the venue), not the state remembered from last time. Re-checked whenever club or venue changes;
+     a state picked by hand stays until club or venue changes again. ---- */
+  let stKey = null;
+  const syncState = () => { if (ctry() !== 'AU') return; const club = val('s_club'), ven = val('s_venue'), key = club + '|' + ven; if (key === stKey) return; stKey = key;
+    const k = clubRec(club, ven), st = k && !k.country && k.state ? k.state : venueState(ven), el = g('s_state');
+    if (st && el && [...el.options].some(o => (o.value || o.text) === st) && el.value !== st) el.value = st; };
+  /* ---- "This event is already on the calendar": update the listed event (same id, same link) or add a separate one ---- */
+  FP.m = {ids: [], pick: '', mode: '', ch: {}, html: ''};
+  const MF = [['name', 'Event name'], ['dates', 'Dates'], ['start_times', 'Start time'], ['location', 'Venue'], ['discipline', 'Type of event'], ['register', 'How to enter'], ['notes', 'Notes'], ['flyer', 'Flyer']];
+  const mTarget = () => FP.on && !g('fp_only').checked && FP.m.mode === 'update' && FP.m.ids.includes(FP.m.pick) && BYID[FP.m.pick] || null;
+  const mNew = k => k === 'name' ? fpVal('title') : k === 'dates' ? (fpIsDate('start_date') ? fpVal('start_date') + '|' + ((fpIsDate('end_date') && fpVal('end_date') >= fpVal('start_date') && fpVal('end_date')) || fpVal('start_date')) : '')
+    : k === 'start_times' ? fpVal('start_time') : k === 'location' ? fpVal('venue') : k === 'discipline' ? fpVal('shoot_type') : k === 'register' ? (fpReg().length ? JSON.stringify(fpReg()) : '')
+    : k === 'notes' ? val('s_notes') : k === 'flyer' ? (g('s_file').files[0] ? 'new' : '') : '';
+  const mOld = (k, y) => k === 'name' ? y.name || '' : k === 'dates' ? (y.start_date ? y.start_date + '|' + evEnd(y) : '') : k === 'start_times' ? y.start_times || '' : k === 'location' ? y.location || ''
+    : k === 'discipline' ? y.discipline || '' : k === 'register' ? (regOf(y).length ? JSON.stringify(regOf(y)) : '') : k === 'notes' ? y.notes || '' : k === 'flyer' ? (y.flyer_web || y.flyer_url ? 'old' : '') : '';
+  const mShow = (k, v) => !v ? '' : k === 'dates' ? (([a, b]) => fdate(a) + (b && b !== a ? ' to ' + fdate(b) : ''))(v.split('|')) : k === 'register' ? regText(JSON.parse(v)).replace(/\n/g, ' · ')
+    : k === 'flyer' ? (v === 'new' ? 'Your flyer' : 'The flyer we have now') : v;
+  const mSame = (k, a, b) => k === 'flyer' ? false : k === 'dates' ? a === b : snorm(mShow(k, a)) === snorm(mShow(k, b));
+  /* The fields that change on the listed event: empty ones are filled from the flyer; where both have a value, the person's pick (flyer by default). */
+  function mFields(y){ const p = {};
+    MF.forEach(([k]) => { const n = mNew(k), o = mOld(k, y); if (!n || (o && mSame(k, n, o)) || (o && FP.m.ch[k] === 'old')) return;
+      if (k === 'dates') { const [a, b] = n.split('|'); p.start_date = a; p.end_date = b; }
+      else if (k === 'register') { const L = fpReg(), u = regFirstUrl(L), bk = L.find(r => r.m === 'bank') || {}; Object.assign(p, {register: L, registration_url: u || null, registration_url_kind: u ? 'entry_page' : null});
+        if (bk.bsb || bk.acct) Object.assign(p, {bank_account_name: bk.acct_name || null, bank_bsb: bk.bsb || null, bank_account: bk.acct || null, bank_reference: bk.ref || null}); }
+      else if (k === 'flyer') p._flyer = true;
+      else p[k] = n; });
+    return p; }
+  const mMerged = y => { const p = mFields(y), z = applyOvr(Object.assign({}, y), p); delete z._ovr;
+    if (p._flyer) Object.assign(z, FP.pdf ? {flyer_url: null, flyer_web: null, flyer_web_sm: null} : {flyer_web: FP.url, flyer_web_sm: FP.url, flyer_url: null, flyer_is_pdf: false});
+    return z; };
+  /* A listed event's own date confirms the date read from the flyer, so it needn't be flagged "Check this". */
+  const mDateOk = k => { const v = fpVal(k); if (!v || (k !== 'start_date' && k !== 'end_date')) return false; const L = FP.m.ids.map(id => BYID[id]).filter(Boolean);
+    return k === 'start_date' ? L.some(y => y.start_date === v) : L.some(y => evEnd(y) === v && y.start_date === fpVal('start_date')) || (v === fpVal('start_date') && (fpSure('start_date') || mDateOk('start_date'))); };
+  function fpMatch(){
+    const box = g('fp_match'); if (!box) return; syncState();
+    const L = FP.on && !g('fp_only').checked ? listedMatches(fpEv(), clubRec(val('s_club'), val('s_venue'))) : [];
+    FP.m.ids = L.map(y => y.id);
+    if (!L.length) { if (FP.m.html) { box.hidden = true; box.innerHTML = ''; FP.m.html = ''; } return; }
+    if (!FP.m.ids.includes(FP.m.pick)) { FP.m.pick = L[0].id; FP.m.ch = {}; }
+    const y = BYID[FP.m.pick], up = FP.m.mode === 'update', ap = subApproved();
+    const evLine = z => `<b>${esc(z.name)}</b><span class="note">${esc(z.start_date ? range(z) : 'Date to be confirmed')}${z.location ? ' · ' + esc(z.location) : ''}</span>`;
+    const rows = !up ? '' : MF.map(([k, lab]) => { const n = mNew(k), o = mOld(k, y); if (!n) return '';
+      if (o && mSame(k, n, o)) return `<li class="fp-m-row same"><span class="fp-lab">${lab}</span><span class="note">Same as listed</span></li>`;
+      if (!o) return `<li class="fp-m-row add"><span class="fp-lab">${lab}</span><span class="fp-m-add">Adds</span><div class="fp-cur">${esc(mShow(k, n))}</div></li>`;
+      const c = FP.m.ch[k] || 'new';
+      return `<li class="fp-m-row pick"><span class="fp-lab" id="fp_chl_${k}">${lab}</span><div class="fp-m-pick" role="radiogroup" aria-labelledby="fp_chl_${k}">
+        <label><input type="radio" name="fp_ch_${k}" value="new" ${c === 'new' ? 'checked' : ''}><span><span class="fp-m-src">From your flyer</span>${esc(mShow(k, n))}</span></label>
+        <label><input type="radio" name="fp_ch_${k}" value="old" ${c === 'old' ? 'checked' : ''}><span><span class="fp-m-src">Keep listed</span>${esc(mShow(k, o))}</span></label></div></li>`; }).join('');
+    const h = `<h4 class="fp-m-h">${L.length > 1 ? 'Already on the calendar?' : 'This event is already on the calendar'}</h4>
+      <p class="note">${L.length > 1 ? 'Your flyer looks like one of these listed events. Pick the one it is for.' : 'Your flyer looks like an event we already list.'} Updating it keeps the same link, so anyone who saved it or ticked entered or paid keeps that.</p>
+      ${L.length > 1 ? `<fieldset class="fp-m-list"><legend class="sr">Which listed event is it?</legend>${L.map(z => `<label class="fp-m-ev"><input type="radio" name="fp_mpick" value="${esc(z.id)}" ${z.id === FP.m.pick ? 'checked' : ''}><span>${evLine(z)}</span></label>`).join('')}</fieldset>`
+        : `<div class="fp-m-ev one"><span>${evLine(y)}</span><a href="#/shoot/${esc(encodeURIComponent(y.id))}" target="_blank" rel="noopener">Open the listed event ↗</a></div>`}
+      <fieldset class="fp-m-choice"><legend class="sr">What should we do with your flyer?</legend>
+        <label class="fp-m-opt main${up ? ' on' : ''}"><input type="radio" name="fp_mode" value="update" ${up ? 'checked' : ''}><span><b>Update the listed event with these details</b><span class="note">Same event, same link. Anything missing is filled in from your flyer.</span></span></label>
+        <label class="fp-m-opt${FP.m.mode === 'new' ? ' on' : ''}"><input type="radio" name="fp_mode" value="new" ${FP.m.mode === 'new' ? 'checked' : ''}><span><b>Add as a separate event</b><span class="note">It is a different shoot.</span></span></label></fieldset>
+      ${up ? `<div class="fp-m-cmp"><p class="fp-lbl">What changes on the listed event</p>${rows ? `<ul>${rows}</ul>` : '<p class="note">Nothing new: the listed event already has these details.</p>'}
+        <p class="note">${ap ? 'You are an approved submitter, so the update goes live straight away.' : 'We check updates before they go live, usually within 48 hours.'}</p></div>` : ''}`;
+    if (h === FP.m.html) return;
+    const a = document.activeElement, ak = a && box.contains(a) && a.name ? [a.name, a.value] : null;
+    box.innerHTML = FP.m.html = h; box.hidden = false;
+    if (ak) { const el = [...box.querySelectorAll('input')].find(i => i.name === ak[0] && i.value === ak[1]); el && el.focus(); }
+  }
+  g('fp_match').addEventListener('change', e => { const t = e.target;
+    if (t.name === 'fp_mode') FP.m.mode = t.value; else if (t.name === 'fp_mpick') { FP.m.pick = t.value; FP.m.ch = {}; } else if (/^fp_ch_/.test(t.name)) FP.m.ch[t.name.slice(6)] = t.value; });
+  ['s_club', 's_venue'].forEach(id => g(id).addEventListener('change', syncState));
   function fpCard(){
-    const c = g('fp_card'), ex = g('fp_extra'); if (!c) return; const x = fpEv();
+    const c = g('fp_card'), ex = g('fp_extra'); if (!c) return; fpMatch(); const y = mTarget(), x = y ? mMerged(y) : fpEv();
+    c.previousElementSibling.textContent = y ? 'How the listed event will look' : 'How it will look on the calendar';
     c.innerHTML = x.start_date ? evCard(x) : `<div class="pend-row fp-pend">${pendCard({club: fpVal('club') || fpVal('title') || 'New flyer', flyer_url: FP.pdf ? null : FP.url || null, flyer_link: val('s_flink')})}</div>
       <p class="note">With no start date yet, it shows in <b>New flyers, details coming</b> until the date is added.</p>`;
     ex.innerHTML = payBox(x) + regSection(x);
     FP.rendered = true;
   }
   function fpList(){
-    const ul = g('fp_list'); if (!ul) return;
-    ul.innerHTML = FP_ROWS.map(([k, lab, kind]) => { const v = fpVal(k), sure = k === 'end_date' && !v ? true : !!v && fpSure(k);
+    const ul = g('fp_list'); if (!ul) return; fpMatch();
+    ul.innerHTML = FP_ROWS.map(([k, lab, kind]) => { const v = fpVal(k), md = !FP.ok[k] && mDateOk(k), sure = k === 'end_date' && !v ? true : !!v && (fpSure(k) || md || (k === 'end_date' && v === fpVal('start_date') && fpSure('start_date')));
       const show = !v ? (k === 'end_date' ? 'Same day as the start' : '<span class="muted">Not filled in</span>') : kind === 'date' && fpIsDate(k) ? esc(fdate(v)) : esc(v);
       const inp = kind === 'date' ? `<input id="fp_in_${k}" type="date" value="${esc(v)}">`
         : kind === 'disc' ? `<select id="fp_in_${k}"><option value="">Choose…</option>${FP_DISC.map(o => `<option ${o === v ? 'selected' : ''}>${o}</option>`).join('')}</select>`
         : `<input id="fp_in_${k}" maxlength="${k === 'entry' ? 300 : 160}" value="${esc(v)}"${k === 'bank_bsb' || k === 'bank_account' ? ' inputmode="numeric"' : ''}>`;
       return `<li class="fp-row${sure ? '' : ' need'}" data-fpk="${k}"><div class="fp-head"><span class="fp-lab">${esc(lab)}</span>
-        ${sure ? (v ? `<span class="fp-ok">✓ ${FP.ok[k] ? 'Checked' : 'From your flyer'}</span>` : '') : '<span class="fp-flag">⚠ Check this</span>'}
+        ${sure ? (v ? `<span class="fp-ok">✓ ${FP.ok[k] ? 'Checked' : md ? 'Same as the listed event' : 'From your flyer'}</span>` : '') : '<span class="fp-flag">⚠ Check this</span>'}
         <button type="button" class="fx-pen fp-pen" aria-expanded="false" aria-controls="fp_ed_${k}" aria-label="Edit ${esc(lab.toLowerCase())}">✏️ <span>Edit</span></button></div>
         <div class="fp-cur">${show}</div>
         <div class="fp-edit" id="fp_ed_${k}" hidden><label class="sr" for="fp_in_${k}">${esc(lab)}</label>${inp}<button type="button" class="btn sm fp-done">Done</button></div></li>`; }).join('');
@@ -3556,7 +3688,7 @@ function bindSubmit(){
     if (!f && !(link && isUrl(link))) { FP.on = false; FP.src = ''; FP.busy = false; box.hidden = true; upd(); return; }
     const src = f ? `f:${f.name}:${f.size}:${f.lastModified}` : 'l:' + link; if (src === FP.src) return;
     FP.src = src; if (FP.url) URL.revokeObjectURL(FP.url);
-    FP.pdf = !!f && (/pdf/.test(f.type) || /\.pdf$/i.test(f.name)); FP.url = f ? URL.createObjectURL(f) : ''; FP.conf = {}; FP.ok = {}; FP.on = true; FP.rendered = false;
+    FP.pdf = !!f && (/pdf/.test(f.type) || /\.pdf$/i.test(f.name)); FP.url = f ? URL.createObjectURL(f) : ''; FP.conf = {}; FP.ok = {}; Object.assign(FP.m, {mode: '', ch: {}, pick: ''}); FP.on = true; FP.rendered = false;
     FP_ROWS.forEach(([k]) => { if (fpVal(k)) FP.ok[k] = true; });   // anything already typed counts as checked
     g('fp_fly').innerHTML = f && !FP.pdf ? `<img src="${esc(FP.url)}" alt="Your flyer">` : f ? `<span class="fp-ic" aria-hidden="true">📄</span><figcaption>${esc(f.name)}</figcaption>`
       : `<span class="fp-ic" aria-hidden="true">🔗</span><figcaption><a href="${esc(link)}" target="_blank" rel="noopener">Open your flyer link ↗</a></figcaption>`;
@@ -3573,7 +3705,9 @@ function bindSubmit(){
       : 'We couldn’t read the flyer automatically, so please fill in each line marked Check this.');
     fpList(); fpCard(); upd();
   }
-  const fpReady = () => !FP.on || (FP.rendered && !FP.busy && ((!!fpVal('title') && fpIsDate('start_date')) || g('fp_only').checked));
+  const mNeed = () => FP.on && !g('fp_only').checked && FP.m.ids.length > 0 && !FP.m.mode;   // a listed match: choose update or separate first
+  const mNothing = () => { const y = mTarget(); return !!y && !Object.keys(mFields(y)).length; };
+  const fpReady = () => !FP.on || (FP.rendered && !FP.busy && !mNeed() && !mNothing() && ((!!fpVal('title') && fpIsDate('start_date')) || g('fp_only').checked));
   g('fp_only').addEventListener('change', upd);
   g('s_flink').addEventListener('change', () => { if (!g('s_file').files[0]) fpStart(); });
   function upd(){
@@ -3582,9 +3716,11 @@ function bindSubmit(){
     if (ap && AUTH.user) g('s_email').value = AUTH.user.email || '';
     g('s_mode').textContent = ap ? '✓ You’re an approved submitter, so your events go live straight away.' : 'We check each flyer and put it on the calendar, usually within 48 hours. Approved clubs go live straight away.';
     if (FP.on) { const ok = fpReady(); b.disabled = !ok; b.setAttribute('aria-disabled', String(!ok));
-      b.textContent = FP.busy ? 'Reading your flyer…' : ap ? 'Looks right, publish' : 'Looks right, send';
+      const up = !!mTarget();
+      b.textContent = FP.busy ? 'Reading your flyer…' : up ? (ap ? 'Update the listed event' : 'Send the update') : ap ? 'Looks right, publish' : 'Looks right, send';
       g('fp_only_t').textContent = ap ? 'Publish flyer-only, details coming' : 'Send the flyer only, you add the details';
-      h.textContent = FP.busy ? 'One moment, we’re reading your flyer.' : !ok ? 'Add the event name and start date in the preview (tap ✏️ Edit), or tick the flyer-only box, to carry on.'
+      h.textContent = FP.busy ? 'One moment, we’re reading your flyer.' : mNeed() ? 'This looks like an event already on the calendar. Choose above: update it, or add yours as a separate event.'
+        : mNothing() ? 'Nothing to update: the listed event already has these details.' : up && ok ? (ap ? 'Updates the listed event straight away. It keeps the same link.' : 'We check it and update the listed event, usually within 48 hours. It keeps the same link.') : !ok ? 'Add the event name and start date in the preview (tap ✏️ Edit), or tick the flyer-only box, to carry on.'
         : !ap ? 'We check it and put it on the calendar, usually within 48 hours.' : complete() ? 'Goes live on the calendar as soon as you tap Looks right, publish.' : FLYQ.ok ? 'Goes live now, and we’ll add the missing details from your flyer shortly.' : 'We read your flyer and put it live for you.';
       return; }
     b.disabled = false; b.removeAttribute('aria-disabled');
@@ -3607,8 +3743,53 @@ function bindSubmit(){
   roleBind('s'); kcLoad(); g('s_email').addEventListener('change', () => kcCheck(val('s_email')));
   const kcNow = id => KC.memo[kcNorm(val(id))];
   g('subMail').onclick = e => { e.currentTarget.href = `mailto:${SITE.contact}?subject=${encodeURIComponent(kcTag(kcNow('s_email')) + subject())}&body=${encodeURIComponent(mailBody())}`; };
+  /* Update a listed event: one submitted_events row with updates_event_id + merge_fields. supabase/event_merge.sql applies it to
+     event_overrides at once for admins and approved submitters (same id, so saves and entered/paid ticks stay), or holds it for review.
+     Before that SQL is run: admins write the override directly; anyone else's update goes by email only. */
+  async function mSubmit(y, k, ap){
+    const p = mFields(y), file = p._flyer && !g('s_file').disabled ? g('s_file').files[0] : null; delete p._flyer;
+    let st = 'email', dbId = '', flyUrl = '', flyPath = null;
+    const hid = (n, v) => { let i = fm.querySelector(`[name="${n}"]`); if (!i) { i = document.createElement('input'); i.type = 'hidden'; i.name = n; fm.appendChild(i); } i.value = v; };
+    if (AUTH.client && AUTH.user) try {
+      if (file && file.size <= FLY_MAX && (/^image\//.test(file.type) || /pdf/.test(file.type) || /\.pdf$/i.test(file.name))) {
+        const ext = (file.name.match(/\.([a-z0-9]{2,5})$/i) || [, /pdf/.test(file.type) ? 'pdf' : 'jpg'])[1].toLowerCase(), pdf = ext === 'pdf' || /pdf/.test(file.type);
+        flyPath = isAdmin() ? `overrides/${y.id.replace(/[^\w.-]/g, '_')}-${Date.now()}.${ext}` : `${AUTH.user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const up = await AUTH.client.storage.from(FLY_BUCKET).upload(flyPath, file, {contentType: file.type || (pdf ? 'application/pdf' : 'image/jpeg'), upsert: false});
+        if (up.error) flyPath = null;
+        else { flyUrl = AUTH.client.storage.from(FLY_BUCKET).getPublicUrl(flyPath).data.publicUrl;
+          Object.assign(p, {flyer_url: pdf ? flyUrl : null, flyer_web: pdf ? null : flyUrl, flyer_web_sm: pdf ? 'icons/icon-512.png' : flyUrl, flyer_is_pdf: pdf, flyer_label: 'Flyer from the club',
+            flyer_year: +(p.start_date || y.start_date || '').slice(0, 4) || null, flyer_is_current: true, flyer_source_name: 'club submission', org_status: 'flyer'}); } }
+      p.last_checked = new Date().toISOString().slice(0, 10);
+      const m = f => f in p ? p[f] : y[f];
+      const row = {country: ctry() === 'OTHER' ? val('s_ctryname') : ctry(), state: val('s_state') || y.state_code || y.state || '', organisation_type: val('s_orgtype'), club: val('s_club') || y.club_name || y.host || y.org || 'Club',
+        submitter_name: ap ? '' : val('s_name'), role: ap ? '' : roleVal('s'), contact_email: val('s_email') || AUTH.user.email || '', phone: ap ? '' : val('s_phone'),
+        name: m('name') || 'Event', start_date: m('start_date') || null, end_date: m('end_date') || m('start_date') || null, venue: m('location') || 'See flyer', discipline: m('discipline') || '',
+        registration_url: m('registration_url') || '', register: Array.isArray(m('register')) ? m('register') : regOf(y), flyer_link: val('s_flink'), notes: val('s_notes'),
+        flyer_path: flyPath, flyer_url: flyUrl || null, updates_event_id: y.id, merge_fields: p};
+      const {data, error} = await AUTH.client.from('submitted_events').insert(row).select('id,status').single();
+      if (!error) { dbId = data.id; st = data.status === 'live' ? 'live' : 'pending'; }
+      else if (isAdmin()) {   // event_merge.sql not run yet: admins update the listed event directly, as on #/fix
+        console.warn('Archery Calendar: update row not saved, writing the override directly:', error.message);
+        const r = await AUTH.client.from('event_overrides').upsert({event_id: y.id, fields: Object.assign({}, OVR[y.id] || {}, p), updated_by: AUTH.user.email}, {onConflict: 'event_id'});
+        if (!r.error) st = 'live'; else console.warn('Archery Calendar: override not saved:', r.error.message); }
+      else console.warn('Archery Calendar: update not saved to the database (email still sent):', error.message);
+    } catch (e) { console.warn('Archery Calendar: update not saved:', e); }
+    if (st === 'live') { OVR[y.id] = Object.assign({}, OVR[y.id] || {}, p); applyOvr(y, OVR[y.id]); }
+    const link = location.origin + location.pathname + '#/shoot/' + encodeURIComponent(y.id);
+    hid('updates_event', `${y.name} (${y.id}) ${link}`);
+    hid('update_changes', Object.entries(p).filter(([f]) => !/^(flyer_|bank_|last_checked|registration_url|org_status)/.test(f)).map(([f, v]) => `${f}: ${Array.isArray(v) ? regText(v).replace(/\n/g, ' · ') : v}`).join(' | ') + (flyUrl ? ' | new flyer' : file ? ' | new flyer attached' : ''));
+    fm.querySelector('[name=submission_id]').value = dbId;
+    fm.querySelector('[name=submission_status]').value = st === 'live' ? 'LIVE UPDATE – the listed event is already updated (same id and link)' : st === 'pending' ? 'pending UPDATE to a listed event – approve at ' + location.origin + location.pathname + '#/admin'
+      : 'UPDATE to a listed event, email only (not saved): apply it with Fix an event at ' + location.origin + location.pathname + '#/fix/' + encodeURIComponent(y.id);
+    if (flyUrl) fm.querySelector('[name=flyer_stored]').value = flyUrl;
+    if (!dbId && st !== 'live' && !ap && k !== true && AUTH.client) AUTH.client.rpc('request_approval', {p_email: val('s_email'), p_name: val('s_name') || null, p_club: val('s_club') || null, p_role: roleVal('s') || null, p_source: 'form', p_note: 'Update: ' + y.name}).then(() => {}, () => {});
+    fm.querySelector('[name=_subject]').value = (st === 'live' ? '[LIVE UPDATE] ' : '[UPDATE] ') + kcTag(k) + `Update: ${y.name}${where() ? ` (${where()})` : ''}`;
+    fm.querySelector('[name=_next]').value = location.href.split('#')[0].split('?')[0] + '?sent=1&upd=' + encodeURIComponent(y.id) + '&us=' + st + '#/submit';
+    HTMLFormElement.prototype.submit.call(fm);
+  }
   fm.onsubmit = e => {
-    if (FP.on && !fpReady()) { e.preventDefault(); upd(); return; }   // preview first: nothing goes until it's been checked
+    if (FP.on && !fpReady()) { e.preventDefault(); upd(); return; }
+    syncState();   // preview first: nothing goes until it's been checked
     fm.dataset.tried = 1;
     const errs = check();
     if (errs.some(id => g('s_mefields').contains(g(id)))) meShow(false);
@@ -3631,6 +3812,7 @@ function bindSubmit(){
       registration_url: regFirstUrl(fpReg()) || '', register: fpReg(), flyer_link: val('s_flink'), notes: [fpVal('start_time') && 'Start time: ' + fpVal('start_time'), val('s_notes')].filter(Boolean).join('\n')};
     Promise.race([kcCheck(val('s_email')), new Promise(r => setTimeout(() => r(false), 4000))]).then(async k => {
       fm.querySelector('[name=known_club]').value = k ? 'yes' : 'no';
+      const yT = mTarget(); if (yT) return mSubmit(yT, k, ap);
       const db = complete() || (ap && FLYQ.ok) ? await dbSubmit(rec, g('s_file').disabled ? null : g('s_file').files[0]) : null;   // flyer only + approved: live as 'details coming'; otherwise emailed
       let tag = kcTag(k);
       if (!db && !ap && k !== true && AUTH.client) AUTH.client.rpc('request_approval', {p_email: val('s_email'), p_name: val('s_name') || null, p_club: val('s_club') || null, p_role: roleVal('s') || null, p_source: 'form', p_note: 'Shoot: ' + (val('s_ename') || 'flyer only')}).then(() => {}, () => {});
