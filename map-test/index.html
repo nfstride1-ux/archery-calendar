@@ -2,7 +2,7 @@
 <html lang="en-AU">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <title>TEMPORARY MOCKUP - Globe map - Archery Calendar</title>
 <link rel="icon" href="../favicon-32.png">
@@ -21,10 +21,10 @@
 #mapLink:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 
 /* ---------- overlay ---------- */
-#gov{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;background:rgba(2,5,12,.82);color:#fff;font-family:var(--body)}
+#gov{position:fixed;left:0;right:0;top:var(--vvt,0px);height:var(--vvh,100dvh);z-index:1000;display:none;align-items:center;justify-content:center;background:rgba(2,5,12,.82);color:#fff;font-family:var(--body)}
 #gov.open{display:flex}
-#gdlg{position:relative;display:flex;flex-direction:column;width:min(1120px,95vw);height:min(780px,92vh);background:#02050c;border:1px solid rgba(255,255,255,.18);border-radius:18px;overflow:hidden;box-shadow:0 20px 80px rgba(0,0,0,.7)}
-#ghead{display:flex;align-items:center;gap:12px;padding:10px 12px 10px 18px;background:#050b18;border-bottom:1px solid rgba(255,255,255,.12)}
+#gdlg{position:relative;display:flex;flex-direction:column;width:min(1120px,95vw);height:min(780px,92%);background:#02050c;border:1px solid rgba(255,255,255,.18);border-radius:18px;overflow:hidden;box-shadow:0 20px 80px rgba(0,0,0,.7)}
+#ghead{display:flex;align-items:center;gap:12px;padding:max(10px,env(safe-area-inset-top,0px)) 12px 10px 18px;background:#050b18;border-bottom:1px solid rgba(255,255,255,.12)}
 #gtitle{flex:1;min-width:0;font:700 20px/1.2 var(--body);color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #gtitle small{display:block;font:500 14px/1.3 var(--body);color:#cbd5e1}
 .gbtn{min-height:48px;min-width:48px;padding:10px 18px;border-radius:12px;border:2px solid #fff;background:rgba(5,11,24,.92);color:#fff;font:700 18px/1.1 var(--body);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;text-align:center}
@@ -35,12 +35,15 @@
 #gstage{position:relative;flex:1;min-height:0;background:#000 url(img/stars-2048.jpg) center/cover;touch-action:none;overflow:hidden}
 #gpath{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}#gpath polyline{stroke-linecap:round;stroke-linejoin:round}#gpath0{stroke:#22d3ff;stroke-width:2;stroke-dasharray:2 8;opacity:.55}#gpath1{stroke:#19d3ff;stroke-width:5;filter:drop-shadow(0 0 5px #0a84ff) drop-shadow(0 0 12px #0a84ff)}#gmount{position:absolute;inset:0}#gstage canvas{display:block}
 #gmsg{position:absolute;left:0;right:0;top:46%;text-align:center;font:700 22px/1.3 var(--body);color:#fff;text-shadow:0 2px 10px #000;pointer-events:none;padding:0 20px}
-#gbar{position:absolute;left:0;right:0;bottom:0;padding:14px 16px 16px;background:linear-gradient(0deg,rgba(2,5,12,.94) 55%,rgba(2,5,12,0));display:flex;flex-direction:column;gap:10px;pointer-events:none}
+#gbar{position:absolute;left:0;right:0;bottom:0;max-height:62%;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:14px 16px calc(16px + env(safe-area-inset-bottom,0px));background:linear-gradient(0deg,rgba(2,5,12,.94) 55%,rgba(2,5,12,0));display:flex;flex-direction:column;gap:10px;pointer-events:none}
 #gbar>*{pointer-events:auto}
 #gstatus{font:700 20px/1.3 var(--body);color:#fff;text-shadow:0 1px 8px #000}
 #gsub{font:500 16px/1.4 var(--body);color:#e2e8f0}
 #gbtns{display:flex;flex-wrap:wrap;gap:10px}
-#gcredit{position:absolute;right:8px;top:6px;font:500 12px/1.3 var(--body);color:#e5e7eb;background:rgba(0,0,0,.55);padding:3px 8px;border-radius:6px;pointer-events:none;max-width:70%;text-align:right}
+#ginfo{position:absolute;right:8px;top:8px;width:36px;height:36px;border-radius:50%;border:2px solid rgba(255,255,255,.85);background:rgba(2,5,12,.6);color:#fff;font:700 italic 18px/1 Georgia,serif;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+#ginfo:focus-visible{outline:3px solid #ffc629;outline-offset:2px}
+#gcredit{position:absolute;right:8px;top:50px;display:none;font:500 13px/1.35 var(--body);color:#e5e7eb;background:rgba(2,5,12,.92);border:1px solid rgba(255,255,255,.25);padding:8px 10px;border-radius:10px;max-width:min(320px,calc(100% - 16px));text-align:left}
+#gcredit.show{display:block}
 #gchip{position:static;max-width:min(460px,100%);background:rgba(5,11,24,.94);border:2px solid #22d3ff;border-radius:14px;padding:12px 14px;display:none;flex-direction:column;gap:8px}
 #gchip.show{display:flex}
 #gsat{position:absolute;inset:0;z-index:0;opacity:0;transition:opacity .6s;pointer-events:none;background:#000}
@@ -48,27 +51,30 @@
 #gsat .leaflet-control-attribution{display:none}
 .satpin{position:relative;width:40px;height:52px;filter:drop-shadow(0 2px 3px #000)}
 .satpin svg{display:block}
-.satpin .lbl{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:2px;white-space:nowrap;font:700 16px/1.2 var(--body);color:#fff;text-shadow:0 0 4px #000,0 0 8px #000,0 1px 2px #000}
+.satpin .lbl{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:14px;white-space:nowrap;font:700 16px/1.2 var(--body);color:#fff;text-shadow:0 0 4px #000,0 0 8px #000,0 1px 2px #000}
 #gmount{z-index:0}
 #gchip b{font:700 18px/1.25 var(--body)}
 #gchip span{font:500 15px/1.35 var(--body);color:#e2e8f0}
 /* markers */
 .mk{position:relative;width:44px;height:44px;margin:0;display:flex;align-items:center;justify-content:center;background:none;border:0;padding:0;cursor:pointer;pointer-events:auto}
-.mk svg{filter:drop-shadow(0 0 4px rgba(34,211,255,.9));display:block}
+.mk svg{filter:drop-shadow(0 1px 3px rgba(0,0,0,.85));display:block}
+.mk.pin:hover svg,.mk.pin:focus-visible svg{transform:scale(1.2)}
 .mk.sel{margin-top:-24px}
 .mk.sel svg{filter:drop-shadow(0 0 8px rgba(255,198,41,.95)) drop-shadow(0 2px 3px #000)}
 .mk .lbl{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:-2px;white-space:nowrap;font:700 16px/1.2 var(--body);color:#fff;text-shadow:0 0 4px #000,0 0 8px #000,0 1px 2px #000;pointer-events:none}
 .mk.start{cursor:default}
 .mk.start .lbl{color:#22d3ff}
+.mk.sel .lbl{margin-top:10px} /* room under the pin tip for the landed arrow */
 .mk.sel .ring{position:absolute;left:50%;top:calc(100% - 6px);width:56px;height:20px;margin-left:-28px;border:3px solid #ffc629;border-radius:50%;animation:ping 1.6s ease-out infinite;pointer-events:none}
 @keyframes ping{0%{transform:scale(.4);opacity:1}100%{transform:scale(1.5);opacity:0}}
-#gplane{position:absolute;left:0;top:0;width:56px;height:56px;margin:-28px 0 0 -28px;pointer-events:none;display:none;filter:drop-shadow(0 0 6px #22d3ff) drop-shadow(0 2px 3px #000)}
+#gplane{position:absolute;z-index:2;left:0;top:0;width:30px;height:12px;margin:-6px 0 0 -30px;transform-origin:30px 6px;pointer-events:none;display:none;filter:drop-shadow(0 0 3px rgba(0,0,0,.9)) drop-shadow(0 0 5px rgba(34,211,255,.8))}
+#gplane svg{display:block}
 @media (max-width:640px){
  #gov{background:#02050c;align-items:stretch;justify-content:stretch}
- #gdlg{width:100%;height:100%;max-height:100dvh;border-radius:0;border:0}
+ #gdlg{width:100%;height:100%;border-radius:0;border:0}
  #gtitle{font-size:18px}
  #gstatus{font-size:19px}
- #gbtns .gbtn{flex:1 1 100%}
+ #gbtns .gbtn{flex:1 1 40%;padding:10px 12px;font-size:17px}
 }
 @media (prefers-reduced-motion:reduce){.mk.sel .ring{animation:none;opacity:.8}}
 </style>
@@ -97,8 +103,9 @@
     <div id="gsat" aria-label="Satellite view of the venue"></div>
     <div id="gmsg" role="status"></div>
     <svg id="gpath" aria-hidden="true"><polyline id="gpath0" fill="none"/><polyline id="gpath1" fill="none"/></svg>
-    <div id="gplane" aria-hidden="true"><svg viewBox="0 0 64 64" width="56" height="56"><path d="M60 32c0 2.2-1.8 3.6-4 3.6H40L28 54h-6l5-18.4H14l-5 7H4l3-11.2L4 20.2h5l5 7h13L22 9h6l12 18.4h16c2.200 0 4 1.400 4 3.600z" fill="#fff" stroke="#22d3ff" stroke-width="2.5" stroke-linejoin="round" transform="translate(0 0.4)"/></svg></div>
-    <div id="gcredit">Imagery: Esri, Maxar, Earthstar Geographics and the GIS User Community. Base: NASA Blue Marble.</div>
+    <div id="gplane" aria-hidden="true"><svg viewBox="0 0 60 24" width="30" height="12"><path d="M2 5 L12 12 L2 19 L8 19 L18 12 L8 5 Z" fill="#22d3ff" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/><path d="M9 5 L19 12 L9 19" fill="none" stroke="#e11d48" stroke-width="2.4" stroke-linejoin="round"/><rect x="8" y="10" width="40" height="4" rx="1.6" fill="#fff" stroke="#0d1b2a" stroke-width=".8"/><path d="M60 12 L45 4.5 L48 12 L45 19.5 Z" fill="#cbd5e1" stroke="#0d1b2a" stroke-width="1.2" stroke-linejoin="round"/></svg></div>
+    <button type="button" id="ginfo" aria-label="Map credits" aria-expanded="false" aria-controls="gcredit">i</button>
+    <div id="gcredit" role="note">Satellite imagery: Esri, Maxar, Earthstar Geographics and the GIS User Community. Globe: NASA Blue Marble and NASA Visible Earth. Map: Leaflet.</div>
     <div id="gbar"><div id="gchip"><b id="gchipn"></b><span id="gchips"></span><button type="button" class="gbtn gold" id="gchipgo">Fly here</button></div><div id="gstatus" aria-live="polite"></div><div id="gsub"></div><div id="gbtns"></div></div>
   </div>
  </div>
@@ -176,7 +183,7 @@ function showSat(t,tok){
     });
   });
 }
-function hideSat(){var was=S.sat;$('gsat').classList.remove('on');S.sat=false;if(was)refreshMarkers()}
+function hideSat(){var was=S.sat;tiles(false);$('gsat').classList.remove('on');S.sat=false;if(was)refreshMarkers()}
 function webglOK(){try{var c=document.createElement('canvas');return !!(window.WebGLRenderingContext&&(c.getContext('webgl2')||c.getContext('webgl')))}catch(e){return false}}
 function gm(url){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(url)}
 function setBar(status,sub,btns){
@@ -193,7 +200,7 @@ function msg(t){$('gmsg').textContent=t||''}
 function openOverlay(t,from){
   focusBack=from||document.activeElement;
   S.target=t;
-  $('gov').classList.add('open');$('gov').setAttribute('aria-hidden','false');
+  fitVV();$('gov').classList.add('open');$('gov').setAttribute('aria-hidden','false');
   document.body.style.overflow='hidden';
   $('gtitle').innerHTML=esc(t.name)+'<small>'+esc(t.when||t.date||'')+'</small>';
   $('gchip').classList.remove('show');
@@ -214,6 +221,11 @@ function closeOverlay(){
   if(focusBack&&focusBack.focus)focusBack.focus();
 }
 $('gclose').addEventListener('click',closeOverlay);
+$('ginfo').addEventListener('click',function(){var c=$('gcredit'),on=!c.classList.contains('show');c.classList.toggle('show',on);this.setAttribute('aria-expanded',on?'true':'false')});
+/* size the overlay to the visible part of the screen (iPhone Safari toolbars) */
+function fitVV(){var v=window.visualViewport,r=document.documentElement.style;if(v){r.setProperty('--vvh',v.height+'px');r.setProperty('--vvt',v.offsetTop+'px')}else{r.setProperty('--vvh',window.innerHeight+'px')}if(G)sizeGlobe()}
+if(window.visualViewport){visualViewport.addEventListener('resize',fitVV);visualViewport.addEventListener('scroll',fitVV)}
+window.addEventListener('orientationchange',function(){setTimeout(fitVV,300)});fitVV();
 $('gov').addEventListener('mousedown',function(e){if(e.target===$('gov'))closeOverlay()});
 document.addEventListener('keydown',function(e){
   if(!$('gov').classList.contains('open'))return;
@@ -243,7 +255,7 @@ function lerp(a,b,t){return a+(b-a)*t}
 function pt(t,A,B,peak){var p=slerp(A,B,t);p.alt=peak*Math.sin(Math.PI*t);return p}
 
 /* ---------- markers ---------- */
-var SVG_DIAMOND='<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path d="M11 1.500 20.500 11 11 20.500 1.500 11z" fill="#0b2a6b" stroke="#22d3ff" stroke-width="2.500"/><circle cx="11" cy="11" r="2.600" fill="#fff"/></svg>';
+var SVG_DIAMOND='<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="9.5" fill="#5c4300"/><circle cx="11" cy="11" r="8" fill="#ffc629" stroke="#fff" stroke-width="1.6"/></svg>';
 var SVG_PIN='<svg width="40" height="52" viewBox="0 0 40 52" aria-hidden="true"><path d="M20 50C20 50 3 31 3 19a17 17 0 0 1 34 0C37 31 20 50 20 50z" fill="#ffc629" stroke="#fff" stroke-width="3"/><circle cx="20" cy="19" r="6.500" fill="#0d1b2a"/></svg>';
 var SVG_YOU='<svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="10" fill="none" stroke="#22d3ff" stroke-width="3"/><circle cx="13" cy="13" r="4" fill="#22d3ff"/></svg>';
 function mkEl(d){
@@ -288,19 +300,36 @@ function makeGlobe(){
   G=Globe({animateIn:false,rendererConfig:{antialias:true,powerPreference:'high-performance'}})(st)
     .width(st.clientWidth).height(st.clientHeight)
     .backgroundColor('rgba(0,0,0,0)')
-    .globeImageUrl('img/earth-blue-marble-2048.jpg')
-    .showAtmosphere(true).atmosphereColor('#7ab8ff').atmosphereAltitude(0.2)
-    .globeTileEngineUrl(function(x,y,l){return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/'+l+'/'+y+'/'+x})
-    .globeTileEngineMaxLevel(14)
+    .globeImageUrl('img/earth-day-clouds-4096.jpg').bumpImageUrl('img/earth-bump-2048.jpg')
+    .showAtmosphere(true).atmosphereColor('#8ec5ff').atmosphereAltitude(0.18)
     .htmlLat('lat').htmlLng('lng').htmlAltitude(0.0001).htmlTransitionDuration(0)
     .htmlElement(mkEl)
     ;
   try{G.htmlElementVisibilityModifier(function(el,vis){var low=G&&G.pointOfView().altitude<0.1;el.style.visibility=(vis||(low&&el.classList.contains('sel')))?'visible':'hidden'})}catch(e){}
+  realism();
   try{G.renderer().setPixelRatio(Math.min(window.devicePixelRatio||1,2))}catch(e){}
   var cam=G.camera();cam.near=0.004;cam.far=1500;cam.updateProjectionMatrix();
   var c=G.controls();c.minDistance=100.06;c.maxDistance=600;c.enablePan=false;c.enableDamping=true;c.dampingFactor=0.08;c.autoRotateSpeed=0.6;
   // lift the Earth a little (default lighting is a touch dim)
   try{G.scene().traverse(function(o){if(o.isAmbientLight){o.intensity=1.5}})}catch(e){}
+}
+var TILE_URL=function(x,y,l){return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/'+l+'/'+y+'/'+x};
+var tilesAreOn=false;
+/* satellite tiles on the globe only while zooming in (the whole-globe view uses the 4K day map) */
+function tiles(on){if(!G||tilesAreOn===!!on)return;tilesAreOn=!!on;try{if(on){G.globeTileEngineMaxLevel(14).globeTileEngineUrl(TILE_URL)}else{G.globeTileEngineUrl(null)}}catch(e){}}
+
+function realism(){
+  var m=G.globeMaterial();
+  try{m.bumpScale=6;m.shininess=18;if(m.specular)m.specular.setRGB(0.18,0.2,0.24)}catch(e){}
+  // the bundle does not expose THREE, so borrow the classes from objects the globe already made
+  var tries=0;(function wait(){
+    var tex=m.map;if(!tex||!tex.image){if(++tries<200)setTimeout(wait,100);return}
+    var Tex=tex.constructor,globe=null;
+    G.scene().traverse(function(o){if(!globe&&o.isMesh&&o.material===m)globe=o});
+    function load(url,cb){var i=new Image();i.crossOrigin='anonymous';i.onload=function(){var t=new Tex(i);t.needsUpdate=true;cb(t)};i.src=url}
+    load('img/earth-water-1600.jpg',function(t){m.specularMap=t;m.needsUpdate=true});
+    // clouds are baked into the day texture (a separate transparent cloud shell rendered with black blocks in testing)
+  })();
 }
 function setUserControl(on){var c=G.controls();c.enabled=!!on;c.enableDamping=!!on;if(!on){try{c.update()}catch(e){}}}
 function fitK(){var st=$('gstage'),a=st.clientWidth/Math.max(1,st.clientHeight);return a<1?Math.max(1,0.9/a):1}
@@ -391,7 +420,7 @@ function clearTrail(){$('gpath0').setAttribute('points','');$('gpath1').setAttri
 function fly(tok){
   var A=S.start,B=S.target,d=angDist(A,B),peak=0.04+0.22*(d/Math.PI);
   var path=[];for(var i=0;i<=64;i++){var q=pt(i/64,A,B,peak);path.push([q.lat,q.lng,q.alt])}
-  var plane=$('gplane');plane.style.display='block';plane.style.opacity=1;
+  var plane=$('gplane');plane.style.display='block';plane.style.opacity=1;S.ang=null;
   var dur=3600,t0=performance.now();S.phase='flight';
   var last={x:0,y:0};
   (function step(now){
@@ -403,7 +432,8 @@ function fly(tok){
     var s1=G.getScreenCoords(p.lat,p.lng,p.alt*1.0),s2=G.getScreenCoords(p2.lat,p2.lng,p2.alt);
     drawTrail(path,tp,pov_);
     if(s1){
-      plane.style.transform='translate('+s1.x+'px,'+s1.y+'px) rotate('+(s2&&(Math.abs(s2.x-s1.x)+Math.abs(s2.y-s1.y)>0.01)?Math.atan2(s2.y-s1.y,s2.x-s1.x)*180/Math.PI:0)+'deg)';
+      if(s2&&(Math.abs(s2.x-s1.x)+Math.abs(s2.y-s1.y)>0.3))S.ang=Math.atan2(s2.y-s1.y,s2.x-s1.x)*180/Math.PI; // keep the last heading near touchdown
+      plane.style.transform='translate('+s1.x+'px,'+s1.y+'px) rotate('+(S.ang||0)+'deg)';
     }
     if(u<1){S.raf=requestAnimationFrame(step)}
     else{parkPlane(1);pov(B.lat,B.lng,alt,0);zoomIn(tok,false)}
@@ -415,32 +445,42 @@ function parkPlane(op){
   var t=S.target,plane=$('gplane'),sc=G.getScreenCoords(t.lat,t.lng,0);
   if(!sc||op<=0){plane.style.display='none';return}
   plane.style.display='block';plane.style.opacity=op;
-  var r=(plane.style.transform.match(/rotate\(([-\d.e]+)deg\)/)||[0,0])[1];
-  plane.style.transform='translate('+sc.x+'px,'+sc.y+'px) rotate('+r+'deg)';
+  plane.style.transform='translate('+sc.x+'px,'+sc.y+'px) rotate('+(S.ang||0)+'deg)';
 }
 function zoomIn(tok,quick){
-  var t=S.target;S.phase='zoom';cancelAnimationFrame(S.raf);
+  var t=S.target;S.phase='zoom';cancelAnimationFrame(S.raf);tiles(true);
   loadLeaflet().catch(function(){});
   S.showStart=false;
   var from=rpov();
   var dur=(quick||reduce())?900:3000,t0=performance.now();
   var a0=Math.max(from.altitude,0.02),a1=VENUE_ALT;
-  setBar('Zooming in to '+(t.venue||t.name),'',quick?[]:[{t:'Skip',fn:function(){S.tok++;var k=S.tok;cancelAnimationFrame(S.raf);pov(t.lat,t.lng,VENUE_ALT,0);parkPlane(0);arrive(k)}}]);
+  setBar('Zooming in to '+(t.venue||t.name),'',quick?[]:[{t:'Skip',fn:function(){S.tok++;var k=S.tok;cancelAnimationFrame(S.raf);pov(t.lat,t.lng,VENUE_ALT,0);parkPlane(1);arrive(k)}}]);
   var pathCleared=false;
   (function step(now){
     if(tok!==S.tok)return;
     var u=Math.min(1,(now-t0)/dur),e=ease(u);
     var alt=Math.exp(lerp(Math.log(a0),Math.log(a1),e));
     pov(t.lat,t.lng,alt,0);
-    parkPlane(quick?0:1-Math.min(1,u/0.6));
+    if(!quick)parkPlane(1);
     if(!pathCleared){pathCleared=true;clearTrail()}
-    if(u<1)S.raf=requestAnimationFrame(step);else{clearTrail();parkPlane(0);arrive(tok)}
+    if(u<1)S.raf=requestAnimationFrame(step);else{clearTrail();if(quick)parkPlane(0);arrive(tok)}
   })(performance.now());
 }
 
+/* the arrow stays stuck point-first in the venue point after landing, on the globe and then on the satellite map */
+function holdArrow(tok){
+  var plane=$('gplane');if(plane.style.display==='none')return;
+  var t=S.target;
+  (function step(){
+    if(tok!==S.tok||S.phase!=='arrived'){return}
+    if(S.sat&&SM){var p=SM.latLngToContainerPoint([t.lat,t.lng]);plane.style.transform='translate('+p.x+'px,'+p.y+'px) rotate('+(S.ang||0)+'deg)'}
+    else parkPlane(1);
+    requestAnimationFrame(step);
+  })();
+}
 function arrive(tok){
   if(tok!==S.tok)return;
-  var t=S.target;S.phase='arrived';clearTrail();$('gplane').style.display='none';
+  var t=S.target;S.phase='arrived';clearTrail();holdArrow(tok);
   showSat(t,tok).catch(function(){});
   setUserControl(true);G.controls().autoRotate=false;
   var approx=t.prec==='approx';
@@ -453,7 +493,7 @@ function arrive(tok){
 }
 
 function backToGlobe(){
-  var tok=++S.tok;cancelAnimationFrame(S.raf);setUserControl(false);S.phase='back';hideSat();
+  var tok=++S.tok;cancelAnimationFrame(S.raf);setUserControl(false);S.phase='back';$('gplane').style.display='none';hideSat();
   var t=S.target;pov(t.lat,t.lng,VENUE_ALT,0);
   var from=rpov(),t=S.target,t0=performance.now(),dur=reduce()?500:1800;
   setBar('Back to the globe','Tap a diamond to see an event, then Fly here.',[{t:'Replay flight',gold:true,fn:function(){S.tok++;var k=S.tok;cancelAnimationFrame(S.raf);beginTrip(k)}}]);
@@ -468,7 +508,7 @@ function backToGlobe(){
 }
 
 // for the test scripts
-window.__demo={state:function(){return {phase:S.phase,pov:G&&G.pointOfView(),start:S.start,sat:!!S.sat,satZoom:SM&&SM.getZoom()}},look:function(la,ln){if(G){G.controls().autoRotate=false;pov(la,ln,1.6,0)}},open:function(i){showCard(D.cards[i]);$('mapLink').click()}};
+window.__demo={G:function(){return G},state:function(){return {tiles:tilesAreOn,phase:S.phase,pov:G&&G.pointOfView(),start:S.start,sat:!!S.sat,satZoom:SM&&SM.getZoom()}},look:function(la,ln){if(G){G.controls().autoRotate=false;pov(la,ln,1.6,0)}},open:function(i){showCard(D.cards[i]);$('mapLink').click()}};
 })();
 </script>
 </body>
