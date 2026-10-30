@@ -963,7 +963,7 @@ function vShoot(id){
   const I = !!x._intl, back = I ? iBackHash(x) : '#/browse', AUTZ = {'Australia/Perth': 'Perth time', 'Australia/Darwin': 'Darwin time', 'Australia/Adelaide': 'Adelaide time', 'Australia/Brisbane': 'Brisbane time', 'Australia/Sydney': 'Sydney/Canberra time', 'Australia/Melbourne': 'Melbourne time', 'Australia/Hobart': 'Hobart time'},
     tzTxt = I && x.tz ? TZ_NAME[x.tz] || x.tz : !I && evTz(x) && tzDiff(evTz(x), x.start_date) ? AUTZ[evTz(x)] || '' : '';
   const where = I ? [(x.location || '').replace(/[,\s]+$/, ''), x.us_state && US_ST[x.us_state], x.country_name || x.country].filter(Boolean).filter((v, i, a) => !(i && (a[0] || '').includes(v))).join(', ') : '';
-  const mapUrl = I && x.location ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(where) : '';
+  const mapUrl = I && x.location && !/^\s*(see |tba|tbc|venue not|various|online|postal)|listing/i.test(x.location) ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(where) : '';
   const srcName = x.source_name || (() => { try { return new URL(x.source_url).hostname.replace(/^www\./, ''); } catch { return x.source_url; } })();
   return `<section class="dhero host-hero"><div class="wrap host-row"><div class="host-txt">
     <a class="crumb" href="${back}" id="backLink">← ${I ? esc(back === '#/intl/WORLD' ? 'World' : iName(back.split('/')[2])) + ' events' : 'All events'}</a>
