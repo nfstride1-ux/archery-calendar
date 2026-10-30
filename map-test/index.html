@@ -4,653 +4,424 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>TEMPORARY MOCKUP - World map - Archery Calendar</title>
-<link rel="stylesheet" href="lib/leaflet.css">
+<title>TEMPORARY MOCKUP - Globe map - Archery Calendar</title>
+<link rel="icon" href="../favicon-32.png">
+<link rel="stylesheet" href="../styles.css">
 <style>
-:root{
-  --navy:#040b24; --navy2:#08143a; --land:#14308f; --land-line:#2c55d6;
-  --neon:#22d3ff; --neon-glow:rgba(34,211,255,.55); --gold:#ffc928; --white:#fff; --muted:#c9d6ff;
+.mock-banner{background:#ffc629;color:#0f172a;font-weight:700;font-size:13px;line-height:1.3;padding:6px 12px;text-align:center}
+.mock-wrap{max-width:760px;margin:0 auto;padding:18px 16px 60px}
+.mock-wrap h1{font-size:34px;margin:6px 0 6px}
+.mock-note{color:var(--muted);font-size:15px;margin:0 0 14px}
+.pick{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.pick button,.demo-row select{min-height:44px;font:600 15px var(--body);border:1.5px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;padding:8px 14px;cursor:pointer}
+.pick button[aria-pressed=true]{background:var(--night);color:#fff;border-color:var(--night)}
+.demo-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 16px;font-size:15px;color:var(--ink2)}
+.demo-row select{border-radius:10px}
+#mapLink{display:inline-block;min-height:44px;line-height:44px;font-weight:700;background:none;border:0;padding:0;font-family:var(--body);font-size:16px;color:var(--blue);text-decoration:underline;cursor:pointer}
+#mapLink:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+/* ---------- overlay ---------- */
+#gov{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;background:rgba(2,5,12,.82);color:#fff;font-family:var(--body)}
+#gov.open{display:flex}
+#gdlg{position:relative;display:flex;flex-direction:column;width:min(1120px,95vw);height:min(780px,92vh);background:#02050c;border:1px solid rgba(255,255,255,.18);border-radius:18px;overflow:hidden;box-shadow:0 20px 80px rgba(0,0,0,.7)}
+#ghead{display:flex;align-items:center;gap:12px;padding:10px 12px 10px 18px;background:#050b18;border-bottom:1px solid rgba(255,255,255,.12)}
+#gtitle{flex:1;min-width:0;font:700 20px/1.2 var(--body);color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#gtitle small{display:block;font:500 14px/1.3 var(--body);color:#cbd5e1}
+.gbtn{min-height:48px;min-width:48px;padding:10px 18px;border-radius:12px;border:2px solid #fff;background:rgba(5,11,24,.92);color:#fff;font:700 18px/1.1 var(--body);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;text-align:center}
+.gbtn:hover{background:#16283b}
+.gbtn.gold{background:#ffc629;border-color:#ffc629;color:#0d1b2a}
+.gbtn.gold:hover{background:#ffd75e}
+.gbtn:focus-visible,#gov a:focus-visible{outline:4px solid #ffc629;outline-offset:2px}
+#gstage{position:relative;flex:1;min-height:0;background:#000 url(img/stars-2048.jpg) center/cover;touch-action:none;overflow:hidden}
+#gpath{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}#gpath polyline{stroke-linecap:round;stroke-linejoin:round}#gpath0{stroke:#22d3ff;stroke-width:2;stroke-dasharray:2 8;opacity:.55}#gpath1{stroke:#19d3ff;stroke-width:5;filter:drop-shadow(0 0 5px #0a84ff) drop-shadow(0 0 12px #0a84ff)}#gmount{position:absolute;inset:0}#gstage canvas{display:block}
+#gmsg{position:absolute;left:0;right:0;top:46%;text-align:center;font:700 22px/1.3 var(--body);color:#fff;text-shadow:0 2px 10px #000;pointer-events:none;padding:0 20px}
+#gbar{position:absolute;left:0;right:0;bottom:0;padding:14px 16px 16px;background:linear-gradient(0deg,rgba(2,5,12,.94) 55%,rgba(2,5,12,0));display:flex;flex-direction:column;gap:10px;pointer-events:none}
+#gbar>*{pointer-events:auto}
+#gstatus{font:700 20px/1.3 var(--body);color:#fff;text-shadow:0 1px 8px #000}
+#gsub{font:500 16px/1.4 var(--body);color:#e2e8f0}
+#gbtns{display:flex;flex-wrap:wrap;gap:10px}
+#gcredit{position:absolute;right:8px;top:6px;font:500 12px/1.3 var(--body);color:#e5e7eb;background:rgba(0,0,0,.55);padding:3px 8px;border-radius:6px;pointer-events:none;max-width:70%;text-align:right}
+#gchip{position:absolute;left:12px;top:12px;max-width:min(420px,calc(100% - 24px));background:rgba(5,11,24,.94);border:2px solid #22d3ff;border-radius:14px;padding:12px 14px;display:none;flex-direction:column;gap:8px}
+#gchip.show{display:flex}
+#gchip b{font:700 18px/1.25 var(--body)}
+#gchip span{font:500 15px/1.35 var(--body);color:#e2e8f0}
+/* markers */
+.mk{position:relative;width:44px;height:44px;margin:-22px 0 0 -22px;display:flex;align-items:center;justify-content:center;background:none;border:0;padding:0;cursor:pointer;pointer-events:auto}
+.mk svg{filter:drop-shadow(0 0 4px rgba(34,211,255,.9));display:block}
+.mk.sel{margin-top:-52px}
+.mk.sel svg{filter:drop-shadow(0 0 8px rgba(255,198,41,.95)) drop-shadow(0 2px 3px #000)}
+.mk .lbl{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:-2px;white-space:nowrap;font:700 16px/1.2 var(--body);color:#fff;text-shadow:0 0 4px #000,0 0 8px #000,0 1px 2px #000;pointer-events:none}
+.mk.start{cursor:default}
+.mk.start .lbl{color:#22d3ff}
+.mk.sel .ring{position:absolute;left:50%;top:calc(100% - 6px);width:56px;height:20px;margin-left:-28px;border:3px solid #ffc629;border-radius:50%;animation:ping 1.6s ease-out infinite;pointer-events:none}
+@keyframes ping{0%{transform:scale(.4);opacity:1}100%{transform:scale(1.5);opacity:0}}
+#gplane{position:absolute;left:0;top:0;width:56px;height:56px;margin:-28px 0 0 -28px;pointer-events:none;display:none;filter:drop-shadow(0 0 6px #22d3ff) drop-shadow(0 2px 3px #000)}
+@media (max-width:640px){
+ #gov{background:#02050c}
+ #gdlg{width:100vw;height:100dvh;height:100vh;border-radius:0;border:0}
+ #gtitle{font-size:18px}
+ #gstatus{font-size:19px}
+ #gbtns .gbtn{flex:1 1 100%}
 }
-*{box-sizing:border-box}
-html,body{margin:0;background:var(--navy);color:var(--white);font:18px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
-a{color:var(--neon)}
-:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
-.banner{background:var(--gold);color:#000;font-weight:700;padding:8px 14px;font-size:16px;text-align:center}
-.wrap{max-width:980px;margin:0 auto;padding:12px 14px 40px}
-h1{font-size:30px;line-height:1.15;margin:6px 0 8px}
-h2{font-size:22px;margin:0 0 6px}
-.btn{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:10px 20px;border:3px solid var(--neon);border-radius:12px;
-  background:var(--neon);color:#00102e;font-family:inherit;font-weight:700;font-size:20px;line-height:1.1;cursor:pointer;text-decoration:none}
-.btn:hover{background:#7fe6ff}
-.btn[disabled]{opacity:.45;cursor:not-allowed}
-.btn.ghost{background:transparent;color:var(--white)}
-.btn.ghost:hover{background:rgba(34,211,255,.18)}
-label{display:block;font-weight:700;font-size:20px;margin:12px 0 4px}
-select{width:100%;min-height:52px;font-family:inherit;font-size:18px;color:#fff;background:var(--navy2);border:3px solid var(--land-line);border-radius:12px;padding:8px 10px}
-.hide,[hidden]{display:none!important}
-.sitebar{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:2px solid var(--land);margin-bottom:12px}
-.sitebar strong{font-size:20px;white-space:nowrap}
-.ph{background:var(--navy2);border:2px dashed #2a3f87;border-radius:10px;padding:12px;margin:10px 0;color:var(--muted);font-size:16px}
-/* homepage card */
-.card{position:relative;height:33svh;min-height:230px;border-radius:16px;overflow:hidden;border:3px solid var(--land-line);background:var(--navy)}
-.card #mini{position:absolute;inset:0}
-.card .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,11,36,.1) 0%,rgba(4,11,36,.2) 40%,rgba(4,11,36,.9) 100%);pointer-events:none;z-index:500}
-.card .txt{position:absolute;left:14px;right:14px;bottom:12px;z-index:600;display:flex;flex-direction:column;gap:8px}
-.card .txt h2{font-size:26px;margin:0;text-shadow:0 2px 6px #000}
-.card .txt p{margin:0;font-size:18px;text-shadow:0 2px 6px #000}
-.measure{font-size:16px;color:var(--gold);margin:6px 0 14px;font-weight:700}
-/* map page */
-.controls{display:grid;gap:4px;grid-template-columns:1fr}
-@media(min-width:760px){.controls{grid-template-columns:1fr 1fr}.controls .full{grid-column:1/-1}}
-.actions{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
-#status{min-height:7.5em;font-size:19px;margin:6px 0;color:#fff}
-#status .fl{display:block;margin-top:6px}
-.fl{font-size:24px;line-height:1.25;font-weight:700;color:#fff}
-.fl .est{display:block;font-size:17px;font-weight:400;color:#fff;margin-top:2px}
-#evcard .fl{display:block;margin-top:8px;font-size:22px}
-.leaflet-popup-content .fl{display:block;margin-top:10px;font-size:20px}
-.leaflet-popup-content .fl .est{font-size:15px}
-#evcard{border:3px solid var(--land-line);border-radius:12px;padding:10px 12px;background:var(--navy2);margin:8px 0}
-#evcard.sel{border-color:var(--gold)}
-#evcard .nm{font-size:22px;font-weight:700}
-.mapbox{position:relative;border:3px solid var(--land-line);border-radius:14px;overflow:hidden;background:var(--navy);height:58svh;min-height:340px}
-#map{position:absolute;inset:0;background:var(--navy)}
-#skip{position:absolute;right:10px;top:10px;z-index:1000}
-.legend{display:flex;flex-wrap:wrap;gap:8px 18px;margin:10px 0;font-size:17px;align-items:center}
-.legend span{display:inline-flex;align-items:center;gap:8px}
-.note{font-size:16px;color:var(--muted)}
-/* Leaflet theme */
-.leaflet-container{background:var(--navy);font:inherit}
-.leaflet-control-zoom a{width:44px!important;height:44px!important;line-height:44px!important;font-size:24px!important;background:var(--navy2)!important;color:#fff!important;border:2px solid var(--land-line)!important}
-.leaflet-control-attribution{background:rgba(4,11,36,.85)!important;color:#fff!important;font-size:12px}
-.leaflet-control-attribution a{color:var(--neon)!important}
-.leaflet-tile-pane .tint{filter:invert(1) grayscale(1) sepia(1) hue-rotate(175deg) saturate(4) brightness(.85) contrast(1.1)}
-.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--navy2);color:#fff;border:3px solid var(--gold)}
-.leaflet-popup-content{font-size:18px;margin:12px 14px}
-.leaflet-popup-content a.btn{min-height:46px;font-size:18px;margin-top:8px;color:#00102e}
-.leaflet-container a.leaflet-popup-close-button{color:#fff;font-size:24px;width:34px;height:34px}
-/* pins: diamonds. filled = venue, hollow = town (approximate) */
-.pinh{display:flex;align-items:center;justify-content:center;cursor:pointer}
-.pin{width:var(--ps,14px);height:var(--ps,14px);transform:rotate(45deg);border:2.5px solid var(--neon);background:var(--neon);box-shadow:0 0 8px var(--neon-glow),0 0 0 1px #00102e}
-.pin.town{background:var(--navy);}
-.pin.gold{border-color:var(--gold);background:var(--gold);box-shadow:0 0 14px 4px rgba(255,201,40,.8),0 0 0 2px #fff;width:24px;height:24px}
-.pin.gold.town{background:var(--navy)}
-.pinh:hover .pin{background:#fff}
-.you{width:18px;height:18px;border-radius:50%;border:4px solid #fff;background:var(--navy);box-shadow:0 0 10px var(--neon)}
-.lbl{background:var(--navy2)!important;color:#fff!important;border:2px solid #fff!important;font-size:15px!important;font-weight:700;padding:2px 8px!important}
-.lbl:before{display:none}
-.plane{filter:drop-shadow(0 0 6px var(--neon)) drop-shadow(0 0 2px #000)}
-.plane svg{display:block;transition:none}
-.timelbl{width:0;height:0;overflow:visible;pointer-events:none}
-.timelbl .tb{position:absolute;left:0;top:0;transform:translate(-50%,calc(-100% - 11px));display:flex;flex-direction:column;align-items:center;white-space:nowrap;
-  background:#fff;color:#0a1a4a;border:3px solid #1f4fd8;border-radius:12px;padding:5px 12px 4px;font:700 18px/1.2 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.45)}
-.timelbl .tb .row{display:flex;align-items:center;gap:7px}
-.timelbl .tb svg{width:22px;height:22px;flex:none;transform:rotate(90deg)}
-.timelbl .tb .e{font-size:13px;font-weight:600;color:#33406b;line-height:1.1}
-.timelbl .tb:after{content:"";position:absolute;left:50%;bottom:-11px;margin-left:-9px;width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:10px solid #1f4fd8}
-.timelbl .tb:before{content:"";position:absolute;left:50%;bottom:-6px;margin-left:-6px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:7px solid #fff;z-index:2}
-.timelbl.off{display:none}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-.pulse{animation:pulse 1.6s ease-out infinite;position:absolute;width:24px;height:24px;border-radius:50%;border:3px solid var(--gold)}
-@keyframes pulse{0%{transform:scale(1);opacity:.9}100%{transform:scale(3.2);opacity:0}}
+@media (prefers-reduced-motion:reduce){.mk.sel .ring{animation:none;opacity:.8}}
 </style>
 </head>
 <body>
-<div class="banner">TEMPORARY MOCKUP - hidden test page, not part of the site</div>
+<div class="mock-banner">TEMPORARY MOCKUP - hidden test page, not part of the site</div>
+<div class="mock-wrap">
+  <h1>Event page demo</h1>
+  <p class="mock-note">This is a copy of the Event details card using real events. Tap the Map link to open the globe. Nothing for the globe is downloaded until you do.</p>
+  <div class="pick" id="pick" role="group" aria-label="Pick an event to test"></div>
+  <div class="demo-row"><label for="from">Pretend I am in:</label>
+    <select id="from">
+      <option value="real">My real location (asks permission)</option>
+      <option value="perth" selected>Perth (default if location is not shared)</option>
+      <option value="syd">Sydney</option><option value="lon">London</option><option value="nyc">New York</option><option value="tok">Tokyo</option>
+    </select></div>
+  <section class="panel"><h2 class="sec">Event details</h2><dl class="kv" id="kv"></dl></section>
+  <p class="note" id="srcnote"></p>
+</div>
 
-<!-- ===== VIEW 1: homepage preview card ===== -->
-<main id="home-view" class="wrap">
-  <div class="sitebar"><strong>Archery Calendar</strong><span class="note">Homepage mock</span></div>
-  <section aria-labelledby="cardh">
-    <div class="card" id="card">
-      <div id="mini" aria-hidden="true"></div>
-      <div class="shade"></div>
-      <div class="txt">
-        <h2 id="cardh">World map</h2>
-        <p id="cardp">Archery events around the world.</p>
-        <a class="btn" id="seemap" href="#map">See the world map</a>
-      </div>
-    </div>
-    <p class="measure" id="measure" aria-live="off"></p>
-  </section>
-  <div class="ph">Rest of the homepage goes here (This weekend, Upcoming events, Near me...)</div>
-  <div class="ph">Event list placeholder</div>
-  <div class="ph">Event list placeholder</div>
-</main>
-
-<!-- ===== VIEW 2: full map page ===== -->
-<main id="map-view" class="wrap hide">
-  <div class="sitebar"><strong>Archery Calendar</strong><a href="#home" id="back">Back to homepage card</a></div>
-  <h1>World map of archery events</h1>
-  <p id="countnote" class="note" role="status">Loading events...</p>
-
-  <div class="controls">
-    <div>
-      <label for="country">Country</label>
-      <select id="country" aria-label="Filter events by country"></select>
-    </div>
-    <div>
-      <label for="event">Event</label>
-      <select id="event" aria-label="Choose an event to see on the map"></select>
-    </div>
+<div id="gov" role="dialog" aria-modal="true" aria-labelledby="gtitle" aria-hidden="true">
+ <div id="gdlg">
+  <div id="ghead"><div id="gtitle"></div><button type="button" class="gbtn" id="gclose">Close</button></div>
+  <div id="gstage">
+    <div id="gmount"></div>
+    <div id="gmsg" role="status"></div>
+    <svg id="gpath" aria-hidden="true"><polyline id="gpath0" fill="none"/><polyline id="gpath1" fill="none"/></svg>
+    <div id="gplane" aria-hidden="true"><svg viewBox="0 0 64 64" width="56" height="56"><path d="M60 32c0 2.2-1.8 3.6-4 3.6H40L28 54h-6l5-18.4H14l-5 7H4l3-11.2L4 20.2h5l5 7h13L22 9h6l12 18.4h16c2.200 0 4 1.400 4 3.600z" fill="#fff" stroke="#22d3ff" stroke-width="2.5" stroke-linejoin="round" transform="translate(0 0.4)"/></svg></div>
+    <div id="gchip"><b id="gchipn"></b><span id="gchips"></span><button type="button" class="gbtn gold" id="gchipgo">Fly here</button></div>
+    <div id="gcredit">Imagery: Esri, Maxar, Earthstar Geographics and the GIS User Community. Base: NASA Blue Marble.</div>
+    <div id="gbar"><div id="gstatus" aria-live="polite"></div><div id="gsub"></div><div id="gbtns"></div></div>
   </div>
+ </div>
+</div>
 
-  <div id="evcard"><span class="nm">No event chosen</span><br><span>Choose an event, or tap a pin on the map.</span></div>
-
-  <div class="actions">
-    <button class="btn" id="see" disabled>See location</button>
-    <button class="btn ghost" id="reset" type="button">Reset map</button>
-  </div>
-  <p id="status" role="status" aria-live="polite">Pick an event, then tap See location. We only ask for your location when you tap the button. If you say no, the flight starts from Perth, Western Australia.</p>
-
-  <div class="mapbox">
-    <div id="map" role="region" aria-label="World map of upcoming archery events. Use the Country and Event lists above to choose an event with the keyboard."></div>
-    <button class="btn" id="skip" type="button" hidden>Skip</button>
-  </div>
-  <div class="legend" aria-label="Map key">
-    <span><i class="pin" style="display:inline-block"></i> Venue location</span>
-    <span><i class="pin town" style="display:inline-block"></i> Town only (approximate)</span>
-    <span><i class="pin gold" style="display:inline-block;width:18px;height:18px"></i> Selected event</span>
-  </div>
-  <p class="note" id="datanote"></p>
-</main>
-
-<script src="lib/leaflet.js"></script>
 <script>
 (function(){
 'use strict';
-const TODAY='2026-10-27';              // mock date: "today" for this demo
-const PERTH={lat:-31.9523,lng:115.8613,name:'Perth, Western Australia'};
-const NEAR_KM=50;
-const SRC={
-  events:['https://archerycalendars.com/data/events.json','../data/events.json'],
-  intl:['https://archerycalendars.com/data/intl.json','../data/intl.json'],
-  coords:['https://archerycalendars.com/data/club_coords.json','../data/club_coords.json']
-};
-const $=id=>document.getElementById(id);
-const reduce=()=>window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-let EVENTS=[], BYID={}, STATS={}, dataSource='';
-let landData=null;
+var D=null, cur=null, opener=null;
+var $=function(i){return document.getElementById(i)};
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+var reduce=function(){return window.matchMedia('(prefers-reduced-motion: reduce)').matches};
+var PRESETS={perth:{lat:-31.9505,lng:115.8605,name:'Perth'},syd:{lat:-33.8688,lng:151.2093,name:'Sydney'},lon:{lat:51.5074,lng:-0.1278,name:'London'},nyc:{lat:40.7128,lng:-74.006,name:'New York'},tok:{lat:35.6762,lng:139.6503,name:'Tokyo'}};
 
-/* ---------- data ---------- */
-async function getJSON(urls){
-  for(let i=0;i<urls.length;i++){
-    try{const r=await fetch(urls[i],{cache:'no-cache'});if(r.ok){return {json:await r.json(),live:i===0}}}catch(e){}
+/* ---------- the faux Event details card (same markup and classes as the site) ---------- */
+function showCard(c){
+  cur=c;
+  var rows='';
+  rows+='<dt>When</dt><dd>'+esc(c.when)+(c.tz?'<br><span class="note">Dates are local to the venue ('+esc(c.tz)+').</span>':'')+'</dd>';
+  rows+='<dt>Where</dt><dd>'+esc(c.where)+'<br><button type="button" id="mapLink" aria-haspopup="dialog">\uD83D\uDCCD Map \u2197</button></dd>';
+  rows+='<dt>Type</dt><dd>'+c.icon+' '+esc(c.type)+'</dd>';
+  rows+='<dt>Discipline</dt><dd>'+esc(c.discipline)+'</dd>';
+  rows+='<dt>Level</dt><dd>'+esc(c.level)+'</dd>';
+  rows+='<dt>Organiser</dt><dd>'+esc(c.org)+'</dd>';
+  if(c.close)rows+='<dt>Entries close</dt><dd>'+esc(c.close)+'</dd>';
+  $('kv').innerHTML=rows;
+  $('srcnote').innerHTML='Real event from the Archery Calendar data (<b>'+esc(c.name)+'</b>). Map point: '+esc(c.src)+'.';
+  $('mapLink').addEventListener('click',function(e){e.preventDefault();openOverlay(c,this)});
+  Array.prototype.forEach.call($('pick').children,function(b){b.setAttribute('aria-pressed',b.dataset.id===c.id?'true':'false')});
+}
+fetch('demo-data.json').then(function(r){return r.json()}).then(function(d){
+  D=d;
+  d.cards.forEach(function(c){
+    var b=document.createElement('button');b.type='button';b.dataset.id=c.id;b.textContent=c.country+': '+c.venue;
+    b.addEventListener('click',function(){showCard(c)});$('pick').appendChild(b);
+  });
+  showCard(d.cards[0]);
+});
+
+/* ---------- overlay + globe (everything below is lazy: nothing loads until Map is tapped) ---------- */
+var G=null, libP=null, S={tok:0,phase:'idle',start:null,target:null,raf:0}, focusBack=null;
+
+function loadLib(){
+  if(libP)return libP;
+  libP=new Promise(function(res,rej){
+    var s=document.createElement('script');s.src='lib/globe.gl.min.js';s.onload=res;s.onerror=function(){libP=null;rej(new Error('lib'))};document.head.appendChild(s);
+  });
+  return libP;
+}
+function webglOK(){try{var c=document.createElement('canvas');return !!(window.WebGLRenderingContext&&(c.getContext('webgl2')||c.getContext('webgl')))}catch(e){return false}}
+function gm(url){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(url)}
+function setBar(status,sub,btns){
+  $('gstatus').textContent=status||'';$('gsub').textContent=sub||'';
+  var h=$('gbtns');h.innerHTML='';
+  (btns||[]).forEach(function(b){
+    var e=document.createElement(b.href?'a':'button');e.className='gbtn'+(b.gold?' gold':'');e.textContent=b.t;
+    if(b.href){e.href=b.href;e.target='_blank';e.rel='noopener noreferrer'}else{e.type='button';e.addEventListener('click',b.fn)}
+    h.appendChild(e);
+  });
+}
+function msg(t){$('gmsg').textContent=t||''}
+
+function openOverlay(t,from){
+  focusBack=from||document.activeElement;
+  S.target=t;
+  $('gov').classList.add('open');$('gov').setAttribute('aria-hidden','false');
+  document.body.style.overflow='hidden';
+  $('gtitle').innerHTML=esc(t.name)+'<small>'+esc(t.when||t.date||'')+'</small>';
+  $('gchip').classList.remove('show');
+  $('gclose').focus();
+  var tok=++S.tok;S.phase='loading';
+  msg('Loading the globe...');setBar('','',[]);
+  if(!webglOK()){fallback(t);return}
+  loadLib().then(function(){ if(tok!==S.tok)return; return startGlobe(t,tok)}).catch(function(e){if(window.console)console.error('globe failed',e&&e.stack||e);if(tok===S.tok)fallback(t,e)});
+}
+function fallback(t){
+  S.phase='fallback';msg('');
+  setBar('The 3D globe is not available on this device.',t.where||t.place||'',[{t:'Open in Google Maps',gold:true,href:gm(t.lat+','+t.lng)}]);
+}
+function closeOverlay(){
+  S.tok++;cancelAnimationFrame(S.raf);S.phase='idle';
+  if(G){try{G.pauseAnimation()}catch(e){}}
+  $('gov').classList.remove('open');$('gov').setAttribute('aria-hidden','true');document.body.style.overflow='';
+  if(focusBack&&focusBack.focus)focusBack.focus();
+}
+$('gclose').addEventListener('click',closeOverlay);
+$('gov').addEventListener('mousedown',function(e){if(e.target===$('gov'))closeOverlay()});
+document.addEventListener('keydown',function(e){
+  if(!$('gov').classList.contains('open'))return;
+  if(e.key==='Escape'){e.preventDefault();closeOverlay();return}
+  if(e.key==='Tab'){ // keep focus inside the dialog
+    var f=Array.prototype.filter.call($('gdlg').querySelectorAll('button,a[href],select,[tabindex]:not([tabindex="-1"])'),function(x){return x.offsetParent!==null&&!x.disabled});
+    if(!f.length)return;var a=f[0],z=f[f.length-1];
+    if(e.shiftKey&&document.activeElement===a){e.preventDefault();z.focus()}else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus()}
   }
-  throw new Error('Could not load '+urls[0]);
-}
-const STREET=/\b(St|Street|Rd|Road|Dr|Drive|Ave|Avenue|Pkwy|Parkway|Pkway|Lane|Ln|Highway|Hwy|Blvd|Boulevard|Crescent|Cres|Terrace|Tce|Lot)\b/i;
-function venueTown(loc){
-  if(!loc)return '';
-  let tbc=/confirm|TBA|TBC/i.test(loc);
-  let s=loc.replace(/\([^)]*\)/g,' ').replace(/\s+/g,' ').trim();
-  let parts=s.split(',').map(p=>p.trim()).filter(Boolean);
-  if(!parts.length)return '';
-  let venue=parts[0], rest=parts.slice(1);
-  let venueIsAddr=/\d/.test(venue)||STREET.test(venue);
-  rest=rest.filter(p=>!/\d/.test(p.replace(/\b(NSW|VIC|QLD|WA|SA|TAS|NT|ACT)\b/,''))||false)
-           .filter(p=>!STREET.test(p));
-  // also strip trailing postcodes from kept parts
-  rest=rest.map(p=>p.replace(/\s+\d{4,6}$/,'').trim()).filter(Boolean);
-  let out=venueIsAddr?[]:[venue];
-  out=out.concat(rest.slice(-2));
-  let txt=out.join(', ')||venue.replace(/\d+\w*\s*/g,'');
-  txt=txt.replace(/\s+\d{4,6}\b/g,'');
-  if(tbc&&!/confirm|TBA|TBC/i.test(txt))txt+=' (venue to be confirmed)';
-  return txt;
-}
-function fmtDate(e){
-  const f=d=>new Date(d+'T00:00:00Z').toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
-  const fd=d=>new Date(d+'T00:00:00Z').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'});
-  if(!e.start_date)return 'Dates to be confirmed';
-  if(!e.end_date||e.end_date===e.start_date)return fd(e.start_date)+' '+e.start_date.slice(0,4);
-  return f(e.start_date).replace(/ \d{4}$/,'')+' to '+f(e.end_date);
-}
-async function loadData(){
-  const [a,b,c]=await Promise.all([getJSON(SRC.events),getJSON(SRC.intl),getJSON(SRC.coords)]);
-  dataSource=(a.live&&b.live&&c.live)?'live from archerycalendars.com':'a local copy of the site data files (live fetch failed)';
-  const cn={AUS:'Australia'};
-  (b.json.countries||[]).forEach(x=>cn[x.code]=x.name);
-  const all={};
-  (a.json.events||[]).concat(b.json.events||[]).forEach(e=>{if(!all[e.id])all[e.id]=e});
-  const clubs=c.json.clubs||{}, places=c.json.places||{};
-  let up=0, members=0, noloc=0, venue=0, town=0, bad=0;
-  const out=[];
-  Object.values(all).forEach(e=>{
-    const d=e.end_date||e.start_date;
-    if(e.cancelled)return;
-    if(d&&d<TODAY)return;
-    up++;
-    if(e.members_only){members++;return}
-    let g=places[e.location]||null;
-    if(!g&&e.club_id)g=clubs[e.club_id]||null;
-    if(!g||typeof g.lat!=='number'||typeof g.lng!=='number'){noloc++;return}
-    const p=g.p==='v'?'v':'t';
-    p==='v'?venue++:town++;
-    out.push({id:e.id,name:e.name,cc:e.country_code||'',country:cn[e.country_code]||e.country||'Country to be confirmed',
-      start:e.start_date,end:e.end_date,date:fmtDate(e),sortKey:e.start_date||'9999',
-      place:venueTown(e.location),lat:g.lat,lng:g.lng,p:p});
-  });
-  out.sort((x,y)=>x.sortKey.localeCompare(y.sortKey)||x.name.localeCompare(y.name));
-  EVENTS=out; out.forEach(e=>BYID[e.id]=e);
-  STATS={upcoming:up,pinned:out.length,venue,town,members,noloc};
-}
+});
 
-/* ---------- map building ---------- */
-async function loadLand(){
-  if(landData)return landData;
-  const r=await fetch('data/land.geojson');landData=await r.json();return landData;
+/* ---------- math ---------- */
+var RAD=Math.PI/180;
+function vec(lat,lng){var a=lat*RAD,b=lng*RAD;return [Math.cos(a)*Math.cos(b),Math.cos(a)*Math.sin(b),Math.sin(a)]}
+function unvec(v){return {lat:Math.atan2(v[2],Math.hypot(v[0],v[1]))/RAD,lng:Math.atan2(v[1],v[0])/RAD}}
+function angDist(a,b){var u=vec(a.lat,a.lng),v=vec(b.lat,b.lng);var d=u[0]*v[0]+u[1]*v[1]+u[2]*v[2];return Math.acos(Math.max(-1,Math.min(1,d)))}
+function kmBetween(a,b){return angDist(a,b)*6371}
+function slerp(a,b,t){
+  var u=vec(a.lat,a.lng),v=vec(b.lat,b.lng),d=Math.acos(Math.max(-1,Math.min(1,u[0]*v[0]+u[1]*v[1]+u[2]*v[2])));
+  if(d<1e-6)return {lat:a.lat,lng:a.lng};
+  var s=Math.sin(d),k1=Math.sin((1-t)*d)/s,k2=Math.sin(t*d)/s;
+  return unvec([u[0]*k1+v[0]*k2,u[1]*k1+v[1]*k2,u[2]*k1+v[2]*k2]);
 }
-function landLayers(map){
-  [-360,0,360].forEach(off=>{
-    L.geoJSON(landData,{interactive:false,
-      coordsToLatLng:c=>L.latLng(c[1],c[0]+off),
-      style:{fillColor:'#14308f',fillOpacity:1,color:'#2c55d6',weight:.8}
-    }).addTo(map);
-  });
-}
-function pinIcon(e,sizeClass){
-  return L.divIcon({className:'pinh',html:'<i class="pin '+(e.p==='t'?'town':'')+'"></i>',iconSize:[30,30],iconAnchor:[15,15]});
-}
-function setPinSize(map,el){
-  const z=map.getZoom();
-  el.style.setProperty('--ps',(z<=2.5?9:z<=4?11:z<=7?14:17)+'px');
-}
-let mini;
-async function buildMini(){
-  await loadLand();
-  mini=L.map('mini',{zoomControl:false,attributionControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,touchZoom:false,boxZoom:false,keyboard:false,
-    zoomSnap:.25,minZoom:.5,maxZoom:6,worldCopyJump:false});
-  landLayers(mini);
-  const fit=()=>{mini.invalidateSize();const s=mini.getSize();const z=Math.max(.5,Math.log2(s.x/256)-.15);mini.setView([22,12],z,{animate:false})};
-  fit();
-  EVENTS.forEach(e=>{
-    [-360,0,360].forEach(off=>{
-      L.marker([e.lat,e.lng+off],{icon:L.divIcon({className:'',html:'<i class="pin" style="--ps:5px;border-width:1px;display:block"></i>',iconSize:[8,8],iconAnchor:[4,4]}),interactive:false,keyboard:false}).addTo(mini);
-    });
-  });
-  mini.on('resize',fit);
-  window.addEventListener('resize',fit);
-}
+function ease(t){return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2}
+function sm(t){return t*t*(3-2*t)}
+function lerp(a,b,t){return a+(b-a)*t}
+function pt(t,A,B,peak){var p=slerp(A,B,t);p.alt=peak*Math.sin(Math.PI*t);return p}
 
-let map, pinLayer, routeLayer, planeMarker, selMarker, popup, timeMarker, youMarker, tileLayers=[], pinEls=[];
-let flying=null;
-async function buildMap(){
-  if(map){setTimeout(()=>map.invalidateSize(),50);return}
-  await loadLand();
-  map=L.map('map',{zoomControl:true,attributionControl:true,zoomSnap:.25,zoomDelta:.5,minZoom:1,maxZoom:21,worldCopyJump:false});
-  window.__map=map;
-  map.getContainer().addEventListener('scroll',()=>{fixScroll()});
-  map.attributionControl.setPrefix(false);
-  map.attributionControl.addAttribution('Land: Natural Earth. Venue lookups (c) OpenStreetMap contributors');
-  landLayers(map);
-  pinLayer=L.layerGroup().addTo(map);
-  EVENTS.forEach(e=>{
-    [-360,0,360].forEach(off=>{
-      const m=L.marker([e.lat,e.lng+off],{icon:pinIcon(e),keyboard:false,title:e.name+', '+e.place,alt:''});
-      m.on('click',()=>{selectEvent(e.id,true)});
-      m.addTo(pinLayer);
-    });
-  });
-  const sz=()=>{const z=map.getZoom();$('map').style.setProperty('--ps',(z<=2.5?9:z<=4?11:z<=7?14:17)+'px')};
-  map.on('zoomend',sz);
-  resetView(false);sz();
-}
-function resetView(anim){
-  const s=map.getSize();
-  const z=Math.max(1,Math.log2(s.x/256)-.1);
-  map.setView([22,12],z,{animate:!!anim&&!reduce()});
-}
-function ensureTiles(){
-  if(tileLayers.length)return;
-  // Demo tiles: standard OpenStreetMap tiles recoloured to dark blue with a CSS filter.
-  // (Fine for a demo. The live site needs a proper tile provider; OSM's free servers are not for heavy use.)
-  const t1=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:21,maxNativeZoom:19,className:'tint',opacity:0,attribution:'Map tiles (c) OpenStreetMap contributors'}).addTo(map);
-  const t2={setOpacity(){}};
-  tileLayers=[t1,t2];
-  // tiles fade in as we zoom in, vector land fades back
-  const upd=()=>{
-    const z=map.getZoom(); const k=Math.min(1,Math.max(0,(z-3.5)/2));
-    t1.setOpacity(k); t2.setOpacity(k);
-    const lp=map.getPane('overlayPane'); lp.style.opacity=(1-.65*k).toFixed(2);
-  };
-  map.on('zoom zoomend',upd);upd();
-  t1.on('tileerror',()=>{window.__tileErr=(window.__tileErr||0)+1});
-  t1.on('tileload',()=>{window.__tileOk=(window.__tileOk||0)+1});
-}
-
-/* ---------- selection ---------- */
-let current=null;
-function mapsUrl(e){
-  const q=(e.p==='v')?(e.lat+','+e.lng):(e.place||e.name);
-  return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q);
-}
-function fillCountries(){
-  const sel=$('country');const counts={};
-  EVENTS.forEach(e=>counts[e.country]=(counts[e.country]||0)+1);
-  const names=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]||a.localeCompare(b));
-  sel.innerHTML='<option value="">All countries ('+EVENTS.length+' events)</option>'+names.map(n=>'<option>'+esc(n)+'</option>').join('').replace(/<option>([^<]*)<\/option>/g,(m,n)=>'<option value="'+n+'">'+n+' ('+counts[unesc(n)]+')</option>');
-  fillEvents();
-}
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
-function unesc(s){return String(s).replace(/&quot;/g,'"').replace(/&gt;/g,'>').replace(/&lt;/g,'<').replace(/&amp;/g,'&')}
-function fillEvents(keep){
-  const c=$('country').value;
-  const list=EVENTS.filter(e=>!c||e.country===c);
-  $('event').innerHTML='<option value="">Choose an event ('+list.length+')</option>'+list.map(e=>'<option value="'+esc(e.id)+'">'+esc(e.date.replace(/ \d{4}$/,''))+' - '+esc(e.name)+(c?'':' ('+esc(e.country)+')')+'</option>').join('');
-  if(keep&&list.some(e=>e.id===keep))$('event').value=keep;
-  syncSee();
-}
-function syncSee(){ $('see').disabled=!$('event').value }
-function showCard(e){
-  const c=$('evcard');
-  if(!e){c.className='';c.innerHTML='<span class="nm">No event chosen</span><br><span>Choose an event, or tap a pin on the map.</span>';return}
-  c.className='sel';
-  c.innerHTML='<span class="nm">'+esc(e.name)+'</span><br>'+esc(e.date)+'<br>'+esc(e.place)+(e.p==='t'?' <span class="note">(town-level pin, approximate)</span>':'')+'<br><span class="note">'+esc(e.country)+'</span>';
-}
-function selectEvent(id,fromPin){
-  const e=BYID[id];if(!e)return;
-  current=e;
-  if(fromPin){$('country').value='';fillEvents(id)}
-  $('event').value=id;syncSee();showCard(e);
-  say('Selected: '+e.name+'. Tap See location.');
-  clearFlight(true);
-}
-function say(t,line){
-  const st=$('status');
-  st.innerHTML=esc(t)+(line?'<span class="fl">'+flHtml(line)+'</span>':'');
-}
-function flHtml(line){return esc(line.main)+(line.est?'<span class="est">'+esc(line.est)+'</span>':'')}
-
-/* ---------- geo maths ---------- */
-const rad=x=>x*Math.PI/180, deg=x=>x*180/Math.PI;
-function km(a,b){const R=6371,dLat=rad(b.lat-a.lat),dLng=rad(b.lng-a.lng);
-  const h=Math.sin(dLat/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLng/2)**2;return 2*R*Math.asin(Math.sqrt(h))}
-/* distance and flight-time estimate (haversine distance / 850 km/h + 30 min for takeoff and landing) */
-const CRUISE_KMH=850, OVERHEAD_H=0.5;
-function fmtKm(d){
-  if(d<1)return 'less than 1';
-  if(d<100)return String(Math.round(d));
-  const r=d<1000?Math.round(d/10)*10:Math.round(d/100)*100;
-  return r.toLocaleString('en-AU');
-}
-function flightHours(d){return d/CRUISE_KMH+OVERHEAD_H}
-function fmtTime(h){
-  if(h<1.5)return (Math.round(h*60/5)*5)+' minutes';
-  if(h<10){const r=Math.round(h*2)/2;return (r%1?r.toFixed(1):r)+' hours'}
-  return Math.round(h)+' hours';
-}
-/* returns {main, est} : near events get distance only */
-function flightLine(d,fromName){
-  if(d<=NEAR_KM){
-    const k=fmtKm(d);
-    return {main:(k==='less than 1'?'Less than 1 km away':'About '+k+' km away'),est:''};
+/* ---------- markers ---------- */
+var SVG_DIAMOND='<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path d="M11 1.500 20.500 11 11 20.500 1.500 11z" fill="#0b2a6b" stroke="#22d3ff" stroke-width="2.500"/><circle cx="11" cy="11" r="2.600" fill="#fff"/></svg>';
+var SVG_PIN='<svg width="40" height="52" viewBox="0 0 40 52" aria-hidden="true"><path d="M20 50C20 50 3 31 3 19a17 17 0 0 1 34 0C37 31 20 50 20 50z" fill="#ffc629" stroke="#fff" stroke-width="3"/><circle cx="20" cy="19" r="6.500" fill="#0d1b2a"/></svg>';
+var SVG_YOU='<svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="10" fill="none" stroke="#22d3ff" stroke-width="3"/><circle cx="13" cy="13" r="4" fill="#22d3ff"/></svg>';
+function mkEl(d){
+  var b=document.createElement(d.kind==='pin'?'button':'div');b.className='mk '+d.kind;
+  if(d.kind==='pin'){
+    b.type='button';b.innerHTML=SVG_DIAMOND;b.setAttribute('aria-label','Event: '+d.name+', '+d.place);
+    b.addEventListener('click',function(ev){ev.stopPropagation();pickPin(d)});
+  }else if(d.kind==='sel'){
+    b.innerHTML='<span class="ring"></span>'+SVG_PIN+'<span class="lbl">'+esc(d.label)+'</span>';b.style.pointerEvents='none';
+  }else if(d.kind==='start'){
+    b.innerHTML=SVG_YOU+'<span class="lbl">'+esc(d.label)+'</span>';b.style.pointerEvents='none';
   }
-  return {main:'About '+fmtKm(d)+' km'+(fromName?' from '+fromName:'')+', roughly '+fmtTime(flightHours(d))+' by plane (direct, estimate)',
-    est:'Estimate of direct flying time only, with no stopovers or connections. Real trips usually take longer.'};
+  return b;
 }
-function cardLine(e,line){
-  const c=$('evcard');const old=document.getElementById('cardfl');if(old)old.remove();
-  if(!e||!line)return;
-  c.insertAdjacentHTML('beforeend','<span class="fl" id="cardfl">'+flHtml(line)+'</span>');
+function markers(){
+  var t=S.target,out=[];
+  (D.pins||[]).forEach(function(p){ if(t&&p.id===t.id)return; out.push({kind:'pin',id:p.id,name:p.name,place:p.place,country:p.country,date:p.date,lat:p.lat,lng:p.lng,p:p.p,cc:p.cc}) });
+  if(t)out.push({kind:'sel',lat:t.lat,lng:t.lng,label:t.venue||t.place||t.name});
+  if(S.start&&S.showStart)out.push({kind:'start',lat:S.start.lat,lng:S.start.lng,label:S.start.name});
+  return out;
 }
-function gcPoints(a,b,n){
-  const la1=rad(a.lat),lo1=rad(a.lng),la2=rad(b.lat),lo2=rad(b.lng);
-  const d=2*Math.asin(Math.sqrt(Math.sin((la2-la1)/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin((lo2-lo1)/2)**2));
-  const pts=[];let prev=a.lng;
-  for(let i=0;i<=n;i++){
-    const f=i/n;
-    if(d<1e-9){pts.push([a.lat,a.lng]);continue}
-    const A=Math.sin((1-f)*d)/Math.sin(d),B=Math.sin(f*d)/Math.sin(d);
-    const x=A*Math.cos(la1)*Math.cos(lo1)+B*Math.cos(la2)*Math.cos(lo2);
-    const y=A*Math.cos(la1)*Math.sin(lo1)+B*Math.cos(la2)*Math.sin(lo2);
-    const z=A*Math.sin(la1)+B*Math.sin(la2);
-    const lat=deg(Math.atan2(z,Math.sqrt(x*x+y*y)));let lng=deg(Math.atan2(y,x));
-    while(lng-prev>180)lng-=360;while(lng-prev<-180)lng+=360;
-    prev=lng;pts.push([lat,lng]);
-  }
-  return pts;
-}
-/* time label on the flight line (decorative duplicate of the status text; aria-hidden) */
-function fmtLabel(h){
-  if(h<1.5)return (Math.round(h*60/5)*5)+' min';
-  let r=h<10?Math.round(h*2)/2:Math.round(h);
-  const hr=Math.floor(r), mn=Math.round((r-hr)*60);
-  return hr+' hr'+(mn?' '+mn+' min':'');
-}
-function timeIcon(txt){
-  return L.divIcon({className:'timelbl',iconSize:[0,0],iconAnchor:[0,0],
-    html:'<div class="tb" aria-hidden="true"><span class="row"><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path fill="#0a1a4a" d="M12 1.5c.9 0 1.5.8 1.5 1.9v6.1l8 4.7v2.2l-8-2.3v4.3l2.2 1.6v1.8L12 20.4l-3.7 1.4v-1.8l2.2-1.6v-4.3l-8 2.3v-2.2l8-4.7V3.4c0-1.1.6-1.9 1.5-1.9z"/></svg><span class="t">'+esc(txt)+'</span></span><span class="e">(est.)</span></div>'});
-}
-function updateTimeLbl(){
-  if(!timeMarker||!map)return;
-  const el=timeMarker.getElement();if(!el)return;
-  const pt=map.latLngToContainerPoint(timeMarker.getLatLng()),sz=map.getSize();
-  const ok=pt.x>70&&pt.x<sz.x-70&&pt.y>70&&pt.y<sz.y-10;
-  el.classList.toggle('off',!ok);
-}
-function addTimeLbl(pts,dist){
-  if(timeMarker&&map)map.removeLayer(timeMarker);
-  const mid=pts[Math.floor(pts.length/2)];
-  timeMarker=L.marker(mid,{icon:timeIcon(fmtLabel(flightHours(dist))),keyboard:false,interactive:false,zIndexOffset:1500,alt:''}).addTo(map);
-  map.off('move zoom moveend zoomend',updateTimeLbl);map.on('move zoom moveend zoomend',updateTimeLbl);
-  updateTimeLbl();
-}
-function planeIcon(){
-  return L.divIcon({className:'plane',iconSize:[44,44],iconAnchor:[22,22],
-    html:'<svg id="planesvg" width="44" height="44" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="#ffffff" stroke="#22d3ff" stroke-width="1" d="M12 1.5c.9 0 1.5.8 1.5 1.9v6.1l8 4.7v2.2l-8-2.3v4.3l2.2 1.6v1.8L12 20.4l-3.7 1.4v-1.8l2.2-1.6v-4.3l-8 2.3v-2.2l8-4.7V3.4c0-1.1.6-1.9 1.5-1.9z"/></svg>'});
-}
-function setPlaneAngle(deg_){const s=document.getElementById('planesvg');if(s)s.style.transform='rotate('+deg_+'deg)'}
-const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
-const wait=ms=>new Promise(r=>setTimeout(r,ms));
+function refreshMarkers(){if(G)G.htmlElementsData(markers())}
 
-/* ---------- flight ---------- */
-/* keep the destination pin visible and the popup above it. Never relies on popup autoPan. */
-function fixScroll(){const c=map&&map.getContainer();if(c){c.scrollLeft=0;c.scrollTop=0}}
-async function framePin(dest){
-  fixScroll();
-  const sz=map.getSize();
-  const pe=popup&&popup.getElement();
-  const ph=pe?pe.offsetHeight+34:0;              // popup body plus its tip
-  // pin row: low enough for the popup to fit above it, never lower than 45 px from the bottom, never above the middle
-  const want=Math.max(sz.y/2,Math.min(sz.y-45,ph+16+10));
-  const cur=map.latLngToContainerPoint([dest.lat,dest.lng]);
-  const dx=Math.round(cur.x-sz.x/2), dy=Math.round(cur.y-want);
-  if(Math.abs(dx)>1||Math.abs(dy)>1){
-    if(reduce()){map.panBy([dx,dy],{animate:false})}
-    else await new Promise(r=>{let d=false;const f=()=>{if(!d){d=true;r()}};map.once('moveend',f);map.panBy([dx,dy],{animate:true,duration:.4});setTimeout(f,900)});
-  }
-  fixScroll();
+function pickPin(d){
+  if(S.phase!=='spin'&&S.phase!=='arrived'&&S.phase!=='globe')return;
+  S.chip=d;$('gchipn').textContent=d.name;
+  $('gchips').textContent=d.date+' - '+d.place+', '+d.country+(d.p==='t'?' (town-level map point)':'');
+  $('gchip').classList.add('show');
 }
-let runSeq=0;
-function clearFlight(keepYou){
-  runSeq++;
-  if(flying){flying.cancel=true}
-  flying=null;
-  [routeLayer,planeMarker,selMarker,popup,timeMarker].forEach(l=>{if(l&&map)map.removeLayer(l)});
-  routeLayer=planeMarker=selMarker=popup=timeMarker=null;
-  if(!keepYou&&youMarker&&map){map.removeLayer(youMarker);youMarker=null}
-  if(youMarker&&map){map.removeLayer(youMarker);youMarker=null}
-  $('skip').hidden=true;
+$('gchipgo').addEventListener('click',function(){
+  var d=S.chip;if(!d)return;$('gchip').classList.remove('show');
+  var t={id:d.id,name:d.name,when:d.date,venue:d.place,where:d.place+', '+d.country,lat:d.lat,lng:d.lng,prec:d.p==='v'?'venue':'approx'};
+  $('gtitle').innerHTML=esc(t.name)+'<small>'+esc(t.when)+'</small>';
+  S.target=t;S.tok++;var tok=S.tok;refreshMarkers();beginTrip(tok);
+});
+
+/* ---------- globe ---------- */
+function sizeGlobe(){var st=$('gstage');if(G){G.width(st.clientWidth).height(st.clientHeight)}}
+window.addEventListener('resize',sizeGlobe);
+function makeGlobe(){
+  var st=$('gmount');
+  G=Globe({animateIn:false,rendererConfig:{antialias:true,powerPreference:'high-performance'}})(st)
+    .width(st.clientWidth).height(st.clientHeight)
+    .backgroundColor('rgba(0,0,0,0)')
+    .globeImageUrl('img/earth-blue-marble-2048.jpg')
+    .showAtmosphere(true).atmosphereColor('#7ab8ff').atmosphereAltitude(0.2)
+    .globeTileEngineUrl(function(x,y,l){return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/'+l+'/'+y+'/'+x})
+    .globeTileEngineMaxLevel(17)
+    .htmlLat('lat').htmlLng('lng').htmlAltitude(0.0001).htmlTransitionDuration(0)
+    .htmlElement(mkEl)
+    ;
+  try{G.htmlElementVisibilityModifier(function(el,vis){var low=G&&G.pointOfView().altitude<0.1;el.style.visibility=(vis||(low&&el.classList.contains('sel')))?'visible':'hidden'})}catch(e){}
+  var cam=G.camera();cam.near=0.004;cam.far=1500;cam.updateProjectionMatrix();
+  var c=G.controls();c.minDistance=100.06;c.maxDistance=600;c.enablePan=false;c.enableDamping=true;c.dampingFactor=0.08;c.autoRotateSpeed=0.6;
+  // lift the Earth a little (default lighting is a touch dim)
+  try{G.scene().traverse(function(o){if(o.isAmbientLight){o.intensity=1.5}})}catch(e){}
 }
-function getOrigin(){
-  return new Promise(res=>{
-    const fall=(why)=>res({lat:PERTH.lat,lng:PERTH.lng,name:PERTH.name,fallback:true,why});
-    if(!navigator.geolocation)return fall('This browser has no location feature.');
-    let done=false;
-    const t=setTimeout(()=>{if(!done){done=true;fall('Location took too long.')}},9000);
-    navigator.geolocation.getCurrentPosition(p=>{if(done)return;done=true;clearTimeout(t);
-      res({lat:p.coords.latitude,lng:p.coords.longitude,name:'your location',fallback:false})},
-      err=>{if(done)return;done=true;clearTimeout(t);fall(err&&err.code===1?'Location was not shared.':'Location not available.')},
-      {enableHighAccuracy:false,timeout:8000,maximumAge:600000});
+function setUserControl(on){var c=G.controls();c.enabled=!!on}
+function fitK(){var st=$('gstage'),a=st.clientWidth/Math.max(1,st.clientHeight);return a<1?Math.max(1,0.9/a):1}
+// On a tall, narrow phone screen the camera sits further back so the whole globe fits the width.
+function scaled(alt){var k=fitK();if(k<=1)return alt;var x=Math.max(0,Math.min(1,(alt-0.02)/0.6));return alt*(1+(k-1)*x*x*(3-2*x))}
+function unscaled(alt){if(fitK()<=1)return alt;var lo=0,hi=alt;for(var i=0;i<40;i++){var m=(lo+hi)/2;if(scaled(m)<alt)lo=m;else hi=m}return (lo+hi)/2}
+function pov(lat,lng,alt,ms){G.pointOfView({lat:lat,lng:lng,altitude:scaled(alt)},ms||0)}
+function rpov(){var p=G.pointOfView();return {lat:p.lat,lng:p.lng,altitude:unscaled(p.altitude)}}
+
+function getStart(tok){
+  var v=$('from').value;
+  if(v!=='real')return Promise.resolve(Object.assign({real:false},PRESETS[v]));
+  return new Promise(function(res){
+    var done=false,fin=function(r){if(!done){done=true;res(r)}};
+    if(!navigator.geolocation){fin(Object.assign({real:false,denied:true},PRESETS.perth));return}
+    setTimeout(function(){fin(Object.assign({real:false,denied:true},PRESETS.perth))},9000);
+    navigator.geolocation.getCurrentPosition(function(p){fin({lat:p.coords.latitude,lng:p.coords.longitude,name:'You',real:true})},function(){fin(Object.assign({real:false,denied:true},PRESETS.perth))},{timeout:8000,maximumAge:600000});
   });
 }
-async function seeLocation(){
-  const e=current||BYID[$('event').value];if(!e)return;
-  current=e;
-  $('see').disabled=true;
-  clearFlight();
-  const my=runSeq, stale=()=>my!==runSeq;
-  await buildMap();
-  if(stale())return;
-  ensureTiles();
-  map.invalidateSize();
-  // scroll map into view on phones
-  document.querySelector('.mapbox').scrollIntoView({block:'center',behavior:reduce()?'auto':'smooth'});
-  say('Finding your location...');
-  const o=await getOrigin();
-  if(stale()){syncSee();return}
-  const dist=km(o,e);
-  const oName=o.fallback?PERTH.name+' (starting point; '+o.why+')':'your location';
-  const fromShort=o.fallback?'Perth':'your location';
-  const line=flightLine(dist,fromShort);
-  window.__lastLine=line;
-  youMarker=L.marker([o.lat,o.lng],{icon:L.divIcon({className:'',html:'<div class="you"></div>',iconSize:[18,18],iconAnchor:[9,9]}),keyboard:false,interactive:false})
-    .bindTooltip(o.fallback?'Perth':'You',{permanent:true,direction:'right',className:'lbl',offset:[12,0]}).addTo(map);
 
-  // unwrap destination lng to the copy nearest the origin
-  let dl=((e.lng-o.lng+540)%360)-180; const dlng=o.lng+dl;
-  const dest={lat:e.lat,lng:dlng};
+function startGlobe(t,tok){
+  if(!G){makeGlobe()}else{G.resumeAnimation();sizeGlobe()}
+  S.showStart=false;S.start=null;S.chip=null;
+  refreshMarkers();
+  var c=G.controls();
+  setUserControl(false);c.autoRotate=!reduce();
+  pov(t.lat,t.lng,2.6,0); // whole-globe view while we find the start point
+  S.phase='spin';
+  msg('');setBar('Finding where to fly from...','If your browser asks, allow location to start from where you are. Otherwise we start from Perth.',[{t:'Skip',fn:skip}]);
+  return getStart(tok).then(function(st){ if(tok!==S.tok)return; S.start=st;S.denied=!!st.denied; beginTrip(tok,true)});
+}
 
-  const finish=async(quick)=>{
-    if(stale()){syncSee();return}
-    if(selMarker)map.removeLayer(selMarker);
-    selMarker=L.marker([dest.lat,dest.lng],{icon:L.divIcon({className:'pinh',html:'<span class="pulse"></span><i class="pin gold '+(e.p==='t'?'town':'')+'" style="position:relative"></i>',iconSize:[40,40],iconAnchor:[20,20]}),keyboard:false,zIndexOffset:2000,title:e.name,alt:''}).addTo(map);
-    const z=e.p==='v'?15:11;
-    if(quick||reduce()){map.setView([dest.lat,dest.lng],z,{animate:false});}
-    else{
-      say('Zooming in on '+e.place+'...',line);
-      await new Promise(r=>{let d=false;const f=()=>{if(!d){d=true;r()}};map.once('moveend',f);map.flyTo([dest.lat,dest.lng],z,{duration:2.4});setTimeout(f,3500)});
-    }
-    if(stale()){syncSee();return}
-    const url=mapsUrl(e);
-    const html='<strong>'+esc(e.name)+'</strong><br>'+esc(e.place)+'<br><a class="btn" id="mapslink" target="_blank" rel="noopener" href="'+url+'" aria-label="Open in Maps: '+esc(e.name)+', '+esc(e.place)+'">Open in Maps</a><span class="fl" id="popfl">'+flHtml(line)+'</span>';
-    popup=L.popup({closeOnClick:false,autoClose:false,offset:[0,-16],maxWidth:Math.max(190,Math.min(250,map.getSize().x-140)),autoPan:false,keepInView:false}).setLatLng([dest.lat,dest.lng]).setContent(html).openOn(map);
-    say('Arrived: '+e.name+', '+e.place+'. Use the Open in Maps link at the pin.'+(e.p==='t'?' This pin is the town only, so the position is approximate.':''),line);
-    $('evcard').insertAdjacentHTML('beforeend','<br><a id="cardlink" href="'+url+'" target="_blank" rel="noopener">Open in Maps (same link)</a>');
-    cardLine(e,line);
-    await framePin(dest);
-    const lk=document.getElementById('mapslink');if(lk){lk.focus({preventScroll:true});fixScroll()}
-    $('see').disabled=false;
-    flying=null;$('skip').hidden=true;
-  };
+function skip(){
+  if(S.phase==='arrived')return;
+  S.tok++;var tok=S.tok;cancelAnimationFrame(S.raf);
+  $('gplane').style.display='none';clearTrail();
+  var t=S.target;
+  zoomIn(tok,true);
+}
 
-  if(dist<=NEAR_KM){
-    say('This event is close to '+(o.fallback?'Perth':'you')+', so no flight is needed.',line);
-    showCard(e);cardLine(e,line);
-    await finish(true);
-    say('Close to '+(o.fallback?'Perth':'you')+', so no flight. Use the Open in Maps link at the pin.',line);
+var VENUE_ALT=0.0007;
+/* distance and flight-time estimate (same as the 29 Oct flat-map demo: great-circle distance / 850 km/h + 30 min for takeoff and landing) */
+function fmtKm(d){if(d<100)return String(Math.round(d));return (d<1000?Math.round(d/10)*10:Math.round(d/100)*100).toLocaleString('en-AU')}
+function fmtTime(h){if(h<1.5)return (Math.round(h*60/5)*5)+' minutes';if(h<10){var r=Math.round(h*2)/2;return (r%1?r.toFixed(1):r)+' hours'}return Math.round(h)+' hours'}
+function flightTxt(d){return 'about '+fmtKm(d)+' km, roughly '+fmtTime(d/850+0.5)+' by plane (direct, estimate)'}
+function beginTrip(tok,fresh){
+  var t=S.target;
+  if(!S.start){S.start=Object.assign({real:false},PRESETS.perth)}
+  var st=S.start;
+  S.phase='spin';cancelAnimationFrame(S.raf);G.controls().autoRotate=false;setUserControl(false);
+  $('gchip').classList.remove('show');
+  var km=kmBetween(st,t);
+  var fromTxt=st.real?'your location':(st.denied?'Perth (location not shared)':st.name);
+  S.showStart=true;
+  var quick=reduce(), near=km<50;
+  S.trip=null;
+  if(quick||near){
+    S.showStart=false;refreshMarkers();
+    setBar(near?'Close to you - zooming in':'Zooming in',(near?'The event is about '+Math.round(km)+' km from '+fromTxt+', so there is no flight.':''),[{t:'Skip',fn:skip}]);
+    pov(t.lat,t.lng,2.2,quick?0:1200);
+    setTimeout(function(){if(tok===S.tok)zoomIn(tok,false)},quick?50:1300);
     return;
   }
-  if(reduce()){
-    showCard(e);cardLine(e,line);
-    say('Reduced motion is on, so the map jumps straight to the venue.',line);
-    await finish(true);return;
-  }
+  refreshMarkers();
+  S.trip={km:km,from:fromTxt};
+  setBar('Flying from '+fromTxt,'to '+(t.venue||t.name)+', '+flightTxt(km),[{t:'Skip',fn:skip}]);
+  pov(st.lat,st.lng,2.0,1400);
+  setTimeout(function(){if(tok===S.tok)fly(tok)},1700);
+}
 
-  // flight
-  showCard(e);cardLine(e,line);
-  const f=flying={cancel:false};
-  $('skip').hidden=false;
-  const pts=gcPoints({lat:o.lat,lng:o.lng},dest,160);
-  routeLayer=L.polyline([],{color:'#22d3ff',weight:4,opacity:.95,dashArray:'2 10',lineCap:'round'}).addTo(map);
-  const faint=L.polyline(pts,{color:'#22d3ff',weight:2,opacity:.35}).addTo(map);
-  const b=L.latLngBounds(pts);
-  // show the whole route and the world around it
-  say('Flying from '+oName+' to '+e.place+'. Tap Skip to jump straight there.',line);
-  const s=map.getSize();
-  const zWorld=Math.max(1,Math.log2(s.x/256)-.1);
-  let z0=map.getBoundsZoom(b.pad(.35),false);
-  z0=Math.min(Math.max(z0,1),4.5);
-  if(map.getZoom()<z0-.01||true){
-    await new Promise(r=>{let d=false;const g=()=>{if(!d){d=true;r()}};map.once('moveend',g);map.flyToBounds(b.pad(.35),{maxZoom:4.5,duration:.9});setTimeout(g,1500)});
-  }
-  if(stale()){map.removeLayer(faint);syncSee();return}
-  if(f.cancel){map.removeLayer(faint);return skipEnd()}
-  addTimeLbl(pts,dist);
-  planeMarker=L.marker(pts[0],{icon:planeIcon(),keyboard:false,interactive:false,zIndexOffset:3000}).addTo(map);
-  const DUR=3600, t0=performance.now();
-  const bearing=(i)=>{
-    const a=map.latLngToContainerPoint(pts[Math.max(0,i-1)]),c=map.latLngToContainerPoint(pts[Math.min(pts.length-1,i+1)]);
-    return deg(Math.atan2(c.x-a.x,-(c.y-a.y)));
-  };
-  await new Promise(resolve=>{
-    function step(now){
-      if(f.cancel)return resolve();
-      const t=Math.min(1,(now-t0)/DUR), k=ease(t);
-      const idx=k*(pts.length-1), i=Math.floor(idx), fr=idx-i;
-      const A=pts[i],B2=pts[Math.min(pts.length-1,i+1)];
-      const cur=[A[0]+(B2[0]-A[0])*fr,A[1]+(B2[1]-A[1])*fr];
-      planeMarker.setLatLng(cur);
-      routeLayer.setLatLngs(pts.slice(0,i+1).concat([cur]));
-      setPlaneAngle(bearing(Math.round(idx)));
-      window.__flightProgress=t;
-      if(t>=1)return resolve();
-      requestAnimationFrame(step);
+function drawTrail(path,tp,cam){
+  var n=path.length,upto=Math.max(1,Math.round(tp*(n-1))),cv=vec(cam.lat,cam.lng),lim=1/(1+cam.alt)-0.02;
+  function seg(a,b){
+    var out=[],cur=[];
+    for(var i=a;i<=b;i++){
+      var q=path[i],v=vec(q[0],q[1]),dot=v[0]*cv[0]+v[1]*cv[1]+v[2]*cv[2],sc=dot>lim?G.getScreenCoords(q[0],q[1],q[2]):null;
+      if(sc)cur.push(sc.x.toFixed(1)+','+sc.y.toFixed(1));else{if(cur.length>1)out.push(cur.join(' '));cur=[]}
     }
-    requestAnimationFrame(step);
-  });
-  map.removeLayer(faint);
-  if(stale()){syncSee();return}
-  if(f.cancel){return skipEnd()}
-  if(planeMarker){map.removeLayer(planeMarker);planeMarker=null}
-  await finish(false);
-  function skipEnd(){
-    if(routeLayer)routeLayer.setLatLngs(pts);
-    if(planeMarker){map.removeLayer(planeMarker);planeMarker=null}
-    return finish(true);
+    if(cur.length>1)out.push(cur.join(' '));
+    return out;
   }
+  // polyline cannot hold gaps, so a path that goes round the back is drawn from its longest visible run
+  function best(l){return l.sort(function(a,b){return b.length-a.length})[0]||''}
+  $('gpath0').setAttribute('points',best(seg(0,n-1)));
+  $('gpath1').setAttribute('points',best(seg(0,upto)));
+}
+function clearTrail(){$('gpath0').setAttribute('points','');$('gpath1').setAttribute('points','')}
+function fly(tok){
+  var A=S.start,B=S.target,d=angDist(A,B),peak=0.04+0.22*(d/Math.PI);
+  var path=[];for(var i=0;i<=64;i++){var q=pt(i/64,A,B,peak);path.push([q.lat,q.lng,q.alt])}
+  var plane=$('gplane');plane.style.display='block';
+  var dur=3600,t0=performance.now();S.phase='flight';
+  var last={x:0,y:0};
+  (function step(now){
+    if(tok!==S.tok)return;
+    var u=Math.min(1,(now-t0)/dur),tp=ease(u),tc=ease(Math.max(0,(u-0.07)/0.93));
+    var p=pt(tp,A,B,peak),p2=pt(Math.min(1,tp+0.01),A,B,peak),cp=slerp(A,B,tc);
+    var alt=lerp(1.25,1.25,0)+1.1*Math.sin(Math.PI*u)*Math.min(1,d/1.2)+0.2;
+    pov(cp.lat,cp.lng,alt,0);var pov_={lat:cp.lat,lng:cp.lng,alt:scaled(alt)};
+    var s1=G.getScreenCoords(p.lat,p.lng,p.alt*1.0),s2=G.getScreenCoords(p2.lat,p2.lng,p2.alt);
+    drawTrail(path,tp,pov_);
+    if(s1){
+      plane.style.transform='translate('+s1.x+'px,'+s1.y+'px) rotate('+(s2&&(Math.abs(s2.x-s1.x)+Math.abs(s2.y-s1.y)>0.01)?Math.atan2(s2.y-s1.y,s2.x-s1.x)*180/Math.PI:0)+'deg)';
+    }
+    if(u<1){S.raf=requestAnimationFrame(step)}
+    else{plane.style.display='none';zoomIn(tok,false)}
+  })(performance.now());
 }
 
-/* ---------- views ---------- */
-let started=false;
-async function route(){
-  const h=location.hash.replace('#','')||'home';
-  const isMap=(h==='map');
-  $('home-view').classList.toggle('hide',isMap);
-  $('map-view').classList.toggle('hide',!isMap);
-  if(isMap){
-    await buildMap();
-    map.invalidateSize();
-    resetView(false);
-    window.scrollTo(0,0);
-  }else if(mini){mini.invalidateSize()}
-  measure();
+function zoomIn(tok,quick){
+  var t=S.target;S.phase='zoom';cancelAnimationFrame(S.raf);
+  $('gplane').style.display='none';
+  S.showStart=false;
+  var from=rpov();
+  var dur=(quick||reduce())?900:3000,t0=performance.now();
+  var a0=Math.max(from.altitude,0.02),a1=VENUE_ALT;
+  setBar('Zooming in to '+(t.venue||t.name),'',quick?[]:[{t:'Skip',fn:function(){S.tok++;var k=S.tok;cancelAnimationFrame(S.raf);pov(t.lat,t.lng,VENUE_ALT,0);arrive(k)}}]);
+  var pathCleared=false;
+  (function step(now){
+    if(tok!==S.tok)return;
+    var u=Math.min(1,(now-t0)/dur),e=ease(u);
+    var la=lerp(from.lat,t.lat,e),ln=from.lng;var dl=((t.lng-from.lng+540)%360)-180;ln=from.lng+dl*e;
+    var alt=Math.exp(lerp(Math.log(a0),Math.log(a1),e));
+    pov(la,ln,alt,0);
+    if(!pathCleared){pathCleared=true;clearTrail()}
+    if(u<1)S.raf=requestAnimationFrame(step);else{clearTrail();arrive(tok)}
+  })(performance.now());
 }
-function measure(){
-  const c=$('card');if(!c||$('home-view').classList.contains('hide'))return;
-  const h=Math.round(c.getBoundingClientRect().height),vh=window.innerHeight;
-  $('measure').textContent='Card height on this screen: '+h+' px of '+vh+' px ('+Math.round(100*h/vh)+'% of the screen height).';
-}
-window.addEventListener('hashchange',route);
-window.addEventListener('resize',measure);
 
-async function init(){
-  try{
-    await loadData();
-  }catch(err){
-    $('countnote').textContent='Could not load the event data: '+err.message;
-    $('cardp').textContent='Event data could not be loaded.';
-    return;
-  }
-  const s=STATS;
-  $('cardp').textContent=s.pinned+' upcoming events pinned worldwide.';
-  $('countnote').textContent='Pinned '+s.pinned+' of '+s.upcoming+' upcoming events.';
-  $('datanote').innerHTML='Pinned '+s.pinned+' of '+s.upcoming+' upcoming events ('+s.venue+' at venue level, '+s.town+' at town level, which is approximate). Not pinned: '+s.noloc+' with no usable location, and '+s.members+' members-only. Data: '+esc(dataSource)+'. Events are as at '+TODAY+'.';
-  fillCountries();
-  $('country').addEventListener('change',()=>{fillEvents();current=null;clearFlight();showCard(null);say('Pick an event, then tap See location.')});
-  $('event').addEventListener('change',()=>{const v=$('event').value;if(v)selectEvent(v,false);else{current=null;showCard(null);syncSee()}});
-  $('see').addEventListener('click',seeLocation);
-  $('skip').addEventListener('click',()=>{if(flying)flying.cancel=true});
-  $('reset').addEventListener('click',()=>{clearFlight();if(map){map.closePopup();resetView(true)}say('Map reset.')});
-  $('seemap').addEventListener('click',e=>{});
-  try{await buildMini()}catch(err){console.error(err)}
-  await route();
-  window.__ready=true;
+function arrive(tok){
+  if(tok!==S.tok)return;
+  var t=S.target;S.phase='arrived';clearTrail();
+  setUserControl(true);G.controls().autoRotate=false;
+  var approx=t.prec==='approx';
+  var q=t.lat.toFixed(6)+','+t.lng.toFixed(6);
+  setBar(t.venue||t.name,(t.where?t.where+'. ':'')+(S.trip?'From '+S.trip.from+': '+flightTxt(S.trip.km)+'. ':'')+(approx?'Map point is the town or park area, not the exact range.':'Drag to look around. Pinch or scroll to zoom.'),[
+    {t:'Open in Google Maps',gold:true,href:gm(approx?(t.where||q):q)},
+    {t:'Directions',href:'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(q)},
+    {t:'Back to globe',fn:backToGlobe}
+  ]);
 }
-init();
-// test hooks
-window.__mock={get map(){return map},get stats(){return STATS},get events(){return EVENTS}};
+
+function backToGlobe(){
+  var tok=++S.tok;cancelAnimationFrame(S.raf);setUserControl(false);S.phase='back';
+  var from=rpov(),t=S.target,t0=performance.now(),dur=reduce()?500:1800;
+  setBar('Back to the globe','Tap a diamond to see an event, then Fly here.',[{t:'Replay flight',gold:true,fn:function(){S.tok++;var k=S.tok;cancelAnimationFrame(S.raf);beginTrip(k)}}]);
+  (function step(now){
+    if(tok!==S.tok)return;
+    var u=Math.min(1,(now-t0)/dur),e=ease(u);
+    pov(from.lat,from.lng,Math.exp(lerp(Math.log(Math.max(from.altitude,0.001)),Math.log(2.4),e)),0);
+    if(u<1)S.raf=requestAnimationFrame(step);
+    else{S.phase='globe';setUserControl(true);G.controls().autoRotate=!reduce();
+      setBar('Back to the globe','Drag to turn it. Tap a diamond to see an event, then Fly here.',[{t:'Replay flight',gold:true,fn:function(){S.tok++;var k=S.tok;beginTrip(k)}},{t:'Close',fn:closeOverlay}])}
+  })(performance.now());
+}
+
+// for the test scripts
+window.__demo={state:function(){return {phase:S.phase,pov:G&&G.pointOfView(),start:S.start}},open:function(i){showCard(D.cards[i]);$('mapLink').click()}};
 })();
 </script>
 </body>
