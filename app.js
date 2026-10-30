@@ -939,6 +939,50 @@ function clubShootsHtml(k){
   const L = CSHOOT[k] || []; if (!L.length || k >= iso(today())) return '';
   return `<h3 class="dp-sub">🏆 Club shoot results (${L.length})</h3><p class="note">Published on Archer's Diary. Tap a shoot to see the scores.</p>${L.map(r => `<details class="res-shoot"><summary><b>${esc(r.club_name)}</b><br><small>${esc(r.title)} · ${r.groups.reduce((a, g) => a + g.rows.length, 0)} archers</small></summary>${r.event_id && BYID[r.event_id] ? `<p><a href="#/shoot/${encodeURIComponent(r.event_id)}?r=1">Open the event card ›</a></p>` : ''}<div class="results-box">${resTables(r, 1)}</div><p class="note"><a href="${esc(r.source_url)}" target="_blank" rel="noopener">Source: Archer's Diary ↗</a></p></details>`).join('')}`;
 }
+/* ---------- Map link → 3D globe overlay ----------
+   Venue points come from data/club_coords.json (places by location, then the club). With a point, Map opens the globe in place
+   (globe/globe.js + globe.gl + textures + Leaflet load only on that tap; never precached). No point but a real address: the old
+   Google Maps link. Placeholder or unreliable locations (TBA, online, "see listing", club names with no address in Australia): no link. */
+let GCO = null, GCOP = null, GLP = null;
+const MAP_PH = /^\s*(see |tba|tbc|venue not|venue to be confirmed|host city to be confirmed|various|online|postal)|listing/i;   // 884a155's check, plus locations that are only "to be confirmed"
+const loadCoords = () => GCO ? Promise.resolve(GCO) : (GCOP = GCOP || fetch('data/club_coords.json').then(r => r.json()).then(j => (GCO = j)).catch(() => { GCOP = null; return null; }));
+const evPt = x => { if (!GCO || !x || !x.location || MAP_PH.test(x.location) || /to be confirmed/i.test(x.location)) return null; /* venue still to be confirmed: old Google Maps link, no pin */ const c = GCO.places[x.location] || (x.club_id && GCO.clubs[x.club_id]); return c && isFinite(c.lat) && isFinite(c.lng) ? c : null; };
+const mapWhere = x => { const l = (x.location || '').replace(/[,\s]+$/, ''); return (x._intl ? [l, x.us_state && US_ST[x.us_state], x.country_name || x.country] : [l, x.state, 'Australia']).filter(Boolean).filter((v, i, a) => !(i && (a[0] || '').includes(v))).join(', '); };
+function mapLinkHtml(x){
+  const l = x.location || ''; if (!l || MAP_PH.test(l)) return '';
+  const ext = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(mapWhere(x));
+  if (!GCO) { loadCoords().then(fillMapSlot); return ''; }
+  if (evPt(x)) return `<br><a href="${esc(ext)}" id="mapLink" data-globe="1" aria-haspopup="dialog">📍 Map</a>`;
+  return x._intl || /\d|,/.test(l) ? `<br><a href="${esc(ext)}" target="_blank" rel="noopener" id="mapLink">📍 Map ↗</a>` : '';
+}
+function fillMapSlot(){ const el = document.getElementById('mapSlot'), x = el && BYID[el.dataset.ev]; if (x && GCO) el.innerHTML = mapLinkHtml(x); }
+const loadGlobe = () => GLP || (GLP = new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = 'globe/globe.js?v=globe1030a';
+  sc.onload = () => window.ACGlobe ? res(window.ACGlobe) : rej(new Error('globe')); sc.onerror = () => { GLP = null; sc.remove(); rej(new Error('globe')); }; document.head.appendChild(sc); }));
+function globePins(){   // gold circles: upcoming events (Australia + overseas) with a map point, one per spot (the soonest)
+  return loadIntl().catch(() => null).then(() => { const seen = {}, out = [];
+    EV.concat(INTL ? INTL.events : []).filter(e => !isPast(e) && !e.cancelled && evPt(e)).sort((a, b) => (a.start_date || '').localeCompare(b.start_date || '')).forEach(e => {
+      const c = evPt(e), k = c.lat.toFixed(3) + ',' + c.lng.toFixed(3); if (seen[k]) return; seen[k] = 1;
+      out.push({id: e.id, name: e.name, place: (e.location || '').split(',')[0].trim(), country: e._intl ? (e.country_name || e.country || '') : 'Australia', date: range(e), lat: c.lat, lng: c.lng, p: c.p}); });
+    return out; });
+}
+function openGlobe(x, a){
+  const c = evPt(x); if (!c) return;
+  const h = location.hash; a.setAttribute('aria-busy', 'true');
+  loadGlobe().then(G => {
+    a.removeAttribute('aria-busy'); if (location.hash !== h) return;
+    G.open({id: x.id, name: x.name, when: range(x), venue: (x.location || '').split(',')[0].trim() || x.name, where: mapWhere(x), lat: c.lat, lng: c.lng, prec: c.p === 'v' ? 'venue' : 'approx'},
+      {pins: globePins(), from: a, onClose: silent => { if (!silent && history.state && history.state.globe) history.back(); }});
+    try { history.pushState({globe: 1}, '', location.href); } catch (e) {}   // the phone's back gesture closes the globe, not the page
+  }).catch(() => { a.removeAttribute('aria-busy'); location.assign(a.href); });
+}
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('#mapLink[data-globe]'); if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+  const el = document.getElementById('mapSlot'), x = el && BYID[el.dataset.ev]; if (!x || !evPt(x)) return;
+  e.preventDefault(); openGlobe(x, a);
+});
+window.addEventListener('popstate', () => { if (window.ACGlobe && ACGlobe.isOpen()) ACGlobe.close(true); });
+window.addEventListener('hashchange', () => { if (window.ACGlobe && ACGlobe.isOpen()) ACGlobe.close(true); });
+
 function resultsBox(x){
   if (!x || !isPast(x)) return '';
   const r = RES[x.id];
@@ -968,7 +1012,7 @@ function vShoot(id){
   const I = !!x._intl, back = I ? iBackHash(x) : '#/browse', AUTZ = {'Australia/Perth': 'Perth time', 'Australia/Darwin': 'Darwin time', 'Australia/Adelaide': 'Adelaide time', 'Australia/Brisbane': 'Brisbane time', 'Australia/Sydney': 'Sydney/Canberra time', 'Australia/Melbourne': 'Melbourne time', 'Australia/Hobart': 'Hobart time'},
     tzTxt = I && x.tz ? TZ_NAME[x.tz] || x.tz : !I && evTz(x) && tzDiff(evTz(x), x.start_date) ? AUTZ[evTz(x)] || '' : '';
   const where = I ? [(x.location || '').replace(/[,\s]+$/, ''), x.us_state && US_ST[x.us_state], x.country_name || x.country].filter(Boolean).filter((v, i, a) => !(i && (a[0] || '').includes(v))).join(', ') : '';
-  const mapUrl = I && x.location && !/^\s*(see |tba|tbc|venue not|various|online|postal)|listing/i.test(x.location) ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(where) : '';
+  const mapSlot = `<span id="mapSlot" data-ev="${esc(x.id)}">${mapLinkHtml(x)}</span>`;   // Map link: 3D globe in place when we have the venue point (globe/globe.js, loaded on tap)
   const srcName = x.source_name || (() => { try { return new URL(x.source_url).hostname.replace(/^www\./, ''); } catch { return x.source_url; } })();
   return `<section class="dhero host-hero"><div class="wrap host-row"><div class="host-txt">
     <a class="crumb" href="${back}" id="backLink">← ${I ? esc(back === '#/intl/WORLD' ? 'World' : iName(back.split('/')[2])) + ' events' : 'All events'}</a>
@@ -989,7 +1033,7 @@ function vShoot(id){
     ${payBox(x)}
     <section class="panel"><h2 class="sec">Event details</h2><dl class="kv">
       <dt>When</dt><dd>${esc(range(x))}${I ? `<br><span class="note">Dates are local to the venue${tzTxt ? ' (' + esc(tzTxt) + ')' : ''}.</span>` : ''}${x.date_note ? '<br><span class="note">⚠ Dates differ between sources – see the note above.</span>' : ''}</dd>
-      ${I ? `<dt>Where</dt><dd>${esc(where || 'Venue not published yet')}${mapUrl ? `<br><a href="${esc(mapUrl)}" target="_blank" rel="noopener" id="mapLink">📍 Map ↗</a>` : ''}</dd>` : `<dt>Where</dt><dd>${esc(x.location || '—')}${x.host ? `<br><span class="note">Host club: ${esc(x.host)}${x.venue_is_host_only ? ' – check the organiser for the exact range' : ''}</span>` : ''}${x.state && !(x.location || '').includes(' ' + x.state) ? ' · ' + esc(x.state) : ''}${x.country ? '<br><span class="note">' + esc(x.country) + '</span>' : ''}</dd>`}
+      ${I ? `<dt>Where</dt><dd>${esc(where || 'Venue not published yet')}${mapSlot}</dd>` : `<dt>Where</dt><dd>${esc(x.location || '—')}${x.host ? `<br><span class="note">Host club: ${esc(x.host)}${x.venue_is_host_only ? ' – check the organiser for the exact range' : ''}</span>` : ''}${x.state && !(x.location || '').includes(' ' + x.state) ? ' · ' + esc(x.state) : ''}${x.country ? '<br><span class="note">' + esc(x.country) + '</span>' : ''}${mapSlot}</dd>`}
       ${CLUB[x.club_id] ? `<dt>Club</dt><dd><button type="button" class="linkbtn club-name" data-clubpop="${esc(x.club_id)}" aria-haspopup="dialog">${esc(CLUB[x.club_id].name)}</button>${clubBadge(x) ? ' ' + clubBadge(x) : ''}</dd>` : ''}
       ${(x.intl_clubs || []).filter(id => CLUB[id]).length ? `<dt>Club${x.intl_clubs.length > 1 ? 's' : ''}</dt><dd>${x.intl_clubs.filter(id => CLUB[id]).map(id => `<button type="button" class="linkbtn club-name" data-clubpop="${esc(id)}" aria-haspopup="dialog">${esc(CLUB[id].name)}</button>${followed().includes(id) ? ' <span class="b watching">👁 Watching</span>' : ''}`).join(', ')}</dd>` : ''}
       ${x.coach ? `<dt>Coach</dt><dd>${esc(x.coach)}</dd>` : ''}
