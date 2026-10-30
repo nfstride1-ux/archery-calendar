@@ -44,7 +44,9 @@ def nominatim(q, cc):
 MANUAL = {'Circle E Guest Ranch, 1 Circle E Lane, Belvidere TN 37306': {'lat': 35.09339, 'lng': -86.09888, 'p': 'v', 'q': 'Circle E Guest Ranch, Tennessee'},
           'Red Lodge Mountain, 305 Ski Run Rd, Red Lodge MT 59068': {'lat': 45.19075, 'lng': -109.33687, 'p': 'v', 'q': 'Red Lodge Mountain, 305 Ski Run Rd, Red Lodge MT'},
           'Sporting Club at the Farm, 4939 River Rd, New Albany IN': {'lat': 38.21642, 'lng': -85.86791, 'p': 'v', 'q': 'Sporting Club at the Farm, River Rd, New Albany IN'},
-          'Crystal Mountain Resort, 12500 Crystal Mountain Dr, Thompsonville MI': {'lat': 44.51903, 'lng': -85.99044, 'p': 'v', 'q': '12500 Crystal Mountain Dr, Thompsonville MI'}}
+          'Crystal Mountain Resort, 12500 Crystal Mountain Dr, Thompsonville MI': {'lat': 44.51903, 'lng': -85.99044, 'p': 'v', 'q': '12500 Crystal Mountain Dr, Thompsonville MI'},
+          # a live (submitted) event, so not in events.json: always written; US Census match for the street address
+          '11209 Shaw Rd E, Puyallup WA 98374': {'lat': 47.15441, 'lng': -122.25587, 'p': 'v', 'q': '11209 Shaw Rd E, Puyallup WA'}}
 
 # Venues checked by hand against the venue's own page or the event's official listing, applied to every place string that names them
 # (the geocoder put these at a suburb or town centre, or at the wrong town). None = no pin at all.
@@ -61,10 +63,128 @@ MANUAL_MATCH = [
      {'lat': 40.78071, 'lng': -112.03723, 'p': 'v', 'q': 'Easton Salt Lake Archery Center, 575 John Glenn Rd'}),
     (r'Lancaster Archery (Academy|Supply)', {'lat': 40.04121, 'lng': -76.22694, 'p': 'v', 'q': 'Lancaster Archery Supply, 2195 Old Philadelphia Pike'}),
     (r'Ben Avery Shooting Facility', {'lat': 33.81459, 'lng': -112.16097, 'p': 'v', 'q': 'Ben Avery Shooting Facility, Phoenix AZ'}),
+    # Oct 30 2026: every remaining event without a point, checked by hand (Vegas Shoot first). Sources: the venue's or club's own page,
+    # OSM, the US Census geocoder, or the venue's place listing; 't' = only the road or town is reliable.
+    (r'\bHorseshoe\b.*\b(Las Vegas|Planet Hollywood)\b|Las Vegas.*\bHorseshoe\b', {'lat': 36.11348, 'lng': -115.16906, 'p': 'v', 'q': 'Horseshoe Las Vegas, 3645 Las Vegas Blvd S'}),   # The Vegas Shoot FAQ (main venue, Horseshoe)
+    (r'11209 Shaw Rd E, Puyallup', {'lat': 47.15441, 'lng': -122.25587, 'p': 'v', 'q': '11209 Shaw Rd E, Puyallup WA'}),   # US Census address match
+    (r'47491 Road 210', {'lat': 37.06124, 'lng': -119.68235, 'p': 'v', 'q': '47491 Road 210, Friant CA'}),   # US Census address match
+    (r'9317 Swasey Dr', {'lat': 40.56016, 'lng': -122.47399, 'p': 'v', 'q': '9317 Swasey Dr, Redding CA'}),   # US Census address match
+    (r'NFAA Easton Yankton', {'lat': 42.87638, 'lng': -97.36668, 'p': 'v', 'q': 'NFAA Easton Yankton Archery Center, 800 Archery Ln'}),   # OSM
+    (r'Evolution Archery Range', {'lat': 35.21895, 'lng': -85.21538, 'p': 'v', 'q': '8408 Gulf View Dr, Soddy-Daisy TN'}),   # US Census
+    (r'Red Dawn Armory', {'lat': 38.32304, 'lng': -87.56711, 'p': 'v', 'q': '2178 N Old Hwy 41 S, Princeton IN'}),   # US Census
+    (r'Anderson Archery, 1324 Alton Station', {'lat': 38.07736, 'lng': -84.9515, 'p': 'v', 'q': '1324 Alton Station Rd, Lawrenceburg KY'}),   # US Census
+    (r'Next Step Archery', {'lat': 47.79627, 'lng': -122.32708, 'p': 'v', 'q': '22313 70th Ave W, Mountlake Terrace WA'}),   # US Census
+    (r'Sandhills Archery Club, 3001', {'lat': 46.88177, 'lng': -96.95497, 'p': 'v', 'q': '3001 Charyl Ave NW, West Fargo ND'}),   # US Census
+    (r'Archery HQ, 5277', {'lat': 29.61831, 'lng': -98.12436, 'p': 'v', 'q': '5277 FM 1044, New Braunfels TX'}),   # US Census
+    (r'Trident Archery', {'lat': 33.83931, 'lng': -118.25598, 'p': 'v', 'q': '1050 E Dominguez St, Carson CA'}),   # US Census
+    (r'HotShots Archery Academy', {'lat': 39.69177, 'lng': -84.03777, 'p': 'v', 'q': '2750 Indian Ripple Rd, Dayton OH'}),   # US Census
+    (r'Hit or Miss Archery', {'lat': 35.11278, 'lng': -106.62929, 'p': 'v', 'q': '2801 Broadbent Pkwy NE, Albuquerque NM'}),   # US Census
+    (r'95 Gibson Flats', {'lat': 47.47245, 'lng': -111.24265, 'p': 'v', 'q': '95 Gibson Flats Rd, Great Falls MT'}),   # US Census
+    (r'Texas Archery, 10265', {'lat': 30.65219, 'lng': -96.26909, 'p': 'v', 'q': '10265 State Hwy 30, College Station TX'}),   # US Census
+    (r'Spooky Nook', {'lat': 40.106, 'lng': -76.41893, 'p': 'v', 'q': 'Spooky Nook Sports, 75 Champ Blvd, Manheim PA'}),   # OSM
+    (r'Crossville Shooting Sports Park', {'lat': 35.96485, 'lng': -84.96383, 'p': 'v', 'q': 'Crossville Shooting Sports Park, TN'}),   # OSM
+    (r'Otter Creek Outdoor Recreation', {'lat': 37.94546, 'lng': -86.04676, 'p': 'v', 'q': 'Otter Creek Outdoor Recreation Area, KY'}),   # OSM
+    (r'Chieftain Center', {'lat': 39.51465, 'lng': -82.37351, 'p': 'v', 'q': 'The Chieftain Center, Logan OH'}),   # OSM
+    (r'Two Mile Run County Park', {'lat': 41.48217, 'lng': -79.76826, 'p': 'v', 'q': 'Two Mile Run County Park, PA'}),   # OSM
+    (r'Canaan Valley Resort', {'lat': 39.02438, 'lng': -79.4649, 'p': 'v', 'q': 'Canaan Valley Resort, WV'}),   # OSM
+    (r'Carson (Field|Stadium)', {'lat': 33.86424, 'lng': -118.26108, 'p': 'v', 'q': 'Dignity Health Sports Park, Carson CA'}),   # OSM
+    (r'Clarke Community Middle and High School', {'lat': 41.04399, 'lng': -93.77189, 'p': 'v', 'q': 'Clarke Community Schools, Osceola IA'}),   # OSM
+    (r'Graham Creek Interpretive', {'lat': 30.34789, 'lng': -87.63267, 'p': 'v', 'q': 'Graham Creek Nature Preserve, Foley AL'}),   # OSM
+    (r'Camp Minden', {'lat': 32.57897, 'lng': -93.39853, 'p': 'v', 'q': 'Camp Minden, LA'}),   # OSM
+    (r'GSU Shooting Sports', {'lat': 32.41547, 'lng': -81.79658, 'p': 'v', 'q': 'GSU Shooting Sports Education Center, Statesboro GA'}),   # OSM
+    (r'^Cortland, New York', {'lat': 42.60118, 'lng': -76.18048, 'p': 't', 'q': 'Cortland, New York'}),   # town only, no venue in the listing
+    (r'Uchee Creek Campground', {'lat': 32.30509, 'lng': -84.95821, 'p': 'v', 'q': 'Uchee Creek Campground, 7 Uchee Creek Rd, Fort Mitchell AL'}),   # Fort Benning MWR address, place listing
+    (r'Capital Region Archery Club', {'lat': 53.51285, 'lng': -113.42301, 'p': 'v', 'q': 'Capital Region Archery Club, 5618 76 Ave NW, Edmonton AB'}),   # crarchery.ca contact page, place listing
+    (r'Adair Shooting Park', {'lat': 32.75014, 'lng': -114.43852, 'p': 't', 'q': 'Adair Park Rd, Yuma County AZ'}),   # access road only
+    (r'SAT Football Stadium, Bangkok', {'lat': 13.75543, 'lng': 100.62216, 'p': 'v', 'q': 'SAT Stadium, Hua Mak, Bangkok'}),   # OSM
+    (r'Dubai Club for People of Determination', {'lat': 25.27772, 'lng': 55.36294, 'p': 'v', 'q': 'Dubai Club for People of Determination'}),   # OSM
+    (r'Khorfakkan Club', {'lat': 25.3221, 'lng': 56.3294, 'p': 'v', 'q': 'Khorfakkan Club, Sharjah'}),   # OSM
+    (r'Tottori Prefectural Gymnasium', {'lat': 35.5002, 'lng': 134.17717, 'p': 'v', 'q': 'Tottori Prefectural Gymnasium'}),   # OSM
+    (r'Samsun İlkadım', {'lat': 41.32012, 'lng': 36.33339, 'p': 'v', 'q': 'Samsun archery range'}),   # OSM
+    (r'Yucatán Siglo XXI', {'lat': 21.03383, 'lng': -89.62959, 'p': 'v', 'q': 'Centro de Convenciones Siglo XXI, Mérida'}),   # OSM
+    (r'Le Parnasse.*N[iî]mes', {'lat': 43.81672, 'lng': 4.36368, 'p': 'v', 'q': 'Le Parnasse, Nîmes'}),   # OSM
+    (r'Rannahof', {'lat': 48.51526, 'lng': 14.56921, 'p': 'v', 'q': 'Rannahof, Etzelsdorf 7'}),   # OSM
+    (r'^Preims 10', {'lat': 46.89871, 'lng': 14.76292, 'p': 'v', 'q': 'Preims 10, 9412'}),   # OSM
+    (r'Bellinge Idrætscenter', {'lat': 55.34156, 'lng': 10.31954, 'p': 'v', 'q': 'Bellinge Idrætscenter, Odense'}),   # OSM
+    (r'Dunedin Archery Club', {'lat': -45.84446, 'lng': 170.53605, 'p': 'v', 'q': '10 Afton Terrace, Dunedin'}),   # OSM
+    (r'Graham Park.*Tauranga|Tauranga Archers - Graham Park', {'lat': -37.69588, 'lng': 176.15755, 'p': 'v', 'q': 'Graham Park, 79 Edgecumbe Rd, Tauranga'}),   # OSM
+    (r'Massey Archery Club|Annett Road Kumeu', {'lat': -36.79883, 'lng': 174.50709, 'p': 't', 'q': 'Annett Rd, Kumeu (club at no. 167)'}),   # road only; masseyarchery.org.nz contact page
+    (r'^Evesham Archery Club', {'lat': 52.08867, 'lng': -1.88855, 'p': 'v', 'q': 'Evesham Archery Club'}),   # OSM
+    (r'^Meriden Archery Club', {'lat': 52.43991, 'lng': -1.65622, 'p': 'v', 'q': 'Meriden Archery Club'}),   # OSM
+    (r'^York Archery Society', {'lat': 53.98639, 'lng': -1.03385, 'p': 'v', 'q': 'Hopgrove Playing Fields, 440 Malton Rd, York'}),   # yorkarchers.co.uk session-times page
+    (r'Thurbon R(oa)?d|^Canberra Archery Club', {'lat': -35.24572, 'lng': 149.12895, 'p': 'v', 'q': 'Canberra Archery Club, 41 Thurbon Rd, Lyneham ACT'}),   # club address, place listing
+    (r'^Tuggeranong', {'lat': -35.42274, 'lng': 149.06057, 'p': 'v', 'q': 'Tuggeranong Archery Club, 299 Soward Way, Greenway ACT'}),   # club address
+    (r'^Weston Valley Archery Club', {'lat': -35.33077, 'lng': 149.05257, 'p': 'v', 'q': 'Weston Valley Archery Club, Weston Creek ACT'}),   # OSM
+    (r'^Paringa', {'lat': -41.43918, 'lng': 147.09562, 'p': 'v', 'q': 'Paringa Archers, 201 Reatta Rd, Trevallyn TAS'}),   # paringaarchers.org.au newsletters: outdoor and indoor ranges both at Trevallyn Reserve
+    (r'Arrows Plus', {'lat': -37.874, 'lng': 144.73897, 'p': 'v', 'q': 'Arrows Plus, 17 Wallace Ave, Point Cook VIC'}),   # arrowsplus.net contact page
+    (r'^Werribee Archers', {'lat': -37.85173, 'lng': 144.76344, 'p': 'v', 'q': 'Werribee Archery, Lawrie Emmins Reserve, Laverton North VIC'}),   # place listing
+    (r'^Westlakes Archers', {'lat': -32.98316, 'lng': 151.58125, 'p': 'v', 'q': 'Fassifern Oval, Fassifern NSW'}),   # OSM pitch, club directory
+    (r'^Shirewood Forest Archers', {'lat': -34.0329, 'lng': 150.99496, 'p': 'v', 'q': 'The Ridge, 40 Recreation Dr, Barden Ridge NSW'}),   # place listing
+    (r'^Loxley Archers', {'lat': -41.08322, 'lng': 145.91221, 'p': 'v', 'q': 'Havenview Primary School, Marriott St, Burnie TAS'}),   # place listing
+    (r'^Van Diemen Archers', {'lat': -42.94371, 'lng': 147.31326, 'p': 'v', 'q': 'The Lea Scout Centre, Gilwell Dr, Kingston TAS'}),   # OSM building
+    (r'^Central Coast Indoor Archery Club', {'lat': -33.41384, 'lng': 151.34125, 'p': 'v', 'q': 'Gosford Showground, NSW'}),   # OSM
     (r'Easton Newberry Archery Center', {'lat': 29.64635, 'lng': -82.6065, 'p': 't', 'q': 'Newberry, Florida'}),   # street address not in OSM; town only, never Gainesville
 ]
 MANUAL_CLUBS = {'hobart-archers': {'lat': -42.89419, 'lng': 147.49488, 'p': 'v', 'q': '195 Roches Beach Rd, Lauderdale TAS'},
-                'whiteman-park-archers': {'lat': -31.80537, 'lng': 115.92349, 'p': 'v', 'q': 'WA Archery Centre, Jules Steiner Memorial Dr, Whiteman WA'}}
+                'whiteman-park-archers': {'lat': -31.80537, 'lng': 115.92349, 'p': 'v', 'q': 'WA Archery Centre, Jules Steiner Memorial Dr, Whiteman WA'},
+                # Oct 30 2026: clubs whose events name only the club; range addresses from the club's own page or its place listing
+                'canberra-archery-club': {'lat': -35.24572, 'lng': 149.12895, 'p': 'v', 'q': '41 Thurbon Rd, Lyneham ACT'},
+                'tuggeranong-archery-club': {'lat': -35.42274, 'lng': 149.06057, 'p': 'v', 'q': '299 Soward Way, Greenway ACT'},
+                'capital-field-archers': {'lat': -35.56747, 'lng': 149.07937, 'p': 'v', 'q': 'Capital Field Archers, Tharwa ACT'},
+                'gold-coast-archery-club': {'lat': -28.14059, 'lng': 153.40171, 'p': 'v', 'q': 'Gold Coast Archery Club'},
+                'pacific-bowmen': {'lat': -28.09665, 'lng': 153.39357, 'p': 'v', 'q': 'Pacific Bowmen'},
+                'moorabbin-archery-club': {'lat': -37.95027, 'lng': 145.05646, 'p': 'v', 'q': 'Moorabbin Archery Club'},
+                'sherbrooke-archers': {'lat': -37.9053, 'lng': 145.30783, 'p': 'v', 'q': 'Sherbrooke Archers'},
+                'lilydale-bowmen': {'lat': -37.84623, 'lng': 145.3297, 'p': 'v', 'q': 'Lilydale Bowmen'},
+                'paringa-archers': {'lat': -41.43918, 'lng': 147.09562, 'p': 'v', 'q': '201 Reatta Rd, Trevallyn TAS'},
+                'twin-city-archers-gippsland': {'lat': -38.22576, 'lng': 146.38481, 'p': 'v', 'q': 'Twin City Archers Gippsland'},
+                'victor-harbor-archery-club': {'lat': -35.52953, 'lng': 138.55654, 'p': 'v', 'q': 'Victor Harbor Archery Club'},
+                'mackay-district-bowmen': {'lat': -20.90393, 'lng': 148.96365, 'p': 'v', 'q': 'Mackay & District Bowmen'},
+                'townsville-district-bowhunters': {'lat': -19.33439, 'lng': 146.70495, 'p': 'v', 'q': 'Townsville District Bowhunters'},
+                'freds-pass-field-archers': {'lat': -12.53901, 'lng': 131.04724, 'p': 'v', 'q': '20 Bees Creek Rd, Freds Pass NT'},
+                'dead-centre-bowhunters': {'lat': -23.77008, 'lng': 133.79303, 'p': 'v', 'q': 'Alice Springs shooting complex, Ilparpa Rd NT'},
+                'werribee-archery': {'lat': -37.85173, 'lng': 144.76344, 'p': 'v', 'q': 'Lawrie Emmins Reserve, Laverton North VIC'},
+                'phoenix-field-archers-of-sale': {'lat': -38.18089, 'lng': 147.06606, 'p': 'v', 'q': 'Phoenix Field Archers, Longford VIC'},
+                'west-gippsland-field-archers': {'lat': -38.16793, 'lng': 145.93798, 'p': 'v', 'q': 'Galloway St, Warragul VIC'},
+                'wide-bay-archers': {'lat': -25.40577, 'lng': 152.75785, 'p': 'v', 'q': 'Hervey Bay Rd, Susan River QLD'},
+                'macalister-trophy-bowhunters': {'lat': -37.88914, 'lng': 146.88838, 'p': 'v', 'q': '107 Commonyard Rd, Newry VIC'},
+                'bairnsdale-field-archers': {'lat': -37.77151, 'lng': 147.68898, 'p': 'v', 'q': '685 Great Alpine Rd, Sarsfield VIC'},
+                'geelong-archers': {'lat': -38.07287, 'lng': 144.32201, 'p': 'v', 'q': '100 Asher Rd, Lovely Banks VIC'},
+                'sunshine-coast-archery-club': {'lat': -26.70307, 'lng': 153.06604, 'p': 'v', 'q': '176 Ballinger Rd, Buderim QLD'},
+                'hervey-bay-archers': {'lat': -25.35322, 'lng': 152.80679, 'p': 'v', 'q': 'Old Rifle Range Rd, Sunshine Acres QLD'},
+                'ddfa': {'lat': -27.50105, 'lng': 151.92426, 'p': 'v', 'q': '69 Willims Rd, Cranley QLD'},
+                'moranbah-bowhunters-and-field-archers': {'lat': -21.99714, 'lng': 148.02124, 'p': 'v', 'q': 'Sarchedon Dr, Moranbah QLD'},
+                'boola-valley-field-archers': {'lat': -38.22513, 'lng': 146.38564, 'p': 'v', 'q': 'Toners Lane Archery Park, Morwell VIC'},
+                'full-draw-field-archers': {'lat': -23.29439, 'lng': 150.54195, 'p': 'v', 'q': '399 Yeppoon Rd, Limestone Creek QLD'},
+                'wa-field-and-bowhunters-club': {'lat': -31.80498, 'lng': 115.92605, 'p': 'v', 'q': 'Whiteman Park International Shooting Complex WA'},
+                'mallee-sunset-field-archers': {'lat': -34.33591, 'lng': 142.13713, 'p': 'v', 'q': 'Red Cliffs-Meringur Rd, Red Cliffs VIC'},
+                'bendigo-field-archers': {'lat': -36.74714, 'lng': 144.35264, 'p': 'v', 'q': 'Tresize Track, Wellsford VIC'},
+                'grange-bowmen': {'lat': -27.35196, 'lng': 152.98478, 'p': 'v', 'q': '534 Albany Creek Rd, Bridgeman Downs QLD'},
+                'bacchus-marsh-bowmen': {'lat': -37.52441, 'lng': 144.56125, 'p': 'v', 'q': '28 Bullard Rd, Gisborne VIC'},
+                'van-diemen-archers': {'lat': -42.94371, 'lng': 147.31326, 'p': 'v', 'q': 'The Lea Scout Centre, Gilwell Dr, Kingston TAS'},
+                'towers-bowhunters': {'lat': -20.03414, 'lng': 146.28938, 'p': 'v', 'q': '52 Archer Rd, Dunmovin QLD'},
+                'saxon-archery-club': {'lat': -24.78987, 'lng': 152.19877, 'p': 'v', 'q': '260 Quinns Rd, Moorland QLD'},
+                'orange-district-archers': {'lat': -33.21761, 'lng': 149.20304, 'p': 'v', 'q': '773 Lower Lewis Ponds Rd, Clifton Grove NSW'},
+                'snowy-bowmen-field-archers': {'lat': -36.07407, 'lng': 148.86673, 'p': 'v', 'q': 'Snowy Mountains Hwy, Cooma NSW'},
+                'colac-otway-archers': {'lat': -38.4089, 'lng': 143.69701, 'p': 'v', 'q': 'Colac Otway archery range, Yeodene VIC'},
+                'warwick-and-district-archers': {'lat': -28.26047, 'lng': 151.95272, 'p': 'v', 'q': '212 Ford Rd, Rosenthal Heights QLD'},
+                'greenough-field-archery': {'lat': -28.96461, 'lng': 114.73474, 'p': 'v', 'q': 'Hampton Ranges, Company Rd, Greenough WA'},
+                'hinchinbrook': {'lat': -18.67191, 'lng': 146.14351, 'p': 'v', 'q': 'Market St, Ingham QLD'},
+                'lakeside-bowmen': {'lat': -27.23839, 'lng': 152.94495, 'p': 'v', 'q': '188 Scout Rd, Kurwongbah QLD'},
+                'wagga-wagga-field-archers': {'lat': -35.15476, 'lng': 147.56626, 'p': 'v', 'q': '327 Wokolena Rd, Alfredtown NSW'},
+                'silver-city-archers': {'lat': -31.91963, 'lng': 141.4714, 'p': 't', 'q': 'Willyama Common, Broken Hill NSW'},
+                'full-boar-archers': {'lat': -19.35409, 'lng': 146.49683, 'p': 'v', 'q': '8 Rifle Range Rd, Hervey Range QLD'},
+                'western-plains-archers': {'lat': -32.0902, 'lng': 116.08689, 'p': 'v', 'q': 'Heath Rd (north end), Roleystone WA'},
+                'collinsville-barebow-hunters': {'lat': -20.49036, 'lng': 147.84702, 'p': 'v', 'q': 'State Route 77, Collinsville QLD'},
+                'yorke-peninsula-field-archers': {'lat': -33.96809, 'lng': 137.7049, 'p': 'v', 'q': 'South Tce, Kadina SA'},
+                'murray-mallee-field-archers': {'lat': -34.87158, 'lng': 139.27943, 'p': 'v', 'q': 'Long Gully Rd, Mannum SA'},
+                'swan-hill-archers': {'lat': -35.1709, 'lng': 143.35875, 'p': 'v', 'q': 'Nyah West Golf Club, 202 Yarraby Rd, Nyah VIC'},
+                'baldivis-archery-club': {'lat': -32.27323, 'lng': 115.75924, 'p': 't', 'q': '1521 Ennis Ave, East Rockingham WA (road)'},
+                'granite-belt-bowmen': {'lat': -28.68053, 'lng': 151.94251, 'p': 't', 'q': 'Speranza Ln, Stanthorpe QLD (road)'},
+                'southern-yorke-archers': {'lat': -34.72095, 'lng': 137.58578, 'p': 't', 'q': 'Southern Yorke Archers, Minlaton SA'},
+                'gloucester-district-archers': {'lat': -31.8975, 'lng': 151.87915, 'p': 't', 'q': 'Rookhurst NSW (locality)'},
+                'central-coast-moonterra-archers': {'lat': -33.19739, 'lng': 151.42566, 'p': 't', 'q': 'Woods Rd, Jilliby NSW (road)'},
+}
 def apply_manual(places, clubs):
     for loc in list(places):
         for rx, v in MANUAL_MATCH:
@@ -188,7 +308,7 @@ def main():
         out['places'][loc] = r
         print('intl', loc[:60], '->', r and (r['p'], r['q'][:60])); sys.stdout.flush()
     for loc, v in MANUAL.items():   # venues Nominatim misses from the full address, checked by hand against OpenStreetMap
-        if loc in out['places']: out['places'][loc] = v
+        out['places'][loc] = v
     apply_manual(out['places'], out['clubs'])
     n_c = sum(1 for v in out['clubs'].values() if v)
     res = {'generated': datetime.date.today().isoformat(),
@@ -197,4 +317,21 @@ def main():
            'places': {k: ({'lat': v['lat'], 'lng': v['lng'], 'p': v['p']} if v else None) for k, v in out['places'].items()}}
     json.dump(res, open(D('club_coords.json'), 'w'), indent=0, ensure_ascii=False, separators=(',', ':'))
     print('clubs with coordinates', n_c, 'of', len(out['clubs']), '| places', sum(1 for v in out['places'].values() if v), 'of', len(out['places']))
-if __name__ == '__main__': main()
+def patch():
+    """--patch: apply the hand-checked overrides to the existing data/club_coords.json without geocoding again."""
+    res = json.load(open(D('club_coords.json')))
+    places = {k: (dict(v) if v else None) for k, v in res['places'].items()}
+    clubs = res['clubs']
+    for f in ('events.json', 'intl.json'):   # locations added since the last full run: only the hand-checked overrides can fill them here
+        for x in json.load(open(D(f)))['events']:
+            loc = (x.get('location') or '').strip()
+            if loc and loc not in places and any(v and re.search(rx, loc, re.I) for rx, v in MANUAL_MATCH): places[loc] = None
+    for loc, v in MANUAL.items():
+        places[loc] = v
+    apply_manual(places, clubs)
+    res['places'] = {k: ({'lat': v['lat'], 'lng': v['lng'], 'p': v['p']} if v else None) for k, v in places.items()}
+    res['clubs'] = {k: ({'lat': v['lat'], 'lng': v['lng'], 'p': v['p'], 'q': v['q']} if v else None) for k, v in clubs.items()}
+    res['generated'] = datetime.date.today().isoformat()
+    json.dump(res, open(D('club_coords.json'), 'w'), indent=0, ensure_ascii=False, separators=(',', ':'))
+    print('clubs with coordinates', sum(1 for v in clubs.values() if v), 'of', len(clubs), '| places', sum(1 for v in res['places'].values() if v), 'of', len(places))
+if __name__ == '__main__': patch() if '--patch' in sys.argv else main()

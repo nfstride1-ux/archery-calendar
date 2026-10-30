@@ -945,7 +945,7 @@ function clubShootsHtml(k){
    (globe/globe.js + globe.gl + textures + Leaflet load only on that tap; never precached). No point but a real address: the old
    Google Maps link. Placeholder or unreliable locations (TBA, online, "see listing", club names with no address in Australia): no link. */
 let GCO = null, GCOP = null, GLP = null;
-const MAP_PH = /^\s*(see |tba|tbc|venue not|venue to be confirmed|host city to be confirmed|various|online|postal|shot at your own|at your own club)|listing/i;   // 884a155's check, plus locations that are only "to be confirmed"
+const MAP_PH = /^\s*(see |tba|tbc|t\.b\.c\.|venue (not|tba|tbc|to be)|host (city|club) (to be confirmed|tba)|host ranges|your home range|various|online|postal|shot at your own|at your own club)|listing/i;   // 884a155's check, plus locations that are only "to be confirmed" or a placeholder (Venue TBA, Host club TBA, your home range): no link at all, never a Google search for the placeholder
 const loadCoords = () => GCO ? Promise.resolve(GCO) : (GCOP = GCOP || fetch('data/club_coords.json').then(r => r.json()).then(j => (GCO = j)).catch(() => { GCOP = null; return null; }));
 // The club's own ground stands in for an event only when the event's location names that club; otherwise the club point would send the globe
 // and Directions to the club's home range while the panel names another venue.

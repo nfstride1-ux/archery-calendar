@@ -1,9 +1,19 @@
 {
-"generated":"2026-10-25",
+"generated":"2026-10-30",
 "note":"Coordinates for clubs and event venues, geocoded only from addresses and place names already in the calendar data (OpenStreetMap Nominatim, (c) OpenStreetMap contributors, ODbL). p: v = a venue or street, t = only a suburb, town or city. null = no reliable location, never guessed.",
 "clubs":{
-"canberra-archery-club":null,
-"tuggeranong-archery-club":null,
+"canberra-archery-club":{
+"lat":-35.24572,
+"lng":149.12895,
+"p":"v",
+"q":"41 Thurbon Rd, Lyneham ACT"
+},
+"tuggeranong-archery-club":{
+"lat":-35.42274,
+"lng":149.06057,
+"p":"v",
+"q":"299 Soward Way, Greenway ACT"
+},
 "ballina-devils-archers":null,
 "boolaroo-bowmen":{
 "lat":-32.98316,
@@ -19,9 +29,19 @@
 "q":"Cobbitty, New South Wales"
 },
 "campbelltown-district-field-archers":null,
-"capital-field-archers":null,
+"capital-field-archers":{
+"lat":-35.56747,
+"lng":149.07937,
+"p":"v",
+"q":"Capital Field Archers, Tharwa ACT"
+},
 "casino-eagle-archers":null,
-"central-coast-moonterra-archers":null,
+"central-coast-moonterra-archers":{
+"lat":-33.19739,
+"lng":151.42566,
+"p":"t",
+"q":"Woods Rd, Jilliby NSW (road)"
+},
 "coast-archers-peats-ridge":{
 "lat":-33.35856,
 "lng":151.29407,
@@ -34,7 +54,12 @@
 "p":"v",
 "q":"Tallara Drive, Moruya NSW 2537, New South Wales"
 },
-"gloucester-district-archers":null,
+"gloucester-district-archers":{
+"lat":-31.8975,
+"lng":151.87915,
+"p":"t",
+"q":"Rookhurst NSW (locality)"
+},
 "hunter-bowmen":null,
 "illawarra-archers":{
 "lat":-34.41067,
@@ -65,7 +90,12 @@
 "p":"t",
 "q":"Uralla NSW, New South Wales"
 },
-"orange-district-archers":null,
+"orange-district-archers":{
+"lat":-33.21761,
+"lng":149.20304,
+"p":"v",
+"q":"773 Lower Lewis Ponds Rd, Clifton Grove NSW"
+},
 "penrith-city-archers":{
 "lat":-33.75867,
 "lng":150.75796,
@@ -78,7 +108,12 @@
 "p":"t",
 "q":"Shellharbour NSW, New South Wales"
 },
-"snowy-bowmen-field-archers":null,
+"snowy-bowmen-field-archers":{
+"lat":-36.07407,
+"lng":148.86673,
+"p":"v",
+"q":"Snowy Mountains Hwy, Cooma NSW"
+},
 "south-west-slopes-sporting-field-archers":null,
 "sopa":{
 "lat":-33.84434,
@@ -86,15 +121,30 @@
 "p":"t",
 "q":"Bennelong Pkwy, New South Wales"
 },
-"wagga-wagga-field-archers":null,
+"wagga-wagga-field-archers":{
+"lat":-35.15476,
+"lng":147.56626,
+"p":"v",
+"q":"327 Wokolena Rd, Alfredtown NSW"
+},
 "warringah-archers":{
 "lat":-33.73852,
 "lng":151.2763,
 "p":"t",
 "q":"Cromer, New South Wales"
 },
-"dead-centre-bowhunters":null,
-"freds-pass-field-archers":null,
+"dead-centre-bowhunters":{
+"lat":-23.77008,
+"lng":133.79303,
+"p":"v",
+"q":"Alice Springs shooting complex, Ilparpa Rd NT"
+},
+"freds-pass-field-archers":{
+"lat":-12.53901,
+"lng":131.04724,
+"p":"v",
+"q":"20 Bees Creek Rd, Freds Pass NT"
+},
 "aspire-archery":null,
 "centenary-archers":{
 "lat":-27.56402,
@@ -102,27 +152,92 @@
 "p":"v",
 "q":"427 Wacol Station Rd, Sumner QLD 4074, Queensland"
 },
-"collinsville-barebow-hunters":null,
-"ddfa":null,
+"collinsville-barebow-hunters":{
+"lat":-20.49036,
+"lng":147.84702,
+"p":"v",
+"q":"State Route 77, Collinsville QLD"
+},
+"ddfa":{
+"lat":-27.50105,
+"lng":151.92426,
+"p":"v",
+"q":"69 Willims Rd, Cranley QLD"
+},
 "emerald-archery-club":null,
-"full-boar-archers":null,
-"full-draw-field-archers":null,
-"gold-coast-archery-club":null,
-"grange-bowmen":null,
-"granite-belt-bowmen":null,
-"hervey-bay-archers":null,
-"hinchinbrook":null,
-"lakeside-bowmen":null,
+"full-boar-archers":{
+"lat":-19.35409,
+"lng":146.49683,
+"p":"v",
+"q":"8 Rifle Range Rd, Hervey Range QLD"
+},
+"full-draw-field-archers":{
+"lat":-23.29439,
+"lng":150.54195,
+"p":"v",
+"q":"399 Yeppoon Rd, Limestone Creek QLD"
+},
+"gold-coast-archery-club":{
+"lat":-28.14059,
+"lng":153.40171,
+"p":"v",
+"q":"Gold Coast Archery Club"
+},
+"grange-bowmen":{
+"lat":-27.35196,
+"lng":152.98478,
+"p":"v",
+"q":"534 Albany Creek Rd, Bridgeman Downs QLD"
+},
+"granite-belt-bowmen":{
+"lat":-28.68053,
+"lng":151.94251,
+"p":"t",
+"q":"Speranza Ln, Stanthorpe QLD (road)"
+},
+"hervey-bay-archers":{
+"lat":-25.35322,
+"lng":152.80679,
+"p":"v",
+"q":"Old Rifle Range Rd, Sunshine Acres QLD"
+},
+"hinchinbrook":{
+"lat":-18.67191,
+"lng":146.14351,
+"p":"v",
+"q":"Market St, Ingham QLD"
+},
+"lakeside-bowmen":{
+"lat":-27.23839,
+"lng":152.94495,
+"p":"v",
+"q":"188 Scout Rd, Kurwongbah QLD"
+},
 "logan-archers":null,
-"mackay-district-bowmen":null,
-"moranbah-bowhunters-and-field-archers":null,
+"mackay-district-bowmen":{
+"lat":-20.90393,
+"lng":148.96365,
+"p":"v",
+"q":"Mackay & District Bowmen"
+},
+"moranbah-bowhunters-and-field-archers":{
+"lat":-21.99714,
+"lng":148.02124,
+"p":"v",
+"q":"Sarchedon Dr, Moranbah QLD"
+},
 "mount-petrie-bowmen":{
 "lat":-27.51927,
 "lng":153.13482,
 "p":"v",
 "q":"1485 Old Cleveland Rd, Belmont QLD 4153, Queensland"
 },
-"pacific-bowmen":null,
+"pacific-bowmen":{
+"lat":-28.09665,
+"lng":153.39357,
+"p":"v",
+"q":"Pacific Bowmen"
+},
 "renegade-bowmen":{
 "lat":-27.66127,
 "lng":152.82412,
@@ -136,15 +251,45 @@
 "p":"v",
 "q":"2204 Mount Samson Rd, Samford Valley QLD, Queensland"
 },
-"saxon-archery-club":null,
-"sunshine-coast-archery-club":null,
+"saxon-archery-club":{
+"lat":-24.78987,
+"lng":152.19877,
+"p":"v",
+"q":"260 Quinns Rd, Moorland QLD"
+},
+"sunshine-coast-archery-club":{
+"lat":-26.70307,
+"lng":153.06604,
+"p":"v",
+"q":"176 Ballinger Rd, Buderim QLD"
+},
 "tableland-company-of-archers":null,
 "toowoomba-company-of-archers":null,
-"towers-bowhunters":null,
-"townsville-district-bowhunters":null,
+"towers-bowhunters":{
+"lat":-20.03414,
+"lng":146.28938,
+"p":"v",
+"q":"52 Archer Rd, Dunmovin QLD"
+},
+"townsville-district-bowhunters":{
+"lat":-19.33439,
+"lng":146.70495,
+"p":"v",
+"q":"Townsville District Bowhunters"
+},
 "townsville-target-archers":null,
-"warwick-and-district-archers":null,
-"wide-bay-archers":null,
+"warwick-and-district-archers":{
+"lat":-28.26047,
+"lng":151.95272,
+"p":"v",
+"q":"212 Ford Rd, Rosenthal Heights QLD"
+},
+"wide-bay-archers":{
+"lat":-25.40577,
+"lng":152.75785,
+"p":"v",
+"q":"Hervey Bay Rd, Susan River QLD"
+},
 "adelaide-archery-club":{
 "lat":-34.90835,
 "lng":138.60874,
@@ -195,24 +340,44 @@
 "q":"West Beach Primary School, West Beach SA, South Australia"
 },
 "light-archers":null,
-"mallee-sunset-field-archers":null,
+"mallee-sunset-field-archers":{
+"lat":-34.33591,
+"lng":142.13713,
+"p":"v",
+"q":"Red Cliffs-Meringur Rd, Red Cliffs VIC"
+},
 "medieval-archers":null,
 "mid-north-archers":null,
-"murray-mallee-field-archers":null,
+"murray-mallee-field-archers":{
+"lat":-34.87158,
+"lng":139.27943,
+"p":"v",
+"q":"Long Gully Rd, Mannum SA"
+},
 "playford-district-field-archers":{
 "lat":-34.67495,
 "lng":138.74517,
 "p":"t",
 "q":"Uleybury, South Australia"
 },
-"silver-city-archers":null,
+"silver-city-archers":{
+"lat":-31.91963,
+"lng":141.4714,
+"p":"t",
+"q":"Willyama Common, Broken Hill NSW"
+},
 "southern-vales-archery-club":{
 "lat":-35.1261,
 "lng":138.52648,
 "p":"v",
 "q":"Wheatsheaf Rd, Morphett Vale SA 5162, South Australia"
 },
-"southern-yorke-archers":null,
+"southern-yorke-archers":{
+"lat":-34.72095,
+"lng":137.58578,
+"p":"t",
+"q":"Southern Yorke Archers, Minlaton SA"
+},
 "the-farm-indoor-archery-club":{
 "lat":-34.92818,
 "lng":138.59993,
@@ -226,9 +391,19 @@
 "p":"v",
 "q":"Birdwood High School, Birdwood SA, South Australia"
 },
-"victor-harbor-archery-club":null,
+"victor-harbor-archery-club":{
+"lat":-35.52953,
+"lng":138.55654,
+"p":"v",
+"q":"Victor Harbor Archery Club"
+},
 "whyalla-bowmen":null,
-"yorke-peninsula-field-archers":null,
+"yorke-peninsula-field-archers":{
+"lat":-33.96809,
+"lng":137.7049,
+"p":"v",
+"q":"South Tce, Kadina SA"
+},
 "burnie-archery-club":{
 "lat":-41.05237,
 "lng":145.90641,
@@ -247,41 +422,116 @@
 "p":"v",
 "q":"195 Roches Beach Rd, Lauderdale TAS"
 },
-"paringa-archers":null,
-"van-diemen-archers":null,
+"paringa-archers":{
+"lat":-41.43918,
+"lng":147.09562,
+"p":"v",
+"q":"201 Reatta Rd, Trevallyn TAS"
+},
+"van-diemen-archers":{
+"lat":-42.94371,
+"lng":147.31326,
+"p":"v",
+"q":"The Lea Scout Centre, Gilwell Dr, Kingston TAS"
+},
 "a-i-m-archers-in-melbourne":null,
 "angel-archers":null,
 "archers-of-warrnambool":null,
-"bacchus-marsh-bowmen":null,
-"bairnsdale-field-archers":null,
-"bendigo-field-archers":null,
-"boola-valley-field-archers":null,
+"bacchus-marsh-bowmen":{
+"lat":-37.52441,
+"lng":144.56125,
+"p":"v",
+"q":"28 Bullard Rd, Gisborne VIC"
+},
+"bairnsdale-field-archers":{
+"lat":-37.77151,
+"lng":147.68898,
+"p":"v",
+"q":"685 Great Alpine Rd, Sarsfield VIC"
+},
+"bendigo-field-archers":{
+"lat":-36.74714,
+"lng":144.35264,
+"p":"v",
+"q":"Tresize Track, Wellsford VIC"
+},
+"boola-valley-field-archers":{
+"lat":-38.22513,
+"lng":146.38564,
+"p":"v",
+"q":"Toners Lane Archery Park, Morwell VIC"
+},
 "box-hill-city-archers":null,
 "chewton-archers":null,
-"colac-otway-archers":null,
+"colac-otway-archers":{
+"lat":-38.4089,
+"lng":143.69701,
+"p":"v",
+"q":"Colac Otway archery range, Yeodene VIC"
+},
 "diamond-valley-archers":null,
 "frankston-archery-club":null,
-"geelong-archers":null,
+"geelong-archers":{
+"lat":-38.07287,
+"lng":144.32201,
+"p":"v",
+"q":"100 Asher Rd, Lovely Banks VIC"
+},
 "geelong-trophy-bowhunters":null,
 "greater-hamilton-archers":null,
 "horsham-company-of-archers":null,
 "kew-city-bowmen":null,
 "koondrook-barham-archers":null,
-"lilydale-bowmen":null,
-"macalister-trophy-bowhunters":null,
-"moorabbin-archery-club":null,
+"lilydale-bowmen":{
+"lat":-37.84623,
+"lng":145.3297,
+"p":"v",
+"q":"Lilydale Bowmen"
+},
+"macalister-trophy-bowhunters":{
+"lat":-37.88914,
+"lng":146.88838,
+"p":"v",
+"q":"107 Commonyard Rd, Newry VIC"
+},
+"moorabbin-archery-club":{
+"lat":-37.95027,
+"lng":145.05646,
+"p":"v",
+"q":"Moorabbin Archery Club"
+},
 "mt-clay-archers":null,
 "north-eastern-archers":null,
 "orion-archers":null,
 "peninsular-target-archers":null,
 "phoenix-archery-club":null,
-"phoenix-field-archers-of-sale":null,
-"sherbrooke-archers":null,
+"phoenix-field-archers-of-sale":{
+"lat":-38.18089,
+"lng":147.06606,
+"p":"v",
+"q":"Phoenix Field Archers, Longford VIC"
+},
+"sherbrooke-archers":{
+"lat":-37.9053,
+"lng":145.30783,
+"p":"v",
+"q":"Sherbrooke Archers"
+},
 "south-eastern-target-archers":null,
 "southern-cross-archery-club":null,
-"swan-hill-archers":null,
+"swan-hill-archers":{
+"lat":-35.1709,
+"lng":143.35875,
+"p":"v",
+"q":"Nyah West Golf Club, 202 Yarraby Rd, Nyah VIC"
+},
 "tooborac-archers":null,
-"twin-city-archers-gippsland":null,
+"twin-city-archers-gippsland":{
+"lat":-38.22576,
+"lng":146.38481,
+"p":"v",
+"q":"Twin City Archers Gippsland"
+},
 "wangaratta-target-archers":null,
 "waverley-city-archers":{
 "lat":-37.92617,
@@ -290,14 +540,29 @@
 "q":"Mulgrave, Victoria"
 },
 "wendouree-archery-club":null,
-"werribee-archery":null,
-"west-gippsland-field-archers":null,
+"werribee-archery":{
+"lat":-37.85173,
+"lng":144.76344,
+"p":"v",
+"q":"Lawrie Emmins Reserve, Laverton North VIC"
+},
+"west-gippsland-field-archers":{
+"lat":-38.16793,
+"lng":145.93798,
+"p":"v",
+"q":"Galloway St, Warragul VIC"
+},
 "yarra-bowmen":null,
 "yarra-valley-archers":null,
 "yering-district-archers":null,
 "amateur-archery-centre":null,
 "archers-of-greenwood":null,
-"baldivis-archery-club":null,
+"baldivis-archery-club":{
+"lat":-32.27323,
+"lng":115.75924,
+"p":"t",
+"q":"1521 Ennis Ave, East Rockingham WA (road)"
+},
 "benara-bowmen":null,
 "bowmen-of-melville":{
 "lat":-32.07273,
@@ -318,7 +583,12 @@
 "p":"t",
 "q":"Huntingdale, Western Australia"
 },
-"greenough-field-archery":null,
+"greenough-field-archery":{
+"lat":-28.96461,
+"lng":114.73474,
+"p":"v",
+"q":"Hampton Ranges, Company Rd, Greenough WA"
+},
 "kgsa":{
 "lat":-31.87034,
 "lng":115.94558,
@@ -335,14 +605,24 @@
 "pioneer-archers":null,
 "plantaganet-company-of-archers":null,
 "sunset-coast-archers":null,
-"wa-field-and-bowhunters-club":null,
+"wa-field-and-bowhunters-club":{
+"lat":-31.80498,
+"lng":115.92605,
+"p":"v",
+"q":"Whiteman Park International Shooting Complex WA"
+},
 "indoor-archery-wa":{
 "lat":-32.13869,
 "lng":115.96736,
 "p":"v",
 "q":"12 Alex Wood Dr, Forrestdale WA 6112, Western Australia"
 },
-"western-plains-archers":null,
+"western-plains-archers":{
+"lat":-32.0902,
+"lng":116.08689,
+"p":"v",
+"q":"Heath Rd (north end), Roleystone WA"
+},
 "whiteman-park-archers":{
 "lat":-31.80537,
 "lng":115.92349,
@@ -413,10 +693,18 @@
 "p":"t"
 },
 "DDFA":null,
-"Paringa, Tasmania":null,
+"Paringa, Tasmania":{
+"lat":-41.43918,
+"lng":147.09562,
+"p":"v"
+},
 "Phoenix Field Archers of Sale":null,
 "Lithgow Valley Archers":null,
-"41 Thurbon Rd, Lyneham ACT 2602":null,
+"41 Thurbon Rd, Lyneham ACT 2602":{
+"lat":-35.24572,
+"lng":149.12895,
+"p":"v"
+},
 "Great Southern Archers, Forrest Road, Strathalbyn":{
 "lat":-35.26898,
 "lng":138.90124,
@@ -538,7 +826,11 @@
 "lng":147.49488,
 "p":"v"
 },
-"Tuggeranong, Canberra":null,
+"Tuggeranong, Canberra":{
+"lat":-35.42274,
+"lng":149.06057,
+"p":"v"
+},
 "Hunter Bowmen":null,
 "Snowy Bowmen Field Archers":null,
 "Colac Otway Archers":null,
@@ -598,7 +890,11 @@
 "lng":145.90047,
 "p":"v"
 },
-"Canberra Archery Club, Canberra":null,
+"Canberra Archery Club, Canberra":{
+"lat":-35.24572,
+"lng":149.12895,
+"p":"v"
+},
 "Brisbane":{
 "lat":-27.46896,
 "lng":153.0235,
@@ -642,19 +938,31 @@
 "lng":115.92349,
 "p":"v"
 },
-"Paringa Archers Target Range Trevallyn, Tasmania":null,
+"Paringa Archers Target Range Trevallyn, Tasmania":{
+"lat":-41.43918,
+"lng":147.09562,
+"p":"v"
+},
 "Troy Adams Archery Field, Lot 31 Werrington Road, Werrington NSW 2747 (enter via Colonial Golf Course)":{
 "lat":-33.75867,
 "lng":150.75796,
 "p":"t"
 },
-"Werribee Archers, VIC":null,
+"Werribee Archers, VIC":{
+"lat":-37.85173,
+"lng":144.76344,
+"p":"v"
+},
 "Romaine Park Primary School sports oval, Roslyn Ave, Burnie TAS":{
 "lat":-41.05237,
 "lng":145.90641,
 "p":"t"
 },
-"Tuggeranong Archery Club, 299 Soward Way, Greenway ACT":null,
+"Tuggeranong Archery Club, 299 Soward Way, Greenway ACT":{
+"lat":-35.42274,
+"lng":149.06057,
+"p":"v"
+},
 "State Archery Centre, 10 Anna Meares Way, Gepps Cross SA 5094":{
 "lat":-34.84239,
 "lng":138.60443,
@@ -724,7 +1032,11 @@
 "p":"v"
 },
 "Gold Coast Archery Club, QLD":null,
-"Westlakes Archers, NSW":null,
+"Westlakes Archers, NSW":{
+"lat":-32.98316,
+"lng":151.58125,
+"p":"v"
+},
 "Moorabbin Archery Club, VIC":null,
 "Samford Valley Target Archers, 2204 Mount Samson Rd, Samford Valley QLD":{
 "lat":-27.36244,
@@ -766,19 +1078,35 @@
 "p":"t"
 },
 "Campbelltown District Field Archers":null,
-"Weston Valley Archery Club, Dixon Dr & Streeton Dr, Weston Creek ACT 2611":null,
+"Weston Valley Archery Club, Dixon Dr & Streeton Dr, Weston Creek ACT 2611":{
+"lat":-35.33077,
+"lng":149.05257,
+"p":"v"
+},
 "Archery Park WA, Whiteman Park":{
 "lat":-31.80537,
 "lng":115.92349,
 "p":"v"
 },
 "Playford District Field Archers":null,
-"Central Coast Indoor Archery Club, NSW":null,
+"Central Coast Indoor Archery Club, NSW":{
+"lat":-33.41384,
+"lng":151.34125,
+"p":"v"
+},
 "Kalamunda Governor Stirling Archery Club":null,
 "Barossa Archery Club, SA":null,
-"Shirewood Forest Archers, NSW":null,
+"Shirewood Forest Archers, NSW":{
+"lat":-34.0329,
+"lng":150.99496,
+"p":"v"
+},
 "Twin City Archers Gippsland, VIC":null,
-"Canberra Archery Club, 41 Thurbon Rd, Lyneham ACT 2602":null,
+"Canberra Archery Club, 41 Thurbon Rd, Lyneham ACT 2602":{
+"lat":-35.24572,
+"lng":149.12895,
+"p":"v"
+},
 "Hills Archers, Lenswood Memorial Park (Lenswood Oval), 693 Swamp Road, Lenswood SA 5240 (Adelaide Hills)":{
 "lat":-34.92021,
 "lng":138.8284,
@@ -841,7 +1169,11 @@
 "lng":153.13482,
 "p":"v"
 },
-"Werribee Archers – Arrows Plus (indoor), VIC":null,
+"Werribee Archers – Arrows Plus (indoor), VIC":{
+"lat":-37.874,
+"lng":144.73897,
+"p":"v"
+},
 "Venue TBC, VIC":null,
 "Venue TBA, VIC":null,
 "Sherbrooke Archers, VIC":null,
@@ -927,7 +1259,11 @@
 "lng":145.88968,
 "p":"t"
 },
-"Paringa Archers, TAS":null,
+"Paringa Archers, TAS":{
+"lat":-41.43918,
+"lng":147.09562,
+"p":"v"
+},
 "Hobart Archers, Hobart TAS":{
 "lat":-42.89419,
 "lng":147.49488,
@@ -938,13 +1274,21 @@
 "lng":145.90645,
 "p":"t"
 },
-"Paringa Archers Indoor Range, TAS":null,
+"Paringa Archers Indoor Range, TAS":{
+"lat":-41.43918,
+"lng":147.09562,
+"p":"v"
+},
 "Upper Burnie Memorial Hall, Burnie TAS":{
 "lat":-41.07082,
 "lng":145.90047,
 "p":"v"
 },
-"Van Diemen Archers, TAS":null,
+"Van Diemen Archers, TAS":{
+"lat":-42.94371,
+"lng":147.31326,
+"p":"v"
+},
 "Gin Gin Field Archers & Bowhunters Club, 22 Tobin Shortcut Road, Horsecamp (Gin Gin) QLD 4671":{
 "lat":-25.10799,
 "lng":151.88727,
@@ -960,7 +1304,11 @@
 "lng":145.92858,
 "p":"t"
 },
-"Loxley Archers, TAS":null,
+"Loxley Archers, TAS":{
+"lat":-41.08322,
+"lng":145.91221,
+"p":"v"
+},
 "Gympie Field Archers, Lot 4 Barsby Road, Imbil QLD":{
 "lat":-26.42791,
 "lng":152.68798,
@@ -1081,7 +1429,11 @@
 "lng":-75.75186,
 "p":"t"
 },
-"GSU Shooting Sports Education Center, Statesboro, Georgoa":null,
+"GSU Shooting Sports Education Center, Statesboro, Georgoa":{
+"lat":32.41547,
+"lng":-81.79658,
+"p":"v"
+},
 "Owensboro Convention Center, Owensboro, KY":{
 "lat":37.77572,
 "lng":-87.11689,
@@ -1138,9 +1490,9 @@
 "p":"v"
 },
 "NFAA Easton Yankton Archery Center, Yankton, SD":{
-"lat":42.87129,
-"lng":-97.3967,
-"p":"t"
+"lat":42.87638,
+"lng":-97.36668,
+"p":"v"
 },
 "Texas A&M University, College Station, TX":{
 "lat":30.61086,
@@ -1243,8 +1595,16 @@
 "lng":-3.37695,
 "p":"t"
 },
-"Las Vegas, Nevada, Horseshoe Hotel, Event Center":null,
-"Horseshoe, Paris and Planet Hollywood, Las Vegas":null,
+"Las Vegas, Nevada, Horseshoe Hotel, Event Center":{
+"lat":36.11348,
+"lng":-115.16906,
+"p":"v"
+},
+"Horseshoe, Paris and Planet Hollywood, Las Vegas":{
+"lat":36.11348,
+"lng":-115.16906,
+"p":"v"
+},
 "Ashland Middle School, Ashland, Massachusetts":{
 "lat":42.25263,
 "lng":-71.47542,
@@ -1255,7 +1615,11 @@
 "lng":-87.63661,
 "p":"v"
 },
-"167 Annett Road Kumeu Auckland, Massey Archery Club":null,
+"167 Annett Road Kumeu Auckland, Massey Archery Club":{
+"lat":-36.79883,
+"lng":174.50709,
+"p":"t"
+},
 "Ben Avery Shooting Facility, Phoenix, Arizona":{
 "lat":33.81459,
 "lng":-112.16097,
@@ -1292,7 +1656,11 @@
 "lng":-88.54052,
 "p":"t"
 },
-"47491 Road 210, Friant CA 93626":null,
+"47491 Road 210, Friant CA 93626":{
+"lat":37.06124,
+"lng":-119.68235,
+"p":"v"
+},
 "Georgia Southern University Recreation Activity Ce, Statesboro, Georgia":{
 "lat":32.44901,
 "lng":-81.78329,
@@ -1313,7 +1681,11 @@
 "lng":-88.05539,
 "p":"v"
 },
-"9317 Swasey Dr, Redding CA":null,
+"9317 Swasey Dr, Redding CA":{
+"lat":40.56016,
+"lng":-122.47399,
+"p":"v"
+},
 "El Dorado Park, Long Beach, CA":{
 "lat":33.81086,
 "lng":-118.08681,
@@ -1405,7 +1777,11 @@
 "lng":-86.89921,
 "p":"v"
 },
-"Jugend- und Wanderherberge Rannahof, Etzelsdorf 7,":null,
+"Jugend- und Wanderherberge Rannahof, Etzelsdorf 7,":{
+"lat":48.51526,
+"lng":14.56921,
+"p":"v"
+},
 "Nanticoke Sportsmens Club, Seaford, Delaware":{
 "lat":38.64135,
 "lng":-75.61146,
@@ -1446,13 +1822,21 @@
 "lng":-83.19589,
 "p":"v"
 },
-"Cortland, New York, 2026 NYSAA Outdoor Championship":null,
+"Cortland, New York, 2026 NYSAA Outdoor Championship":{
+"lat":42.60118,
+"lng":-76.18048,
+"p":"t"
+},
 "Lincoln Sports Foundation, Lincoln, NE":{
 "lat":40.88766,
 "lng":-96.61883,
 "p":"v"
 },
-"NFAA Easton Yankton Archery Center, Yankton SD":null,
+"NFAA Easton Yankton Archery Center, Yankton SD":{
+"lat":42.87638,
+"lng":-97.36668,
+"p":"v"
+},
 "Genesee Valley Outdoor Learning Center, Parkton, Maryland":{
 "lat":39.64094,
 "lng":-76.65914,
@@ -1521,7 +1905,11 @@
 "lng":-86.01399,
 "p":"t"
 },
-"Preims 10, 9412 Preims":null,
+"Preims 10, 9412 Preims":{
+"lat":46.89871,
+"lng":14.76292,
+"p":"v"
+},
 "Boulder Rifle and Pistol Club, Boulder City, Nevada":{
 "lat":35.97876,
 "lng":-114.83376,
@@ -1552,7 +1940,11 @@
 "lng":11.96702,
 "p":"t"
 },
-"NFAA Easton Yankton Archery Center, Yankton":null,
+"NFAA Easton Yankton Archery Center, Yankton":{
+"lat":42.87638,
+"lng":-97.36668,
+"p":"v"
+},
 "Ace Archers, Foxboro, Massachusetts":{
 "lat":42.09535,
 "lng":-71.26163,
@@ -1722,7 +2114,11 @@
 "lng":-82.6065,
 "p":"t"
 },
-"Evolution Archery Range and Shop, 8408 Gulf View Drive B Soddy-Daisy, Tennessee 37379":null,
+"Evolution Archery Range and Shop, 8408 Gulf View Drive B Soddy-Daisy, Tennessee 37379":{
+"lat":35.21895,
+"lng":-85.21538,
+"p":"v"
+},
 "Tipp City, OH":{
 "lat":39.96133,
 "lng":-84.17006,
@@ -1758,14 +2154,26 @@
 "lng":10.13761,
 "p":"t"
 },
-"Dunedin Archery Club- 10 Afton Terrace":null,
+"Dunedin Archery Club- 10 Afton Terrace":{
+"lat":-45.84446,
+"lng":170.53605,
+"p":"v"
+},
 "Shore Archery, 9 Argus Place, Wairau Valley":{
 "lat":-36.78462,
 "lng":174.74263,
 "p":"t"
 },
-"Tauranga Archers - Graham Park, Tauranga":null,
-"Red Dawn Armory Archery Range, 2178 North Old Highway 41 South Princeton, Indiana 47670":null,
+"Tauranga Archers - Graham Park, Tauranga":{
+"lat":-37.69588,
+"lng":176.15755,
+"p":"v"
+},
+"Red Dawn Armory Archery Range, 2178 North Old Highway 41 South Princeton, Indiana 47670":{
+"lat":38.32304,
+"lng":-87.56711,
+"p":"v"
+},
 "Jitra, Kedah":{
 "lat":6.26678,
 "lng":100.41975,
@@ -1787,7 +2195,11 @@
 "lng":-83.39641,
 "p":"v"
 },
-"Anderson Archery, 1324 Alton Station Road Lawrenceburg, Kentucky 40342":null,
+"Anderson Archery, 1324 Alton Station Road Lawrenceburg, Kentucky 40342":{
+"lat":38.07736,
+"lng":-84.9515,
+"p":"v"
+},
 "All Star Archery & Marine, 3603 Security Street Garland, Texas 75042":{
 "lat":32.89734,
 "lng":-96.68453,
@@ -1828,7 +2240,11 @@
 "lng":-96.65945,
 "p":"v"
 },
-"Next Step Archery, 22313 70th Avenue West, Ste U1A Mountlake Terrace, Washington 98043":null,
+"Next Step Archery, 22313 70th Avenue West, Ste U1A Mountlake Terrace, Washington 98043":{
+"lat":47.79627,
+"lng":-122.32708,
+"p":"v"
+},
 "50 Totara Road Palmerston North":{
 "lat":-40.38237,
 "lng":175.58164,
@@ -1860,14 +2276,26 @@
 "p":"t"
 },
 "Host ranges in all 8 NFAA sections (list on the NFAA page)":null,
-"Sandhills Archery Club, 3001 Charyl Avenue Northwest West Fargo, North Dakota 58078":null,
-"Archery HQ, 5277 Farm to Market Road 1044 New Braunfels, Texas 78130":null,
+"Sandhills Archery Club, 3001 Charyl Avenue Northwest West Fargo, North Dakota 58078":{
+"lat":46.88177,
+"lng":-96.95497,
+"p":"v"
+},
+"Archery HQ, 5277 Farm to Market Road 1044 New Braunfels, Texas 78130":{
+"lat":29.61831,
+"lng":-98.12436,
+"p":"v"
+},
 "Rising Phoenix Archery, 3863 Rochester Road Troy, Michigan 48083":{
 "lat":42.57566,
 "lng":-83.12857,
 "p":"t"
 },
-"Trident Archery, 1050 East Dominguez Street Unit P Carson, California 90746":null,
+"Trident Archery, 1050 East Dominguez Street Unit P Carson, California 90746":{
+"lat":33.83931,
+"lng":-118.25598,
+"p":"v"
+},
 "Your home range – shoot locally, compete nationally":null,
 "Capital Sports Center, 5209 Luce Ave, McClellan, California, 95652":{
 "lat":38.66153,
@@ -1889,22 +2317,46 @@
 "lng":-121.39171,
 "p":"v"
 },
-"HotShots Archery Academy, 2750-B Indian Ripple Road Dayton, Ohio 45440":null,
-"NFAA Easton Yankton Archery Center, 800 Archery Lane Yankton, South Dakota 57078":null,
+"HotShots Archery Academy, 2750-B Indian Ripple Road Dayton, Ohio 45440":{
+"lat":39.69177,
+"lng":-84.03777,
+"p":"v"
+},
+"NFAA Easton Yankton Archery Center, 800 Archery Lane Yankton, South Dakota 57078":{
+"lat":42.87638,
+"lng":-97.36668,
+"p":"v"
+},
 "Detroit Archers, West Bloomfield Township, Michigan":{
 "lat":42.55061,
 "lng":-83.39572,
 "p":"v"
 },
-"Hit or Miss Archery, 2801 Broadbent Parkway Northeast, Ste D Albuquerque, New Mexico 87107":null,
+"Hit or Miss Archery, 2801 Broadbent Parkway Northeast, Ste D Albuquerque, New Mexico 87107":{
+"lat":35.11278,
+"lng":-106.62929,
+"p":"v"
+},
 "Easton Salt Lake Archery Center, 575 John Glenn Road Salt Lake City, Utah 84116":{
 "lat":40.78071,
 "lng":-112.03723,
 "p":"v"
 },
-"Montana S3DA - Private Building, 95 Gibson Flats Road Great Falls, Montana 59405":null,
-"Spooky Nook Sports, 75 Champ Blvd, Manheim PA":null,
-"Bellinge Idrætscenter, Sædekildegårdsvej 4, 5250 Odense SV":null,
+"Montana S3DA - Private Building, 95 Gibson Flats Road Great Falls, Montana 59405":{
+"lat":47.47245,
+"lng":-111.24265,
+"p":"v"
+},
+"Spooky Nook Sports, 75 Champ Blvd, Manheim PA":{
+"lat":40.106,
+"lng":-76.41893,
+"p":"v"
+},
+"Bellinge Idrætscenter, Sædekildegårdsvej 4, 5250 Odense SV":{
+"lat":55.34156,
+"lng":10.31954,
+"p":"v"
+},
 "Randleman Parks and Rec Center, Randleman, North Carolina":{
 "lat":35.81791,
 "lng":-79.80309,
@@ -1986,7 +2438,11 @@
 "lng":-86.08196,
 "p":"v"
 },
-"Adair Shooting Park, Yuma AZ":null,
+"Adair Shooting Park, Yuma AZ":{
+"lat":32.75014,
+"lng":-114.43852,
+"p":"t"
+},
 "Tantasqua Regional High School, 319 Brookfield Road, Fiskdale, Massachusetts, 01518":{
 "lat":42.16288,
 "lng":-72.13197,
@@ -2042,7 +2498,11 @@
 "lng":-121.56317,
 "p":"t"
 },
-"Texas Archery, 10265 State Highway 30 College Station, Texas 77845":null,
+"Texas Archery, 10265 State Highway 30 College Station, Texas 77845":{
+"lat":30.65219,
+"lng":-96.26909,
+"p":"v"
+},
 "Franklin County Archers":null,
 "Esbjerg Archery, Esbjerg (venue to be confirmed)":null,
 "Antalya Spor Salonu, Sakıp Sabancı Bulvarı, Meltem Mahallesi, 07030 Muratpaşa, Antalya, Türkiye":{
@@ -2050,7 +2510,11 @@
 "lng":30.70302,
 "p":"t"
 },
-"Graham Creek Interpretive Center, Foley AL":null,
+"Graham Creek Interpretive Center, Foley AL":{
+"lat":30.34789,
+"lng":-87.63267,
+"p":"v"
+},
 "Albuquerque Convention Center, 401 2nd Street NW, Albuquerque, New Mexico, 87102":{
 "lat":35.08697,
 "lng":-106.64781,
@@ -2096,10 +2560,26 @@
 "lng":-116.93723,
 "p":"v"
 },
-"Horseshoe Las Vegas, Paris Las Vegas & Planet Hollywood, Las Vegas NV":null,
-"Crossville Shooting Sports Park, 772 Albert Frye Rd, Crossville TN 38571":null,
-"Graham Park Tauranga, 79 Edgecumbe Road in Tauranga, Tauranga Archery Club":null,
-"Uchee Creek Campground, Russell County AL":null,
+"Horseshoe Las Vegas, Paris Las Vegas & Planet Hollywood, Las Vegas NV":{
+"lat":36.11348,
+"lng":-115.16906,
+"p":"v"
+},
+"Crossville Shooting Sports Park, 772 Albert Frye Rd, Crossville TN 38571":{
+"lat":35.96485,
+"lng":-84.96383,
+"p":"v"
+},
+"Graham Park Tauranga, 79 Edgecumbe Road in Tauranga, Tauranga Archery Club":{
+"lat":-37.69588,
+"lng":176.15755,
+"p":"v"
+},
+"Uchee Creek Campground, Russell County AL":{
+"lat":32.30509,
+"lng":-84.95821,
+"p":"v"
+},
 "Indiana, USA (venue not yet announced)":null,
 "Kuantan, Pahang (venue to be confirmed)":{
 "lat":3.79745,
@@ -2113,7 +2593,11 @@
 "lng":-112.07414,
 "p":"t"
 },
-"Otter Creek Outdoor Recreation Area, 850 Otter Creek Park Rd, Brandenburg KY 40108":null,
+"Otter Creek Outdoor Recreation Area, 850 Otter Creek Park Rd, Brandenburg KY 40108":{
+"lat":37.94546,
+"lng":-86.04676,
+"p":"v"
+},
 "Sporting Club at the Farm, 4939 River Rd, New Albany IN":{
 "lat":38.21642,
 "lng":-85.86791,
@@ -2124,10 +2608,26 @@
 "lng":121.47002,
 "p":"t"
 },
-"47491 Road 210 (Hildreth), Friant CA 93626 (near Fresno) – private ranch":null,
-"Massey Archery Club, Auckland":null,
-"Camp Minden Training Site, Minden LA":null,
-"The Chieftain Center, Logan OH":null,
+"47491 Road 210 (Hildreth), Friant CA 93626 (near Fresno) – private ranch":{
+"lat":37.06124,
+"lng":-119.68235,
+"p":"v"
+},
+"Massey Archery Club, Auckland":{
+"lat":-36.79883,
+"lng":174.50709,
+"p":"t"
+},
+"Camp Minden Training Site, Minden LA":{
+"lat":32.57897,
+"lng":-93.39853,
+"p":"v"
+},
+"The Chieftain Center, Logan OH":{
+"lat":39.51465,
+"lng":-82.37351,
+"p":"v"
+},
 "Newberry, Florida":{
 "lat":29.64635,
 "lng":-82.6065,
@@ -2159,9 +2659,9 @@
 "p":"t"
 },
 "Yamata Sports Park, Tottori, Japan (outdoor: athletics stadium; indoor: Tottori Prefectural Gymnasium)":{
-"lat":35.35551,
-"lng":133.86785,
-"p":"t"
+"lat":35.5002,
+"lng":134.17717,
+"p":"v"
 },
 "Noblesville, Indiana":{
 "lat":40.04609,
@@ -2178,7 +2678,11 @@
 "lng":-117.03712,
 "p":"t"
 },
-"Two Mile Run County Park, 471 Beach Rd, Franklin PA 16323":null,
+"Two Mile Run County Park, 471 Beach Rd, Franklin PA 16323":{
+"lat":41.48217,
+"lng":-79.76826,
+"p":"v"
+},
 "Crystal Mountain Resort, 12500 Crystal Mountain Dr, Thompsonville MI":{
 "lat":44.51903,
 "lng":-85.99044,
@@ -2246,11 +2750,15 @@
 "p":"t"
 },
 "Canaan Valley Resort State Park, WV":{
-"lat":39.02686,
-"lng":-79.46524,
-"p":"t"
+"lat":39.02438,
+"lng":-79.4649,
+"p":"v"
 },
-"Canaan Valley Resort State Park, 230 Main Lodge Rd, WV":null,
+"Canaan Valley Resort State Park, 230 Main Lodge Rd, WV":{
+"lat":39.02438,
+"lng":-79.4649,
+"p":"v"
+},
 "Yankton, SD":{
 "lat":42.87129,
 "lng":-97.3967,
@@ -2302,8 +2810,16 @@
 "lng":10.44783,
 "p":"t"
 },
-"Carson Stadium (Dignity Health Sports Park), Carson CA":null,
-"Carson Field, Carson CA":null,
+"Carson Stadium (Dignity Health Sports Park), Carson CA":{
+"lat":33.86424,
+"lng":-118.26108,
+"p":"v"
+},
+"Carson Field, Carson CA":{
+"lat":33.86424,
+"lng":-118.26108,
+"p":"v"
+},
 "Jo-Brook Outdoors, 2030 B Park Ave, Brandon, MB":{
 "lat":49.85111,
 "lng":-99.96089,
@@ -2349,7 +2865,11 @@
 "lng":-108.31594,
 "p":"t"
 },
-"Capital Region Archery Club, AB":null,
+"Capital Region Archery Club, AB":{
+"lat":53.51285,
+"lng":-113.42301,
+"p":"v"
+},
 "Gatineau, QC":{
 "lat":45.42777,
 "lng":-75.71098,
@@ -2406,11 +2926,27 @@
 "lng":103.8195,
 "p":"t"
 },
-"Le Parnasse & Parc des Expositions, Nimes":null,
-"Yucatán Siglo XXI Convention Centre, Merida":null,
+"Le Parnasse & Parc des Expositions, Nimes":{
+"lat":43.81672,
+"lng":4.36368,
+"p":"v"
+},
+"Yucatán Siglo XXI Convention Centre, Merida":{
+"lat":21.03383,
+"lng":-89.62959,
+"p":"v"
+},
 "Sulaymaniyah Sport club, Sulaymaniyah":null,
-"SAT Football Stadium, Bangkok":null,
-"Khorfakkan Club for the Disabled, SHARJAH":null,
+"SAT Football Stadium, Bangkok":{
+"lat":13.75543,
+"lng":100.62216,
+"p":"v"
+},
+"Khorfakkan Club for the Disabled, SHARJAH":{
+"lat":25.3221,
+"lng":56.3294,
+"p":"v"
+},
 "Outdoorsman's Sport Shop, Greenwood, Indiana":{
 "lat":39.6137,
 "lng":-86.10954,
@@ -2436,7 +2972,11 @@
 "lng":-1.42897,
 "p":"t"
 },
-"Meriden Archery Club, Meriden":null,
+"Meriden Archery Club, Meriden":{
+"lat":52.43991,
+"lng":-1.65622,
+"p":"v"
+},
 "Woking, Surrey":{
 "lat":51.32019,
 "lng":-0.55647,
@@ -2448,8 +2988,16 @@
 "lng":-1.15622,
 "p":"t"
 },
-"York Archery Society":null,
-"Evesham Archery Club, Evesham":null,
+"York Archery Society":{
+"lat":53.98639,
+"lng":-1.03385,
+"p":"v"
+},
+"Evesham Archery Club, Evesham":{
+"lat":52.08867,
+"lng":-1.88855,
+"p":"v"
+},
 "Gieten, Netherlands":{
 "lat":53.00331,
 "lng":6.76385,
@@ -2465,7 +3013,11 @@
 "lng":4.90514,
 "p":"v"
 },
-"Tottori Prefectural Gymnasium 2, Tottori":null,
+"Tottori Prefectural Gymnasium 2, Tottori":{
+"lat":35.5002,
+"lng":134.17717,
+"p":"v"
+},
 "Stadion prijateljstva Mekinje, Cankarjeva cesta 26a, Kamnik":{
 "lat":46.23044,
 "lng":14.61361,
@@ -2476,8 +3028,16 @@
 "lng":-38.52804,
 "p":"t"
 },
-"Dubai Club for People of Determination, Dubai":null,
-"Samsun İlkadım Archery Range, Samsun":null,
+"Dubai Club for People of Determination, Dubai":{
+"lat":25.27772,
+"lng":55.36294,
+"p":"v"
+},
+"Samsun İlkadım Archery Range, Samsun":{
+"lat":41.32012,
+"lng":36.33339,
+"p":"v"
+},
 "Landerneau":{
 "lat":48.45148,
 "lng":-4.25579,
@@ -2498,11 +3058,20 @@
 "lng":4.86386,
 "p":"t"
 },
-"Clarke Community Middle and High School, Osceola IA":null,
+"Clarke Community Middle and High School, Osceola IA":{
+"lat":41.04399,
+"lng":-93.77189,
+"p":"v"
+},
 "Battle River Archers indoor range (old Battleford curling rink), 412 27th Street, Battleford, SK":{
 "lat":52.7377,
 "lng":-108.3039,
 "p":"t"
+},
+"11209 Shaw Rd E, Puyallup WA 98374":{
+"lat":47.15441,
+"lng":-122.25587,
+"p":"v"
 }
 }
 }
