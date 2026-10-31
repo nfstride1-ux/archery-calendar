@@ -1,4 +1,4 @@
-/* Archery Calendar <- ScoreTool (22 Oct 2026). Finished ScoreTool rounds appear in the archer's own My events (list + month grid).
+/* Archery Calendars <- ScoreTool (22 Oct 2026). Finished ScoreTool rounds appear in the archer's own My events (list + month grid).
    Data: public.score_entries, written only by the scoretool_save_score() function for a linked account (supabase/scoretool_scores.sql).
    Linking: #/scoretool, signed in -> create_scoretool_link() -> the secret goes back to ScoreTool on a FIXED address (no open redirect),
    and is shown to copy for installed-app users. Until the SQL is run, everything here quietly does nothing. */

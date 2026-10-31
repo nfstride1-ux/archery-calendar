@@ -310,7 +310,7 @@ function bulkAdminView(head){
   if (typeof setTitle === 'function') setTitle('Calendar uploads');
   head = typeof pageHead === 'function' ? pageHead('Admin', 'Calendar uploads', 'mixed') : '';
   if (!AUTH.ready) return `${head}<div class="wrap"><p class="loading">Checking sign-in…</p></div>`;
-  if (typeof isAdmin === 'function' && !isAdmin()) return `${head}<div class="wrap narrow"><section class="panel"><p>This page is only for Archery Calendar admins. <a href="#/account">Sign in</a></p></section></div>`;
+  if (typeof isAdmin === 'function' && !isAdmin()) return `${head}<div class="wrap narrow"><section class="panel"><p>This page is only for Archery Calendars admins. <a href="#/account">Sign in</a></p></section></div>`;
   if (!AD.subs) { adLoad(); return `${head}<div class="wrap"><p class="loading">Loading uploads…</p></div>`; }
   const tabs = ADTABS.map(([k, l]) => `<button type="button" class="btn sm ${AD.tab === k ? 'gold' : 'alt'}" data-adtab="${k}">${l} (${AD.subs.filter(s => adIn(s, k)).length})</button>`).join(' ');
   const list = AD.subs.filter(s => adIn(s, AD.tab));

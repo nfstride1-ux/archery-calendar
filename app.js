@@ -1,4 +1,4 @@
-/* Archery Calendar – prototype PWA. No build step. All user data stays in localStorage on this device. */
+/* Archery Calendars – prototype PWA. No build step. All user data stays in localStorage on this device. */
 'use strict';
 const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -81,7 +81,7 @@ function showInstall(){
   if (!instEv || $('#instBar') || matchMedia('(display-mode: standalone)').matches) return;
   if (+localStorage.getItem('archcal.instDismissed') > Date.now() - 30 * 864e5) return;     // dismissed: ask again after 30 days
   const b = document.createElement('div'); b.id = 'instBar'; b.setAttribute('role', 'region'); b.setAttribute('aria-label', 'Install the app');
-  b.innerHTML = `<span>📲 Add Archery Calendar to your home screen</span><button type="button" class="ib-go">Install</button><button type="button" class="ib-x" aria-label="Dismiss">✕</button>`;
+  b.innerHTML = `<span>📲 Add Archery Calendars to your home screen</span><button type="button" class="ib-go">Install</button><button type="button" class="ib-x" aria-label="Dismiss">✕</button>`;
   document.body.appendChild(b); document.body.classList.add('has-inst');
   const close = () => { b.remove(); document.body.classList.remove('has-inst'); };
   b.querySelector('.ib-x').onclick = () => { localStorage.setItem('archcal.instDismissed', String(Date.now())); close(); };
@@ -127,7 +127,7 @@ async function boot(){
 function showUpdateBar(){
   if ($('#updBar')) return;
   const d = document.createElement('div'); d.id = 'updBar'; d.className = 'upd-bar'; d.setAttribute('role', 'status');
-  d.innerHTML = '<span>A new version of Archery Calendar is ready.</span><button type="button" class="btn gold" id="updGo">Refresh</button><button type="button" class="upd-x" aria-label="Later">✕</button>';
+  d.innerHTML = '<span>A new version of Archery Calendars is ready.</span><button type="button" class="btn gold" id="updGo">Refresh</button><button type="button" class="upd-x" aria-label="Later">✕</button>';
   document.body.appendChild(d); $('#updGo').onclick = () => location.reload(); d.querySelector('.upd-x').onclick = () => d.remove();
 }
 /* ---------- settings migration: never let stale/odd saved settings hide everything ---------- */
@@ -342,7 +342,7 @@ function toggleSave(id){
   else { S.saved[id] = {added: iso(new Date())}; toast('★ Added to My events'); }
   save(); const y = scrollY; render(); scrollTo(0, y);
 }
-function setTitle(t){ document.title = t === 'Archery Calendar' ? 'Archery Calendar – every archery event in one calendar' : t + ' · Archery Calendar'; }
+function setTitle(t){ document.title = t === 'Archery Calendars' ? 'Archery Calendars – every archery event in one calendar' : t + ' · Archery Calendars'; }
 /* Banners: wide photos fill the banner (with a per-photo focal point, credits.json "pos"); group photos ("layout":"split")
    sit beside the text at their full 16:9 frame so nobody's face is cut off. */
 function heroOpen(cls, p){
@@ -356,7 +356,7 @@ function pageHead(title, sub, t = 'mixed'){
   return `${heroOpen('phead', p)}<h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}${heroClose(p)}`;
 }
 function clubCta(compact){
-  const m = `mailto:${SITE.contact}?subject=${encodeURIComponent('Our event / flyer for Archery Calendar')}`;
+  const m = `mailto:${SITE.contact}?subject=${encodeURIComponent('Our event / flyer for Archery Calendars')}`;
   return `<aside class="cta${compact ? ' compact' : ''}"><span class="kicker">Clubs &amp; organisers</span><b class="cta-h">Send us your flyer</b>
     <p>We'll list your event for free.</p>
     <div class="cta-btns"><a class="btn gold" href="#/submit">Submit an event</a><a class="cta-mail" href="${m}">or email ${esc(SITE.contact)}</a></div></aside>`;
@@ -379,7 +379,7 @@ function flyerHosted(x){
   const close = ex.entry_close ? pd(ex.entry_close).toLocaleDateString(LOC(),{weekday:'short',day:'numeric',month:'short',year:'numeric'}) + (ex.entry_close_note ? ', ' + ex.entry_close_note : '') : null;
   const rows = [['How to enter', ex.registration], [cur && !(ex.entry_close && daysTo(ex.entry_close) < 0) ? 'Entries close' : 'Entries closed', close], ['Fee', ex.fee], ['Rounds', ex.rounds], ['Times', ex.start_times], ['Contact', ex.contact], ['Notes', ex.notes]].filter(r => r[1]);
   const src = x.flyer_source_url, org = x.flyer_org || x.org || 'the organiser';
-  const mail = `mailto:${SITE.contact}?subject=${encodeURIComponent('Flyer on Archery Calendar: ' + x.name)}`;
+  const mail = `mailto:${SITE.contact}?subject=${encodeURIComponent('Flyer on Archery Calendars: ' + x.name)}`;
   const ey = x.start_date ? +x.start_date.slice(0, 4) : 0, lastYr = !ey || x.flyer_year === ey - 1, oldH = lastYr ? 'Last year’s flyer' : `Earlier flyer (${x.flyer_year})`;
   const oldB = `⚠ ${lastYr ? `Last year’s flyer (${x.flyer_year})` : `Earlier flyer from ${x.flyer_year}`} – ${isPast(x) ? `we don’t have the ${ey || 'new'} flyer` : `the ${ey || 'new'} flyer isn’t out yet; details may change`}`;
   return `<section class="panel flyer-panel" id="flyer"><h2 class="sec">${cur ? '📄 ' + esc(x.flyer_kind || 'Flyer') : '⚠ ' + oldH}</h2>
@@ -648,13 +648,13 @@ function TICKS_LS(){
 function appVideoBox(){
   if ((window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone) return '';   // already installed: hide
   return `<section class="appvid" id="appVid" aria-labelledby="appVidH"><div class="av-copy"><span class="kicker">Free, no app store</span>
-    <h2 class="av-h" id="appVidH">Put Archery Calendar on your phone like an app</h2>
+    <h2 class="av-h" id="appVidH">Put Archery Calendars on your phone like an app</h2>
     <p>Watch how, it takes 30 seconds. Works on iPhone and Samsung, no app store.</p>
     <details class="av-steps"><summary>Prefer to read the steps?</summary>
       <h3>iPhone (Chrome)</h3><ol><li>Open archerycalendars.com in Chrome.</li><li>Tap the Share icon.</li><li>Tap Add to Home Screen, then Add.</li></ol>
       <h3>Samsung (Chrome)</h3><ol><li>Open archerycalendars.com in Chrome.</li><li>Tap the three dots menu.</li><li>Tap Add to Home screen or Install app, then Install.</li></ol>
     </details></div>
-    <div class="av-vid"><video controls preload="none" playsinline poster="img/howto-app-poster.jpg" width="540" height="960" aria-label="How to put Archery Calendar on your phone like an app"><source src="media/add-to-home-screen.mp4" type="video/mp4">Your browser can't play this video.</video></div>
+    <div class="av-vid"><video controls preload="none" playsinline poster="img/howto-app-poster.jpg" width="540" height="960" aria-label="How to put Archery Calendars on your phone like an app"><source src="media/add-to-home-screen.mp4" type="video/mp4">Your browser can't play this video.</video></div>
   </section>`;
 }
 // Latest news: one-line cards linking to newsletter issues (static pages under /newsletter/), newest first. Update NEWS when a new issue goes up.
@@ -670,7 +670,7 @@ const NEWS_COLS = [{"url":"newsletter/yankton-world-championships-2026/","short"
    and scrolling with the page. Text is clipped at a whole paragraph / list item to the page height (fitNewsCols); the full article is one tap away. Below 1280px and on phones the stacked
    Latest news cards (newsCard) are used and these columns are hidden. */
 const newsCols = () => NEWS_COLS.map((n, i) => `<section class="news-col ${i ? 'nc-r' : 'nc-l'}" aria-labelledby="ncH${i}"><div class="nc-in">
-  <p class="nc-kick">Archery Calendar newsletter</p><h2 class="nc-h" id="ncH${i}"><a href="${esc(n.url)}" data-gc="home-card/newsletter-col" data-gc-t="Newsletter column headline (${esc(n.short)})">${esc(n.title)}</a></h2><p class="nc-date">${esc(n.date)}</p>
+  <p class="nc-kick">Archery Calendars newsletter</p><h2 class="nc-h" id="ncH${i}"><a href="${esc(n.url)}" data-gc="home-card/newsletter-col" data-gc-t="Newsletter column headline (${esc(n.short)})">${esc(n.title)}</a></h2><p class="nc-date">${esc(n.date)}</p>
   <div class="nc-body">${n.blocks.map(([k, h]) => k === 'h' ? `<h3 class="nc-sub">${h}</h3>` : k === 'n' ? `<p class="nc-note">${h}</p>` : k === 'li' ? `<p class="nc-li">${h}</p>` : `<p>${h}</p>`).join('')}</div>
   <p class="nc-more"><a class="btn gold" href="${esc(n.url)}" data-gc="home-card/newsletter-col-read" data-gc-t="Read the full article (${esc(n.short)})">Read the full article</a> <a class="nc-all" href="newsletter/">All newsletters</a></p></div></section>`).join('') + (setTimeout(initNewsFit, 0), '');
 let _ncRO = null, _ncRaf = 0;
@@ -693,7 +693,7 @@ function initNewsFit(){
 }
 const newsItems = code => NEWS.filter(n => n.where.includes(code || 'AUS'));
 const newsCard = code => newsItems(code).map(n => `<a class="news-card nc-main" href="${esc(n.url)}" data-gc="home-card/newsletter" data-gc-t="Latest news card (home)"><span class="nc-tag">Latest news</span><span class="nc-t">${esc(n.title)}</span><span class="nc-go" aria-hidden="true">&rarr;</span></a>`).join('');
-/* Help panel "What is Archery Calendar?" text: names the country the visitor is viewing (country home / international page), else their home country.
+/* Help panel "What is Archery Calendars?" text: names the country the visitor is viewing (country home / international page), else their home country.
    Organisations are only ones the site really lists for that country (from data/intl.json sources); countries with none listed get the plain country line. Australia keeps its own text (in help.js). */
 const HELP_ORGS = {USA: 'USA Archery, NFAA, IBO and the Archery Shooters Association', DEN: 'Bueskydning Danmark', NZL: 'Archery New Zealand, NZ Field Archery Association, the NZ Bowhunters Society and ArcheryOSA',
   GBR: 'Archery GB', CAN: 'Archery Canada and Archery Manitoba', AUT: 'the Österreichischer Bogensportverband', SUI: 'Swiss Archery', MAS: 'NAAM', KOR: 'the Korea Archery Association', NED: 'IFAA',
@@ -703,13 +703,13 @@ function helpAbout(){
   let c = ''; try { const [, p, a] = (location.hash || '').split('?')[0].split('/'); if (p === 'home' && !a) return ''; if ((p === 'home' || p === 'intl') && a) c = iso3of(decodeURIComponent(a)) || ''; } catch {}
   if (!c) { try { c = homeCode(); } catch {} }
   if (!c || c === 'AUS') return '';
-  if (c === 'WORLD') return `<p>Archery Calendar puts archery events from around the world in one place, from World Archery and national federations. It's free.</p><p>Tap any event for dates, venue, entry details and the flyer.</p>`;
+  if (c === 'WORLD') return `<p>Archery Calendars puts archery events from around the world in one place, from World Archery and national federations. It's free.</p><p>Tap any event for dates, venue, entry details and the flyer.</p>`;
   let nm = ''; try { nm = iName(c); } catch {} if (!nm || nm === c) return '';
   const the = /^(United|Netherlands)/.test(nm) ? 'the ' : '', o = HELP_ORGS[c];
-  return `<p>Archery Calendar puts archery events from around ${the}${esc(nm)} (and overseas) in one place${o ? `, including events from ${esc(o)}` : ''}. It's free.</p><p>Tap any event for dates, venue, entry details and the flyer.</p>`;
+  return `<p>Archery Calendars puts archery events from around ${the}${esc(nm)} (and overseas) in one place${o ? `, including events from ${esc(o)}` : ''}. It's free.</p><p>Tap any event for dates, venue, entry details and the flyer.</p>`;
 }
 function vHome(){
-  setTitle('Archery Calendar');
+  setTitle('Archery Calendars');
   const mine = Object.keys(S.saved).map(id => BYID[id]).filter(Boolean);
   const up = mine.filter(x => !isPast(x)).sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
   const nEnt = up.filter(x => ST(x.id) !== 'none').length, nPay = up.filter(x => ST(x.id) === 'entered').length, nTodo = up.filter(x => ST(x.id) === 'none' && !x.info_only).length;
@@ -1243,7 +1243,7 @@ function bindCommon(){
     if (!('Notification' in window)) return toast('This browser can’t show notifications');
     const p = await Notification.requestPermission(); S.notify = p === 'granted'; save();
     if (S.notify) { const reg = await navigator.serviceWorker?.getRegistration(); const o = {body:'Reminders are on. You’ll hear from us before your events.', icon:'icons/icon-192.png'};
-      reg ? reg.showNotification('🎯 Archery Calendar', o) : new Notification('🎯 Archery Calendar', o); S.notified = {}; checkReminders(); }
+      reg ? reg.showNotification('🎯 Archery Calendars', o) : new Notification('🎯 Archery Calendars', o); S.notified = {}; checkReminders(); }
     render();
   };
   const off = $('#notifOff'); if (off) off.onclick = () => { S.notify = false; save(); toast('Notifications off'); render(); };
@@ -1278,7 +1278,7 @@ function vAdvertise(){
       <li>No ad trackers (visits are counted anonymously; see <a href="#/privacy">privacy</a>). Ads link straight to your website.</li></ul></section>
     <section class="panel dark"><h2 class="sec">Get in touch</h2><p class="big-mail"><a href="${AD_MAIL}">${CONTACT}</a></p>
       <p class="foot-tag"><i>Created by an archer, for archers.</i></p>
-      <nav class="foot-social" aria-label="Follow us"><p class="foot-social-label">Follow us</p><div class="foot-social-row"><a class="foot-social-link" href="https://www.facebook.com/profile.php?id=61595338617579" target="_blank" rel="noopener" aria-label="Archery Calendar on Facebook"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M22 12.07A10 10 0 1 0 10.4 21.9v-6.94H7.9v-2.9h2.5V9.8c0-2.47 1.47-3.84 3.72-3.84 1.08 0 2.2.2 2.2.2v2.42h-1.24c-1.22 0-1.6.76-1.6 1.54v1.85h2.72l-.43 2.9h-2.29v6.94A10 10 0 0 0 22 12.07z"/></svg><span>Facebook</span></a><a class="foot-social-link" href="https://www.instagram.com/archerycalendar/" target="_blank" rel="noopener" aria-label="Archery Calendar on Instagram"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7.5 2h9A5.5 5.5 0 0 1 22 7.5v9a5.5 5.5 0 0 1-5.5 5.5h-9A5.5 5.5 0 0 1 2 16.5v-9A5.5 5.5 0 0 1 7.5 2zm0 2A3.5 3.5 0 0 0 4 7.5v9A3.5 3.5 0 0 0 7.5 20h9a3.5 3.5 0 0 0 3.5-3.5v-9A3.5 3.5 0 0 0 16.5 4h-9zm9.75 1.25a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 .002 6.002A3 3 0 0 0 12 9z"/></svg><span>Instagram</span></a></div></nav>
+      <nav class="foot-social" aria-label="Follow us"><p class="foot-social-label">Follow us</p><div class="foot-social-row"><a class="foot-social-link" href="https://www.facebook.com/profile.php?id=61595338617579" target="_blank" rel="noopener" aria-label="Archery Calendars on Facebook"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M22 12.07A10 10 0 1 0 10.4 21.9v-6.94H7.9v-2.9h2.5V9.8c0-2.47 1.47-3.84 3.72-3.84 1.08 0 2.2.2 2.2.2v2.42h-1.24c-1.22 0-1.6.76-1.6 1.54v1.85h2.72l-.43 2.9h-2.29v6.94A10 10 0 0 0 22 12.07z"/></svg><span>Facebook</span></a><a class="foot-social-link" href="https://www.instagram.com/archerycalendar/" target="_blank" rel="noopener" aria-label="Archery Calendars on Instagram"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7.5 2h9A5.5 5.5 0 0 1 22 7.5v9a5.5 5.5 0 0 1-5.5 5.5h-9A5.5 5.5 0 0 1 2 16.5v-9A5.5 5.5 0 0 1 7.5 2zm0 2A3.5 3.5 0 0 0 4 7.5v9A3.5 3.5 0 0 0 7.5 20h9a3.5 3.5 0 0 0 3.5-3.5v-9A3.5 3.5 0 0 0 16.5 4h-9zm9.75 1.25a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 .002 6.002A3 3 0 0 0 12 9z"/></svg><span>Instagram</span></a></div></nav>
       <p class="note">NFS Strategic Holdings</p></section>
   </div>`;
 }
@@ -1305,7 +1305,7 @@ function vPrivacy(){
     <li><b>Who can see it:</b> only you. Every row is locked to your account by the database (row-level security). We don’t sell it, share it or use it for advertising.</li>
     <li><b>Deleting it:</b> <a href="#/account">Account → Delete account and data</a> removes your account and everything in it straight away. Signing out keeps a copy on your device unless you choose “remove from this device”. Or email us and we’ll delete it.</li></ul></section>` : ''}
     <section class="panel"><h2 class="sec">Disclaimer</h2><p><b>Dates come from organisers' public calendars; always check with the organiser.</b></p>
-    <p class="note">Event details are collected from Archery Australia, Archery WA, the ABA, World Archery and club websites and flyers, and can change at any time. Archery Calendar is independent and is not run by or affiliated with any of these organisations. Flyers belong to their organisers – we link to them at the source.</p></section></div>`;
+    <p class="note">Event details are collected from Archery Australia, Archery WA, the ABA, World Archery and club websites and flyers, and can change at any time. Archery Calendars is independent and is not run by or affiliated with any of these organisations. Flyers belong to their organisers – we link to them at the source.</p></section></div>`;
 }
 function vCredits(){
   setTitle('Credits');
@@ -1323,10 +1323,10 @@ function fold(l){ const enc = new TextEncoder(), out = []; let cur = '', n = 0, 
 const SITE_URL = () => (SITE.url || location.origin + location.pathname).replace(/[^/]*$/, '');   // https://archerycalendars.com/
 function downloadIcs(list, name){
   const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
-  const L = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Archery Calendar//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:My archery events'];
+  const L = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Archery Calendars//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:My archery events'];
   for (const x of list) {
     const e = S.entries[x.id], end = pd(x.end_date || x.start_date); end.setDate(end.getDate() + 1);
-    const st = ST(x.id), desc = [st === 'paid' ? `ENTERED + PAID${e.amount ? ' ' + (e.currency || 'AUD') + ' ' + e.amount : ''}${e.ref ? ' (#' + e.ref + ')' : ''}` : st === 'entered' ? 'ENTERED – NOT PAID YET' : 'NOT ENTERED YET', x.discipline, x.registration_url ? 'Entry: ' + x.registration_url : '', 'Source: ' + x.source_url, 'Archery Calendar: ' + SITE_URL() + '#/shoot/' + encodeURIComponent(x.id)].filter(Boolean).join('\n');
+    const st = ST(x.id), desc = [st === 'paid' ? `ENTERED + PAID${e.amount ? ' ' + (e.currency || 'AUD') + ' ' + e.amount : ''}${e.ref ? ' (#' + e.ref + ')' : ''}` : st === 'entered' ? 'ENTERED – NOT PAID YET' : 'NOT ENTERED YET', x.discipline, x.registration_url ? 'Entry: ' + x.registration_url : '', 'Source: ' + x.source_url, 'Archery Calendars: ' + SITE_URL() + '#/shoot/' + encodeURIComponent(x.id)].filter(Boolean).join('\n');
     L.push('BEGIN:VEVENT', `UID:${x.id}@archery-calendar`, `DTSTAMP:${stamp}`, `DTSTART;VALUE=DATE:${x.start_date.replace(/-/g, '')}`, `DTEND;VALUE=DATE:${iso(end).replace(/-/g, '')}`,
       fold(`SUMMARY:${icsEsc((st === 'paid' ? '✓$ ' : st === 'entered' ? '✓ ' : '') + x.name)}`), fold(`LOCATION:${icsEsc([x.location, x.country].filter(Boolean).join(', '))}`), fold(`DESCRIPTION:${icsEsc(desc)}`));
     if (x.registration_url || x.source_url) L.push(fold(`URL:${x.registration_url || x.source_url}`));
@@ -1695,7 +1695,7 @@ function sbKeyOk(k){
 }
 const AUTH = {configured: false, on: /^https:\/\/[^\s/]+\/?$/.test(SB_URL) && sbKeyOk(SB_KEY), client: null, user: null, sync: null, ready: false, msg: '', sent: '', chain: Promise.resolve()};
 AUTH.configured = AUTH.on; AUTH.auto = window.SUPABASE_ENABLED === 'auto'; if (window.SUPABASE_ENABLED !== true && !AUTH.auto) AUTH.on = false;   // master switch in config.js
-if (SB_URL && !AUTH.on) console.warn('Archery Calendar: Supabase config ignored – needs SUPABASE_URL (https://…supabase.co) and the PUBLIC anon/publishable key (never the service_role/secret key).');
+if (SB_URL && !AUTH.on) console.warn('Archery Calendars: Supabase config ignored – needs SUPABASE_URL (https://…supabase.co) and the PUBLIC anon/publishable key (never the service_role/secret key).');
 const loadScript = src => new Promise((ok, no) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => no(new Error('load ' + src)); document.head.appendChild(s); });
 const redirectUrl = () => location.origin + location.pathname;
 // Installed app (Home Screen): its storage is separate from the browser's, so an emailed link signs in the BROWSER, not the app.
@@ -1761,7 +1761,7 @@ async function sbReady(){
 async function initAuth(){
   // The SUPABASE_ENABLED switch is the gate now (it is set only after schema.sql has run). The tables-ready probe is kept for a
   // config without the switch confirmed (SUPABASE_ENABLED = 'auto'); it logs harmless 401s in the console, so it isn't run by default.
-  if (AUTH.on && AUTH.auto && !(await sbReady())) { AUTH.on = false; AUTH.pending = true; console.info('Archery Calendar: accounts configured but the database tables are not set up yet (run supabase/schema.sql) – sign-in hidden.'); }
+  if (AUTH.on && AUTH.auto && !(await sbReady())) { AUTH.on = false; AUTH.pending = true; console.info('Archery Calendars: accounts configured but the database tables are not set up yet (run supabase/schema.sql) – sign-in hidden.'); }
   updateNav(); if (!AUTH.on) { authRender(); return; }
   try { if (!window.supabase) await loadScript('vendor/supabase-js-2.117.3.js'); }
   catch { AUTH.msg = 'Sign-in couldn’t load. Are you offline? Your events are still saved on this device.'; AUTH.ready = true; authRender(); return; }
@@ -1824,9 +1824,9 @@ function appVidPopup(){
   try { localStorage.setItem(K, '1'); } catch {}      // closing counts as seen
   const d = document.createElement('div'); d.className = 'avp-wrap'; d.id = 'appVidPop';
   d.innerHTML = `<div class="avp" role="dialog" aria-modal="true" aria-labelledby="avpT"><button type="button" class="avp-x" id="avpX" aria-label="Close">✕</button>
-    <h2 id="avpT">Put Archery Calendar on your phone like an app</h2>
+    <h2 id="avpT">Put Archery Calendars on your phone like an app</h2>
     <p class="note">Watch how, it takes 30 seconds. iPhone and Samsung, no app store.</p>
-    <video controls preload="none" playsinline poster="img/howto-app-poster.jpg" width="540" height="960" aria-label="How to put Archery Calendar on your phone like an app"><source src="media/add-to-home-screen.mp4" type="video/mp4"></video>
+    <video controls preload="none" playsinline poster="img/howto-app-poster.jpg" width="540" height="960" aria-label="How to put Archery Calendars on your phone like an app"><source src="media/add-to-home-screen.mp4" type="video/mp4"></video>
     <div class="avp-btns"><button type="button" class="btn gold" id="avpClose">Close</button><button type="button" class="btn alt" id="avpNever">Don't show again</button></div></div>`;
   document.body.appendChild(d);
   const close = () => { const v = d.querySelector('video'); if (v) v.pause(); d.remove(); };
@@ -1889,7 +1889,7 @@ function spShow(){
   d.innerHTML = `<div class="sp-card" role="dialog" aria-modal="true" aria-labelledby="spT" tabindex="-1">
     <div class="sp-grab" aria-hidden="true"></div>
     <button type="button" class="sp-x" id="spX" aria-label="Close">${SP_IC.x}</button>
-    <div class="sp-brand" aria-hidden="true"><span class="logo-mark"></span>Archery <b>Calendar</b></div>
+    <div class="sp-brand" aria-hidden="true"><span class="logo-mark"></span>Archery <b>Calendars</b></div>
     <h2 id="spT">Never miss a <em>shoot</em></h2>
     <p class="sp-lead">Make an account in under a minute. No password.</p>
     <ul class="sp-ben">
@@ -1994,7 +1994,7 @@ function vAccount(){
    <section class="panel"><h2 class="sec">Sync</h2><p class="sync-st" id="syncSt">${syncTxt}</p>
     <p class="note">${c.saved} saved event${c.saved === 1 ? '' : 's'} · ${c.ent} entr${c.ent === 1 ? 'y' : 'ies'}. Changes save on this device straight away and sync in the background, also after being offline.</p>
     <button class="btn alt" id="syncNow">↻ Sync now</button></section>
-   ${isAdmin() || ADMNAV.ok ? `<section class="panel"><h2 class="sec">🛡 Admin</h2><p>You’re an Archery Calendar admin.${ADMNAV.n ? ` <b>${ADMNAV.n} waiting for approval.</b>` : ''}</p><p class="row"><a class="btn gold" href="#/admin">Requests &amp; submissions</a><a class="btn alt" href="#/admin/approved">Approved people</a><a class="btn alt" href="#/admin/scores">Self-reported scores</a><a class="btn alt" href="#/admin/calendars">Calendar uploads</a></p></section>` : ''}
+   ${isAdmin() || ADMNAV.ok ? `<section class="panel"><h2 class="sec">🛡 Admin</h2><p>You’re an Archery Calendars admin.${ADMNAV.n ? ` <b>${ADMNAV.n} waiting for approval.</b>` : ''}</p><p class="row"><a class="btn gold" href="#/admin">Requests &amp; submissions</a><a class="btn alt" href="#/admin/approved">Approved people</a><a class="btn alt" href="#/admin/scores">Self-reported scores</a><a class="btn alt" href="#/admin/calendars">Calendar uploads</a></p></section>` : ''}
    <section class="panel"><h2 class="sec">Sign out</h2>
     <button class="btn alt block" id="so">Sign out (keep my events on this device)</button>
     <button class="btn alt block" id="soClear">Sign out and remove my events from this device</button>
@@ -2298,7 +2298,7 @@ const fdate = d => !d ? '' : /^\d{4}-\d{2}-\d{2}$/.test(d) ? pd(d).toLocaleDateS
   return `${head}<div class="wrap fans">
   ${sent ? `<section class="panel thanks" id="fanThanks" tabindex="-1"><span class="thanks-mark" aria-hidden="true">✓</span><h2 class="sec">Thanks, we’ve got your photo</h2><p>We check every photo before it goes up, usually within a few days. We’ll email you if we have a question.</p></section>` : ''}
   ${nHere ? `<p class="fan-add-top"><a class="btn gold" href="#send" data-fansend>📷 Add your fan photo</a></p><div class="fan-wall">${wall}</div>` : `<section class="panel fan-empty"><h2 class="sec-h">No fan photos from ${cnm ? cthe + esc(cnm) : 'your country'} yet</h2><p>Be the first: podiums, club days, a great shot on the course. It takes a minute, like adding an event, and we check every photo before it goes up.</p><p><a class="btn gold big-btn" href="#send" data-fansend>📷 Add your fan photo</a></p></section>`}
-  <p class="note fan-rm">In a photo and want it removed? Email <a href="mailto:${esc(SITE.contact)}?subject=${encodeURIComponent('Photo removal – Archery Calendar Fans page')}">${esc(SITE.contact)}</a> and we’ll take it down.</p>
+  <p class="note fan-rm">In a photo and want it removed? Email <a href="mailto:${esc(SITE.contact)}?subject=${encodeURIComponent('Photo removal – Archery Calendars Fans page')}">${esc(SITE.contact)}</a> and we’ll take it down.</p>
   <section class="panel sub fan-send" id="send"><h2 class="sec">📷 Send us your photo</h2>
    <ul class="ticks"><li>Podiums, club days, a great shot on the course – archery photos from ${cnm ? cthe + esc(cnm) : 'your country'}.</li><li>Every photo is <b>reviewed before it’s posted</b>. We may crop or resize it.</li><li>Fields marked <span class="req">*</span> are required.</li></ul>
    <form id="fanForm" data-clarity-mask="true" class="sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate>
@@ -2831,7 +2831,7 @@ const CDISC = [['target', 'Target', /target|outdoor|para|\b(720|1440|900)\b/i, '
 const discPhoto = (code, k, gen) => PH['c_' + String(iIso(code) || '').toLowerCase() + '_' + k] || (gen && PH[gen]) || null;
 function vCountryHome(code){
   const nm = iName(code), the = /^(United|Netherlands)/.test(nm) ? 'the ' : '';
-  setTitle(`Archery in ${the}${nm} · Archery Calendar`);
+  setTitle(`Archery in ${the}${nm} · Archery Calendars`);
   const h = PH[cHero(code)] || (code === 'USA' ? PH.us_field : PH['3d']) || photo('mixed');
   const hero = `<section class="hero" style="--img:url('${esc(h.file)}');--pos:${esc(h.pos || 'center 35%')}"><div class="wrap hero-grid">
     <div class="hero-copy"><p class="kicker">${flag(iIso(code))} ${esc(nm)}</p><h1>Every archery event in ${the}${esc(nm)}.<br><span>One calendar.</span></h1>
@@ -2952,7 +2952,7 @@ function vNotFound(kind, id){
   return `<div class="wrap narrow nf-wrap"><section class="panel nf-box" aria-labelledby="nfH">
     <p class="nf-back"><a href="#/browse">← All events</a></p>
     <h1 class="sec" id="nfH">🔎 ${ev ? 'We can’t find that event' : 'Page not found'}</h1>
-    <p>${ev ? 'It may have been renamed, merged with another listing or removed, or the link was cut short. Try a search:' : 'That link doesn’t match a page on Archery Calendar. Try a search:'}</p>
+    <p>${ev ? 'It may have been renamed, merged with another listing or removed, or the link was cut short. Try a search:' : 'That link doesn’t match a page on Archery Calendars. Try a search:'}</p>
     <form class="nf-search" id="nfSearch" role="search"><label class="sr" for="nfq">Search events</label><input id="nfq" type="search" value="${esc(nfWords(id))}" placeholder="Search an event, club or town…" autocomplete="off"><button class="btn gold" type="submit">Search</button></form>
     <div class="nf-links"><a class="btn alt" href="#/browse">← Find events</a><a class="btn alt" href="#/intl">🌐 International</a><a class="btn alt" href="#/home">Home</a></div></section></div>`;
 }
@@ -3124,9 +3124,9 @@ async function dbSubmit(rec, file){
     let {data, error} = await AUTH.client.from('submitted_events').insert(row).select('id,status,flyer_url,details_pending').single();
     if (error && /details_pending/i.test(error.message || '')) ({data, error} = await AUTH.client.from('submitted_events').insert(row).select('id,status,flyer_url').single());
     if (error && /register/i.test(error.message || '')) { delete row.register; ({data, error} = await AUTH.client.from('submitted_events').insert(row).select('id,status,flyer_url').single()); }   // before event_overrides.sql adds the column
-    if (error) { console.warn('Archery Calendar: submission not saved to the database (email still sent):', error.message); return null; }
+    if (error) { console.warn('Archery Calendars: submission not saved to the database (email still sent):', error.message); return null; }
     return data;
-  } catch (e) { console.warn('Archery Calendar: submission not saved to the database:', e); return null; }
+  } catch (e) { console.warn('Archery Calendars: submission not saved to the database:', e); return null; }
 }
 /* Thanks page after FormSubmit sends people back with ?sid=: live → show the finished event card; pending → waiting for review. */
 async function subDoneLoad(sid){
@@ -3164,7 +3164,7 @@ function vAdmin(){
   setTitle('Admin');
   const head = pageHead('Admin', 'Club submissions', 'mixed');
   if (!AUTH.ready) return `${head}<div class="wrap"><p class="loading">Checking sign-in…</p></div>`;
-  if (!isAdmin()) return `${head}<div class="wrap narrow"><section class="panel"><p>This page is only for Archery Calendar admins. <a href="#/account">Sign in</a></p></section></div>`;
+  if (!isAdmin()) return `${head}<div class="wrap narrow"><section class="panel"><p>This page is only for Archery Calendars admins. <a href="#/account">Sign in</a></p></section></div>`;
   if (location.hash.split('?')[0] === '#/admin/calendars' && typeof bulkAdminView === 'function') return bulkAdminView();
   if (!ADM.rows) { admLoad(); return `${head}<div class="wrap"><p class="loading">Loading submissions…</p></div>`; }
   if (location.hash.split('?')[0] === '#/admin/approved') return vAdmApproved(head);
@@ -3775,11 +3775,11 @@ function bindSubmit(){
       const {data, error} = await AUTH.client.from('submitted_events').insert(row).select('id,status').single();
       if (!error) { dbId = data.id; st = data.status === 'live' ? 'live' : 'pending'; }
       else if (isAdmin()) {   // event_merge.sql not run yet: admins update the listed event directly, as on #/fix
-        console.warn('Archery Calendar: update row not saved, writing the override directly:', error.message);
+        console.warn('Archery Calendars: update row not saved, writing the override directly:', error.message);
         const r = await AUTH.client.from('event_overrides').upsert({event_id: y.id, fields: Object.assign({}, OVR[y.id] || {}, p), updated_by: AUTH.user.email}, {onConflict: 'event_id'});
-        if (!r.error) st = 'live'; else console.warn('Archery Calendar: override not saved:', r.error.message); }
-      else console.warn('Archery Calendar: update not saved to the database (email still sent):', error.message);
-    } catch (e) { console.warn('Archery Calendar: update not saved:', e); }
+        if (!r.error) st = 'live'; else console.warn('Archery Calendars: override not saved:', r.error.message); }
+      else console.warn('Archery Calendars: update not saved to the database (email still sent):', error.message);
+    } catch (e) { console.warn('Archery Calendars: update not saved:', e); }
     if (st === 'live') { OVR[y.id] = Object.assign({}, OVR[y.id] || {}, p); applyOvr(y, OVR[y.id]); }
     const link = location.origin + location.pathname + '#/shoot/' + encodeURIComponent(y.id);
     hid('updates_event', `${y.name} (${y.id}) ${link}`);

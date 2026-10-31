@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Archery Calendar: read the "Send us your calendar" inbox (supabase/bulk_calendar_inbox.sql).
+"""Archery Calendars: read the "Send us your calendar" inbox (supabase/bulk_calendar_inbox.sql).
 
 The reader (Grok Bot) works in four steps. This script does the mechanical parts and the safety checks; the reading itself is done by the reader.
 
@@ -375,8 +375,8 @@ def cmd_live_email(a):
     s = bot('get', a.id)
     n = s.get('published_count') or 0
     nm = (s.get('submitter_name') or '').split(' ')[0] or 'there'
-    print('DRAFT ONLY (not sent). To: %s\nSubject: Your events are live on Archery Calendar\n\nHi %s,\n\nYour events are now live on Archery Calendar: %d event%s from the calendar you sent us.\n'
-          'You can see them at https://archerycalendars.com\n\nIf anything looks wrong, reply to this email and we will fix it.\n\nThanks,\nNathaniel Stride\nArchery Calendar' % (s.get('submitter_email'), nm, n, '' if n == 1 else 's'))
+    print('DRAFT ONLY (not sent). To: %s\nSubject: Your events are live on Archery Calendars\n\nHi %s,\n\nYour events are now live on Archery Calendars: %d event%s from the calendar you sent us.\n'
+          'You can see them at https://archerycalendars.com\n\nIf anything looks wrong, reply to this email and we will fix it.\n\nThanks,\nNathaniel Stride\nArchery Calendars' % (s.get('submitter_email'), nm, n, '' if n == 1 else 's'))
 
 
 def cmd_purge(a):

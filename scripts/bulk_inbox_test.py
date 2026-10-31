@@ -101,7 +101,7 @@ with sync_playwright() as p:
     chk(t+'waiting tab lists the unread upload',pg.locator('.adm-cal').count()==1 and 'Waiting for the reader' in pg.locator('.adm-cal').inner_text())
     # ---- non-admin cannot use the admin page ----
     E(MOCK,['someone@else.test',False,[]]);E("location.hash='#/admin'");E("location.hash='#/admin/calendars'");pg.wait_for_timeout(700)
-    chk(t+'non-admin sees only the admins-only note','only for Archery Calendar admins' in pg.locator('#view').inner_text() and pg.locator('.adm-cal').count()==0)
+    chk(t+'non-admin sees only the admins-only note','only for Archery Calendars admins' in pg.locator('#view').inner_text() and pg.locator('.adm-cal').count()==0)
     # ---- old bulk wording gone, other pages ----
     pg.goto(f'http://localhost:{PORT}/#/privacy');pg.wait_for_timeout(1200)
     chk(t+'privacy page has the calendar upload line','Send us your calendar' in pg.locator('#view').inner_text())
