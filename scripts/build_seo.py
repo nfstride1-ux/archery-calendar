@@ -22,7 +22,7 @@ SITE = 'https://archerycalendars.com'
 ap = argparse.ArgumentParser()
 ap.add_argument('--sample', action='store_true'); ap.add_argument('--out'); ap.add_argument('--check', action='store_true')
 ap.add_argument('--today'); ap.add_argument('--groups', help='comma list, overrides PUBLISHED (tests only)'); args = ap.parse_args()
-PUBLISHED = {'hubs', 'events'}
+PUBLISHED = {'hubs', 'events', 'countries'}
 GROUPS = set(args.groups.split(',')) if args.groups else PUBLISHED
 BRAND = 'Archery Calendars'
 OUT = os.path.abspath(args.out or ROOT)
@@ -282,7 +282,8 @@ def year_span(evs):
     ys = sorted({d8(x['start_date']).year for x in evs if x.get('start_date') and not is_past(x)})
     return ('%d' % ys[0] if len(ys) == 1 else '%d-%d' % (ys[0], ys[-1])) if ys else str(d8(TODAY).year)
 def top_places(evs, n=6):
-    c = collections.Counter(v for v in (venue(x)[1].split(',')[0].strip() for x in evs) if v)
+    cn = {v['name'].lower() for v in CTRY.values()}   # a locality that is just the country name is not a venue town
+    c = collections.Counter(v for v in (venue(x)[1].split(',')[0].strip() for x in evs) if v and v.lower() not in cn)
     return [p for p, _ in c.most_common(n)]
 def join_and(items): return ', '.join(items[:-1]) + ' and ' + items[-1] if len(items) > 1 else (items[0] if items else '')
 
@@ -450,7 +451,8 @@ def country_page(c):
     if c == 'USA':
         sc = collections.Counter(x.get('us_state') for x in evs if x.get('us_state') and not is_past(x))
         extra = '<p>Events span ' + str(len(sc)) + ' US states.</p>'
-    return list_page('country', f'/countries/{slug(n)}/', f'Archery Events in {n} {yr}', f'Archery events in {n}', f'in {n}', evs,
+    tn = ('the ' if n in ('United States', 'United Arab Emirates', 'Netherlands', 'Philippines', 'Czech Republic') else '') + n   # "in the United States"
+    return list_page('country', f'/countries/{slug(n)}/', f'Archery Events in {tn} {yr}', f'Archery events in {tn}', f'in {tn}', evs,
         [('Home', '/'), ('Countries', '/countries/'), (n, None)], extra_intro=extra, desc_hint='Federation and club tournaments with entry links.')
 for c in sorted(COUNTRY_SET, key=lambda c: CTRY[c]['name']):
     if 'countries' not in GROUPS: break
@@ -479,7 +481,7 @@ def llms():
     if 'countries' in GROUPS:
         L.append(f'- [Archery events by country]({SITE}/countries/): events outside Australia')
         for c in ('USA', 'DEN', 'NZL', 'CAN', 'GBR'):
-            if c in COUNTRY_SET: L.append(f'- [Archery events in {CTRY[c]["name"]}]({SITE}/countries/{slug(CTRY[c]["name"])}/)')
+            if c in COUNTRY_SET: L.append(f'- [Archery events in {("the " if CTRY[c]["name"] in ("United States", "United Arab Emirates", "Netherlands") else "") + CTRY[c]["name"]}]({SITE}/countries/{slug(CTRY[c]["name"])}/)')
     L += [f'- [Newsletter]({SITE}/newsletter/): event news and results round-ups',
           f'- [Hobart nationals wrap-up]({SITE}/newsletter/hobart-nationals-2026/): the 2026 National Target and Para Championships in Hobart',
           f'- [Yankton world championships wrap-up]({SITE}/newsletter/yankton-world-championships-2026/): World Archery Field and 3D Championships 2026, Yankton, South Dakota', '',

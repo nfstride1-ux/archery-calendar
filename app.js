@@ -704,7 +704,7 @@ function seoAbout(){
   const slug = t => String(t).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   return `<section class="panel seo-about"><h2 class="sec-h">About Archery Calendars</h2>
     <p>Archery Calendars lists archery events in Australia in one calendar: field, 3D, target and indoor shoots from Archery Australia, the ABA (Australian Bowhunters Association), Archery WA and clubs. It also covers the USA, Denmark, New Zealand, Canada and more. It is free, and every event links to the organiser's entry page and flyer.</p>
-    <p class="seo-chips">${STATES.map(z => `<a class="chip" href="/australia/${slug(z[1])}/">${esc(z[1])}</a>`).join('')}<a class="chip" href="/australia/">All of Australia</a><a class="chip" href="/organisers/aba/">ABA shoots</a><a class="chip" href="/organisers/archery-wa/">Archery WA calendar</a><a class="chip" href="#/intl">Other countries</a></p></section>`;
+    <p class="seo-chips">${STATES.map(z => `<a class="chip" href="/australia/${slug(z[1])}/">${esc(z[1])}</a>`).join('')}<a class="chip" href="/australia/">All of Australia</a><a class="chip" href="/organisers/aba/">ABA shoots</a><a class="chip" href="/organisers/archery-wa/">Archery WA calendar</a><a class="chip" href="/countries/">Events in other countries</a></p></section>`;
 }
 function helpAbout(){
   let c = ''; try { const [, p, a] = (location.hash || '').split('?')[0].split('/'); if (p === 'home' && !a) return ''; if ((p === 'home' || p === 'intl') && a) c = iso3of(decodeURIComponent(a)) || ''; } catch {}

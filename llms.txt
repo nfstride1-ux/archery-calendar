@@ -26,6 +26,12 @@ Each event shows its dates, venue, discipline and organiser, with a link to the 
 - [Archery Australia events](https://archerycalendars.com/organisers/archery-australia/)
 - [Archery WA (Archery Western Australia) events](https://archerycalendars.com/organisers/archery-wa/)
 - [Traditional Archery Australia events](https://archerycalendars.com/organisers/taa/)
+- [Archery events by country](https://archerycalendars.com/countries/): events outside Australia
+- [Archery events in the United States](https://archerycalendars.com/countries/united-states/)
+- [Archery events in Denmark](https://archerycalendars.com/countries/denmark/)
+- [Archery events in New Zealand](https://archerycalendars.com/countries/new-zealand/)
+- [Archery events in Canada](https://archerycalendars.com/countries/canada/)
+- [Archery events in Great Britain](https://archerycalendars.com/countries/great-britain/)
 - [Newsletter](https://archerycalendars.com/newsletter/): event news and results round-ups
 - [Hobart nationals wrap-up](https://archerycalendars.com/newsletter/hobart-nationals-2026/): the 2026 National Target and Para Championships in Hobart
 - [Yankton world championships wrap-up](https://archerycalendars.com/newsletter/yankton-world-championships-2026/): World Archery Field and 3D Championships 2026, Yankton, South Dakota
