@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://archerycalendars.com/</loc>
-    <lastmod>2026-10-29</lastmod>
+    <lastmod>2026-10-31</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
     <image:image><image:loc>https://archerycalendars.com/img/target-face.jpg</image:loc></image:image>
@@ -29,4 +29,36 @@
     <priority>0.6</priority>
     <image:image><image:loc>https://archerycalendars.com/img/newsletter-archery-range-galston-gorge-2022.jpg</image:loc></image:image>
   </url>
+  <url><loc>https://archerycalendars.com/australia/</loc><lastmod>2026-10-26</lastmod><changefreq>daily</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/3d/</loc><lastmod>2026-10-23</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/australian-capital-territory/</loc><lastmod>2026-10-22</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/australian-capital-territory/target/</loc><lastmod>2026-10-22</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/field/</loc><lastmod>2026-10-26</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/indoor/</loc><lastmod>2026-10-17</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/new-south-wales/</loc><lastmod>2026-10-23</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/new-south-wales/3d/</loc><lastmod>2026-10-23</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/new-south-wales/field/</loc><lastmod>2026-10-20</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/new-south-wales/target/</loc><lastmod>2026-10-22</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/northern-territory/</loc><lastmod>2026-10-09</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/queensland/</loc><lastmod>2026-10-26</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/queensland/field/</loc><lastmod>2026-10-22</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/queensland/target/</loc><lastmod>2026-10-26</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/south-australia/</loc><lastmod>2026-10-22</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/south-australia/field/</loc><lastmod>2026-10-22</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/south-australia/target/</loc><lastmod>2026-10-22</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/target/</loc><lastmod>2026-10-26</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/tasmania/</loc><lastmod>2026-10-17</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/tasmania/field/</loc><lastmod>2026-10-17</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/tasmania/target/</loc><lastmod>2026-10-17</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/victoria/</loc><lastmod>2026-10-17</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/victoria/field/</loc><lastmod>2026-10-09</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/victoria/target/</loc><lastmod>2026-10-17</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/western-australia/</loc><lastmod>2026-10-26</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/western-australia/field/</loc><lastmod>2026-10-26</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/western-australia/indoor/</loc><lastmod>2026-10-09</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/western-australia/target/</loc><lastmod>2026-10-22</lastmod><changefreq>monthly</changefreq></url>
+  <url><loc>https://archerycalendars.com/organisers/aba/</loc><lastmod>2026-10-20</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/organisers/archery-australia/</loc><lastmod>2026-10-20</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/organisers/archery-wa/</loc><lastmod>2026-10-26</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/organisers/taa/</loc><lastmod>2026-10-17</lastmod><changefreq>weekly</changefreq></url>
 </urlset>

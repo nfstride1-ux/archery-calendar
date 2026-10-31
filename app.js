@@ -699,6 +699,13 @@ const HELP_ORGS = {USA: 'USA Archery, NFAA, IBO and the Archery Shooters Associa
   GBR: 'Archery GB', CAN: 'Archery Canada and Archery Manitoba', AUT: 'the Österreichischer Bogensportverband', SUI: 'Swiss Archery', MAS: 'NAAM', KOR: 'the Korea Archery Association', NED: 'IFAA',
   TUR: 'the Turkish Archery Federation', FRA: 'the FFTA', IRL: 'Archery Ireland', LUX: "the Fédération Luxembourgeoise de Tir à l'Arc", ITA: 'the Italian Archery Federation', SVK: 'the Slovak Archery Association',
   BEL: 'the Belgian Archery Federation', GER: 'IFAA', HUN: 'IFAA'};
+/* About panel on the Australian home: plain, crawlable text with real links to the static pages (scripts/build_seo.py) */
+function seoAbout(){
+  const slug = t => String(t).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return `<section class="panel seo-about"><h2 class="sec-h">About Archery Calendars</h2>
+    <p>Archery Calendars lists archery events in Australia in one calendar: field, 3D, target and indoor shoots from Archery Australia, the ABA (Australian Bowhunters Association), Archery WA and clubs. It also covers the USA, Denmark, New Zealand, Canada and more. It is free, and every event links to the organiser's entry page and flyer.</p>
+    <p class="seo-chips">${STATES.map(z => `<a class="chip" href="/australia/${slug(z[1])}/">${esc(z[1])}</a>`).join('')}<a class="chip" href="/australia/">All of Australia</a><a class="chip" href="/organisers/aba/">ABA shoots</a><a class="chip" href="/organisers/archery-wa/">Archery WA calendar</a><a class="chip" href="#/intl">Other countries</a></p></section>`;
+}
 function helpAbout(){
   let c = ''; try { const [, p, a] = (location.hash || '').split('?')[0].split('/'); if (p === 'home' && !a) return ''; if ((p === 'home' || p === 'intl') && a) c = iso3of(decodeURIComponent(a)) || ''; } catch {}
   if (!c) { try { c = homeCode(); } catch {} }
@@ -741,6 +748,7 @@ function vHome(){
       <section><h2 class="sec-h">Coming up in my events</h2>
       ${up.length ? `<div class="list">${up.slice(0, 4).map(evCard).join('')}</div>` : `<div class="empty">No events yet. Tap ☆ on any event in <a href="#/browse">Find events</a>.</div>`}</section>
     </div>
+    ${seoAbout()}
     ${appVideoBox()}
     ${clubCta()}
     <p class="center see-all"><a class="btn" href="#/browse" id="seeAll">See all events →</a></p>
@@ -2831,7 +2839,7 @@ const CDISC = [['target', 'Target', /target|outdoor|para|\b(720|1440|900)\b/i, '
 const discPhoto = (code, k, gen) => PH['c_' + String(iIso(code) || '').toLowerCase() + '_' + k] || (gen && PH[gen]) || null;
 function vCountryHome(code){
   const nm = iName(code), the = /^(United|Netherlands)/.test(nm) ? 'the ' : '';
-  setTitle(`Archery in ${the}${nm} · Archery Calendars`);
+  setTitle(`Archery in ${the}${nm}`);
   const h = PH[cHero(code)] || (code === 'USA' ? PH.us_field : PH['3d']) || photo('mixed');
   const hero = `<section class="hero" style="--img:url('${esc(h.file)}');--pos:${esc(h.pos || 'center 35%')}"><div class="wrap hero-grid">
     <div class="hero-copy"><p class="kicker">${flag(iIso(code))} ${esc(nm)}</p><h1>Every archery event in ${the}${esc(nm)}.<br><span>One calendar.</span></h1>

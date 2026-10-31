@@ -1,6 +1,7 @@
 /* What's new: plain-English release notes for Archery Calendars, newest first. Every item comes from a real commit (hashes listed). */
 window.CAL_WHATSNEW = [
   {d: '2026-10-31', label: 'Sat 31 Oct 2026', items: [
+    ['Pages for each state, discipline and organiser', 'There are now simple pages listing archery events by state and territory, by discipline (field, 3D, target and indoor) and by organiser (ABA, Archery WA, Archery Australia and Traditional Archery Australia), for example archerycalendars.com/australia/western-australia/. They help people find the calendar on Google. Links to them are at the bottom of the home page, in the About Archery Calendars box. Tap any event on them to open it in the app.', ['this release']],
     ['New name: Archery Calendars', 'The site is now called Archery Calendars, to match our web address, archerycalendars.com. Nothing else changes: the same address, the same events, and your saved events, entries and settings are all still here. If you put the site on your phone like an app, it keeps working as before.', ['this release']],
     ['Visit insights with Microsoft Clarity', 'We now use Microsoft Clarity to see how visitors use the site, such as where people click and how far they scroll, so we can find and fix the spots that are hard to use. Anything you type, such as your name, email or phone, is hidden from the recordings. Our visit counts with GoatCounter are unchanged. The Privacy page has the details.', ['this release']],
   ]},

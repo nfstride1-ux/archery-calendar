@@ -2,17 +2,36 @@
 
 > Archery Calendars (archerycalendars.com) is a free calendar of archery events and competitions: field, 3D, target and indoor. It covers Australia (Archery Australia, the Australian Bowhunters Association (ABA), Archery WA, the state archery associations and club shoots in every state and territory) plus the USA, Denmark, New Zealand, Canada, Great Britain and many other countries, and world events such as the World Cup and World Championships. Made by an archer, for archers.
 
-Each event shows its dates, venue, discipline and organiser, with a link to the organiser's entry page and flyer. Event details come from organisers' public calendars, flyers and club submissions. Always confirm dates and entry details with the organiser. The site does not publish archers' personal contact details.
+Currently 527 upcoming events are listed (229 in Australia). Data updated 2026-10-30.
+
+Each event shows its dates, venue, discipline and organiser, with a link to the organiser's entry page and flyer. Event details come from organisers' public calendars, flyers and club submissions. Always confirm dates and entry details with the organiser. The site does not publish archers' personal contact details or scores in these pages.
 
 ## Main pages
 
 - [Archery Calendars](https://archerycalendars.com/): the calendar app. Search and filter events by country, state, discipline and organiser, save events, get reminders before entries close, find clubs near you, and score rounds with ScoreTool.
+- [Archery events in Australia](https://archerycalendars.com/australia/): all Australian events, by state, discipline and organiser
+- [Archery events in New South Wales](https://archerycalendars.com/australia/new-south-wales/)
+- [Archery events in Victoria](https://archerycalendars.com/australia/victoria/)
+- [Archery events in Queensland](https://archerycalendars.com/australia/queensland/)
+- [Archery events in Western Australia](https://archerycalendars.com/australia/western-australia/)
+- [Archery events in South Australia](https://archerycalendars.com/australia/south-australia/)
+- [Archery events in Tasmania](https://archerycalendars.com/australia/tasmania/)
+- [Archery events in Australian Capital Territory](https://archerycalendars.com/australia/australian-capital-territory/)
+- [Archery events in Northern Territory](https://archerycalendars.com/australia/northern-territory/)
+- [Field archery events in Australia](https://archerycalendars.com/australia/field/)
+- [3D archery events in Australia](https://archerycalendars.com/australia/3d/)
+- [Indoor archery events in Australia](https://archerycalendars.com/australia/indoor/)
+- [Target archery events in Australia](https://archerycalendars.com/australia/target/)
+- [Australian Bowhunters Association (ABA) events](https://archerycalendars.com/organisers/aba/)
+- [Archery Australia events](https://archerycalendars.com/organisers/archery-australia/)
+- [Archery WA (Archery Western Australia) events](https://archerycalendars.com/organisers/archery-wa/)
+- [Traditional Archery Australia events](https://archerycalendars.com/organisers/taa/)
 - [Newsletter](https://archerycalendars.com/newsletter/): event news and results round-ups
 - [Hobart nationals wrap-up](https://archerycalendars.com/newsletter/hobart-nationals-2026/): the 2026 National Target and Para Championships in Hobart
 - [Yankton world championships wrap-up](https://archerycalendars.com/newsletter/yankton-world-championships-2026/): World Archery Field and 3D Championships 2026, Yankton, South Dakota
 
 ## Notes for AI and search tools
 
-- The calendar is a JavaScript app. Event listings appear after the page runs its scripts; the raw home page holds a short plain-text summary.
-- Event times are local to the venue.
+- The calendar itself is a JavaScript app; the pages listed above are plain HTML built from the same data every time it changes.
+- Event times are local to the venue. Where dates are not yet confirmed the page says so.
 - Clubs and organisers can add or correct an event with "Submit an event" in the app, or send their whole calendar in any format (PDF, photo, spreadsheet, Word file, link or text).

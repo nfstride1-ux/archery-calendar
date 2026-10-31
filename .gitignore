@@ -3,3 +3,4 @@ incoming/
 .DS_Store
 
 !guides/*.pdf
+__pycache__/
