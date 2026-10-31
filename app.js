@@ -2502,14 +2502,15 @@ const SOON = [];
 const I_FULL = ['USA', 'DEN', 'MAS', 'KOR', 'NZL', 'CAN'];   // + Canada (Archery Canada, ianseo, provincial bodies), owner 13 Oct 2026
 //   // + New Zealand (ArcheryOSA / Archery NZ, NZFAA, NZBS), owner 13 Oct 2026
 //   // + Malaysia (NAAM calendar) and South Korea (Korea Archery Association), owner 10 Oct 2026
-/* Outside the USA we list 3D / bowhunter events and IFAA / continental majors only (owner, 9 Oct 2026).
+/* Outside the USA we started with 3D / bowhunter events and IFAA / continental majors (owner, 9 Oct 2026); countries now also have nationals,
+   indoor and target events, so the dropdown group is just 'By country' (owner, 31 Oct 2026).
    'WORLD' = every country except the USA; single countries only appear once they have an upcoming event. */
 const iWorldCtrs = () => ICTRY.countries.filter(c => c.code !== 'USA' && (INTL ? iUpN(c.code) > 0 : c.upcoming > 0));
 function intlOptions(cur){
   const o = c => `<option value="${esc(c.code)}" ${cur === c.code ? 'selected' : ''}>${flag(c.iso2)} ${esc(c.name)}</option>`;
   const usa = I_FULL.map(k => ICTRY.countries.find(c => c.code === k)).filter(Boolean), wc = iWorldCtrs().filter(c => !I_FULL.includes(c.code)), soon = SOON.filter(([c]) => !wc.some(x => x.code === c));
-  return usa.map(o).join('') + (ICTRY.countries.length > 1 ? `<option value="WORLD" ${cur === 'WORLD' ? 'selected' : ''}>🌐 World events (World Cup, Worlds, Olympics, 3D &amp; majors)</option>` : '')
-    + (wc.length ? `<optgroup label="By country (3D &amp; majors)">${wc.map(o).join('')}</optgroup>` : '')
+  return usa.map(o).join('') + (ICTRY.countries.length > 1 ? `<option value="WORLD" ${cur === 'WORLD' ? 'selected' : ''}>🌐 World events (World Cup, Worlds, Olympics and more)</option>` : '')
+    + (wc.length ? `<optgroup label="By country">${wc.map(o).join('')}</optgroup>` : '')
     + (soon.length ? `<optgroup label="Coming soon">${soon.map(([c, n]) => `<option value="${c}" disabled>${esc(n)} – coming soon</option>`).join('')}</optgroup>` : '');
 }
 function intlMenu(){
