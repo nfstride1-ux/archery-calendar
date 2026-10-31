@@ -3300,6 +3300,121 @@
 "lat":33.68329,
 "lng":-112.08741,
 "p":"v"
+},
+"Sportland Tennishalle, Obertshausener Straße 2, 4663 Laakirchen":{
+"lat":47.98502,
+"lng":13.8176,
+"p":"v"
+},
+"Millenniumshalle, Sportplatz \"In der Au\", 2000 Stockerau":{
+"lat":48.38219,
+"lng":16.20511,
+"p":"v"
+},
+"Turnhalle Dr. Friedrich Niederl, Hochstraße 18, Kammern im Liesingtal":{
+"lat":47.39516,
+"lng":14.91502,
+"p":"v"
+},
+"Turnhalle der GTVS Aspernallee, Aspernallee 5, 1020 Wien":{
+"lat":48.1966,
+"lng":16.44272,
+"p":"v"
+},
+"Sporthalle Wimpassing, Bundesstraße 42, 2632 Wimpassing":{
+"lat":47.69991,
+"lng":16.0266,
+"p":"v"
+},
+"Bogenhalle des VAS Villach, Mittelschule Auen, Villach":{
+"lat":46.60092,
+"lng":13.84574,
+"p":"v"
+},
+"Schwarzenbergkaserne, Wals-Siezenheim":{
+"lat":47.79971,
+"lng":12.98214,
+"p":"v"
+},
+"Hall Omnisports Bonnevoie, 42 Rue Jean-François Gangler, Luxembourg":{
+"lat":49.59645,
+"lng":6.14582,
+"p":"v"
+},
+"Hall Omnisports Frankie Hansen, Zone Artisanale et Commerciale, Ettelbruck":{
+"lat":49.8405,
+"lng":6.09366,
+"p":"v"
+},
+"Wasserbillig":{
+"lat":49.71434,
+"lng":6.50135,
+"p":"t"
+},
+"Siu Sai Wan Sports Ground, Hong Kong":{
+"lat":22.26761,
+"lng":114.24888,
+"p":"v"
+},
+"Kings Park Archery Club, Masabalala Yengwa Ave, Durban":{
+"lat":-29.82398,
+"lng":31.03365,
+"p":"v"
+},
+"Marks Park Archery Club, Marks Park Sports Club, Orange Rd, Emmarentia, Johannesburg":{
+"lat":-26.16359,
+"lng":28.0039,
+"p":"v"
+},
+"Knysna Target Archery Club, Knysna High School fields, Knysna":{
+"lat":-34.03854,
+"lng":23.04235,
+"p":"v"
+},
+"Halbrendshallen, Liavegen 53, 6800 Førde":{
+"lat":61.44881,
+"lng":5.83404,
+"p":"v"
+},
+"Sandefjord Bueskyttere, Laskengrenda 10, Sandefjord":{
+"lat":59.14247,
+"lng":10.1908,
+"p":"v"
+},
+"Camp Luther, 9311 Shook Rd, Mission, BC":{
+"lat":49.1704,
+"lng":-122.2438,
+"p":"v"
+},
+"Oliver, BC":{
+"lat":49.18333,
+"lng":-119.55,
+"p":"t"
+},
+"Olympia Mol, Sluis 75, Mol":{
+"lat":51.20943,
+"lng":5.12396,
+"p":"v"
+},
+"Europalaan 3, Terhagen":{
+"lat":51.07705,
+"lng":4.40298,
+"p":"v"
+},
+"Kerkhovenweg 2A, Leopoldsburg":{
+"lat":51.12512,
+"lng":5.26243,
+"p":"v"
+},
+"Ljubešćica":{
+"lat":46.16342,
+"lng":16.38201,
+"p":"t"
+},
+"Varaždin":{
+"lat":46.30796,
+"lng":16.33782,
+"p":"t"
 }
 }
 }
