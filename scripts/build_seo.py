@@ -12,6 +12,10 @@ Usage:  python3 scripts/build_seo.py                 full build into the repo
         python3 scripts/build_seo.py --sample        small sample (3 events, WA page, Denmark page, llms.txt)
         python3 scripts/build_seo.py --out /tmp/x    write somewhere else (for counts / dry runs)
         python3 scripts/build_seo.py --check         exit 1 if generated files in the repo are stale
+KEEP IT CURRENT: whenever data/events.json or data/intl.json changes (an event added, edited or removed), run
+  python3 scripts/build_seo.py   (or: python3 scripts/process_calendar_inbox.py pages)
+and commit events/ australia/ organisers/ countries/ llms.txt sitemap.xml with the data change. scripts/seo_test.py fails
+while the pages are stale. Pages also say "upcoming"/"past" relative to today, so rebuild at least once a day.
 Published page groups (PUBLISHED below) grow one release at a time: hubs (Australia hub, states, disciplines,
 organisers), events (/events/<id>/), countries (/countries/). Links to a group that is not published yet point into the app.
 Run it after any change to data/events.json or data/intl.json, and commit the changed pages with the data."""
@@ -519,7 +523,11 @@ if args.check:
         full = os.path.join(ROOT, p.lstrip('/')) if not p.endswith('/') else os.path.join(ROOT, p.lstrip('/'), 'index.html')
         if not os.path.exists(full) or open(full, encoding='utf-8').read() != h: stale.append(p)
     if open(sm_path, encoding='utf-8').read() != sitemap: stale.append('/sitemap.xml')
-    print('stale:', len(stale), stale[:5]); sys.exit(1 if stale else 0)
+    want = {os.path.join(ROOT, p.lstrip('/'), 'index.html') for p in pages if p.endswith('/')}
+    for d in GEN_DIRS:   # pages left over from events that were removed or renamed
+        for dp, _, fs in os.walk(os.path.join(ROOT, d)):
+            stale += ['/' + os.path.relpath(os.path.join(dp, f), ROOT) for f in fs if f == 'index.html' and os.path.join(dp, f) not in want]
+    print('stale:', len(stale), stale[:5]); print('OK: pages match the data' if not stale else 'Run: python3 scripts/build_seo.py, then commit events/ australia/ organisers/ countries/ llms.txt sitemap.xml'); sys.exit(1 if stale else 0)
 for d in GEN_DIRS:
     if not args.sample and os.path.isdir(os.path.join(OUT, d)): shutil.rmtree(os.path.join(OUT, d))
 for p, (h, _) in pages.items(): write(p, h)
