@@ -232,6 +232,7 @@ dl.kv.fx dd{font-weight:500}
  .side .ev-times{order:-1;margin-top:16px;width:100%;box-sizing:border-box}
  .side .ev-times + .act{margin-top:0}
  .side .ad-side{order:2;margin-bottom:10px}
+ .side .wx{order:-1;width:100%;box-sizing:border-box}
 }
 @media (max-width:720px){
  .nav{-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent);padding-right:40px}
@@ -1452,3 +1453,26 @@ html.sp-lock{overflow:hidden}
 }
 .seo-about{margin-top:18px}.seo-about .sec-h{margin-top:0}.seo-about p{max-width:820px;line-height:1.55}
 .seo-cta .btn{white-space:normal;text-align:center;max-width:100%}
+
+/* Weather forecast (weather.js): hour-by-hour table per shoot day, venue local time */
+.wx[hidden],.wx-line[hidden],.wx-tbl tr[hidden]{display:none}
+.wx h2.sec{margin-bottom:4px}
+.wx .wx-tz{margin:0 0 8px}
+.wx-day{border-top:1px solid var(--line);padding:6px 0}
+.wx-day>summary{cursor:pointer;display:flex;flex-wrap:wrap;gap:2px 10px;align-items:baseline;font-size:15px;padding:4px 0;list-style-position:inside}
+.wx-day>summary b{font-weight:800}
+.wx-sum{font-size:14px;color:var(--ink2)}
+.wx-tbl{width:100%;border-collapse:collapse;font-size:15px;font-variant-numeric:tabular-nums;margin:4px 0 6px}
+.wx-tbl th,.wx-tbl td{padding:5px 4px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--grey-bg)}
+.wx-tbl th:first-child{text-align:left}
+.wx-tbl thead th{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em}
+.wx-tbl thead small{font-size:11px;text-transform:none;font-weight:600}
+.wx-tbl tbody th{font-weight:700;color:var(--ink)}
+.wx-tbl td.wx-p{background:linear-gradient(90deg,transparent calc(100% - var(--p)),rgba(29,78,216,.2) 0)}
+.wx .wx-all{font-size:14px;padding:6px 0;color:var(--blue)}
+.wx .wx-src{font-size:12px;margin:6px 0 0}
+.meta.wx-line{color:var(--ink2);margin:2px 0}
+.meta.wx-line a{white-space:nowrap}
+.wx{scroll-margin-top:130px}
+.wx-day>summary{list-style:none}.wx-day>summary::-webkit-details-marker{display:none}
+.wx-day>summary b::before{content:'▸ ';color:var(--muted)}.wx-day[open]>summary b::before{content:'▾ '}

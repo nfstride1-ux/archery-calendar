@@ -1076,6 +1076,7 @@ function vShoot(id){
       ${x.info_only ? '' : myEntry(x)}
       ${x.info_only ? '' : `<button class="btn ${on ? 'alt' : ''} block" id="saveBtn" aria-pressed="${on}">${on ? '★ In My events – remove' : '☆ Add to My events'}</button>`}
       ${x.start_date && !x.info_only ? `<button class="btn alt block" id="icsOne">▦ Add to my calendar (.ics)</button>` : ''}</section>
+    ${typeof wxBox === 'function' ? wxBox(x) : ''}
     ${adSlot('side', t)}
     ${I ? '' : clubCta(true)}
    </aside>
@@ -1130,7 +1131,7 @@ function dayPanel(k, mineDay){
   const d = pd(k), lbl = d.toLocaleDateString(LOC(), {weekday:'long', day:'numeric', month:'long', year:'numeric'}), fol = followed();
   const clubNm = x => (CLUB[x.club_id] || {}).name || folIds(x).map(id => (CLUB[id] || {}).name).filter(Boolean)[0] || x.host || x.org || '';
   const where = x => x.state || (x._intl ? x.country_name || x.country || '' : '');
-  const row = x => { const on = !!S.saved[x.id]; return `<li class="dp-row"><div class="dp-main"><a href="#/shoot/${encodeURIComponent(x.id)}${isPast(x) ? '?r=1' : ''}"><b>${esc(x.name)}</b></a>${isPast(x) ? ` <a class="b res-lnk" href="#/shoot/${encodeURIComponent(x.id)}?r=1">🏆 ${resOf(x) ? (resOf(x).kind === 'full' ? 'See scores' : 'Results link') : 'Results'}</a>` : ''}${tmLine(x, k)}<div class="meta">${esc([clubNm(x), (evTimesShort(x, k) ? '' : x.start_times) || (x.end_date && x.end_date !== x.start_date ? range(x) : ''), where(x)].filter(Boolean).join(' · '))}</div>${isPast(x) ? '' : entryBtn(x, 'dp-reg', false)}${S.myClubs.some(id => folIds(x).includes(id)) ? '<span class="b myclub">🏠 My club</span>' : '<span class="b watching">👁 Watching</span>'}${clubOnly(x) ? ' <span class="b members">👥 Members only</span>' : ''}</div>${x.info_only ? '' : `<button class="star dp-star" aria-pressed="${on}" aria-label="${on ? 'Remove from' : 'Add to'} my events" data-star="${esc(x.id)}">${on ? '★' : '☆'}</button>`}</li>`; };
+  const row = x => { const on = !!S.saved[x.id]; return `<li class="dp-row"><div class="dp-main"><a href="#/shoot/${encodeURIComponent(x.id)}${isPast(x) ? '?r=1' : ''}"><b>${esc(x.name)}</b></a>${isPast(x) ? ` <a class="b res-lnk" href="#/shoot/${encodeURIComponent(x.id)}?r=1">🏆 ${resOf(x) ? (resOf(x).kind === 'full' ? 'See scores' : 'Results link') : 'Results'}</a>` : ''}${tmLine(x, k)}${typeof wxLine === 'function' ? wxLine(x, k) : ''}<div class="meta">${esc([clubNm(x), (evTimesShort(x, k) ? '' : x.start_times) || (x.end_date && x.end_date !== x.start_date ? range(x) : ''), where(x)].filter(Boolean).join(' · '))}</div>${isPast(x) ? '' : entryBtn(x, 'dp-reg', false)}${S.myClubs.some(id => folIds(x).includes(id)) ? '<span class="b myclub">🏠 My club</span>' : '<span class="b watching">👁 Watching</span>'}${clubOnly(x) ? ' <span class="b members">👥 Members only</span>' : ''}</div>${x.info_only ? '' : `<button class="star dp-star" aria-pressed="${on}" aria-label="${on ? 'Remove from' : 'Add to'} my events" data-star="${esc(x.id)}">${on ? '★' : '☆'}</button>`}</li>`; };
   const fs = folOnDay(k).filter(x => !mineDay.some(y => y.id === x.id));
   const homeSt = (CLUB[S.homeClub] || CLUB[fol[0]] || {}).state || (S.states.length === 1 ? S.states[0] : '');
   const stCode = homeSt && (STATES.find(s => s[0] === homeSt || s[1] === homeSt) || [])[0] || '';
@@ -2981,8 +2982,8 @@ function render(){
   if (p === 'browse') { v.innerHTML = vBrowse(); bindBrowse(); }
   else if (p === 'shoot') { const id = decodeURIComponent(arg || ''); if (S.clubNew[id]) { delete S.clubNew[id]; save(); }
     if (!BYID[id] && !INTL) { v.innerHTML = '<div class="wrap"><p class="loading">Loading event…</p></div>'; loadIntl().then(() => { if (location.hash.split('?')[0] === h) render(); }).catch(() => { if (location.hash.split('?')[0] === h) { v.innerHTML = vShoot(id); } }); }
-    else { v.innerHTML = vShoot(id); bindShoot(id); if (typeof selfBind === 'function') selfBind(id); } }
-  else if (p === 'calendar') { v.innerHTML = vCalendar(); bindCalendar(); }
+    else { v.innerHTML = vShoot(id); bindShoot(id); if (typeof selfBind === 'function') selfBind(id); if (typeof wxFill === 'function') wxFill(); } }
+  else if (p === 'calendar') { v.innerHTML = vCalendar(); bindCalendar(); if (typeof wxFill === 'function') wxFill(); }
   else if (p === 'entries') v.innerHTML = vEntries();
   else if (p === 'settings') { v.innerHTML = vSettings(); bindSettings(); if (arg === 'clubs') setTimeout(() => { const c = $('#clubs'); c && c.scrollIntoView(); }, 30); }
   else if (p === 'advertise') v.innerHTML = vAdvertise();
