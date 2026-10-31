@@ -137,6 +137,31 @@ MANUAL_MATCH = [
     (r'^Andeok-myeon Stadium', {'lat': 33.25739, 'lng': 126.33114, 'p': 't', 'q': 'Andeok-myeon Stadium, 59 Hwasunseoseo-ro, Andeok-myeon, Seogwipo'}),   # facility register address; place listing beside the stadium
     (r'^Sulaymaniyah Sport club', {'lat': 35.5498, 'lng': 45.4289, 'p': 't', 'q': 'Sulaymaniyah Stadium (Sulaymaniyah SC home ground)'}),   # Wikipedia coords of the club's stadium; archery field not published
     (r'Easton Newberry Archery Center', {'lat': 29.64635, 'lng': -82.6065, 'p': 't', 'q': 'Newberry, Florida'}),   # street address not in OSM; town only, never Gainesville
+    # Oct 31 2026 event scan (batch A): venue checked by hand for every new event; source after the point in q. 't' = the official listing gives only the town.
+    ('Parc des Sports de Treichville', {'lat': 5.29807, 'lng': -4.00545, 'p': 'v', 'q': 'Palais des Sports de Treichville, Abidjan (OSM)'}),
+    ('Polideportivo Ciudad Merliot', {'lat': 13.69004, 'lng': -89.27005, 'p': 'v', 'q': 'Polideportivo de Ciudad Merliot (OSM)'}),
+    ('Antalya Archery Centre', {'lat': 36.88901, 'lng': 30.67057, 'p': 'v', 'q': 'Antalya 100. Yıl Okçuluk Tesisleri, Sakıp Sabancı Blv (Wikipedia/OSM)'}),
+    ('^Nové Město nad Metují$', {'lat': 50.34421, 'lng': 16.1513, 'p': 't', 'q': 'Nové Město nad Metují (town, WA gives only the town)'}),
+    ('^Dubai$', {'lat': 25.26472, 'lng': 55.29242, 'p': 't', 'q': 'Dubai (city, WA gives only the city)'}),
+    ('^Ahmedabad$', {'lat': 23.02154, 'lng': 72.58006, 'p': 't', 'q': 'Ahmedabad (city, WA gives only the city)'}),
+    ('^Lima$', {'lat': -12.04598, 'lng': -77.03059, 'p': 't', 'q': 'Lima (city, WA gives only the city)'}),
+    ('LSC Sports Complex \\"Druskininkai\\"', {'lat': 54.00112, 'lng': 23.99987, 'p': 'v', 'q': 'M.K. Čiurlionio g. 115A, Druskininkai (OSM building)'}),
+    ('NAEC Stoneleigh', {'lat': 52.34209, 'lng': -1.52883, 'p': 'v', 'q': 'Stoneleigh Park, Warwickshire (OSM)'}),
+    ('Sport Wales National Centre, Sophia Close', {'lat': 51.48604, 'lng': -3.19044, 'p': 'v', 'q': 'Sport Wales National Centre, Sophia Close (OSM)'}),
+    ('^Bogfimisetrið, Dugguvogur 42', {'lat': 64.13201, 'lng': -21.84924, 'p': 'v', 'q': 'Bogfimisetrið, Dugguvogur 42 (OSM)'}),
+    ('^Shillong, Meghalaya$', {'lat': 25.57599, 'lng': 91.88279, 'p': 't', 'q': 'Shillong (city, WA gives only the city)'}),
+    ('^Maulana Azad Stadium, Jammu$', {'lat': 32.72295, 'lng': 74.85383, 'p': 'v', 'q': 'Maulana Azad Stadium, Jammu (OSM)'}),
+    ('Maaspoort, Marathonloop 1', {'lat': 51.72225, 'lng': 5.3157, 'p': 'v', 'q': 'Maaspoort, Marathonloop 1 (OSM; KHSN event page)'}),
+    ('^Leiraveien 2, 2000 Lillestrøm$', {'lat': 59.969, 'lng': 11.07485, 'p': 'v', 'q': 'Leiraveien 2, Lillestrøm (OSM; NBF event 2027024)'}),
+    ('^SBB Arena, Snoddasgatan 12, Bollnäs$', {'lat': 61.3541, 'lng': 16.39495, 'p': 'v', 'q': 'SBB Arena sports hall, Bollnäs (OSM)'}),
+    ('^Sion$', {'lat': 46.23118, 'lng': 7.35888, 'p': 't', 'q': 'Sion (town, WA gives only the town)'}),
+    ('^Macolin \\(Magglingen\\)$', {'lat': 47.14025, 'lng': 7.21588, 'p': 't', 'q': 'Magglingen/Macolin (village, WA gives only the place)'}),
+    ('^Holstebro$', {'lat': 56.35903, 'lng': 8.61592, 'p': 't', 'q': 'Holstebro (town, WA gives only the town)'}),
+    ('Hall Marcel Balthasar', {'lat': 49.62219, 'lng': 6.08447, 'p': 'v', 'q': 'Hall Marcel Balthasar, 299 Rue de Reckenthal, Strassen (strassen.lu; OSM)'}),
+    ('Two Rivers Archery Club', {'lat': 38.93471, 'lng': -78.13325, 'p': 'v', 'q': 'Two Rivers Archery Club, 83 Dismal Hollow Rd, Front Royal VA (place listing)'}),
+    ('Owen County High School', {'lat': 38.52964, 'lng': -84.80868, 'p': 'v', 'q': 'Owen County High School, 2340 Hwy 22 E, Owenton KY (NCES)'}),
+    ('H&H Shooting Sports', {'lat': 35.46185, 'lng': -97.59694, 'p': 'v', 'q': 'H&H Shooting Sports, 400 S Vermont Ave, Oklahoma City (OSM)'}),
+    ('Arizona Archery Club, 1115 W Deer Valley', {'lat': 33.68329, 'lng': -112.08741, 'p': 'v', 'q': 'Arizona Archery Club, 1115 W Deer Valley Rd, Phoenix (OSM)'}),
 ]
 MANUAL_CLUBS = {'hobart-archers': {'lat': -42.89419, 'lng': 147.49488, 'p': 'v', 'q': '195 Roches Beach Rd, Lauderdale TAS'},
                 'whiteman-park-archers': {'lat': -31.80537, 'lng': 115.92349, 'p': 'v', 'q': 'WA Archery Centre, Jules Steiner Memorial Dr, Whiteman WA'},

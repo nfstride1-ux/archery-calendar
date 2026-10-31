@@ -1,5 +1,5 @@
 {
-"generated":"2026-10-30",
+"generated":"2026-10-31",
 "note":"Coordinates for clubs and event venues, geocoded only from addresses and place names already in the calendar data (OpenStreetMap Nominatim, (c) OpenStreetMap contributors, ODbL). p: v = a venue or street, t = only a suburb, town or city. null = no reliable location, never guessed.",
 "clubs":{
 "canberra-archery-club":{
@@ -1405,9 +1405,9 @@
 "p":"v"
 },
 "Owen County High School, Owenton, Kentucky":{
-"lat":38.53646,
-"lng":-84.84189,
-"p":"t"
+"lat":38.52964,
+"lng":-84.80868,
+"p":"v"
 },
 "Maryland State Game and Fish, Perry Hall, Maryland":{
 "lat":39.40731,
@@ -1470,9 +1470,9 @@
 "p":"v"
 },
 "H&H Shooting Sports, Oklahoma City, Oklahoma":{
-"lat":35.47299,
-"lng":-97.51705,
-"p":"t"
+"lat":35.46185,
+"lng":-97.59694,
+"p":"v"
 },
 "UIC Student Recreation Facility, Chicago, Illinois":{
 "lat":41.87556,
@@ -1560,9 +1560,9 @@
 "p":"v"
 },
 "Two Rivers Archery Club, Front Royal, Virginia":{
-"lat":38.91791,
-"lng":-78.19181,
-"p":"t"
+"lat":38.93471,
+"lng":-78.13325,
+"p":"v"
 },
 "Dracut, Massachusetts, Kestrel Archery":{
 "lat":42.66451,
@@ -3179,6 +3179,126 @@
 "Huanglong Sports Centre, Hangzhou, China":{
 "lat":30.26836,
 "lng":120.12791,
+"p":"v"
+},
+"Parc des Sports de Treichville (Palais des Sports), Abidjan":{
+"lat":5.29807,
+"lng":-4.00545,
+"p":"v"
+},
+"Polideportivo Ciudad Merliot (campo de tiro con arco \"Jorge Jiménez\"), Ciudad Merliot":{
+"lat":13.69004,
+"lng":-89.27005,
+"p":"v"
+},
+"Antalya Archery Centre, Sakıp Sabancı Bulvarı 8, Meltem, Antalya":{
+"lat":36.88901,
+"lng":30.67057,
+"p":"v"
+},
+"Nové Město nad Metují":{
+"lat":50.34421,
+"lng":16.1513,
+"p":"t"
+},
+"Dubai":{
+"lat":25.26472,
+"lng":55.29242,
+"p":"t"
+},
+"Ahmedabad":{
+"lat":23.02154,
+"lng":72.58006,
+"p":"t"
+},
+"Lima":{
+"lat":-12.04598,
+"lng":-77.03059,
+"p":"t"
+},
+"LSC Sports Complex \"Druskininkai\", M.K. Čiurlionio g. 115A, Druskininkai":{
+"lat":54.00112,
+"lng":23.99987,
+"p":"v"
+},
+"Hall 2, NAEC Stoneleigh Park, Warwickshire":{
+"lat":52.34209,
+"lng":-1.52883,
+"p":"v"
+},
+"Sport Wales National Centre, Sophia Close, Cardiff":{
+"lat":51.48604,
+"lng":-3.19044,
+"p":"v"
+},
+"Bogfimisetrið, Dugguvogur 42, Reykjavík":{
+"lat":64.13201,
+"lng":-21.84924,
+"p":"v"
+},
+"Shillong, Meghalaya":{
+"lat":25.57599,
+"lng":91.88279,
+"p":"t"
+},
+"Maulana Azad Stadium, Jammu":{
+"lat":32.72295,
+"lng":74.85383,
+"p":"v"
+},
+"Maaspoort, Marathonloop 1, 's-Hertogenbosch":{
+"lat":51.72225,
+"lng":5.3157,
+"p":"v"
+},
+"Leiraveien 2, 2000 Lillestrøm":{
+"lat":59.969,
+"lng":11.07485,
+"p":"v"
+},
+"SBB Arena, Snoddasgatan 12, Bollnäs":{
+"lat":61.3541,
+"lng":16.39495,
+"p":"v"
+},
+"Sion":{
+"lat":46.23118,
+"lng":7.35888,
+"p":"t"
+},
+"Macolin (Magglingen)":{
+"lat":47.14025,
+"lng":7.21588,
+"p":"t"
+},
+"Holstebro":{
+"lat":56.35903,
+"lng":8.61592,
+"p":"t"
+},
+"Hall Marcel Balthasar, 299 Rue de Reckenthal, Strassen":{
+"lat":49.62219,
+"lng":6.08447,
+"p":"v"
+},
+"Two Rivers Archery Club, 83 Dismal Hollow Rd, Front Royal, Virginia":{
+"lat":38.93471,
+"lng":-78.13325,
+"p":"v"
+},
+"Owen County High School, 2340 Highway 22 E, Owenton, Kentucky":{
+"lat":38.52964,
+"lng":-84.80868,
+"p":"v"
+},
+"H&H Shooting Sports, 400 S Vermont Ave, Oklahoma City, Oklahoma":{
+"lat":35.46185,
+"lng":-97.59694,
+"p":"v"
+},
+"Arizona Archery Club, 1115 W Deer Valley Rd, Phoenix, Arizona":{
+"lat":33.68329,
+"lng":-112.08741,
 "p":"v"
 }
 }
