@@ -920,7 +920,7 @@ function myEntry(x){
     <p class="st-now st-${s}" id="stNow">${ST_TXT[s]}</p>
     ${statusToggles(x, true)}
     ${s === 'none' ? `<p class="note">Entered somewhere else (Assemble, Archers Diary, email)? Tick it here. It's added to My events automatically.</p>` : `
-    <form id="entryForm" class="ent-form"><p class="note">Optional details</p>
+    <form id="entryForm" data-clarity-mask="true" class="ent-form"><p class="note">Optional details</p>
       <div class="row"><div><label for="f_amt">Amount paid ($)</label><input id="f_amt" inputmode="decimal" placeholder="e.g. 85" value="${esc(en.amount || '')}"></div>
       <div><label for="f_pd">Date paid</label><input type="date" id="f_pd" value="${esc(en.paid_date || '')}"></div></div>
       <label for="f_ref">Receipt / entry number</label><input id="f_ref" value="${esc(en.ref || '')}" placeholder="e.g. Assemble #12345">
@@ -1275,7 +1275,7 @@ function vAdvertise(){
     <section class="panel"><h2 class="sec">How it works</h2>
       <ul class="ticks"><li>Arranged directly with archery businesses. Email us to talk it through.</li>
       <li>Every ad is clearly labelled "Sponsored". Archery-related businesses only.</li>
-      <li>No cookies or ad trackers (visits are counted anonymously). Ads link straight to your website.</li></ul></section>
+      <li>No ad trackers (visits are counted anonymously; see <a href="#/privacy">privacy</a>). Ads link straight to your website.</li></ul></section>
     <section class="panel dark"><h2 class="sec">Get in touch</h2><p class="big-mail"><a href="${AD_MAIL}">${CONTACT}</a></p>
       <p class="foot-tag"><i>Created by an archer, for archers.</i></p>
       <nav class="foot-social" aria-label="Follow us"><p class="foot-social-label">Follow us</p><div class="foot-social-row"><a class="foot-social-link" href="https://www.facebook.com/profile.php?id=61595338617579" target="_blank" rel="noopener" aria-label="Archery Calendar on Facebook"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M22 12.07A10 10 0 1 0 10.4 21.9v-6.94H7.9v-2.9h2.5V9.8c0-2.47 1.47-3.84 3.72-3.84 1.08 0 2.2.2 2.2.2v2.42h-1.24c-1.22 0-1.6.76-1.6 1.54v1.85h2.72l-.43 2.9h-2.29v6.94A10 10 0 0 0 22 12.07z"/></svg><span>Facebook</span></a><a class="foot-social-link" href="https://www.instagram.com/archerycalendar/" target="_blank" rel="noopener" aria-label="Archery Calendar on Instagram"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7.5 2h9A5.5 5.5 0 0 1 22 7.5v9a5.5 5.5 0 0 1-5.5 5.5h-9A5.5 5.5 0 0 1 2 16.5v-9A5.5 5.5 0 0 1 7.5 2zm0 2A3.5 3.5 0 0 0 4 7.5v9A3.5 3.5 0 0 0 7.5 20h9a3.5 3.5 0 0 0 3.5-3.5v-9A3.5 3.5 0 0 0 16.5 4h-9zm9.75 1.25a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 .002 6.002A3 3 0 0 0 12 9z"/></svg><span>Instagram</span></a></div></nav>
@@ -1290,6 +1290,7 @@ function vPrivacy(){
     <li>Club details you send with an event are remembered on this device${AUTH.on ? ' (and in your account if you are signed in)' : ''} so you don't retype them. Tap “Not you? Clear” on the Submit form to wipe them.</li>
     <li>Clearing your browser data deletes them. Use <a href="#/settings">Settings → Export backup</a> to keep a copy or move to another device.</li>
     <li id="privStats"><b>Visit counts:</b> we count visits anonymously with <a href="https://www.goatcounter.com/" target="_blank" rel="noopener">GoatCounter</a>: which pages are viewed and the words typed into Find events search. <b>No cookies</b>, no advertising trackers and nothing that identifies you. Searches that look like an email address or phone number are never counted. Reminders are made on your device.</li>
+    <li id="privClarity"><b>Microsoft Clarity:</b> we use Microsoft Clarity to see how visitors use the site (clicks and scrolling) so we can improve it; typed details are hidden. Clarity sets its own cookies (see <a href="https://privacy.microsoft.com/privacystatement" target="_blank" rel="noopener">Microsoft's privacy statement</a>).</li>
     <li>"Register / enter" and email links go straight to the organiser. Anything you send them is between you and the organiser.</li>
     <li><b>Submit an event form:</b> what a club sends us (contact name, email, phone, event details and flyer, plus the email and ID of the signed-in account that sent it) is emailed to us at ${esc(SITE.contact)} via the form service FormSubmit (formsubmit.co). When you’re signed in, the event, flyer and your details are also saved to your account on Supabase so we can review and publish it; only the event details and flyer are shown publicly once it’s live. We use it only to check and list the event. Contact details aren't published unless they're on your flyer. Ask us any time to correct or delete them.</li>
     <li><b>Send us your calendar:</b> when you send a calendar (a file, photo, link or pasted text), it is saved privately to your account on Supabase, not emailed. Only we can open it, and only to put your events on the calendar. We email ourselves a short note with a link and a count, never the contents. We publish event details only (name, date, place, club and entry link), never personal contact details or the names of anyone under 16. Your files are deleted once your events are published or turned down, and in any case after 30 days. The email address you are signed in with is kept with the upload so we can tell you when your events are live.</li>
@@ -1897,7 +1898,7 @@ function spShow(){
       <li><span class="sp-ic">${SP_IC.rec}</span>A record of your entries and what you spend</li>
       <li><span class="sp-ic">${SP_IC.plan}</span>A plan for your whole year of shoots</li></ul>
     <p class="sp-voice">Always know what's coming up, all in one place.</p>
-    <form id="spF" novalidate>
+    <form id="spF" data-clarity-mask="true" novalidate>
       <label class="sr" for="spEm">Your email</label>
       <input id="spEm" class="sp-in" type="email" autocomplete="email" inputmode="email" placeholder="Your email" required>
       <p class="sp-err" id="spErr" role="alert" hidden></p>
@@ -1958,11 +1959,11 @@ function vAccount(){
   if (!AUTH.user) return `${head}<div class="wrap narrow">${msg}
     <section class="panel"><h2 class="sec">Sign in or create an account</h2>
     ${AUTH.sent ? `<div class="okbox" role="status">✉ <b>Check your email.</b> We sent a sign-in email to <b>${esc(AUTH.sent)}</b>.${isStandalone() ? ' <b>Use the code from the email to sign in here</b> – the link in the email opens in your browser, not in this app.' : ' Type the code from it below, or tap the link in it <b>in this browser on this device</b>.'} It works once and expires in an hour.</div>
-      <form id="otpf" novalidate><label for="otp">Enter the code from the email</label>
+      <form id="otpf" data-clarity-mask="true" novalidate><label for="otp">Enter the code from the email</label>
       <input id="otp" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="10" required placeholder="••••••" class="otp-in">
       <button class="btn gold block" type="submit">✓ Sign in with code</button></form>
       <p class="note">No email? Check junk, or <button type="button" class="linkbtn" id="again">send it again</button> (or use a different email).</p>`
-      : `${isStandalone() ? '<p class="okbox hint-app" role="note">📱 <b>Use the code from the email to sign in here.</b> The link in the email opens in your browser, not in this app.</p>' : ''}<form id="signin" novalidate><label for="em">Email</label><input id="em" type="email" autocomplete="email" required placeholder="you@example.com">
+      : `${isStandalone() ? '<p class="okbox hint-app" role="note">📱 <b>Use the code from the email to sign in here.</b> The link in the email opens in your browser, not in this app.</p>' : ''}<form id="signin" data-clarity-mask="true" novalidate><label for="em">Email</label><input id="em" type="email" autocomplete="email" required placeholder="you@example.com">
       <button class="btn gold block" type="submit">✉ Email me a sign-in code</button></form>
       <p class="note">No password. We email you a code (and a link). New here? The same email creates your account.</p>`}
     ${window.SUPABASE_GOOGLE ? `<div class="or"><span>or</span></div><button class="btn alt block" id="google" type="button"><b>G</b>&nbsp; Continue with Google</button>` : ''}
@@ -1984,7 +1985,7 @@ function vAccount(){
   const stTxt = S.states.length ? S.states.join(', ') : 'All of Australia', grTxt = GROUPS.filter(g => S.groups.includes(g[0])).map(g => g[0] === 'aba' ? 'ABA' : g[0] === 'taa' ? 'TAA' : g[1]).join(', ');
   return `${head}<div class="wrap narrow">${msg}
    <section class="panel"><h2 class="sec">Your details</h2><dl class="kv"><dt>Email</dt><dd>${esc(u.email || '—')}</dd></dl>
-    <form id="dn"><label for="dname">Display name</label><input id="dname" maxlength="80" autocomplete="nickname" value="${esc(st.displayName || '')}">
+    <form id="dn" data-clarity-mask="true"><label for="dname">Display name</label><input id="dname" maxlength="80" autocomplete="nickname" value="${esc(st.displayName || '')}">
     <button class="btn alt" type="submit">Save name</button></form></section>
    <section class="panel"><h2 class="sec">My states &amp; organisations</h2><dl class="kv"><dt>States</dt><dd>${esc(stTxt)}</dd><dt>Organisations</dt><dd>${esc(grTxt || '—')}</dd>
     <dt>Reminders</dt><dd>${esc(S.remindDays.join(', '))} days before · entries close ${esc(S.closeDays.join(' / '))}</dd></dl>
@@ -2000,7 +2001,7 @@ function vAccount(){
     <p class="note">Use the second one on a shared or borrowed device.</p></section>
    <section class="panel danger"><h2 class="sec">Delete account and data</h2>
     <p>Permanently deletes your account and everything stored in it (saved events, entries, payments, notes, reminders, settings). This can’t be undone.</p>
-    <form id="del"><label for="delc">Type <b>DELETE</b> to confirm</label><input id="delc" autocomplete="off" autocapitalize="characters">
+    <form id="del" data-clarity-mask="true"><label for="delc">Type <b>DELETE</b> to confirm</label><input id="delc" autocomplete="off" autocapitalize="characters">
     <label class="chk"><input type="checkbox" id="delLocal" checked> Also remove my events from this device</label>
     <button class="btn danger block" type="submit">🗑 Delete my account and data</button></form></section></div>`;
 }
@@ -2169,7 +2170,7 @@ function cardForm(){
   const front = 'front' in d ? d.front : old && old.front, back = d.noBack ? null : 'back' in d ? d.back : old && old.back;
   const fu = front ? cardUrl(front) : '', bu = back ? cardUrl(back) : '';
   const label = d.label ?? (old ? old.label : ({aa: 'Archery Australia', aba: 'ABA', ifaa: 'IFAA', usa: 'USA Archery', nfaa: 'NFAA'}[body] || ''));
-  return `<form class="panel mcc-form" id="mcForm" novalidate><h2 class="sec">${old ? 'Edit card' : 'Add a card · 3 of 3'}</h2>
+  return `<form class="panel mcc-form" id="mcForm" data-clarity-mask="true" novalidate><h2 class="sec">${old ? 'Edit card' : 'Add a card · 3 of 3'}</h2>
     <p class="mcc-chosen">${cardLogo(body, 32)} <b>${bn}</b> <button type="button" class="linkbtn" data-mcstep="body">change</button></p>
     ${kind === 'photo' ? `<div class="mcc-shots"><figure>${fu ? `<img class="mcc-prev" src="${esc(fu)}" alt="Front of the card">` : '<span class="mcc-none">No photo yet</span>'}<figcaption>Front</figcaption>
         <label class="btn alt sm" for="mcFrontCam">📷 ${fu ? 'Retake' : 'Take photo'}</label><input id="mcFrontCam" class="mcc-file" type="file" accept="image/*" capture="environment">
@@ -2300,7 +2301,7 @@ const fdate = d => !d ? '' : /^\d{4}-\d{2}-\d{2}$/.test(d) ? pd(d).toLocaleDateS
   <p class="note fan-rm">In a photo and want it removed? Email <a href="mailto:${esc(SITE.contact)}?subject=${encodeURIComponent('Photo removal – Archery Calendar Fans page')}">${esc(SITE.contact)}</a> and we’ll take it down.</p>
   <section class="panel sub fan-send" id="send"><h2 class="sec">📷 Send us your photo</h2>
    <ul class="ticks"><li>Podiums, club days, a great shot on the course – archery photos from ${cnm ? cthe + esc(cnm) : 'your country'}.</li><li>Every photo is <b>reviewed before it’s posted</b>. We may crop or resize it.</li><li>Fields marked <span class="req">*</span> are required.</li></ul>
-   <form id="fanForm" class="sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate>
+   <form id="fanForm" data-clarity-mask="true" class="sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate>
     <input type="hidden" name="_subject" value="Fan photo – Archery Calendar"><input type="hidden" name="_template" value="table"><input type="hidden" name="_next" value="">
     <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true"><input type="hidden" name="_captcha" value="false">
     <div class="grid2">${fld('f_name', 'Your name', `<input id="f_name" name="name" required maxlength="80" autocomplete="name">`, 'Shown as the photo credit.')}
@@ -3192,10 +3193,10 @@ function vAdmin(){
 function vAdmApproved(head){
   const subs = (ADM.subs || []).filter(s => s.instant);
   return `${head}<div class="wrap adm"><p><a href="#/admin">← Back to requests</a></p>${ADM.err ? `<p class="err" role="alert">${esc(ADM.err)}</p>` : ''}
-    <section class="panel"><h2 class="sec">Add someone</h2><form id="admAdd" class="adm-add"><input name="name" placeholder="Name" autocomplete="off" required><input name="email" type="email" placeholder="Email" autocomplete="off" required><input name="club" placeholder="Club" autocomplete="off"><button class="btn gold">✓ Approve</button></form></section>
+    <section class="panel"><h2 class="sec">Add someone</h2><form id="admAdd" data-clarity-mask="true" class="adm-add"><input name="name" placeholder="Name" autocomplete="off" required><input name="email" type="email" placeholder="Email" autocomplete="off" required><input name="club" placeholder="Club" autocomplete="off"><button class="btn gold">✓ Approve</button></form></section>
     <section class="panel"><h2 class="sec">Approved people (${subs.length})</h2>${subs.length ? subs.map(s => `<div class="adm-req" data-sem="${esc(s.email)}"><div><b>${esc(s.name || '')}</b><br>${esc(s.club || '')}<br><span class="note">${esc(s.email)}</span></div><div class="adm-btns row"><button class="btn alt" data-sact="remove">Remove</button></div></div>`).join('') : '<p class="note">No one yet.</p>'}</section>
     <section class="panel"><h2 class="sec">Approved club &amp; organisation email domains (${(ADM.doms || []).length})</h2><p class="note">Anyone emailing from these is approved automatically. Gmail, Hotmail, Bigpond and other free email can’t be added.</p>
-      <form id="admDom" class="adm-add"><input name="domain" placeholder="e.g. archerywa.com.au" autocomplete="off" required><input name="label" placeholder="Club / organisation" autocomplete="off"><button class="btn gold">+ Add domain</button></form>
+      <form id="admDom" data-clarity-mask="true" class="adm-add"><input name="domain" placeholder="e.g. archerywa.com.au" autocomplete="off" required><input name="label" placeholder="Club / organisation" autocomplete="off"><button class="btn gold">+ Add domain</button></form>
       ${(ADM.doms || []).map(d => `<div class="adm-req" data-dom="${esc(d.domain)}"><div><b>@${esc(d.domain)}</b><br><span class="note">${esc(d.label || '')}</span></div><div class="adm-btns row"><button class="btn alt" data-dact="remove">Remove</button></div></div>`).join('')}</section></div>`;
 }
 async function admLoad(){
@@ -3453,7 +3454,7 @@ function vSubmit(country){
   return `${head}<div class="wrap narrow sub">${subTabs('new')}
   <section class="panel sub-intro"><p class="sub-lead"><b>Just send your flyer.</b> That's all we need. We read it and build your event card for you.</p>
     <p class="note sub-mode" id="s_mode">${ap ? '✓ You’re an approved submitter, so your events go live straight away.' : 'We check each flyer and put it on the calendar, usually within 48 hours. Approved clubs go live straight away.'}</p></section>
-  <form id="subForm" class="panel sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate>
+  <form id="subForm" data-clarity-mask="true" class="panel sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate>
     <input type="hidden" name="_subject" value="New flyer – Archery Calendar"><input type="hidden" name="known_club" value="">${acctHidden()}<input type="hidden" name="submission_id" value=""><input type="hidden" name="submission_status" value="email only (not saved to database)"><input type="hidden" name="flyer_stored" value="">
     <input type="hidden" name="_template" value="table">
     <input type="hidden" name="_next" value="">
@@ -3943,7 +3944,7 @@ function vFix(id){
   const x = BYID[id], ADM = isAdmin();
   const f = (fid, lab, inp, hint = '', req = false) => `<div class="fld" data-f="${fid}"><label for="${fid}">${lab}${req ? ' <span class="req" aria-hidden="true">*</span>' : ' <span class="opt">(optional)</span>'}</label>${inp}${hint ? `<p class="hint" id="${fid}_h">${hint}</p>` : ''}<p class="err" id="${fid}_e" role="alert"></p></div>`;
   return `${head}<div class="wrap narrow sub">${subTabs('fix')}
-  <form id="fixForm" class="panel sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate>
+  <form id="fixForm" data-clarity-mask="true" class="panel sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate>
     <input type="hidden" name="_subject" value="Correction:"><input type="hidden" name="known_club" value="">${acctHidden()}
     <input type="hidden" name="_template" value="table">
     <input type="hidden" name="_next" value="">

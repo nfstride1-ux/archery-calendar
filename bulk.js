@@ -175,7 +175,7 @@ function bulkView(){
   const ap = approved();
   if (typeof setTitle === 'function') setTitle('Send us your calendar');
   const head = typeof pageHead === 'function' ? pageHead('Send us your calendar', 'However you keep it. We do the typing.', '3d') : '';
-  const who = ap ? '' : `<div class="bulk-who" id="bkWho"><div class="fld"><label for="bk_name">Your name <span class="req" aria-hidden="true">*</span></label><input id="bk_name" autocomplete="name" maxlength="80" value="${E(BK.name)}"></div>
+  const who = ap ? '' : `<div class="bulk-who" id="bkWho" data-clarity-mask="true"><div class="fld"><label for="bk_name">Your name <span class="req" aria-hidden="true">*</span></label><input id="bk_name" autocomplete="name" maxlength="80" value="${E(BK.name)}"></div>
     <div class="fld"><label for="bk_role">Your role at the club <span class="req" aria-hidden="true">*</span></label><select id="bk_role"><option value="">Choose…</option>${roleOptions().map(o => `<option${o === BK.role ? ' selected' : ''}>${E(o)}</option>`).join('')}</select></div>
     <p class="hint">We check your name and role with the club before anything goes live.</p><p class="err" id="bk_who_err" role="alert"></p></div>`;
   const body = BK.done ? `<section class="panel bk-thanks" role="status" aria-live="polite"><span class="thanks-mark" aria-hidden="true">✓</span><h2 class="sec">Sent</h2><p class="sub-lead" id="bkThanks">${E(THANKS)}</p>

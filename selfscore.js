@@ -38,7 +38,7 @@ function selfBox(x){
   if (open && !AUTH.user) form = `<p><a class="btn gold block" href="#/account">Sign in to add my score</a></p>`;
   else if (open) { const e = SS.edit ? rows.find(r => r.id === SS.edit) || {} : {}, nm = (typeof myName === 'function' && myName()) || '';
     form = !SS.edit && SS.edit !== '' ? `<p><button type="button" class="btn gold block" id="ssAdd">＋ Add my score</button></p>` :
-    `<form id="ssForm" class="ss-form"><h3 class="dp-sub">${e.id ? 'Edit my score' : 'Add my score'}</h3>
+    `<form id="ssForm" data-clarity-mask="true" class="ss-form"><h3 class="dp-sub">${e.id ? 'Edit my score' : 'Add my score'}</h3>
       ${nm ? `<p class="note">Shown as <b>${esc(nm)}</b> (your display name). <a href="#/account">Change</a></p>` : `<label for="ss_nm">Your name (shown publicly)</label><input id="ss_nm" name="display_name" maxlength="60" required autocomplete="nickname">`}
       <label for="ss_div">Round or division</label><input id="ss_div" name="division" maxlength="80" required value="${esc(e.division || '')}" placeholder="e.g. WA 70/720, Open Recurve">
       <label for="ss_bow">Bow</label><select id="ss_bow" name="bow">${SS_BOWS.map(b => `<option${b === (e.bow || 'Recurve') ? ' selected' : ''}>${b}</option>`).join('')}</select>

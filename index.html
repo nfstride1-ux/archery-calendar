@@ -27,7 +27,15 @@
 <link rel="preload" href="fonts/Inter-var.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/BarlowCondensed-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="stylesheet" href="styles.css?v=globeall1030c">
+<link rel="stylesheet" href="styles.css?v=clarity1031a">
+<!-- Microsoft Clarity (session replays and heatmaps; masking set to Strict in the Clarity dashboard). Loads async and never blocks the page. -->
+<script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "z660a5ongn");
+</script>
 </head>
 <body>
 <a class="skip" href="#view">Skip to content</a>
@@ -81,17 +89,23 @@
 <a href="#/submit" id="fabAdd" class="fab-add" aria-label="Add event"><span aria-hidden="true">+</span></a>
 <div id="toast" role="status" aria-live="polite"></div>
 <!-- Anonymous visit counts (GoatCounter: no cookies, no personal data). The app counts hash-route page views itself. -->
+<script>/* Clarity belt-and-braces masking: every form field, and the whole page on sign-in, account, submit, fix, admin, cards, settings, entries and fans */
+(function(){try{var M='data-clarity-mask',P=/^#\/(account|submit|fix|admin|cards|settings|entries|fans)(\/|\?|$)/,q=0;
+function mark(){q=0;try{var v=document.getElementById('view');if(v){if(P.test(location.hash))v.setAttribute(M,'true');else if(v.hasAttribute(M))v.removeAttribute(M);}
+var f=document.querySelectorAll('input:not(['+M+']),textarea:not(['+M+']),select:not(['+M+']),[contenteditable]:not(['+M+'])');for(var i=0;i<f.length;i++)f[i].setAttribute(M,'true');}catch(e){}}
+function soon(){if(!q){q=1;(window.queueMicrotask||setTimeout)(mark);}}
+mark();addEventListener('hashchange',soon);new MutationObserver(soon).observe(document.body,{childList:true,subtree:true});}catch(e){}})();</script>
 <script>window.goatcounter = {no_onload: true};</script>
 <script data-goatcounter="https://archerycalendars.goatcounter.com/count" async src="https://gc.zgo.at/count.js" onload="window.gcFlush && window.gcFlush()"></script>
 <script src="config.js?v=adm1016b"></script>
 <script src="sync.js?v=ctryhome1022"></script>
-<script src="app.js?v=globeall1030c"></script>
-<script src="selfscore.js?v=ss1016"></script>
+<script src="app.js?v=clarity1031a"></script>
+<script src="selfscore.js?v=clarity1031a"></script>
 <script src="scoretool.js?v=stl1025"></script>
-<script src="nearme.js?v=near1025"></script>
-<script src="gsearch.js?v=globeall1030c"></script>
-<script src="bulk.js?v=globeall1030c"></script>
-<script src="whatsnew.js?v=globeall1030c"></script>
-<script src="help.js?v=globeall1030c" defer></script>
+<script src="nearme.js?v=clarity1031a"></script>
+<script src="gsearch.js?v=clarity1031a"></script>
+<script src="bulk.js?v=clarity1031a"></script>
+<script src="whatsnew.js?v=clarity1031a"></script>
+<script src="help.js?v=clarity1031a" defer></script>
 </body>
 </html>

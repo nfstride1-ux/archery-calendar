@@ -122,7 +122,7 @@
       <button type="button" class="btn gold nm-go" id="nmGeo"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>Find clubs near me</button>
       <p class="nm-priv"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 1 3 5v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V5l-9-4zm0 11h7c-.5 4.1-3.2 7.8-7 9V12H5V6.3l7-3.1V12z"/></svg><span>Your location stays on your phone. We don’t store it.</span></p>
       <div class="nm-or"><span>or type a suburb or postcode</span></div>
-      <form id="nmForm" class="nm-form" role="search" novalidate>
+      <form id="nmForm" data-clarity-mask="true" class="nm-form" role="search" novalidate>
         <div class="nm-f1"><label for="nmQ">Suburb, town or postcode</label><input id="nmQ" type="search" inputmode="text" autocomplete="off" placeholder="e.g. Mandurah, 6210, or Phoenix AZ" value=""></div>
         <div class="nm-f2"><label for="nmC">Country</label><select id="nmC">${cOpts}</select></div>
         <button type="submit" class="btn nm-find">Search</button>
