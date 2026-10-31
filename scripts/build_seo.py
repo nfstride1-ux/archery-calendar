@@ -22,7 +22,7 @@ SITE = 'https://archerycalendars.com'
 ap = argparse.ArgumentParser()
 ap.add_argument('--sample', action='store_true'); ap.add_argument('--out'); ap.add_argument('--check', action='store_true')
 ap.add_argument('--today'); ap.add_argument('--groups', help='comma list, overrides PUBLISHED (tests only)'); args = ap.parse_args()
-PUBLISHED = {'hubs'}
+PUBLISHED = {'hubs', 'events'}
 GROUPS = set(args.groups.split(',')) if args.groups else PUBLISHED
 BRAND = 'Archery Calendars'
 OUT = os.path.abspath(args.out or ROOT)
@@ -91,6 +91,16 @@ def disc_keys(x):
 def disc_label(x):
     d = (x.get('discipline') or '').strip()
     return d or 'Archery'
+def disc_noun(x):
+    """Readable noun phrase for the discipline: 'indoor archery event', '3D / field archery event', 'archery coaching course'."""
+    d = disc_label(x); l = d.lower().replace('3d', '3D')
+    if l in ('archery', 'various', ''): return 'archery event'
+    if l in ('coaching', 'judging'): return f'archery {l} course'
+    if l == 'bowfishing': return 'bowfishing event'
+    if l.endswith('archery'): return f'{l} event'
+    return f'{l} archery event'
+def disc_kind(x): n = disc_noun(x); return n.rsplit(' ', 1)[0]   # 'indoor archery', 'archery coaching'
+def a_an(w): return 'an' if w[:1].lower() in 'aeiou' else 'a'
 def end(x): return x.get('end_date') or x.get('start_date')
 def is_past(x): return bool(end(x)) and end(x) < TODAY
 def fmt_date(s, wd=True):
@@ -150,7 +160,7 @@ def status_text(x):
 def describe(x):
     """Plain sentence built only from data fields."""
     v = venue_text(x); reg = region_of(x); where = ', '.join(t for t in (v, SNAME.get(reg, reg) if x.get('country_code') == 'AUS' else '', ctry_name(x)) if t)
-    dl_ = disc_label(x).lower(); s = f'{x["name"]} is {"an" if dl_[0] in "aeiou" else "a"} {dl_} archery event' + (f' run by {x["org"]}' if x.get('org') else '')
+    dn = disc_noun(x); s = f'{x["name"]} is {a_an(dn)} {dn}' + (f' run by {x["org"]}' if x.get('org') else '')
     if x.get('start_date'): s += f' on {date_range(x)}'
     if where: s += f' at {where}'
     s += '.'
@@ -160,8 +170,8 @@ def meta_desc(x):
     place = ', '.join(t for t in (venue_text(x), st or '', ctry_name(x)) if t)
     tail = ' Entry link, flyer and details.' if (reg_url(x) or flyer_link(x)) else ' Dates, venue and organiser.'
     for opt in (describe(x) + tail, describe(x),
-                f'{x["name"]}: {disc_label(x).lower()} archery, {date_range(x)}' + (f', {place}' if place else '') + '.',
-                f'{x["name"]}: {disc_label(x).lower()} archery, {date_range(x)}.'):
+                f'{x["name"]}: {disc_kind(x)}, {date_range(x)}' + (f', {place}' if place else '') + '.',
+                f'{x["name"]}: {disc_kind(x)}, {date_range(x)}.'):
         if len(opt) <= 158: return opt
     return opt[:155].rsplit(' ', 1)[0] + '...'
 
@@ -326,7 +336,7 @@ def event_page(x, rel):
     cs = [('Home', '/')]
     if x.get('country_code') == 'AUS':
         cs += [('Australia', '/australia/')] + ([(SNAME[reg], f'/australia/{slug(SNAME[reg])}/')] if reg in SNAME and reg in STATE_SET else [])
-    elif country_of(x) in COUNTRY_SET: cs += [('Countries', '/countries/'), (cn, f'/countries/{slug(cn)}/')]
+    elif country_of(x) in COUNTRY_SET and 'countries' in GROUPS: cs += [('Countries', '/countries/'), (cn, f'/countries/{slug(cn)}/')]   # until D: Home > event
     cs += [(x['name'], None)]
     facts = [('Status', st), ('Dates', date_range(x) + ('' if x.get('dates_confirmed', True) or not x.get('start_date') else ' (dates not yet confirmed by the organiser)'))]
     if v: facts.append(('Venue', v))
@@ -354,7 +364,7 @@ def event_page(x, rel):
         body += '<h2 class="sec-h">More archery events nearby in the calendar</h2><ul class="seo-list">' + ''.join(ev_row(r) for r in rel) + '</ul>'
     ld = [crumbs_ld(cs), event_jsonld(x)]
     robots = None if indexable(x) else 'noindex,follow'
-    return shell(title, meta_desc(x), event_path(x), x['name'], body, ld, kicker=f'{disc_label(x)} archery event', robots=robots, og_type='article')
+    return shell(title, meta_desc(x), event_path(x), x['name'], body, ld, kicker=disc_noun(x), robots=robots, og_type='article')
 
 def related(x, pool_by_key, n=5):
     key = (x.get('country_code'), region_of(x))

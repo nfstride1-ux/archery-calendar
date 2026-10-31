@@ -32,6 +32,7 @@ Each event shows its dates, venue, discipline and organiser, with a link to the 
 
 ## Notes for AI and search tools
 
+- Each event has its own page at https://archerycalendars.com/events/<id>/ with dates, venue town, discipline, organiser, entry and flyer links, and schema.org Event data where the dates and venue are confirmed.
 - The calendar itself is a JavaScript app; the pages listed above are plain HTML built from the same data every time it changes.
 - Event times are local to the venue. Where dates are not yet confirmed the page says so.
 - Clubs and organisers can add or correct an event with "Submit an event" in the app, or send their whole calendar in any format (PDF, photo, spreadsheet, Word file, link or text).
