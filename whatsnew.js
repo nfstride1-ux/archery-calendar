@@ -1,5 +1,8 @@
 /* What's new: plain-English release notes for Archery Calendars, newest first. Every item comes from a real commit (hashes listed). */
 window.CAL_WHATSNEW = [
+  {d: '2026-11-03', label: 'Tue 3 Nov 2026', items: [
+    ['News tab', 'There is now a News tab at the top. It opens the newsletters for the country you are looking at, newest first, with other countries below. The first US newsletter is up: NAST shoots, the Indoor Nationals and the Rushmore Rumble as the US indoor season starts.', ['this release']],
+    ['Signed in stays signed in', 'If your sign-in was waiting to refresh (for example the phone had just woken up or was offline), the header could show Sign in and the sign-up box could pop up even though you have an account. Now the site keeps you signed in and tries again in the background, and the sign-up box never shows on a device where you have signed in.', ['this release']]]},
   {d: '2026-11-01', label: 'Sun 1 Nov 2026', items: [
     ['Centenary Archers Club: field shoot on Sun 6 Dec', 'From the latest Centenary Archers Club newsletter (Sumner, QLD), we added their Field Archery Competition on Sun 6 Dec, 8:00 am to 2:00 pm, with entry on Archer’s Diary. The newsletter gives no fee or entry close date, so check with the club. This event has no flyer yet.', ['this release']]]},
   {d: '2026-10-31', label: 'Sat 31 Oct 2026', items: [

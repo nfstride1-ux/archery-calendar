@@ -27,7 +27,7 @@ try:
       chk('top entry is this release',E("CAL_WHATSNEW[0].items[0][2][0]")=='this release')
       chk('no purple on page',E("[...document.querySelectorAll('.wn-day *')].every(e=>!/rgb\\(1[0-9]{2}, [0-9]{1,2}, 2[0-9]{2}\\)/.test(getComputedStyle(e).color))"))
     pg.screenshot(path=f'{SH}/01-whatsnew-{scheme}.png')
-    for a in ['whats-new','news','updates']:
+    for a in ['whats-new','updates']:   # #/news is the News tab since 3 Nov 2026
       pg.goto(f'http://localhost:{PORT}/#/{a}');pg.wait_for_timeout(600)
       chk(t+f'alias #/{a} goes to What’s new',pg.url.endswith('#/whatsnew'))
     chk(t+'footer links to What’s new',pg.locator('footer a[href="#/whatsnew"]').count()>=1)
