@@ -32,7 +32,7 @@
   function orgList(){
     const out = [];
     (typeof ORGS !== 'undefined' ? ORGS : []).forEach(o => { const g = AU_ORG_GRP[o.id]; if (!g) return;   // branches are reached through ABA
-      out.push({id: o.id, name: o.name.replace(/\s*\(.*\)/, ''), names: [o.id, o.name, ...AU_ORG_ALIAS[o.id]], hay: mkHay([o.name, ...AU_ORG_ALIAS[o.id]]), where: 'Australia', go: () => { Object.assign(BF, {scope: 'g:' + g, q: '', disc: '', cat: '', ost: '', state: '', club: '', clubId: '', day: '', past: false, limit: 60}); return '#/browse'; }}); });
+      out.push({id: o.id, name: o.name.replace(/\s*\(.*\)/, ''), names: [o.id, o.name, ...AU_ORG_ALIAS[o.id]], hay: mkHay([o.name, ...AU_ORG_ALIAS[o.id]]), where: 'Australia', go: () => { Object.assign(BF, {scope: 'g:' + g, q: '', disc: '', cat: '', ost: '', state: '', club: '', clubId: '', day: '', past: false, limit: 60}); return auFind(); }}); });
     (typeof US_ORGS !== 'undefined' ? US_ORGS : []).forEach(([k, label]) => { if (k === 'world') return; const w = (typeof US_ORG_WORDS !== 'undefined' && US_ORG_WORDS[k]) || '';
       out.push({id: 'us-' + k, name: label, names: [k, label], hay: mkHay([label, w]), where: 'United States', go: () => { Object.assign(IF, {code: 'USA', q: '', disc: '', org: k, st: '', ctry: '', major: false, cat: '', past: false, limit: 60}); return '#/intl/USA'; }}); });
     return out;
@@ -69,7 +69,7 @@
     const home = typeof homeCode === 'function' && homeCode() !== 'AUS' ? ((ICTRY.countries.find(c => c.code === homeCode()) || {}).name || '') : 'Australia';
     const names = Object.keys(grp).sort((a, b) => (b === home) - (a === home) || grp[b].length - grp[a].length || (a < b ? -1 : 1));
     let h = `<p class="qcount" id="gsCount" aria-live="polite">${R.evs.length} event${R.evs.length === 1 ? '' : 's'}${R.clubs.length ? `, ${R.clubs.length} club${R.clubs.length === 1 ? '' : 's'}` : ''}${R.orgs.length ? `, ${R.orgs.length} organisation${R.orgs.length === 1 ? '' : 's'}` : ''} match “${esc(R.q.trim())}” in ${names.length > 1 ? 'every country' : 'all countries'}${names.length > 1 ? ` (${names.length} countries)` : ''}.</p>`;
-    if (R.orgs.length) h += `<h2 class="sec-h">Organisations</h2><ul class="gs-list">${R.orgs.map((o, i) => `<li><a href="#/browse" data-gso="${i}"><b>${esc(o.name)}</b> <span class="note">${esc(o.where)}</span></a></li>`).join('')}</ul>`;
+    if (R.orgs.length) h += `<h2 class="sec-h">Organisations</h2><ul class="gs-list">${R.orgs.map((o, i) => `<li><a href="${auFind()}" data-gso="${i}"><b>${esc(o.name)}</b> <span class="note">${esc(o.where)}</span></a></li>`).join('')}</ul>`;
     if (R.clubs.length) h += `<h2 class="sec-h">Clubs</h2><ul class="gs-list">${R.clubs.slice(0, 40).map(c => `<li><a href="#/club/${esc(encodeURIComponent(c.id))}"><b>${esc(c.name)}</b> <span class="note">${esc([c.suburb, c.state, c.country_name || (c.country ? '' : 'Australia')].filter(Boolean).join(', '))}${c.n_events ? ` · ${c.n_events} event${c.n_events === 1 ? '' : 's'}` : ''}</span></a></li>`).join('')}</ul>${R.clubs.length > 40 ? `<p class="note">${R.clubs.length - 40} more clubs: add a word to narrow it down.</p>` : ''}`;
     const og = {}; R.evs.forEach(x => { const k = x.club_name || x.host || x.source_name || x.org; if (k && !R.orgs.some(o => snorm(o.name) === snorm(k)) && !R.clubs.some(c => snorm(c.name) === snorm(k))) { const o = og[k] = og[k] || {n: 0, c: cName(x)}; o.n++; } });
     const ok = Object.keys(og).sort((a, b) => og[b].n - og[a].n).slice(0, 14);
