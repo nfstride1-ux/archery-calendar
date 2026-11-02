@@ -1429,6 +1429,61 @@ function bindCals(){
   bindClubDrop(CF);
   document.querySelectorAll('[data-clubf]').forEach(b => b.onclick = () => { CF.club = CF.club === b.dataset.clubf ? '' : b.dataset.clubf; render(); });
 }
+/* Calendars for the visitor's country (owner 2 Nov 2026): with the US, Denmark, NZ… set, Calendars shows that country's organisations,
+   not the Australian ones. #/calendars/USA, #/calendars/USA/nfaa. The ABA / AA / AWA / TAA calendars stay at #/calendars/aba etc. */
+let CCF = {code: '', where: '', disc: '', past: true};
+function calCountry(arg){
+  if (arg && (CALS[arg] || arg === 'aba-j')) return '';
+  if (arg) { const a = decodeURIComponent(arg); return /^[A-Z]{3}$/.test(a) && a !== 'AUS' && a !== 'WORLD' ? a : ''; }
+  const c = homeCode(); return c !== 'AUS' && c !== 'WORLD' ? c : '';
+}
+function vCCals(code){
+  const org = decodeURIComponent((location.hash || '').split('?')[0].split('/')[3] || '');
+  if (CCF.code !== code) Object.assign(CCF, {code, where: '', disc: ''});
+  const nm = iName(code), the = /^(United|Netherlands)/.test(nm) ? 'the ' : '', usa = code === 'USA';
+  setTitle(`${nm} calendars`);
+  const head = pageHead('Calendars', `Every organisation’s calendar in ${the}${esc(nm)}, in one place. Tap an event for details and entry.`, PH[cHero(code)] ? cHero(code) : usa ? 'us_field' : '3d');
+  const au = `<p class="note cal-au">🇦🇺 Australian calendars: ${Object.entries(CALS).map(([k, o]) => `<a href="#/calendars/${k}">${esc(o.name)}</a>`).join(' · ')}</p>`;
+  if (!INTL) { loadIntl().then(() => { if ((location.hash || '').startsWith('#/calendars')) softRenderForce(); }).catch(() => {}); return `${head}<div class="wrap cals"><p class="note">Loading calendars…</p></div>`; }
+  const all = INTL.events.filter(x => x.country_code === code && x.start_date && x.start_date >= '2026-01-01').sort((a, b) => a.start_date < b.start_date ? -1 : a.start_date > b.start_date ? 1 : a.name < b.name ? -1 : 1);
+  const orgs = iOrgs(code, all).filter(([k]) => all.some(x => iOrgKey(x) === k)), cur = orgs.some(o => o[0] === org) ? org : '';
+  const inOrg = all.filter(x => !cur || iOrgKey(x) === cur), years = [...new Set(inOrg.map(x => x.start_date.slice(0, 4)))];
+  const whereOf = x => usa ? (x.us_state ? US_ST[x.us_state] || x.us_state : '') : iOrgName(iOrgKey(x));
+  const wheres = usa ? [...new Set(inOrg.map(whereOf).filter(Boolean))].sort() : [];
+  const discs = IDISC.filter(([, re]) => inOrg.some(x => re.test((x.discipline || '') + ' ' + x.name))).map(d => d[0]);
+  if (CCF.where && !wheres.includes(CCF.where)) CCF.where = ''; if (CCF.disc && !discs.includes(CCF.disc)) CCF.disc = '';
+  const dre = CCF.disc && IDISC.find(d => d[0] === CCF.disc)[1];
+  const list = inOrg.filter(x => (!CCF.where || whereOf(x) === CCF.where) && (!dre || dre.test((x.discipline || '') + ' ' + x.name)) && (CCF.past || !iPast(x)));
+  const nPast = list.filter(iPast).length, site = cur && iOrgSite(cur), base = '#/calendars/' + code;
+  let html = `${head}<div class="wrap cals">
+  <div class="tabs" role="tablist" aria-label="Organisation"><a role="tab" class="tab" href="${base}" aria-selected="${!cur}">${flag(iIso(code))} All ${esc(usa ? 'USA' : nm)}</a>${orgs.map(([k, l]) => `<a role="tab" class="tab" href="${base}/${encodeURIComponent(k)}" aria-selected="${k === cur}">${esc(l)}</a>`).join('')}</div>
+  <div class="panel cal-head"><h2 class="sec"><span>${esc(cur ? iOrgName(cur) : `Every organisation in ${the}${nm}`)} – ${years.join(' & ') || '2026'}</span></h2>
+  <div class="cal-filters">${usa ? `<label>State<select id="ccw"><option value="">All states</option>${wheres.map(w => `<option ${CCF.where === w ? 'selected' : ''}>${esc(w)}</option>`).join('')}</select></label>` : ''}
+  <label>Discipline<select id="ccd"><option value="">All disciplines</option>${discs.map(d => `<option ${CCF.disc === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select></label>
+  <label class="chk"><input type="checkbox" id="ccp" ${CCF.past ? 'checked' : ''}> Show finished</label></div>
+  <p class="note">${list.length} event${list.length !== 1 ? 's' : ''}${CCF.past && nPast ? ` (${nPast} finished, shown greyed out)` : ''}.${site ? ` Official source: <a href="${esc(site)}" target="_blank" rel="noopener">${esc(iOrgName(cur))} ↗</a>` : ''} <a href="#/browse">Find events in ${esc(usa ? 'the USA' : nm)} →</a></p></div>
+  <div class="cal-list" role="table" aria-label="${esc(nm)} calendar"><div class="cal-row cal-th" role="row"><span role="columnheader">Date</span><span role="columnheader">Event</span><span role="columnheader">Club / venue</span><span role="columnheader">${usa ? 'State' : 'Organisation'}</span><span role="columnheader">Discipline</span></div>`;
+  let m = '';
+  for (const x of list) {
+    const k = x.start_date.slice(0, 7);
+    if (k !== m) { m = k; html += `<div class="cal-month" role="row"><span role="cell">${MONL[+k.slice(5) - 1]} ${k.slice(0, 4)}</span></div>`; }
+    const past = iPast(x), st = ST(x.id);
+    const stb = st === 'paid' ? '<span class="b paid">✓$ Paid</span>' : st === 'entered' ? '<span class="b ent">✓ Entered</span>' : '';
+    html += `<a class="cal-row${past ? ' past' : ''}" role="row" href="#/shoot/${esc(x.id)}">
+      <span class="c-date" role="cell">${esc(range(x).replace(/ 20\d\d$/, ''))}${past ? '<small> · finished</small>' : ''}</span>
+      <span class="c-name" role="cell"><b>${esc(x.name)}</b>${stb}</span>
+      <span class="c-club" role="cell">${esc(x.host || x.location || '')}</span>
+      <span class="c-where" role="cell">${esc(whereOf(x))}</span>
+      <span class="c-disc" role="cell">${esc(x.discipline || '')}</span></a>`;
+  }
+  if (!list.length) html += `<div class="empty">No events match these filters.</div>`;
+  return html + `</div><p class="note">Rebuilt from each organisation’s published calendar. Always confirm with the organiser.</p>${au}</div>`;
+}
+function bindCCals(){
+  const w = $('#ccw'); if (w) w.onchange = e => { CCF.where = e.target.value; softRenderForce(); };
+  const d = $('#ccd'); if (d) d.onchange = e => { CCF.disc = e.target.value; softRenderForce(); };
+  const p = $('#ccp'); if (p) p.onchange = e => { CCF.past = e.target.checked; softRenderForce(); };
+}
 /* ---------- clubs: directory, my clubs / watching, club pages, "New from your clubs" ---------- */
 const CLUBF = {mine: '🏠 My clubs', watch: '👁 Watching', new: '✦ New from your clubs'};
 const isMine = id => S.myClubs.includes(id), isWatch = id => S.watchClubs.includes(id);
@@ -2536,6 +2591,24 @@ const TZ_NAME = {'America/New_York': 'Eastern Time', 'America/Chicago': 'Central
   'America/Los_Angeles': 'Pacific Time', 'America/Anchorage': 'Alaska Time', 'Pacific/Honolulu': 'Hawaii Time', 'America/Puerto_Rico': 'Atlantic Time', 'Europe/Copenhagen': 'Danish time', 'Asia/Kuala_Lumpur': 'Malaysia time', 'Asia/Seoul': 'Korea time', 'Pacific/Auckland': 'NZ time', 'America/Toronto': 'Eastern Time', 'America/Winnipeg': 'Central Time', 'America/Regina': 'Saskatchewan time', 'America/Edmonton': 'Mountain Time', 'America/Vancouver': 'Pacific Time'};
 const IDISC = [['Target', /target|clout|flight|para|outdoor/i], ['Indoor', /indoor/i], ['Field', /field/i], ['3D', /3d|bowhunt|trail/i], ['Clout', /clout/i], ['Flight', /\bflight\b/i], ['Run Archery', /run archery/i], ['Traditional', /traditional/i], ['Bowfishing', /bowfish/i]];
 const iPast = x => (x.end_date || x.start_date) && daysTo(x.end_date || x.start_date) < 0;
+/* Organisations per country (owner 2 Nov 2026): every body with events in that country, from data/intl.json (org_id + its orgs list).
+   USA keeps its own groups (USA Archery, NFAA, ASA, IBO…) and adds any other organiser, e.g. the National Archery Scholarship Tour. */
+const I_WORLD_ORG = ['world-archery', 'ioc-la28', 'ifaa'], I_ORG_LABEL = {'ianseo-can': 'Archery Canada club events'};
+const iOrgKey = x => x.country_code === 'USA' ? (x.us_org && x.us_org !== 'other' ? x.us_org : I_WORLD_ORG.includes(x.org_id) ? 'world' : x.org_id || '') : x.org_id || '';
+function iOrgName(k){
+  const u = US_ORGS.find(o => o[0] === k); if (u) return u[1];
+  if (I_ORG_LABEL[k]) return I_ORG_LABEL[k];
+  const o = INTL && (INTL.orgs || []).find(o => o.id === k), e = !o && INTL && INTL.events.find(x => x.org_id === k);
+  const n = o ? o.name : e ? e.org || k : k;
+  return n.replace(/\s+–\s.*$/, '').replace(/\s*\([^)]*\)/g, '').replace(/,\s[^,]*$/, '').trim() || n;
+}
+const iOrgSite = k => { const o = INTL && (INTL.orgs || []).find(o => o.id === k); return o ? o.events_url || o.website || '' : ''; };
+// [[key, label]] for a country's events: USA in its usual order first, then the rest by number of events.
+function iOrgs(code, evs){
+  const m = {}; evs.forEach(x => { const k = iOrgKey(x); if (k) m[k] = (m[k] || 0) + 1; });
+  const fixed = code === 'USA' ? US_ORGS.map(o => o[0]) : [];
+  return [...fixed, ...Object.keys(m).filter(k => !fixed.includes(k)).sort((a, b) => m[b] - m[a] || (iOrgName(a) < iOrgName(b) ? -1 : 1))].map(k => [k, iOrgName(k)]);
+}
 const iEv = code => (INTL && INTL.events.find(x => x.country_code === code)) || {};
 const iName = code => code === 'WORLD' ? 'World events' : (ICTRY.countries.find(c => c.code === code) || {}).name || iEv(code).country_name || code;
 const iIso = code => (ICTRY.countries.find(c => c.code === code) || {}).iso2 || iEv(code).iso2;
@@ -2860,6 +2933,7 @@ function setHomeLinks(){
   const c = homeCode(), h = homeHash(c);
   document.querySelectorAll('.nav a[data-tab=home], .site-head .logo').forEach(a => a.setAttribute('href', h));
   const fe = $('.nav a[data-tab=browse]'); if (fe) fe.setAttribute('href', c === 'AUS' ? '#/browse' : '#/intl/' + c);
+  const ca = $('.nav a[data-tab=calendars]'); if (ca) ca.setAttribute('href', c === 'AUS' || c === 'WORLD' ? '#/calendars/aba' : '#/calendars/' + c);   // Calendars follows the country (owner 2 Nov 2026)
   const b = $('#ctrySw'); if (b) { const cur = curHomePage() || c; b.innerHTML = `<span aria-hidden="true">${cur === 'AUS' ? flag('AU') : cur === 'WORLD' ? '🌐' : flag(iIso(cur))}</span><span class="pl"> ${esc(cur === 'AUS' ? 'Australia' : iName(cur))}</span> ▾`; b.setAttribute('aria-label', `Country: ${cur === 'AUS' ? 'Australia' : iName(cur)}. Change country`); }
 }
 const curHomePage = () => { const [, p, a] = (location.hash || '').split('?')[0].split('/'); return p === 'home' ? (a ? iso3of(a) || '' : 'AUS') : ''; };
@@ -3041,7 +3115,7 @@ function render(){
   else if (p === 'submit' && arg === 'bulk' && typeof bulkView === 'function') { v.innerHTML = bulkView(); bulkBind(); }
   else if (p === 'fix' || (p === 'submit' && arg === 'fix')) { v.innerHTML = vFix(decodeURIComponent(p === 'fix' ? (arg || '') : (h.split('/')[3] || ''))); bindFix(); }
   else if (p === 'submit') { v.innerHTML = vSubmit(HQ.get('country')); bindSubmit(); }
-  else if (p === 'calendars') { v.innerHTML = vCals(arg); bindCals(); }
+  else if (p === 'calendars') { const cc = calCountry(arg); if (cc) { v.innerHTML = vCCals(cc); bindCCals(); } else { v.innerHTML = vCals(arg); bindCals(); } }
   else if (p === 'club') { const id = decodeURIComponent(arg || ''); v.innerHTML = vClub(id); bindClub(id); }
   else if (p === 'clubs') { v.innerHTML = vClubs(); bindClubPicker(); }
   else if (p === 'intl') { v.innerHTML = vIntl(arg); bindIntl(arg); }
