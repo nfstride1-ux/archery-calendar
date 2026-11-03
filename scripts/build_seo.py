@@ -487,6 +487,7 @@ def llms():
         for c in ('USA', 'DEN', 'NZL', 'CAN', 'GBR'):
             if c in COUNTRY_SET: L.append(f'- [Archery events in {("the " if CTRY[c]["name"] in ("United States", "United Arab Emirates", "Netherlands") else "") + CTRY[c]["name"]}]({SITE}/countries/{slug(CTRY[c]["name"])}/)')
     L += [f'- [Newsletter]({SITE}/newsletter/): event news and results round-ups',
+          f'- [Weekly round-up, Australia and USA, 3 November 2026]({SITE}/newsletter/au-us-weekly-2026-11-03/): Archery WA QREs, Hobart nationals and Para Pan Am results, NAST shoots, USA Archery Indoor Nationals and Dakar 2026',
           f'- [US indoor season starts]({SITE}/newsletter/usa-indoor-season-2026/): NAST shoots, USA Archery Indoor Nationals and the Rushmore Rumble, November 2026',
           f'- [Hobart nationals wrap-up]({SITE}/newsletter/hobart-nationals-2026/): the 2026 National Target and Para Championships in Hobart',
           f'- [Yankton world championships wrap-up]({SITE}/newsletter/yankton-world-championships-2026/): World Archery Field and 3D Championships 2026, Yankton, South Dakota', '',

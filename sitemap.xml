@@ -16,6 +16,13 @@
     <image:image><image:loc>https://archerycalendars.com/img/newsletter-archery-range-galston-gorge-2022.jpg</image:loc></image:image>
   </url>
   <url>
+    <loc>https://archerycalendars.com/newsletter/au-us-weekly-2026-11-03/</loc>
+    <lastmod>2026-11-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <image:image><image:loc>https://archerycalendars.com/img/newsletter-archery-range-galston-gorge-2022.jpg</image:loc></image:image>
+  </url>
+  <url>
     <loc>https://archerycalendars.com/newsletter/usa-indoor-season-2026/</loc>
     <lastmod>2026-11-03</lastmod>
     <changefreq>monthly</changefreq>
