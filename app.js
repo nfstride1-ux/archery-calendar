@@ -1446,7 +1446,7 @@ function mDrop(label, kind, opts){
 document.addEventListener('change', e => {
   const sel = e.target.closest && e.target.closest('select.m-drop'); if (!sel) return;
   const k = sel.dataset.mdrop, v = sel.value;
-  if (k === 'href') { location.hash = v; return; }
+  if (k === 'href') { if (v) location.hash = v; return; }
   const box = sel.closest('section, .mc-st, .panel, .wrap') || document;
   let b = [...box.querySelectorAll(`[data-${k}]`)].find(x => x.dataset[k.replace(/-(\w)/g, (_, c) => c.toUpperCase())] === v);
   if (!b && k === 'ihst' && !v) b = box.querySelector('[data-ihst][aria-pressed="true"]');   // "All states": tap the picked state again to clear it
@@ -1484,7 +1484,7 @@ function vCals(arg){
   if (CF.cat === 'club' && CF.mc) list = list.filter(x => followed().includes(x.club_id));
   const nPast = list.filter(isPast).length;
   let html = `${pageHead('Calendars', 'Each organisation’s full calendar, in one place. Tap an event for details, entry and reminders.', CF.org === 'aba' ? 'aba_field' : CF.cat === 'youth' && PH.youth ? 'youth' : CF.cat === 'come_try' && PH.come_try ? 'come_try' : 'mixed')}<div class="wrap cals">
-  ${mDrop('Organisation', 'href', Object.entries(CALS).map(([k, o]) => ['#/calendars/' + k, o.name, k === CF.org]))}  <div class="tabs has-mdrop" role="tablist" aria-label="Organisation">${Object.entries(CALS).map(([k, o]) => `<a role="tab" class="tab" href="#/calendars/${k}" aria-selected="${k === CF.org}">${k === 'aba' ? abaLogo(32, 'chip-logo') : ''}${esc(o.name)}</a>`).join('')}</div>
+  ${calTabs(CF.org)}
   <div class="panel cal-head"><h2 class="sec${CF.org === 'aba' ? ' with-logo' : ''}">${CF.org === 'aba' ? abaLogo(64, 'head-logo') : ''}<span>${esc(c.full)} – ${(years.length > 2 ? years[0] + '–' + years[years.length - 1] : years.join(' & ')) || '2026'}</span></h2>
   ${typeSel(CF.cat, tc)}${CF.cat === 'club' ? clubDrop(CF, x => inGrp(x, CF.org) && (CF.past || !isPast(x))) : ''}
   ${CF.org === 'aba' && CF.where === 'J – WA' ? `<div class="branch-src" id="branchJ"><a class="bs-img" href="sources/aba-j-2026-branch-calendar.jpg" target="_blank" rel="noopener" aria-label="Open the Branch J calendar full size"><img src="sources/aba-j-2026-branch-calendar-sm.jpg" alt="ABA Branch J (WA) Event Calendar 2026" width="110" loading="lazy"></a>
@@ -1568,6 +1568,81 @@ function bindCCals(){
   bindMcal(softRenderForce);
   const d = $('#ccd'); if (d) d.onchange = e => { CCF.disc = e.target.value; softRenderForce(); };
   const p = $('#ccp'); if (p) p.onchange = e => { CCF.past = e.target.checked; softRenderForce(); };
+}
+/* Organisation tabs on the Australian Calendars page, plus "Clubs" (owner 5 Nov 2026: every club gets its own calendar too). */
+function calTabs(cur){
+  const t = [...Object.entries(CALS).map(([k, o]) => ['#/calendars/' + k, o.name, k === cur, k]), ['#/calendars/clubs', '🏠 Clubs', cur === 'clubs', 'clubs']];
+  return `${mDrop('Calendar', 'href', t.map(([h, l, on]) => [h, l, on]))}<div class="tabs has-mdrop" role="tablist" aria-label="Organisation">${t.map(([h, l, on, k]) => `<a role="tab" class="tab" href="${h}" aria-selected="${on}">${k === 'aba' ? abaLogo(32, 'chip-logo') : ''}${esc(l)}</a>`).join('')}</div>`;
+}
+/* ---------- Club calendars (owner 5 Nov 2026: "Give each club its own calendar too … same style as the organisation calendars").
+   #/calendars/clubs asks for the state first, then the club; #/calendars/club/<id> (and the old #/club/<id> links) is that club's month calendar.
+   Australian clubs: every event with that club_id (the same set as the club popover's count; club championships and members-only events
+   keep their usual badges – picking the club is one of the existing reasons they show). International clubs: their events from intl.json. ---------- */
+const CLF = {st: ''};
+const clubUp = c => c.country ? iClubEv(c.id).filter(x => !iPast(x)).length || (INTL ? 0 : c.n_events || 0) : EV.filter(x => x.club_id === c.id && !isPast(x)).length;
+const auClubs = st => CLUBS.filter(c => !c.country && c.state === st);
+function clubSwitch(c){   // state, then club, as two big dropdowns (every screen size)
+  const sts = STATES.filter(([k]) => auClubs(k).length), cs = auClubs(c.state).map(x => [x, clubUp(x)]).sort((a, b) => a[0].name.localeCompare(b[0].name));
+  return `<div class="club-sw"><label class="cs-l">State<select class="m-drop cs-sel" data-mdrop="href" aria-label="State">${sts.map(([k, n]) => `<option value="#/calendars/clubs?st=${k}"${k === c.state ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select></label>
+    <label class="cs-l">Club<select class="m-drop cs-sel" data-mdrop="href" aria-label="Club">${cs.map(([x, n]) => `<option value="#/calendars/club/${esc(encodeURIComponent(x.id))}"${x.id === c.id ? ' selected' : ''}>${esc(x.name)}${n ? ` (${n} upcoming)` : ''}</option>`).join('')}</select></label></div>`;
+}
+function vClubCals(){
+  const q = new URLSearchParams((location.hash.split('?')[1]) || ''), qs = q.get('st');
+  if (qs !== null) CLF.st = STATES.some(s => s[0] === qs) ? qs : '';
+  else if (!CLF.st && CF.lastSt && STATES.some(s => s[0] === CF.lastSt)) CLF.st = CF.lastSt;   // a state already picked on another calendar carries over
+  setTitle('Club calendars');
+  let html = `${pageHead('Calendars', 'Every club’s own calendar. Pick your state, then your club.', 'mixed')}<div class="wrap cals">${calTabs('clubs')}
+  <div class="panel cal-head"><h2 class="sec"><span>🏠 Club calendars</span></h2>`;
+  const sts = STATES.map(([k, n]) => [k, n, auClubs(k)]).filter(s => s[2].length), mine = [...new Set([...S.states, ...followed().map(id => CLUB[id].state)])];
+  if (!CLF.st) {
+    html += `<p class="note">${CLUBS.filter(c => !c.country).length} Australian clubs. Each one has its own month calendar.</p></div>
+    <section class="panel st-pick" aria-labelledby="stPickH"><h2 class="sec-h" id="stPickH">Which state?</h2><p class="st-pick-sub">Pick one to see its clubs. You can switch state at any time.</p>
+    <div class="st-grid">${[...sts].sort((a, b) => mine.includes(b[0]) - mine.includes(a[0])).map(([k, n, cs]) => `<a class="st-b${mine.includes(k) ? ' mine' : ''}" href="#/calendars/clubs?st=${k}"><b>${esc(n)}</b><small>${cs.length} clubs${mine.includes(k) ? ' · your state' : ''}</small></a>`).join('')}</div></section>`;
+    return html + '</div>';
+  }
+  const cs = auClubs(CLF.st).map(c => [c, clubUp(c)]).sort((a, b) => (b[1] > 0) - (a[1] > 0) || a[0].name.localeCompare(b[0].name)), stN = (STATES.find(s => s[0] === CLF.st) || [, CLF.st])[1];
+  html += `<div class="mc-st has-mdrop" role="group" aria-label="State">${mDrop('State', 'href', sts.map(([k, n, x]) => ['#/calendars/clubs?st=' + k, `${n} (${x.length} clubs)`, k === CLF.st]))}<span class="mc-st-l">State:</span>${sts.map(([k, , x]) => `<a class="chip" href="#/calendars/clubs?st=${k}" aria-pressed="${k === CLF.st}">${k} <small>${x.length}</small></a>`).join('')}</div>
+    <p class="note">${cs.length} clubs in ${esc(stN)}, ${cs.filter(c => c[1]).length} with upcoming events listed.</p></div>
+    <section class="panel club-pick" aria-labelledby="cpkH"><h2 class="sec-h" id="cpkH">Which club?</h2>
+    ${mDrop('Club', 'href', [['', 'Choose a club…', true], ...cs.map(([c, n]) => ['#/calendars/club/' + encodeURIComponent(c.id), c.name + (n ? ` (${n} upcoming)` : ''), false])])}
+    <div class="st-grid has-mdrop">${cs.map(([c, n]) => `<a class="st-b${isMine(c.id) || isWatch(c.id) ? ' mine' : ''}" href="#/calendars/club/${esc(encodeURIComponent(c.id))}"><b>${esc(c.name)}</b><small>${esc(c.suburb || '')}${c.suburb ? ' · ' : ''}${n ? `${n} upcoming` : 'no upcoming events yet'}${isMine(c.id) ? ' · my club' : isWatch(c.id) ? ' · watching' : ''}</small></a>`).join('')}</div></section>`;
+  return html + `<p class="note">Club list from the Archery WA, Archery SA, SQAS and Archery Victoria club lists and the events on our calendars. Missing your club? <a href="#/submit">Tell us</a>.</p></div>`;
+}
+function vClubCal(id){
+  const c = CLUB[id];
+  if (!c) { setTitle('Club'); return `${pageHead('Club not found', '', 'mixed')}<div class="wrap narrow"><p>We couldn’t find that club.</p><a class="btn gold f-back" href="#/calendars/clubs">← Back to club calendars</a></div>`; }
+  setTitle(c.name + ' calendar');
+  const intl = !!c.country, cn = intl ? (c.country_name || iName(c.country)) : '';
+  if (intl && !INTL) { loadIntl().then(() => { if (/^#\/(club|calendars\/club)\//.test(location.hash || '')) softRenderForce(); }).catch(() => {}); return `${pageHead(esc(c.name), esc(clubLine(c)), 'mixed')}<div class="wrap cals"><p class="note">Loading calendar…</p></div>`; }
+  if (!intl) CLF.st = c.state || CLF.st;
+  const all = (intl ? iClubEv(id) : EV.filter(x => x.club_id === id)).sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
+  const past = intl ? iPast : isPast, up = all.filter(x => !past(x)), list = all.filter(x => CF.past || !past(x)), nPast = list.filter(past).length;
+  const back = intl ? `<a class="btn gold f-back" href="#/intl/${esc(c.country)}">← Back to ${esc(cn)} events</a>` : `<a class="btn gold f-back" href="#/calendars/clubs?st=${esc(c.state || '')}">← Back to ${esc(c.state || 'all')} clubs</a>`;
+  const q = encodeURIComponent([c.name, c.address || c.suburb, c.state, cn].filter(Boolean).join(', '));
+  const info = `<div class="club-info"><p class="ci-line">${esc(clubLine(c))}</p>
+    ${c.address ? `<p>${esc(c.address)} · <a href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener">📍 Map ↗</a></p>` : ''}
+    ${c.website ? `<p><a href="${esc(c.website)}" target="_blank" rel="noopener">${esc(c.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '').slice(0, 50))} ↗</a></p>` : ''}
+    ${c.email || c.phone ? `<p>${c.email ? `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>` : ''}${c.email && c.phone ? ' · ' : ''}${c.phone ? `<a href="tel:${esc(c.phone.replace(/\s/g, ''))}">${esc(c.phone)}</a>` : ''}</p>` : ''}
+    <div class="club-acts"><button type="button" class="tbtn" data-join="${esc(id)}" aria-pressed="${isMine(id)}">${isMine(id) ? '✓ 🏠 My club' : '+ 🏠 My club'}</button><button type="button" class="tbtn" data-watch="${esc(id)}" aria-pressed="${isWatch(id)}">${isWatch(id) ? '✓ 👁 Watching' : '+ 👁 Watch'}</button>${isMine(id) ? `<button type="button" class="tbtn" data-home="${esc(id)}" aria-pressed="${S.homeClub === id}">${S.homeClub === id ? '★ Home club' : '☆ Make home club'}</button>` : ''}</div></div>`;
+  const empty = !up.length ? `<div class="club-empty"><p><b>No upcoming events listed for ${esc(c.name)} yet.</b></p><p>Running an event at this club? Add it and it will show here.</p><a class="btn gold" href="#/submit">➕ Add an event</a>${all.length ? '<p class="note">Past events are on the calendar below, greyed out.</p>' : ''}</div>` : '';
+  let html = `${pageHead('Calendars', intl ? `Club calendar · ${esc(cn)}` : 'Club calendar. Tap an event for details, entry and reminders.', (c.orgs || []).includes('aba') && !(c.orgs || []).some(o => o !== 'aba') ? 'aba_field' : 'mixed')}<div class="wrap cals club-cal">
+  ${intl ? '' : calTabs('clubs')}${back}
+  <div class="panel cal-head"><h2 class="sec"><span>${esc(c.name)}</span></h2>${info}${intl ? '' : clubSwitch(c)}
+  ${all.length ? `<div class="cal-filters"><label class="chk"><input type="checkbox" id="clp" ${CF.past ? 'checked' : ''}> Show finished</label></div>` : ''}
+  <p class="note">${up.length} upcoming event${up.length === 1 ? '' : 's'}${CF.past && nPast ? ` (${nPast} finished, shown greyed out)` : ''}. ${intl ? '' : `<button type="button" class="linkbtn" data-clubgo="${esc(id)}">See them as a list in Find events</button>`}</p></div>
+  ${empty}`;
+  if (all.length) html += monthCal('club-' + id, list, x => {
+    const st = ST(x.id), stb = st === 'paid' ? '<span class="b paid">✓$ Paid</span>' : st === 'entered' ? '<span class="b ent">✓ Entered</span>' : '';
+    return intl ? mcRow(x, x.location || '', stb) : mcRow(x, calWhere(x), stb + catTag(x) + (x.members_only ? '<span class="b members">👥 Club members only</span>' : '') + clubBadge(x) + clashBadge(x));
+  }, {sig: [CF.past].join('|'), cc: intl ? c.country : 'AUS', past, label: c.name + ' calendar'});
+  const und = list.filter(x => !/^\d{4}-\d\d-\d\d$/.test(x.start_date || ''));   // book-any-time and dates-to-come events can't sit on a day
+  if (und.length) html += `<details class="mc-tba" open><summary>${und.some(x => x.book_anytime) && und.every(x => x.book_anytime) ? 'Book any time' : 'No set date'} (${und.length})</summary>${und.map(x => mcRow(x, intl ? x.location || '' : calWhere(x), intl ? '' : catTag(x))).join('')}</details>`;
+  return html + `<p class="note">From the events on our calendars that name this club as host. Always confirm with the club.</p></div>`;
+}
+function bindClubCal(id){
+  const re = () => { const y = scrollY; render(); scrollTo(0, y); };
+  const p = $('#clp'); if (p) p.onchange = e => { CF.past = e.target.checked; re(); };
+  bindMcal(re); bindClubBtns($('#view'));
 }
 /* ---------- clubs: directory, my clubs / watching, club pages, "New from your clubs" ---------- */
 const CLUBF = {mine: '🏠 My clubs', watch: '👁 Watching', new: '✦ New from your clubs'};
@@ -1658,19 +1733,22 @@ function bindClubDrop(F){
 function clubPop(id, from){
   const c = CLUB[id]; if (!c) return; closeClubPop();
   const up = c.country ? iClubEv(id).filter(x => !iPast(x)).length || (INTL ? 0 : c.n_events) : EV.filter(x => x.club_id === id && !isPast(x)).length, q = encodeURIComponent([c.name, c.address || c.suburb, c.state].filter(Boolean).join(', '));
+  const cal = !c.country || !INTL || iClubEv(id).length > 0;   // international clubs with no events of their own keep the old jump to their country page
   const d = document.createElement('div'); d.className = 'club-pop-wrap'; d.id = 'clubPop';
   d.innerHTML = `<div class="club-pop" role="dialog" aria-modal="true" aria-labelledby="cpT"><button type="button" class="cp-x" id="cpX" aria-label="Close">✕</button>
     <h2 id="cpT">${esc(c.name)}</h2><p class="note">${esc(clubLine(c))}</p>
     ${c.address ? `<p>${esc(c.address)} · <a href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener">📍 Map ↗</a></p>` : ''}
     ${c.website ? `<p><a href="${esc(c.website)}" target="_blank" rel="noopener">${esc(c.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, ''))} ↗</a></p>` : ''}
     <div class="club-acts"><button type="button" class="tbtn" data-join="${esc(id)}" aria-pressed="${isMine(id)}">${isMine(id) ? '✓ 🏠 My club' : '+ 🏠 My club'}</button><button type="button" class="tbtn" data-watch="${esc(id)}" aria-pressed="${isWatch(id)}">${isWatch(id) ? '✓ 👁 Watching' : '+ 👁 Watch'}</button></div>
-    <button type="button" class="btn alt block" id="cpShoots">Show its events (${up} upcoming)</button></div>`;
+    ${cal ? `<a class="btn gold block" id="cpCal" href="#/calendars/club/${esc(encodeURIComponent(id))}">📅 Club calendar (${up} upcoming)</a><button type="button" class="linkbtn cp-list" id="cpShoots">or see ${c.country ? 'its country’s events' : 'them as a list'}</button>`
+      : `<button type="button" class="btn alt block" id="cpShoots">Show its events (${up} upcoming)</button>`}</div>`;
   document.body.appendChild(d);
   const back = () => { closeClubPop(); from && from.focus && from.focus(); };
   d.onclick = e => { if (e.target === d) back(); };
   $('#cpX').onclick = back; $('#cpX').focus();
   d.querySelectorAll('[data-join],[data-watch]').forEach(b => b.onclick = () => { if (b.dataset.join) toggleClub('my', id); else toggleClub('watch', id); const y = scrollY; render(); scrollTo(0, y); clubPop(id, from); });
   $('#cpShoots').onclick = () => { closeClubPop(); showClubShoots(id); };
+  const cc = $('#cpCal'); if (cc) cc.onclick = () => closeClubPop();
 }
 /* Show only one club's events in Find events (same set as the popover's "N upcoming": every event with that club_id). */
 function showClubShoots(id){ const c = CLUB[id]; if (c && c.country) { location.hash = '#/intl/' + c.country; return; }
@@ -3249,8 +3327,10 @@ function render(){
   else if (p === 'submit' && arg === 'bulk' && typeof bulkView === 'function') { v.innerHTML = bulkView(); bulkBind(); }
   else if (p === 'fix' || (p === 'submit' && arg === 'fix')) { v.innerHTML = vFix(decodeURIComponent(p === 'fix' ? (arg || '') : (h.split('/')[3] || ''))); bindFix(); }
   else if (p === 'submit') { v.innerHTML = vSubmit(HQ.get('country')); bindSubmit(); }
+  else if (p === 'calendars' && arg === 'clubs') v.innerHTML = vClubCals();
+  else if (p === 'calendars' && arg === 'club') { const id = decodeURIComponent(h.split('/')[3] || ''); v.innerHTML = vClubCal(id); bindClubCal(id); }
   else if (p === 'calendars') { const cc = calCountry(arg); if (cc) { v.innerHTML = vCCals(cc); bindCCals(); } else { v.innerHTML = vCals(arg); bindCals(); } }
-  else if (p === 'club') { const id = decodeURIComponent(arg || ''); v.innerHTML = vClub(id); bindClub(id); }
+  else if (p === 'club') { const id = decodeURIComponent(arg || ''); v.innerHTML = vClubCal(id); bindClubCal(id); }   // old club page links open the club's calendar
   else if (p === 'clubs') { v.innerHTML = vClubs(); bindClubPicker(); }
   else if (p === 'intl') { v.innerHTML = vIntl(arg); bindIntl(arg); }
   else if (p === 'search' && typeof gsView === 'function') { const sq = HQ.get('q') || ''; v.innerHTML = gsView(sq); gsBind(sq); }

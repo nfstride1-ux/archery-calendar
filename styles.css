@@ -1562,3 +1562,25 @@ html.sp-lock{overflow:hidden}
  .mc-st.has-mdrop>.chip,.mc-st.has-mdrop>.mc-st-l{display:none}
  .mc-st.has-mdrop .m-drop-w{margin:0}
 }
+
+/* Club calendars (owner 5 Nov 2026). State then club; big plain text, gold edges like the other pickers. */
+.club-pick{border:3px solid var(--gold)}
+.club-pick .sec-h{font-size:30px;margin-top:0}
+a.st-b{text-decoration:none}
+.chip small{font-weight:600}
+.mc-st a.chip{text-decoration:none}
+.club-info{font-size:17px;margin:0 0 10px}.club-info p{margin:4px 0}.ci-line{font-weight:700;color:#334155}
+.club-info .club-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.club-sw{display:grid;grid-template-columns:1fr 2fr;gap:10px;margin:10px 0}
+.club-sw .cs-l{display:block;font-weight:800;font-size:17px;color:var(--night)}
+.club-sw .cs-sel{display:block;width:100%;min-height:52px;margin-top:6px;padding:10px 14px;font:700 18px/1.3 var(--body);color:var(--night);background:#fff;border:3px solid var(--gold);border-radius:14px}
+.club-empty{border:3px solid var(--gold);border-radius:14px;background:#fffbea;padding:16px 18px;margin:0 0 14px;font-size:18px}
+.club-empty p{margin:0 0 8px}
+.club-cal .f-back{text-decoration:none}
+.cp-list{display:block;margin:10px auto 0;font-size:16px}
+#cpCal{text-decoration:none;text-align:center;font-size:19px}
+@media (max-width:720px){
+ .club-sw{grid-template-columns:1fr}
+ .st-grid.has-mdrop{display:none}
+ .club-sw .cs-sel{min-height:56px;font-size:19px}
+}
