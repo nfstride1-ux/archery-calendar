@@ -1437,6 +1437,21 @@ function mcRow(x, where, extra){
     <span class="mc-rb"><b class="mc-rn">${esc(x.name)}</b><span class="mc-rm">📅 ${esc(range(x))}${done ? ' · finished' : ''}</span>${where || x.location || x.host ? `<span class="mc-rm">📍 ${esc([x.host && x.host !== where ? x.host : '', where || x.location].filter(Boolean).join(' · '))}</span>` : ''}${x.discipline ? `<span class="mc-rm">🏹 ${esc(x.discipline)}</span>` : ''}
     <span class="badges">${cdBadge(x)}${extra || ''}</span></span></a>`;
 }
+/* Phone dropdowns (owner 4 Nov 2026: "make the organisations and states a drop down menu on the phone"). Below 720px the chip / tab rows
+   hide and a big gold-edged native select shows instead; desktop is unchanged. kind: the chip's data-* key it stands for, or 'href' for tab links.
+   opts: [[value, label, selected]]. Picking an option clicks the matching (hidden) chip, so every filter keeps its one code path. */
+function mDrop(label, kind, opts){
+  return `<label class="m-drop-w"><span class="m-drop-l">${esc(label)}</span><select class="m-drop" data-mdrop="${esc(kind)}" aria-label="${esc(label)}">${opts.map(([v, l, on]) => `<option value="${esc(v)}"${on ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
+}
+document.addEventListener('change', e => {
+  const sel = e.target.closest && e.target.closest('select.m-drop'); if (!sel) return;
+  const k = sel.dataset.mdrop, v = sel.value;
+  if (k === 'href') { location.hash = v; return; }
+  const box = sel.closest('section, .mc-st, .panel, .wrap') || document;
+  let b = [...box.querySelectorAll(`[data-${k}]`)].find(x => x.dataset[k.replace(/-(\w)/g, (_, c) => c.toUpperCase())] === v);
+  if (!b && k === 'ihst' && !v) b = box.querySelector('[data-ihst][aria-pressed="true"]');   // "All states": tap the picked state again to clear it
+  if (b) b.click();
+});
 /* "Which state?" (item 1): clicking an organisation asks for the state first. opts: [[value, label, count]]; mine: values to list first. */
 function statePick(title, opts, all, mine = []){
   const s = [...opts].sort((a, b) => mine.includes(b[0]) - mine.includes(a[0]));
@@ -1446,7 +1461,7 @@ function statePick(title, opts, all, mine = []){
 }
 /* State switcher that sits on the calendar. */
 function stateChips(label, opts, cur, allLbl){
-  return `<div class="mc-st" role="group" aria-label="${esc(label)}"><span class="mc-st-l">${esc(label)}:</span><button type="button" class="chip" data-pst="" aria-pressed="${!cur}">${esc(allLbl)}</button>${opts.map(([v, l, n]) => `<button type="button" class="chip" data-pst="${esc(v)}" aria-pressed="${cur === v}">${esc(l)} <small>${n}</small></button>`).join('')}</div>`;
+  return `<div class="mc-st has-mdrop" role="group" aria-label="${esc(label)}">${mDrop(label, 'pst', [['', allLbl, !cur], ...opts.map(([v, l, n]) => [v, `${l} (${n})`, cur === v])])}<span class="mc-st-l">${esc(label)}:</span><button type="button" class="chip" data-pst="" aria-pressed="${!cur}">${esc(allLbl)}</button>${opts.map(([v, l, n]) => `<button type="button" class="chip" data-pst="${esc(v)}" aria-pressed="${cur === v}">${esc(l)} <small>${n}</small></button>`).join('')}</div>`;
 }
 function vCals(arg){
   if (arg === 'aba-j') { CF.org = 'aba'; CF.where = 'J – WA'; CF.disc = ''; CF.askedOrg = 'aba'; }
@@ -1469,7 +1484,7 @@ function vCals(arg){
   if (CF.cat === 'club' && CF.mc) list = list.filter(x => followed().includes(x.club_id));
   const nPast = list.filter(isPast).length;
   let html = `${pageHead('Calendars', 'Each organisation’s full calendar, in one place. Tap an event for details, entry and reminders.', CF.org === 'aba' ? 'aba_field' : CF.cat === 'youth' && PH.youth ? 'youth' : CF.cat === 'come_try' && PH.come_try ? 'come_try' : 'mixed')}<div class="wrap cals">
-  <div class="tabs" role="tablist" aria-label="Organisation">${Object.entries(CALS).map(([k, o]) => `<a role="tab" class="tab" href="#/calendars/${k}" aria-selected="${k === CF.org}">${k === 'aba' ? abaLogo(32, 'chip-logo') : ''}${esc(o.name)}</a>`).join('')}</div>
+  ${mDrop('Organisation', 'href', Object.entries(CALS).map(([k, o]) => ['#/calendars/' + k, o.name, k === CF.org]))}  <div class="tabs has-mdrop" role="tablist" aria-label="Organisation">${Object.entries(CALS).map(([k, o]) => `<a role="tab" class="tab" href="#/calendars/${k}" aria-selected="${k === CF.org}">${k === 'aba' ? abaLogo(32, 'chip-logo') : ''}${esc(o.name)}</a>`).join('')}</div>
   <div class="panel cal-head"><h2 class="sec${CF.org === 'aba' ? ' with-logo' : ''}">${CF.org === 'aba' ? abaLogo(64, 'head-logo') : ''}<span>${esc(c.full)} – ${(years.length > 2 ? years[0] + '–' + years[years.length - 1] : years.join(' & ')) || '2026'}</span></h2>
   ${typeSel(CF.cat, tc)}${CF.cat === 'club' ? clubDrop(CF, x => inGrp(x, CF.org) && (CF.past || !isPast(x))) : ''}
   ${CF.org === 'aba' && CF.where === 'J – WA' ? `<div class="branch-src" id="branchJ"><a class="bs-img" href="sources/aba-j-2026-branch-calendar.jpg" target="_blank" rel="noopener" aria-label="Open the Branch J calendar full size"><img src="sources/aba-j-2026-branch-calendar-sm.jpg" alt="ABA Branch J (WA) Event Calendar 2026" width="110" loading="lazy"></a>
@@ -1536,7 +1551,8 @@ function vCCals(code){
   const list = inOrg.filter(x => (!CCF.where || whereOf(x) === CCF.where) && (!dre || dre.test((x.discipline || '') + ' ' + x.name)) && (CCF.past || !iPast(x)));
   const nPast = list.filter(iPast).length, site = cur && iOrgSite(cur), base = '#/calendars/' + code;
   let html = `${head}<div class="wrap cals">
-  <div class="tabs" role="tablist" aria-label="Organisation"><a role="tab" class="tab" href="${base}" aria-selected="${!cur}">${flag(iIso(code))} All ${esc(usa ? 'USA' : nm)}</a>${orgs.map(([k, l]) => `<a role="tab" class="tab" href="${base}/${encodeURIComponent(k)}" aria-selected="${k === cur}">${esc(l)}</a>`).join('')}</div>
+  ${mDrop('Organisation', 'href', [[base, `All ${usa ? 'USA' : nm}`, !cur], ...orgs.map(([k, l]) => [base + '/' + encodeURIComponent(k), l, k === cur])])}
+  <div class="tabs has-mdrop" role="tablist" aria-label="Organisation"><a role="tab" class="tab" href="${base}" aria-selected="${!cur}">${flag(iIso(code))} All ${esc(usa ? 'USA' : nm)}</a>${orgs.map(([k, l]) => `<a role="tab" class="tab" href="${base}/${encodeURIComponent(k)}" aria-selected="${k === cur}">${esc(l)}</a>`).join('')}</div>
   <div class="panel cal-head"><h2 class="sec"><span>${esc(cur ? iOrgName(cur) : `Every organisation in ${the}${nm}`)} – ${(years.length > 2 ? years[0] + '–' + years[years.length - 1] : years.join(' & ')) || '2026'}</span></h2>
   ${ask ? '' : `<div class="cal-filters"><label>Discipline<select id="ccd"><option value="">All disciplines</option>${discs.map(d => `<option ${CCF.disc === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select></label>
   <label class="chk"><input type="checkbox" id="ccp" ${CCF.past ? 'checked' : ''}> Show finished</label></div>`}
@@ -2811,16 +2827,20 @@ const cdSE = x => { const tz = evTz(x); return [tzMid(x.start_date, tz), tzMid(x
 function bigText(s, e){ const n = Date.now(); if (n >= e) return 'Finished'; if (n >= s) return 'On now'; const d = Math.floor((s - n) / 864e5); return d < 1 ? 'Under 1 day' : dayLbl(d); }
 function bigCd(x){ if (!x || !/^\d{4}-\d\d-\d\d$/.test(x.start_date || '')) return '<b class="big">–</b>'; const [s, e] = cdSE(x), L = cdTargets(x), g = L ? L[0][0] : s;
   return `<b class="big" data-cdb="${g}" data-cde="${e}">${bigText(g, e)}</b><small class="cd-cap">${L ? `full days until ${L[0][1] === 'Sign-in' ? 'sign-in opens' : 'the start'}` : 'full days until the first day starts'}</small>`; }
-/* Item 4 (owner 4 Nov 2026): countdown timers only on the soonest few events worldwide (Australian + international together),
+/* Item 4 (owner 4 Nov 2026, changed later that day): countdown timers only on the soonest few (CD_N = 3) events in EACH country
+   (Australia counts as one country), so every country page shows its own next three; the world view shows the next three of every country.
+   Earlier note: was the soonest few events worldwide (Australian + international together),
    not on every major. An event's own page (big) still shows its timer if it's a major. Before this, a timer showed on any 'major' (championships, nationals, world events, QREs…), which is why
    only some cards had one. CD_N = how many; events already running count while they're on. */
-const CD_N = 6;
+const CD_N = 3;   // per country
 function cdSoon(){
   const k = [EV.length, INTL ? INTL.events.length : 0, iso(today()), Math.floor(Date.now() / 6e5)].join('|');
   if (cdSoon.k === k) return cdSoon.s;
   const ok = x => x && /^\d{4}-\d\d-\d\d$/.test(x.start_date || '') && !x.cancelled && x.status !== 'cancelled' && x.status !== 'dates_tba' && !x.info_only && !clubOnly(x) && x.category !== 'seminar' && (typeof isShoot !== 'function' || x._intl || isShoot(x));
   const L = [...EV, ...(INTL ? INTL.events : [])].filter(ok).map(x => [x, cdSE(x)]).filter(([, [s, e]]) => e > Date.now() && e - s <= 8 * 864e5).sort((a, b) => a[1][0] - b[1][0]);
-  cdSoon.k = k; cdSoon.s = new Set(L.slice(0, CD_N).map(([x]) => x.id)); return cdSoon.s;
+  const per = {}, out = new Set();
+  for (const [x] of L) { const c = x.country_code || 'AUS'; if ((per[c] = (per[c] || 0) + 1) <= CD_N) out.add(x.id); }
+  cdSoon.k = k; cdSoon.s = out; return cdSoon.s;
 }
 function cdBadge(x, big){
   if (!x || !(cdSoon().has(x.id) || big && isMajor(x)) || !/^\d{4}-\d\d-\d\d$/.test(x.start_date || '') || x.cancelled || x.status === 'cancelled' || x.status === 'dates_tba') return '';
@@ -3124,13 +3144,14 @@ function vIntl(arg, find){
   // Every organisation in the country (owner 2 Nov 2026), not only the USA's: pick one, then narrow with search and filters.
   const orgs = world ? [] : iOrgs(code, all.filter(x => IF.past || !iPast(x) || iOrgKey(x) === IF.org));
   const orgP = orgs.length ? `<section class="panel i-orgs" aria-labelledby="iorgH"><h2 class="sec-h" id="iorgH">Organisations in ${the}${esc(nm)}</h2><p class="note">Pick one to see only its events, then narrow it down with the search and filters below.</p>
-    <div class="chips" role="group" aria-label="Organisation"><button class="chip" data-iorg="" aria-pressed="${!IF.org}">All ${esc(usa ? 'USA' : nm)}</button>${orgs.map(([k, l]) => `<button class="chip" data-iorg="${esc(k)}" aria-pressed="${IF.org === k}">${esc(l)} <small>${all.filter(x => iOrgKey(x) === k && (IF.past || !iPast(x))).length}</small></button>`).join('')}</div></section>` : '';
+    ${mDrop('Organisation', 'iorg', [['', `All ${usa ? 'USA' : nm}`, !IF.org], ...orgs.map(([k, l]) => [k, `${l} (${all.filter(x => iOrgKey(x) === k && (IF.past || !iPast(x))).length})`, IF.org === k])])}
+    <div class="chips has-mdrop" role="group" aria-label="Organisation"><button class="chip" data-iorg="" aria-pressed="${!IF.org}">All ${esc(usa ? 'USA' : nm)}</button>${orgs.map(([k, l]) => `<button class="chip" data-iorg="${esc(k)}" aria-pressed="${IF.org === k}">${esc(l)} <small>${all.filter(x => iOrgKey(x) === k && (IF.past || !iPast(x))).length}</small></button>`).join('')}</div></section>` : '';
   // Item 3 (owner 4 Nov 2026): a big gold Back button replaces the small "✕ Clear".
   const back = active.length ? `<button type="button" class="btn gold i-back" id="iclr">← Back to all ${esc(world ? 'world' : usa ? 'USA' : nm)} events</button>` : '';
   const cnt = `<p class="note" id="icount">${list.length} event${list.length === 1 ? '' : 's'}${active.length ? ' · ' + active.join(' · ') : ''}.</p>`;
   // By state (USA), its own panel under Organisations; counts follow the organisation picked.
   const stc = usa ? Object.entries(all.filter(x => !iPast(x) && x.status !== 'cancelled' && (!IF.org || iOrgKey(x) === IF.org)).reduce((a, x) => (x.us_state && (a[x.us_state] = (a[x.us_state] || 0) + 1), a), {})).sort((a, b) => b[1] - a[1]) : [];
-  const stP = stc.length && !find ? `<section class="panel i-sts" aria-labelledby="istH"><h2 class="sec-h" id="istH">By state</h2><div class="chips" role="group" aria-label="Events by US state">${stc.map(([s, n]) => `<button class="chip" data-ihst="${s}" aria-pressed="${IF.st === s}">${esc(US_ST[s] || s)} <small>${n}</small></button>`).join('')}</div></section>` : '';
+  const stP = stc.length && !find ? `<section class="panel i-sts" aria-labelledby="istH"><h2 class="sec-h" id="istH">By state</h2>${mDrop('State', 'ihst', [['', 'All states', !IF.st], ...stc.map(([s, n]) => [s, `${US_ST[s] || s} (${n})`, IF.st === s])])}<div class="chips has-mdrop" role="group" aria-label="Events by US state">${stc.map(([s, n]) => `<button class="chip" data-ihst="${s}" aria-pressed="${IF.st === s}">${esc(US_ST[s] || s)} <small>${n}</small></button>`).join('')}</div></section>` : '';
   // Item 1 (owner 4 Nov 2026): picking an organisation on the USA page asks for the state first.
   const ask = usa && IF.org && !IF.st && IF.stAsked !== IF.org && stc.length > 1 && !IF.q.trim();
   const ist = x => { const h = iStatus(x); return /Scheduled/.test(h) ? '' : h; };
