@@ -10,7 +10,7 @@ try:
   ctx.add_init_script("try{localStorage.setItem('archreg.popup.v1',JSON.stringify({seen:Date.now(),dismissed:Date.now()}));localStorage.setItem('archcal.instDismissed',String(Date.now()))}catch(e){}")
   pg=ctx.new_page(); pg.goto(f'http://localhost:{port}/#/calendars/aba'); pg.wait_for_function('navigator.serviceWorker.controller',timeout=30000)
   pg.reload(); pg.wait_for_timeout(3000); pg.evaluate("scrollTo(0,900); window.__mark=1")
-  s=open(d+'/sw.js').read().replace("archcal-qre1103","archcal-test9"); open(d+'/sw.js','w').write(s)
+  import re; s=re.sub(r"const C='[^']*'","const C='archcal-test9'",open(d+'/sw.js').read(),count=1); open(d+'/sw.js','w').write(s)
   pg.evaluate("navigator.serviceWorker.getRegistration().then(r=>r.update())"); pg.wait_for_timeout(8000)
   m=pg.evaluate("[window.__mark||0, !!document.querySelector('#updBar'), scrollY]"); print(tag,'after update: [same page kept, update bar, scrollY]',m)
   pg.screenshot(path=f'{out}/{tag}-item9-sw-update-phone.png')
