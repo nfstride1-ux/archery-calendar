@@ -1548,3 +1548,4 @@ html.sp-lock{overflow:hidden}
 .i-cal .browse{display:block}
 .i-cal .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;position:static;box-shadow:none;padding:0;border:0;background:transparent;margin-bottom:10px}
 .i-cal .filters input[type=search]{flex:2 1 260px}.i-cal .filters select{flex:1 1 160px;width:auto}
+.g-first{font-size:19px;padding:16px}

@@ -2133,6 +2133,7 @@ function vAccount(){
   if (!AUTH.client) return `${head}<div class="wrap narrow">${msg}</div>`;
   if (!AUTH.user) return `${head}<div class="wrap narrow">${msg}
     <section class="panel"><h2 class="sec">Sign in or create an account</h2>
+    ${window.SUPABASE_GOOGLE && !AUTH.sent ? `<button class="btn gold block g-first" id="google" type="button"><b>G</b>&nbsp; Continue with Google</button><p class="note">One tap with your Google account – no code to type. You stay signed in on this device until you sign out.</p><div class="or"><span>or use your email</span></div>` : ''}
     ${AUTH.sent ? `<div class="okbox" role="status">✉ <b>Check your email.</b> We sent a sign-in email to <b>${esc(AUTH.sent)}</b>.${isStandalone() ? ' <b>Use the code from the email to sign in here</b> – the link in the email opens in your browser, not in this app.' : ' Type the code from it below, or tap the link in it <b>in this browser on this device</b>.'} It works once and expires in an hour.</div>
       <form id="otpf" data-clarity-mask="true" novalidate><label for="otp">Enter the code from the email</label>
       <input id="otp" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="10" required placeholder="••••••" class="otp-in">
@@ -2141,11 +2142,12 @@ function vAccount(){
       : `${isStandalone() ? '<p class="okbox hint-app" role="note">📱 <b>Use the code from the email to sign in here.</b> The link in the email opens in your browser, not in this app.</p>' : ''}<form id="signin" data-clarity-mask="true" novalidate><label for="em">Email</label><input id="em" type="email" autocomplete="email" required placeholder="you@example.com">
       <button class="btn gold block" type="submit">✉ Email me a sign-in code</button></form>
       <p class="note">No password. We email you a code (and a link). New here? The same email creates your account.</p>`}
-    ${window.SUPABASE_GOOGLE ? `<div class="or"><span>or</span></div><button class="btn alt block" id="google" type="button"><b>G</b>&nbsp; Continue with Google</button>` : ''}
+    ${window.SUPABASE_GOOGLE && AUTH.sent ? `<div class="or"><span>or</span></div><button class="btn alt block" id="google" type="button"><b>G</b>&nbsp; Continue with Google</button>` : ''}
     </section>
     <section class="panel"><h2 class="sec">What an account does</h2><ul class="ticks">
       <li>Your saved events, “I’ve entered / I’ve paid”, amounts, receipt numbers, notes, reminders and Settings are kept in your account and synced across your devices.</li>
-      <li>Not signed in? Everything still works and stays on this device, as now.</li>
+      <li>Not signed in? Everything still works and stays on this device, as now – ★ My events included.</li>
+      <li>Once you're signed in you stay signed in on this device (the sign-in renews itself) until you sign out.</li>
       <li>Stored in Australia (Sydney). Delete your account and data any time. <a href="#/privacy">Privacy</a></li></ul></section></div>`;
   const u = AUTH.user, st = AUTH.sync.state(), c = counts();
   if (!AUTH.sync.linked()) return `${head}<div class="wrap narrow">${msg}<section class="panel"><h2 class="sec">Add this device’s events to your account?</h2>
