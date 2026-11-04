@@ -2722,9 +2722,13 @@ function iCtryList(){
   if (INTL) INTL.events.forEach(x => { const c = x.country_code; if (c && c !== 'AUS' && !seen.has(c) && iHasPage(c)) { seen.add(c); out.push({code: c, name: x.country_name || c, iso2: x.iso2}); } });
   return out.sort((a, b) => (b.code === 'USA') - (a.code === 'USA') || iUpN(b.code) - iUpN(a.code) || (a.name < b.name ? -1 : 1));
 }
+/* Item 6 (owner 4 Nov 2026): for visitors whose home country isn't Australia, Australia is a normal country bubble with its count
+   (it opens Find events in Australia) instead of the "Australian events are in Find events" line. */
+const auUpN = () => EV.filter(x => !isPast(x) && !x.cancelled && x.status !== 'cancelled').length;
 function iCtryStrip(cur){
-  const cs = iCtryList(); if (!cs.length) return '';
-  return `<nav class="ctry-strip" aria-label="Country home pages">${cs.map(c => `<a class="ctry-chip" href="#/intl/${esc(c.code)}"${cur === c.code ? ' aria-current="page"' : ''}><span aria-hidden="true">${flag(c.iso2)}</span> ${esc(c.name)}${INTL ? ` <small>${iUpN(c.code)}</small>` : ''}</a>`).join('')}<a class="ctry-chip" href="#/intl/WORLD"${cur === 'WORLD' ? ' aria-current="page"' : ''}><span aria-hidden="true">🌐</span> World events</a></nav>`;
+  let cs = iCtryList(); if (!cs.length) return '';
+  if (homeCode() !== 'AUS' && EV.length) { const n = auUpN(), au = {code: 'AUS', name: 'Australia', iso2: 'AU', au: 1}, i = INTL ? cs.findIndex(c => iUpN(c.code) < n) : 0; cs = [...cs]; cs.splice(i < 0 ? cs.length : i, 0, au); }
+  return `<nav class="ctry-strip" aria-label="Country home pages">${cs.map(c => c.au ? `<a class="ctry-chip" href="#/browse/AUS"><span aria-hidden="true">${flag('AU')}</span> Australia <small>${auUpN()}</small></a>` : `<a class="ctry-chip" href="#/intl/${esc(c.code)}"${cur === c.code ? ' aria-current="page"' : ''}><span aria-hidden="true">${flag(c.iso2)}</span> ${esc(c.name)}${INTL ? ` <small>${iUpN(c.code)}</small>` : ''}</a>`).join('')}<a class="ctry-chip" href="#/intl/WORLD"${cur === 'WORLD' ? ' aria-current="page"' : ''}><span aria-hidden="true">🌐</span> World events</a></nav>`;
 }
 /* Major events: flagged from existing data only (world majors / world-level, titles, championships, nationals, national tours, world cups, games, QREs) or a 'major' field. */
 const MAJOR_RE = /champion|\bnationals\b|national tour|world cup|grand prix|olympic games|paralympic games|world masters|winter games|\bDM\b|\bqre\b|world record status/i;
@@ -3055,7 +3059,7 @@ function vIntl(arg, find){
     ${first ? `<section class="i-first" id="ifirst" aria-label="Matching events">${cnt}${res}</section>` : ''}
     ${find ? `<p class="note i-find">Showing events in ${flag(iIso(code))} ${esc(nm)}, your country. <a href="#/intl">🌐 Other countries</a> · <a href="#/browse/AUS">🇦🇺 Australian events</a></p>${orgP}` : `<section class="panel intl-menu intl-panel" aria-labelledby="intlH"><h2 class="sec-h" id="intlH">🌐 International</h2>
       <form id="intlForm" class="intl-form"><label for="intlSel">Country</label><select id="intlSel">${intlOptions(code)}</select><button class="btn" type="submit">Show events →</button>
-      <a class="note" href="#/browse/AUS">🇦🇺 Australian events are in Find events</a></form>${iCtryStrip(code)}</section>${orgP}`}
+      ${homeCode() === 'AUS' ? '<a class="note" href="#/browse/AUS">🇦🇺 Australian events are in Find events</a>' : ''}</form>${iCtryStrip(code)}</section>${orgP}`}
     ${world || find ? '' : iHome(code, all)}${spStrip(world ? 'world' : String(iIso(code) || code).toLowerCase(), 'intl')}
     <div class="browse"><div class="filters"><input type="search" id="iq" placeholder="${usa ? 'Search: vegas, nfaa, ibo, texas, CA…' : code === 'DEN' ? 'Search: DM, indoor, 3D, Aarhus, Taastrup…' : code === 'MAS' ? 'Search: indoor, Selangor, Kedah, seminar…' : code === 'KOR' ? 'Search: festival, trials, Jeju, workshop…' : code === 'NZL' ? 'Search: Auckland, Christchurch, 720, NZFAA, 3D…' : code === 'CAN' ? 'Search: Manitoba, BC, MICA, 18m, nationals…' : 'Search event, club, town…'}" value="${esc(IF.q)}" aria-label="Search events in ${esc(nm)}">${IF.q.trim() ? `<p class="note gs-hint">Showing ${world ? 'world' : esc(nm)} events only. <a href="#/search?q=${esc(encodeURIComponent(IF.q.trim()))}">Search every country for “${esc(IF.q.trim())}” →</a></p>` : ''}
       ${world ? `<label for="ictr2" class="sr">Country</label><select id="ictr2" aria-label="Country"><option value="">All countries</option>${wctr.map(c => `<option value="${c}" ${IF.ctry === c ? 'selected' : ''}>${flag(iIso(c))} ${esc(iName(c))}</option>`).join('')}</select>` : ''}
