@@ -43,7 +43,7 @@
     <priority>0.6</priority>
     <image:image><image:loc>https://archerycalendars.com/img/newsletter-archery-range-galston-gorge-2022.jpg</image:loc></image:image>
   </url>
-  <url><loc>https://archerycalendars.com/australia/</loc><lastmod>2026-11-03</lastmod><changefreq>daily</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/</loc><lastmod>2026-11-04</lastmod><changefreq>daily</changefreq></url>
   <url><loc>https://archerycalendars.com/australia/3d/</loc><lastmod>2026-10-23</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/australia/australian-capital-territory/</loc><lastmod>2026-10-22</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/australia/australian-capital-territory/target/</loc><lastmod>2026-10-22</lastmod><changefreq>monthly</changefreq></url>
@@ -66,7 +66,7 @@
   <url><loc>https://archerycalendars.com/australia/tasmania/target/</loc><lastmod>2026-10-17</lastmod><changefreq>monthly</changefreq></url>
   <url><loc>https://archerycalendars.com/australia/victoria/</loc><lastmod>2026-10-17</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/australia/victoria/target/</loc><lastmod>2026-10-17</lastmod><changefreq>monthly</changefreq></url>
-  <url><loc>https://archerycalendars.com/australia/western-australia/</loc><lastmod>2026-11-03</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/western-australia/</loc><lastmod>2026-11-04</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/australia/western-australia/field/</loc><lastmod>2026-11-03</lastmod><changefreq>monthly</changefreq></url>
   <url><loc>https://archerycalendars.com/australia/western-australia/indoor/</loc><lastmod>2026-10-09</lastmod><changefreq>monthly</changefreq></url>
   <url><loc>https://archerycalendars.com/australia/western-australia/target/</loc><lastmod>2026-11-03</lastmod><changefreq>monthly</changefreq></url>
@@ -443,7 +443,7 @@
   <url><loc>https://archerycalendars.com/events/awa-baldivis-breakfast-2026/</loc><lastmod>2026-10-09</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/awa-benara-matchplay-2026/</loc><lastmod>2026-10-09</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/awa-clout-2026/</loc><lastmod>2026-10-09</lastmod><changefreq>weekly</changefreq></url>
-  <url><loc>https://archerycalendars.com/events/awa-kgsa-junior-2026/</loc><lastmod>2026-10-09</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/awa-kgsa-junior-2026/</loc><lastmod>2026-11-04</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/awa-sorrento-2026/</loc><lastmod>2026-10-09</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/bd-5361/</loc><lastmod>2026-11-04</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/bd-6502/</loc><lastmod>2026-11-04</lastmod><changefreq>weekly</changefreq></url>
@@ -1440,6 +1440,6 @@
   <url><loc>https://archerycalendars.com/events/yaa-2027-07-04-yaa-wa900-and-variants-2027/</loc><lastmod>2026-11-04</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/organisers/aba/</loc><lastmod>2026-11-03</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/organisers/archery-australia/</loc><lastmod>2026-10-20</lastmod><changefreq>weekly</changefreq></url>
-  <url><loc>https://archerycalendars.com/organisers/archery-wa/</loc><lastmod>2026-11-03</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/organisers/archery-wa/</loc><lastmod>2026-11-04</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/organisers/taa/</loc><lastmod>2026-10-17</lastmod><changefreq>weekly</changefreq></url>
 </urlset>
