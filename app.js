@@ -1397,7 +1397,7 @@ function vCals(arg){
   const nPast = list.filter(isPast).length;
   let html = `${pageHead('Calendars', 'Each organisation’s full calendar, in one place. Tap an event for details, entry and reminders.', CF.org === 'aba' ? 'aba_field' : CF.cat === 'youth' && PH.youth ? 'youth' : CF.cat === 'come_try' && PH.come_try ? 'come_try' : 'mixed')}<div class="wrap cals">
   <div class="tabs" role="tablist" aria-label="Organisation">${Object.entries(CALS).map(([k, o]) => `<a role="tab" class="tab" href="#/calendars/${k}" aria-selected="${k === CF.org}">${k === 'aba' ? abaLogo(32, 'chip-logo') : ''}${esc(o.name)}</a>`).join('')}</div>
-  <div class="panel cal-head"><h2 class="sec${CF.org === 'aba' ? ' with-logo' : ''}">${CF.org === 'aba' ? abaLogo(64, 'head-logo') : ''}<span>${esc(c.full)} – ${years.join(' & ') || '2026'}</span></h2>
+  <div class="panel cal-head"><h2 class="sec${CF.org === 'aba' ? ' with-logo' : ''}">${CF.org === 'aba' ? abaLogo(64, 'head-logo') : ''}<span>${esc(c.full)} – ${(years.length > 2 ? years[0] + '–' + years[years.length - 1] : years.join(' & ')) || '2026'}</span></h2>
   ${typeSel(CF.cat, tc)}${CF.cat === 'club' ? clubDrop(CF, x => inGrp(x, CF.org) && (CF.past || !isPast(x))) : ''}
   ${CF.org === 'aba' ? `<div class="chips" role="group" aria-label="Branch"><a class="chip" href="#/calendars/aba" id="brAll" aria-pressed="${!CF.where}">All branches</a><a class="chip" href="#/calendars/aba-j" id="brJ" aria-pressed="${CF.where === 'J – WA'}">Branch J (WA)</a></div>` : ''}
   ${CF.org === 'aba' && CF.where === 'J – WA' ? `<div class="branch-src" id="branchJ"><a class="bs-img" href="sources/aba-j-2026-branch-calendar.jpg" target="_blank" rel="noopener" aria-label="Open the Branch J calendar full size"><img src="sources/aba-j-2026-branch-calendar-sm.jpg" alt="ABA Branch J (WA) Event Calendar 2026" width="110" loading="lazy"></a>
@@ -1469,7 +1469,7 @@ function vCCals(code){
   const nPast = list.filter(iPast).length, site = cur && iOrgSite(cur), base = '#/calendars/' + code;
   let html = `${head}<div class="wrap cals">
   <div class="tabs" role="tablist" aria-label="Organisation"><a role="tab" class="tab" href="${base}" aria-selected="${!cur}">${flag(iIso(code))} All ${esc(usa ? 'USA' : nm)}</a>${orgs.map(([k, l]) => `<a role="tab" class="tab" href="${base}/${encodeURIComponent(k)}" aria-selected="${k === cur}">${esc(l)}</a>`).join('')}</div>
-  <div class="panel cal-head"><h2 class="sec"><span>${esc(cur ? iOrgName(cur) : `Every organisation in ${the}${nm}`)} – ${years.join(' & ') || '2026'}</span></h2>
+  <div class="panel cal-head"><h2 class="sec"><span>${esc(cur ? iOrgName(cur) : `Every organisation in ${the}${nm}`)} – ${(years.length > 2 ? years[0] + '–' + years[years.length - 1] : years.join(' & ')) || '2026'}</span></h2>
   <div class="cal-filters">${usa ? `<label>State<select id="ccw"><option value="">All states</option>${wheres.map(w => `<option ${CCF.where === w ? 'selected' : ''}>${esc(w)}</option>`).join('')}</select></label>` : ''}
   <label>Discipline<select id="ccd"><option value="">All disciplines</option>${discs.map(d => `<option ${CCF.disc === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select></label>
   <label class="chk"><input type="checkbox" id="ccp" ${CCF.past ? 'checked' : ''}> Show finished</label></div>
