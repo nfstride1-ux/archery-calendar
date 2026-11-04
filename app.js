@@ -2801,8 +2801,19 @@ const cdSE = x => { const tz = evTz(x); return [tzMid(x.start_date, tz), tzMid(x
 function bigText(s, e){ const n = Date.now(); if (n >= e) return 'Finished'; if (n >= s) return 'On now'; const d = Math.floor((s - n) / 864e5); return d < 1 ? 'Under 1 day' : dayLbl(d); }
 function bigCd(x){ if (!x || !/^\d{4}-\d\d-\d\d$/.test(x.start_date || '')) return '<b class="big">–</b>'; const [s, e] = cdSE(x), L = cdTargets(x), g = L ? L[0][0] : s;
   return `<b class="big" data-cdb="${g}" data-cde="${e}">${bigText(g, e)}</b><small class="cd-cap">${L ? `full days until ${L[0][1] === 'Sign-in' ? 'sign-in opens' : 'the start'}` : 'full days until the first day starts'}</small>`; }
+/* Item 4 (owner 4 Nov 2026): countdown timers only on the soonest few events worldwide (Australian + international together),
+   not on every major. An event's own page (big) still shows its timer if it's a major. Before this, a timer showed on any 'major' (championships, nationals, world events, QREs…), which is why
+   only some cards had one. CD_N = how many; events already running count while they're on. */
+const CD_N = 6;
+function cdSoon(){
+  const k = [EV.length, INTL ? INTL.events.length : 0, iso(today()), Math.floor(Date.now() / 6e5)].join('|');
+  if (cdSoon.k === k) return cdSoon.s;
+  const ok = x => x && /^\d{4}-\d\d-\d\d$/.test(x.start_date || '') && !x.cancelled && x.status !== 'cancelled' && x.status !== 'dates_tba' && !x.info_only && !clubOnly(x) && x.category !== 'seminar' && (typeof isShoot !== 'function' || x._intl || isShoot(x));
+  const L = [...EV, ...(INTL ? INTL.events : [])].filter(ok).map(x => [x, cdSE(x)]).filter(([, [s, e]]) => e > Date.now() && e - s <= 8 * 864e5).sort((a, b) => a[1][0] - b[1][0]);
+  cdSoon.k = k; cdSoon.s = new Set(L.slice(0, CD_N).map(([x]) => x.id)); return cdSoon.s;
+}
 function cdBadge(x, big){
-  if (!x || !isMajor(x) || !/^\d{4}-\d\d-\d\d$/.test(x.start_date || '') || x.cancelled || x.status === 'cancelled' || x.status === 'dates_tba') return '';
+  if (!x || !(cdSoon().has(x.id) || big && isMajor(x)) || !/^\d{4}-\d\d-\d\d$/.test(x.start_date || '') || x.cancelled || x.status === 'cancelled' || x.status === 'dates_tba') return '';
   if (iPast(x)) return '';
   const [s, e] = cdSE(x), L = cdTargets(x), tz = evTz(x);
   const when = L && new Date(L[0][0]).toLocaleString(LOC(), {timeZone: tz || undefined, weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit'});
