@@ -2942,8 +2942,16 @@ function setHomeLinks(){
   document.querySelectorAll('.nav a[data-tab=home], .site-head .logo').forEach(a => a.setAttribute('href', h));
   const fe = $('.nav a[data-tab=browse]'); if (fe) fe.setAttribute('href', c === 'WORLD' ? '#/intl/WORLD' : '#/browse');   // other countries: Find events opens on their own events (owner 2 Nov 2026)
   const ca = $('.nav a[data-tab=calendars]'); if (ca) ca.setAttribute('href', c === 'AUS' || c === 'WORLD' ? '#/calendars/aba' : '#/calendars/' + c);   // Calendars follows the country (owner 2 Nov 2026)
-  const b = $('#ctrySw'); if (b) { const cur = curHomePage() || c; b.innerHTML = `<span aria-hidden="true">${cur === 'AUS' ? flag('AU') : cur === 'WORLD' ? '🌐' : flag(iIso(cur))}</span><span class="pl"> ${esc(cur === 'AUS' ? 'Australia' : iName(cur))}</span> ▾`; b.setAttribute('aria-label', `Country: ${cur === 'AUS' ? 'Australia' : iName(cur)}. Change country`); }
+  const b = $('#ctrySw'); if (b) { const cur = pageCtry() || c; b.innerHTML = `<span aria-hidden="true">${cur === 'AUS' ? flag('AU') : cur === 'WORLD' ? '🌐' : flag(iIso(cur))}</span><span class="pl"> ${esc(cur === 'AUS' ? 'Australia' : iName(cur))}</span> ▾`; b.setAttribute('aria-label', `Country: ${cur === 'AUS' ? 'Australia' : iName(cur)}. Change country`); }
 }
+/* Item 5 (owner 4 Nov 2026): the country button shows the country of the page being viewed (it showed GB on the US page,
+   because only #/home pages were recognised). #/intl/USA, #/calendars/USA/…, #/browse/AUS and the AU calendars count too. */
+const pageCtry = () => { const [, p, a] = (location.hash || '').split('?')[0].split('/'), A = decodeURIComponent(a || '');
+  if (p === 'home') return curHomePage();
+  if ((p === 'intl' || p === 'calendars' || p === 'browse') && /^[A-Z]{3}$/.test(A)) return A === 'WORLD' ? 'WORLD' : A;
+  if (p === 'intl' && A === 'WORLD') return 'WORLD';
+  if (p === 'calendars' && CALS[A.replace(/-j$/, '')]) return 'AUS';
+  return ''; };
 const curHomePage = () => { const [, p, a] = (location.hash || '').split('?')[0].split('/'); return p === 'home' ? (a ? iso3of(a) || '' : 'AUS') : ''; };
 function ctryMenu(){
   const old = $('#ctryMenu'); if (old) { old.remove(); $('#ctrySw').setAttribute('aria-expanded', 'false'); return; }
