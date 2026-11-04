@@ -106,9 +106,13 @@ async function boot(){
       if (!hadSW) return;
       if (globeBusy()) { window.SW_PENDING = true; return; }   // never reload under an open or loading globe; offer the refresh after it closes
       const busy = /^#\/(submit|fix|account|settings)/.test(location.hash) && [...document.querySelectorAll('#view input:not([type=hidden]),#view textarea')].some(i => i.type === 'checkbox' ? false : i.value && i.value !== i.defaultValue);
-      const last = +sessionStorage.getItem('swReloadedAt') || 0;
-      if (!busy && Date.now() - last > 15000) { sessionStorage.setItem('swReloadedAt', Date.now()); location.reload(); return; }
-      showUpdateBar(); });
+      // Item 9 (owner 4 Nov 2026): never reload under the reader. Offer "Update ready – Refresh", and otherwise pick up the new
+      // version quietly on the next page change (a tap to another page loads fresh anyway), unless a form is half filled.
+      window.SW_NEXT = !busy; showUpdateBar(); });
+    window.addEventListener('hashchange', () => {
+      if (!window.SW_NEXT || globeBusy() || (history.state && history.state.globe)) return;
+      const last = +sessionStorage.getItem('swReloadedAt') || 0; if (Date.now() - last < 15000) return;
+      window.SW_NEXT = false; sessionStorage.setItem('swReloadedAt', Date.now()); location.reload(); });
     navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(r => { r.update().catch(() => {});   // offline or mid-deploy: try again on the next foreground
 
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') r.update().catch(() => {}); }); }).catch(() => {});
