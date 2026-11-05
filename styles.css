@@ -1520,7 +1520,7 @@ html.sp-lock{overflow:hidden}
 .mc-tba{margin-top:12px}.mc-tba summary{font-weight:800;font-size:16px;cursor:pointer;padding:8px 0}
 /* "Which state?" picker */
 .st-pick{border:3px solid var(--gold)}
-.st-pick .sec-h{font-size:30px}
+.st-pick .sec-h{font-size:30px;margin-top:0}
 .st-pick-sub{font-size:17px;margin:0 0 12px}
 .st-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
 .st-b{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:14px 16px;border:2px solid var(--night);border-radius:12px;background:#fff;color:var(--night);font:inherit;text-align:left;cursor:pointer;min-height:64px}
@@ -1561,7 +1561,12 @@ html.sp-lock{overflow:hidden}
  .mc-st.has-mdrop{display:block}
  .mc-st.has-mdrop>.chip,.mc-st.has-mdrop>.mc-st-l{display:none}
  .mc-st.has-mdrop .m-drop-w{margin:0}
+ /* Leave a gutter for the fixed + and Help (?) so they don't sit on selects or the state picker. */
+ .st-pick,.club-pick,.i-orgs,.i-sts{padding-right:76px}
+ .wrap>.m-drop-w,.cals>.m-drop-w{margin-right:64px;width:auto}
+ .mc-st.has-mdrop,.club-sw{padding-right:64px}
 }
+
 
 /* Club calendars (owner 5 Nov 2026). State then club; big plain text, gold edges like the other pickers. */
 .club-pick{border:3px solid var(--gold)}
