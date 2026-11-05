@@ -1,7 +1,8 @@
 /* What's new: plain-English release notes for Archery Calendars, newest first. Every item comes from a real commit (hashes listed). */
 window.CAL_WHATSNEW = [
   {d: '2026-11-04', label: 'Wed 4 Nov 2026', items: [
-    ['More shoots in Great Britain', 'The Great Britain page now also lists the calendars of NFAS, the Eastern Counties Archery Association (ECAA) and the Yorkshire Archery Association, as separate organisations, with 128 more events. Events that Archery GB already lists are not shown twice.', ['this release']],
+    ['KGSA Junior Shoot details', 'The Kalamunda Governor Stirling Archers Junior Shoot on Sunday 6 December now shows the 2026 details from the club: a 10:00 am start, entry fee $20 cash on the day, entries close Wednesday 25 November, and the rounds.', ['this release']],
+    ['More shoots in Great Britain', 'The Great Britain page now also lists the calendars of the National Field Archery Society (NFAS), the Essex & Suffolk County Archery Association and the Yorkshire Archery Association, as separate organisations, with 128 more events. Events that Archery GB already lists are not shown twice.', ['this release']],
     ['No more sudden reloads', 'When we put out an update, the page no longer reloads while you are reading it. A bar says the update is ready with a Refresh button, and otherwise the update loads quietly the next time you move to another page.', ['this release']],
     ['Country button shows the page you are on', 'The country button at the top now shows the country of the page you are looking at, for example the USA on the US calendar, instead of a different one.', ['this release']],
     ['Australia in the country list', 'If you visit from outside Australia, Australia now shows in the row of country buttons with its number of events, like every other country.', ['this release']]]},
