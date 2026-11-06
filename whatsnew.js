@@ -1,5 +1,7 @@
 /* What's new: plain-English release notes for Archery Calendars, newest first. Every item comes from a real commit (hashes listed). */
 window.CAL_WHATSNEW = [
+  {d: '2026-11-06', label: 'Fri 6 Nov 2026', items: [
+    ['Coaching and judging', 'The button that used to say Coaching now says Coaching & judging. Judging courses, such as the Archery Australia Judges Course, were already in that list. Each one is tagged Coaching / judging course.', ['this release']]]},
   {d: '2026-11-04', label: 'Wed 4 Nov 2026', items: [
     ['KGSA Junior Shoot details', 'The Kalamunda Governor Stirling Archers Junior Shoot on Sunday 6 December now shows the 2026 details from the club: a 10:00 am start, entry fee $20 cash on the day, entries close Wednesday 25 November, and the rounds.', ['this release']],
     ['More shoots in Great Britain', 'The Great Britain page now also lists the calendars of the National Field Archery Society (NFAS), the Essex & Suffolk County Archery Association and the Yorkshire Archery Association, as separate organisations, with 128 more events. Events that Archery GB already lists are not shown twice.', ['this release']],
