@@ -860,6 +860,9 @@ let BF = {day:'', q:'', disc:'', cat:'', ost:'', scope:'all', state:'', club:'',
 const discsOf = x => [...new Set(String(x.discipline || '').replace(/\([^)]*\)/g, ' ').split(/[,/]/).map(t => t.trim().split(/\s+/)[0]).filter(Boolean))];
 function vBrowse(){
   setTitle('Find events');
+  // Archery WA is the state body for Western Australia, not a national organisation (owner 10 Nov 2026).
+  // Its events stay on the calendar and open from the Western Australia state control.
+  if (AUS() && BF.scope === 'g:awa') { BF.scope = 'all'; if (!BF.state) BF.state = 'WA'; }
   const grp = AUS() && BF.scope.startsWith('g:') ? BF.scope.slice(2) : null;
   if (AUS() && grp && !GROUPS.some(g => g[0] === grp)) BF.scope = 'all';
   // A chip always wins over Settings: ABA chip = every ABA event (only the page's own state filter applies).
@@ -867,7 +870,7 @@ function vBrowse(){
   const Q = BF.q ? parseQuery(BF.q) : null, qState = !!(Q && Q.states.length);
   // A state named in the search (e.g. 'target sa') also overrides 'My states' from Settings.
   const vis = grp ? EV.filter(x => inGrp(x, grp)) : Q ? EV.slice() : EV.filter(x => visible(x, !!BF.state || qState));   // a typed search looks at every event, whatever Settings hide
-  const scopes = AUS() ? [['all','All Australia'], ...GROUPS.map(g => ['g:' + g[0], {aa:'Archery Australia', aba:'ABA', awa:'Archery WA', taa:'TAA'}[g[0]]])] : [['all','All'], ['world','🌐 World'], ...S.countries.map(c => [c, CMAP[c] || c]), ...S.orgs.map(o => [o, (ORGS.find(x => x.id === o) || {}).name?.replace(/\s*\(.*\)/,'') || o])];
+  const scopes = AUS() ? [['all','All Australia'], ...GROUPS.filter(g => g[0] !== 'awa').map(g => ['g:' + g[0], {aa:'Archery Australia', aba:'ABA', taa:'TAA'}[g[0]]])] : [['all','All'], ['world','🌐 World'], ...S.countries.map(c => [c, CMAP[c] || c]), ...S.orgs.map(o => [o, (ORGS.find(x => x.id === o) || {}).name?.replace(/\s*\(.*\)/,'') || o])];
   const discs = [...new Set(vis.filter(x => (BF.past || !isPast(x)) && isShoot(x) && !/^(meeting|judging|coaching)/i.test(x.discipline || '')).flatMap(discsOf))].sort();   // only disciplines with events to show
   if (BF.disc && !discs.includes(BF.disc)) discs.push(BF.disc);   // never hide an active filter behind 'All disciplines'
   let list = vis.slice();
@@ -875,15 +878,15 @@ function vBrowse(){
   else if (BF.scope === 'world') list = list.filter(x => x.world_level);
   else if (BF.scope !== 'all') list = list.filter(x => x.country_code === BF.scope && !x.world_level && !['aba','archery-wa'].includes(x.org_id) || x.org_id === BF.scope);
   if (BF.clubId) list = EV.filter(x => x.club_id === BF.clubId);
-  else if (BF.club) list = (BF.state ? EV.filter(x => x.state_code === BF.state) : EV).filter(clubFilter(BF.club));
-  else if (BF.state) list = list.filter(x => x.state_code === BF.state);
+  else if (BF.club) list = EV.filter(clubFilter(BF.club));
+  let stBase = list;
+  if (!BF.clubId && !BF.club && !Q) stBase = list.filter(x => clubOk(x, Q));
+  const stCount = {};
+  stBase.forEach(x => { if (x.state_code && (BF.past || !isPast(x))) stCount[x.state_code] = (stCount[x.state_code] || 0) + 1; });
+  if (BF.state && !BF.clubId) list = list.filter(x => x.state_code === BF.state);
   const nHiddenClub = (BF.clubId || BF.club || Q) ? 0 : list.filter(x => !clubOk(x, Q) && (BF.past || !isPast(x))).length;
   if (!BF.clubId && !BF.club && !Q) list = list.filter(x => clubOk(x, Q));
   const active = [BF.day && `on ${esc(pd(BF.day).toLocaleDateString(LOC(), {weekday:'short', day:'numeric', month:'short', year:'numeric'}))}`, BF.q && `search “${esc(BF.q)}”`, BF.state && (STATES.find(s => s[0] === BF.state) || [, BF.state])[1], BF.disc && `discipline ${esc(BF.disc)}`, BF.cat && CATS[BF.cat] && CATS[BF.cat][2], BF.ost && OST[BF.ost] && OST[BF.ost][2], BF.club && CLUBF[BF.club], BF.clubId && CLUB[BF.clubId] && `club: ${esc(CLUB[BF.clubId].name)}`, BF.cat === 'club' && BF.mc && 'only my clubs', qState && `state from your search: ${Q.states.join(', ')}${!grp && !BF.state && S.states.length ? ' (overrides your Settings states)' : ''}`, !grp && !BF.state && !qState && S.states.length && AUS() && `your states in Settings (${S.states.join(', ')})`].filter(Boolean);
-  // Search results first (owner 30 Oct 2026): on phones, a search or filter puts the count, Clear and matching events above the filter panel.
-  // Desktop already shows them at the top beside the filters. Not while typing in the box, so the box doesn't jump.
-  const bfOn = !BF.typing && !!(BF.day || BF.q || BF.state || BF.disc || BF.cat || BF.ost || BF.club || BF.clubId || BF.scope !== 'all');
-  const actTop = [BF.scope !== 'all' && !BF.club && !BF.clubId && (scopes.find(([k]) => k === BF.scope) || [])[1], ...active.filter(a => !/^your states in Settings/.test(a))].filter(Boolean);
   if (BF.day) list = list.filter(x => datable(x) && x.start_date <= BF.day && evEnd(x) >= BF.day);
   if (BF.disc) list = list.filter(x => discsOf(x).includes(BF.disc));
   const tc = typeCounts(list.filter(x => BF.past || !isPast(x)));
@@ -907,45 +910,55 @@ function vBrowse(){
   if (!BF.past) { const up = list.filter(x => !isPast(x)); if (!up.length && Q && list.length) showPastNote = true; else list = up; }
   const sk = x => x.book_anytime ? '9999-99' : x.start_date || '9999';
   list.sort((a, b) => sk(a) < sk(b) ? -1 : 1);
-  const total = list.length; list = list.slice(0, BF.limit);
-  let html = `${pageHead('Find an event', 'Field, 3D, Target and Indoor events from the calendars you follow.', BF.cat === 'youth' && BF.scope !== 'g:aba' && PH.youth ? 'youth' : BF.cat === 'come_try' && PH.come_try ? 'come_try' : BF.scope === 'g:aba' ? abaKey(BF.disc === '3D' ? '3d' : 'field') : BF.disc === 'Field' && !['g:aa', 'g:awa'].includes(BF.scope) ? 'aba_field' : {Field:'field','3D':'3d',Target:'target',Indoor:'indoor'}[BF.disc] || 'mixed')}<div class="wrap">${clubNotice()}${typeSel(BF.cat, tc)}${BF.cat === 'club' ? clubDrop(BF, x => !isPast(x) || BF.past) : ''}</div><div class="wrap browse${bfOn ? ' res-first' : ''}"><div class="filters"><input type="search" id="q" placeholder="Search event, club, town…" value="${esc(BF.q)}" aria-label="Search events" enterkeyhint="search">
-  ${Q ? `<p class="qcount" id="qCount" aria-live="polite">${total ? `<a href="#qres" id="qGo">${total} event${total !== 1 ? 's' : ''} match “${esc(BF.q.trim())}” ↓</a>` : `No events match “${esc(BF.q.trim())}”.`} <a href="#/search?q=${esc(encodeURIComponent(BF.q.trim()))}" class="gs-all">Search every country, club and organisation →</a></p>` : ''}
-  <div class="chips" role="group" aria-label="Show">${scopes.map(([k, l]) => `<button class="chip" data-scope="${esc(k)}" aria-pressed="${BF.scope === k && !BF.club}">${k === 'g:aba' ? abaLogo(32, 'chip-logo') : ''}${esc(l)}</button>`).join('')}</div>
-  ${AUS() ? `<label for="st" class="sr">State</label><select id="st" aria-label="State"><option value="">All states &amp; territories</option>${STATES.map(([c, n]) => `<option value="${c}" ${BF.state === c ? 'selected' : ''}>${n}</option>`).join('')}</select>` : ''}
-  <label for="ost" class="sr">Organisation status</label><select id="ost" aria-label="Organisation status"><option value="">All – any status</option>${Object.entries(OST).map(([k, v]) => `<option value="${k}" ${BF.ost === k ? 'selected' : ''}>${v[0]} ${v[2]}</option>`).join('')}</select>
-  <div class="row"><select id="disc" aria-label="Discipline"><option value="">All disciplines</option>${discs.map(d => `<option ${BF.disc === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select>
-  <label style="display:flex;align-items:center;gap:8px;margin:0;flex:0 0 auto"><input type="checkbox" id="past" ${BF.past ? 'checked' : ''} style="width:22px;min-height:22px"> Show finished</label></div>
-  ${myD.length ? `<label class="chk hide-clash" style="display:flex;align-items:center;gap:8px;margin:6px 0 0"><input type="checkbox" id="hideClash" ${BF.hideClash ? 'checked' : ''} style="width:22px;min-height:22px"> ⚠️ Hide clashes with my events${BF.hideClash ? '' : ` (${nClash})`}</label>` : ''}
-  ${showPastNote ? `<p class="note" id="pastNote">◷ No upcoming events match – showing finished events.</p>` : ''}
-  ${BF.clubId && CLUB[BF.clubId] ? `<p class="club-filter"><button type="button" class="chip" id="clubChipX" aria-pressed="true" aria-label="Remove club filter ${esc(CLUB[BF.clubId].name)}">Club: ${esc(CLUB[BF.clubId].name)} ✕</button></p>` : ''}
-  ${active.length && total ? `<p class="note" id="activeF">Filtered by: ${active.join(' · ')}</p><button type="button" class="btn gold f-back" id="clearF2">← Back to all events</button>` : ''}
-  <p class="note" id="countNote">${total} event${total !== 1 ? 's' : ''}. Change ${AUS() ? 'states &amp; organisations' : 'countries &amp; bodies'} in <a href="#/settings">Settings</a>.${nHiddenClub ? ` <span id="clubOnlyNote">${nHiddenClub} club-only event${nHiddenClub !== 1 ? 's' : ''} (club championships, members only) hidden – add your club in <a href="#/clubs">My clubs</a> to see them.</span>` : ''}</p></div><div class="results" id="qres">${bfOn ? `<p class="note res-top" id="resTop">${total} event${total !== 1 ? 's' : ''}${actTop.length ? ' · ' + actTop.join(' · ') : ''} <button class="linkbtn" id="clearF3">✕ Clear</button></p>` : ''}`;
-  let m = '', n = 0;
-  for (const x of list) { const k = x.book_anytime ? 'ANY' : x.start_date ? x.start_date.slice(0, 7) : 'TBC'; if (k !== m) { m = k; html += `<div class="month">${k === 'ANY' ? '📞 Book any time' : k === 'TBC' ? 'Dates to be confirmed' : MONL[+k.slice(5) - 1] + ' ' + k.slice(0, 4)}</div>`; } html += evCard(x); if (++n % 10 === 0 && n < list.length) html += adSlot('feed'); }
-  if (!total) html += `<div class="empty">No events match${active.length ? ': ' + active.join(' · ') : ''}. ${active.length ? '<button class="btn alt" id="clearF">✕ Clear filters</button>' : `Try another filter${AUS() ? '' : ' or add countries in Settings'}.`}</div>`;
-  if (total > BF.limit) html += `<button class="btn alt more" id="more">Show more (${total - BF.limit} left)</button>`;
-  return html + '</div></div>';
+  const total = list.length;
+  const undated = list.filter(x => !/^\d{4}-\d\d-\d\d$/.test(x.start_date || ''));
+  const stOpts = STATES.map(([c, n]) => [c, n, stCount[c] || 0]);
+  const browseRow = x => {
+    const stt = ST(x.id);
+    const stb = stt === 'paid' ? '<span class="b paid">✓$ Paid</span>' : stt === 'entered' ? '<span class="b ent">✓ Entered</span>' : '';
+    const place = x._intl ? [x.location, x.country_name].filter(Boolean).join(', ') : [x.location, x.state && x.state !== x.location ? x.state : ''].filter(Boolean).join(', ');
+    return mcRow(x, place, stb + catTag(x) + clubBadge(x) + clashBadge(x));
+  };
+  const head = pageHead('Find an event', 'Field, 3D, Target and Indoor events from the calendars you follow.', BF.cat === 'youth' && BF.scope !== 'g:aba' && PH.youth ? 'youth' : BF.cat === 'come_try' && PH.come_try ? 'come_try' : BF.scope === 'g:aba' ? abaKey(BF.disc === '3D' ? '3d' : 'field') : BF.disc === 'Field' && !['g:aa', 'g:awa'].includes(BF.scope) ? 'aba_field' : {Field:'field','3D':'3d',Target:'target',Indoor:'indoor'}[BF.disc] || 'mixed');
+  const orgHtml = `<section class="panel i-orgs" aria-labelledby="forgH"><h2 class="sec-h" id="forgH">Organisation</h2>
+    ${mDrop('Organisation', 'scope', scopes.map(([k, l]) => [k, l, BF.scope === k && !BF.club]))}
+    <div class="chips has-mdrop" role="group" aria-label="Organisation">${scopes.map(([k, l]) => `<button class="chip" data-scope="${esc(k)}" aria-pressed="${BF.scope === k && !BF.club}">${k === 'g:aba' ? abaLogo(32, 'chip-logo') : ''}${esc(l)}</button>`).join('')}</div></section>`;
+  const stHtml = AUS() ? `<section class="panel i-sts" aria-labelledby="fstH"><h2 class="sec-h" id="fstH">State</h2><p class="note">Western Australia includes Archery WA. Archery WA is the state body, so it is not listed with the organisations.</p>${stateChips('State', stOpts, BF.state, 'All states')}</section>` : '';
+  return `${head}<div class="wrap find-flow">${clubNotice()}${orgHtml}${typeSel(BF.cat, tc)}${BF.cat === 'club' ? clubDrop(BF, x => !isPast(x) || BF.past) : ''}${stHtml}
+    <section class="panel i-cal" id="findCal" aria-labelledby="fcalH"><h2 class="sec-h" id="fcalH">Calendar</h2>
+    <div class="browse"><div class="filters"><input type="search" id="q" placeholder="Search event, club, town…" value="${esc(BF.q)}" aria-label="Search events" enterkeyhint="search">
+      ${Q ? `<p class="qcount" id="qCount" aria-live="polite">${total ? `${total} event${total !== 1 ? 's' : ''} match “${esc(BF.q.trim())}”` : `No events match “${esc(BF.q.trim())}”.`} <a href="#/search?q=${esc(encodeURIComponent(BF.q.trim()))}" class="gs-all">Search every country, club and organisation →</a></p>` : ''}
+      <label for="ost" class="sr">Organisation status</label><select id="ost" aria-label="Organisation status"><option value="">All – any status</option>${Object.entries(OST).map(([k, v]) => `<option value="${k}" ${BF.ost === k ? 'selected' : ''}>${v[0]} ${v[2]}</option>`).join('')}</select>
+      <div class="row"><select id="disc" aria-label="Discipline"><option value="">All disciplines</option>${discs.map(d => `<option ${BF.disc === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select>
+      <label style="display:flex;align-items:center;gap:8px;margin:0;flex:0 0 auto"><input type="checkbox" id="past" ${BF.past ? 'checked' : ''} style="width:22px;min-height:22px"> Show finished</label></div>
+      ${myD.length ? `<label class="chk hide-clash" style="display:flex;align-items:center;gap:8px;margin:6px 0 0"><input type="checkbox" id="hideClash" ${BF.hideClash ? 'checked' : ''} style="width:22px;min-height:22px"> ⚠️ Hide clashes with my events${BF.hideClash ? '' : ` (${nClash})`}</label>` : ''}
+      ${showPastNote ? `<p class="note" id="pastNote">◷ No upcoming events match – showing finished events.</p>` : ''}
+      ${BF.clubId && CLUB[BF.clubId] ? `<p class="club-filter"><button type="button" class="chip" id="clubChipX" aria-pressed="true" aria-label="Remove club filter ${esc(CLUB[BF.clubId].name)}">Club: ${esc(CLUB[BF.clubId].name)} ✕</button></p>` : ''}
+      ${active.length && total ? `<p class="note" id="activeF">Filtered by: ${active.join(' · ')}</p><button type="button" class="btn gold f-back" id="clearF2">← Back to all events</button>` : ''}
+      ${!total && active.length ? `<div class="empty">No events match: ${active.join(' · ')}. <button class="btn alt" id="clearF">✕ Clear filters</button></div>` : ''}
+      <p class="note" id="countNote">${total} event${total !== 1 ? 's' : ''} on this calendar. Change ${AUS() ? 'states &amp; organisations' : 'countries &amp; bodies'} in <a href="#/settings">Settings</a>.${nHiddenClub ? ` <span id="clubOnlyNote">${nHiddenClub} club-only event${nHiddenClub !== 1 ? 's' : ''} (club championships, members only) hidden – add your club in <a href="#/clubs">My clubs</a> to see them.</span>` : ''}</p></div></div>
+    ${monthCal('find-au', list, browseRow, {sig: [BF.q, BF.scope, BF.state, BF.disc, BF.cat, BF.ost, BF.club, BF.clubId, BF.mc, BF.past, BF.hideClash, BF.day].join('|'), cc: 'AUS', past: x => x._intl ? iPast(x) : isPast(x), label: 'Find events'})}
+    ${undated.length ? `<details class="mc-tba"><summary>Dates not published yet (${undated.length})</summary>${undated.map(browseRow).join('')}</details>` : ''}
+    ${adSlot('feed')}</section></div>`;
 }
 function bindBrowse(){
-  const toRes = () => { const r = $('#qres'); if (r) r.scrollIntoView({block: 'start', behavior: 'smooth'}); };
-  const qg = $('#qGo'); if (qg) qg.onclick = e => { e.preventDefault(); toRes(); };
-  const q = $('#q'); q.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(bindBrowse.t); BF.q = q.value; BF.limit = 60; render(); const n = $('#q'); if (n) n.blur(); toRes(); } };
-  q.oninput = () => { BF.q = q.value; gcSearch(q.value); BF.limit = 60; clearTimeout(bindBrowse.t); bindBrowse.t = setTimeout(() => { if (!(location.hash || '').startsWith('#/browse')) return; BF.typing = true; render(); BF.typing = false; const n = $('#q'); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }, 250); };
-  document.querySelectorAll('[data-scope]').forEach(b => b.onclick = () => { BF.scope = b.dataset.scope; BF.club = ''; BF.clubId = ''; BF.disc = ''; BF.limit = 60; render(); });
-  document.querySelectorAll('[data-clubf]').forEach(b => b.onclick = () => { BF.club = BF.club === b.dataset.clubf ? '' : b.dataset.clubf; BF.limit = 60; render(); });
+  const toCal = () => { const r = $('#findCal'); if (r) r.scrollIntoView({block: 'start', behavior: 'smooth'}); };
+  const q = $('#q'); q.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(bindBrowse.t); BF.q = q.value; render(); const n = $('#q'); if (n) n.blur(); toCal(); } };
+  q.oninput = () => { BF.q = q.value; gcSearch(q.value); clearTimeout(bindBrowse.t); bindBrowse.t = setTimeout(() => { if (!(location.hash || '').startsWith('#/browse')) return; BF.typing = true; render(); BF.typing = false; const n = $('#q'); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }, 250); };
+  document.querySelectorAll('[data-scope]').forEach(b => b.onclick = () => { BF.scope = b.dataset.scope; BF.club = ''; BF.clubId = ''; BF.disc = ''; render(); });
+  document.querySelectorAll('[data-pst]').forEach(b => b.onclick = () => { BF.state = b.dataset.pst; render(); toCal(); });
+  document.querySelectorAll('[data-clubf]').forEach(b => b.onclick = () => { BF.club = BF.club === b.dataset.clubf ? '' : b.dataset.clubf; render(); });
   bindClubNotice();
   const clr = () => { Object.assign(BF, {day:'', q:'', disc:'', cat:'', ost:'', state:'', club:'', clubId:'', mc:false, limit:60}); if (S.states.length) { S.states = []; save(); } render(); };
   ['#clearF', '#clearF2'].forEach(s => { const b = $(s); if (b) b.onclick = clr; });
-  const c3 = $('#clearF3'); if (c3) c3.onclick = () => { Object.assign(BF, {day:'', q:'', disc:'', cat:'', ost:'', state:'', club:'', clubId:'', mc:false, scope:'all', limit:60}); render(); };
-  const cx = $('#clubChipX'); if (cx) cx.onclick = () => { BF.clubId = ''; BF.limit = 60; render(); };
+  const cx = $('#clubChipX'); if (cx) cx.onclick = () => { BF.clubId = ''; render(); };
   $('#disc').onchange = e => { BF.disc = e.target.value; render(); };
-  document.querySelectorAll('[data-tcat]').forEach(b => b.onclick = () => { BF.cat = b.dataset.tcat; BF.limit = 60; render(); });
+  document.querySelectorAll('[data-tcat]').forEach(b => b.onclick = () => { BF.cat = b.dataset.tcat; render(); });
   bindClubDrop(BF);
-  $('#ost').onchange = e => { BF.ost = e.target.value; BF.limit = 60; render(); };
-  const st = $('#st'); if (st) st.onchange = e => { BF.state = e.target.value; BF.limit = 60; render(); };
+  $('#ost').onchange = e => { BF.ost = e.target.value; render(); };
   $('#past').onchange = e => { BF.past = e.target.checked; render(); };
-  const hc = $('#hideClash'); if (hc) hc.onchange = e => { BF.hideClash = e.target.checked; BF.limit = 60; render(); };
-  const mo = $('#more'); if (mo) mo.onclick = () => { BF.limit += 60; render(); };
+  const hc = $('#hideClash'); if (hc) hc.onchange = e => { BF.hideClash = e.target.checked; render(); };
+  bindMcal();
 }
 
 function myEntry(x){
