@@ -186,6 +186,8 @@ MANUAL_MATCH = [
     ('^Kerkhovenweg 2A, Leopoldsburg$', {'lat': 51.12512, 'lng': 5.26243, 'p': 'v', 'q': 'Kerkhovenweg 2A, Leopoldsburg (OSM)'}),
     ('^Ljubešćica$', {'lat': 46.16342, 'lng': 16.38201, 'p': 't', 'q': 'Ljubešćica (village, WA gives only the village)'}),
     ('^Varaždin$', {'lat': 46.30796, 'lng': 16.33782, 'p': 't', 'q': 'Varaždin (city, WA gives only the city)'}),
+    # 9 Nov 2026: National Safari 2027 page publishes the range coordinates (Heywood Pony Club / Mount Clay Archers).
+    ('Woolsthorpe-Heywood Rd, Heywood', {'lat': -38.12865, 'lng': 141.66319, 'p': 'v', 'q': 'Mount Clay Archers, Woolsthorpe-Heywood Rd, Heywood VIC (ABA National Safari page)'}),
 ]
 MANUAL_CLUBS = {'hobart-archers': {'lat': -42.89419, 'lng': 147.49488, 'p': 'v', 'q': '195 Roches Beach Rd, Lauderdale TAS'},
                 'whiteman-park-archers': {'lat': -31.80537, 'lng': 115.92349, 'p': 'v', 'q': 'WA Archery Centre, Jules Steiner Memorial Dr, Whiteman WA'},
