@@ -808,8 +808,12 @@ function hay(x){
 }
 const ACRO = [[/total archery challenge/i, 'tac'], [/indoor world series/i, 'iws'], [/\bnfaa\b|national field archery association/i, 'nfaa national field archery association'], [/\bifaa\b|international field archery/i, 'ifaa international field archery association'],
   [/\baba\b|bowhunters association/i, 'aba australian bowhunters association'], [/\btaa\b|traditional archery australia/i, 'taa traditional archery australia'], [/\bibo\b|international bowhunting/i, 'ibo international bowhunting organization'],
-  [/\basa\b|archery shooters association/i, 'asa archery shooters association'], [/usa archery/i, 'usa archery usaa'], [/las vegas/i, 'vegas'], [/olympic/i, 'olympics olympic games']];
-function acroTxt(x){ const t = [x.name, x.org, x.org_id, x.us_org, x.host, x.location].filter(Boolean).join(' '); return ACRO.filter(([re]) => re.test(t)).map(([, a]) => a).join(' '); }
+  [/\basa\b|archery shooters association/i, 'asa archery shooters association'], [/usa archery/i, 'usa archery usaa'], [/las vegas/i, 'vegas']];
+/* 'Olympics' / 'Olympic Games' means the Games in the event name (LA28, Youth Olympic Games). A venue or
+   address that merely says Olympic Park, Olympic Parkway or Olympic Training Center is not those events. */
+const gamesQuery = q => { const s = snorm(q); if (!/\b(olympics|olympic games?)\b/.test(s)) return null; return {rest: s.replace(/\bolympics\b/g, ' ').replace(/\bolympic games?\b/g, ' ').replace(/\s+/g, ' ').trim()}; };
+const nameHasGames = x => /\b(olympics|olympic games?)\b/.test(snorm(x && x.name || ''));
+function acroTxt(x){ const t = [x.name, x.org, x.org_id, x.us_org, x.host, x.location].filter(Boolean).join(' '); return ACRO.filter(([re]) => re.test(t)).map(([, a]) => a).join(' ') + (nameHasGames(x) ? ' olympics olympic games' : ''); }
 function roundTerms(x){   // archery jargon derived from rounds/discipline text
   const t = [x.rounds, x.discipline, x.name, x.level, x.flyer_extract && x.flyer_extract.rounds].filter(Boolean).join(' ').toLowerCase(), out = [];
   for (const m of t.matchAll(/\b(wa|aa|fita)\s?(\d{2,3})\s?\/?\s?(1440|720|960|1080|900)?/g)) { out.push(m[2] + 'm'); if (m[3]) out.push(m[3], 'wa' + m[3]); if (m[1] !== 'aa') out.push('fita world archery'); }
@@ -833,10 +837,11 @@ function lev1(a, b){   // edit distance <= 1 (incl. one swap of neighbours)
   return a.slice(i + 1) === b.slice(i + 1) || a.slice(i) === b.slice(i + 1) || a.slice(i + 1) === b.slice(i) || (a[i] === b[i + 1] && a[i + 1] === b[i] && a.slice(i + 2) === b.slice(i + 2));
 }
 function parseQuery(q){
-  let s = ' ' + snorm(q) + ' ', states = [];
+  const g = gamesQuery(q);
+  let s = ' ' + snorm(g ? g.rest : q) + ' ', states = [];
   for (const [k, v] of Object.entries(STATE_ALIASES).sort((a, b) => b[0].length - a[0].length)) if (s.includes(' ' + k + ' ')) { states.push(v); s = s.replace(' ' + k + ' ', ' '); }
   const words = s.trim().split(' ').filter(Boolean);
-  return {words, states: [...new Set(states)]};
+  return {words, states: [...new Set(states)], games: !!g};
 }
 function wordHit(w, H){
   if (QSYN[w]) return QSYN[w].some(v => v.includes(' ') ? H.s.includes(' ' + v + ' ') : wordHit1(v, H)) || wordHit1(w, H);
@@ -851,7 +856,7 @@ function wordHit1(w, H){
 const DISC_Q = {indoor: /indoor|18 ?m\b|vegas/i, field: /field|ifaa|arrowhead/i, target: /target|qre|1440|720|900|matchplay/i, clout: /clout/i, '3d': /\b3d\b|3-d|bowhunt/i};
 const discTxt = x => [x.discipline, x.name, x.rounds].filter(Boolean).join(' ');
 const NOT_FITA = /field|\b3d\b|clout|ifaa|bowhunt|arrowhead/i;
-const matchQ = (x, Q) => (!Q.states.length || Q.states.includes(x.state_code)) && Q.words.every(w =>
+const matchQ = (x, Q) => (!Q.games || nameHasGames(x)) && (!Q.states.length || Q.states.includes(x.state_code)) && Q.words.every(w =>
   w === 'fita' ? !NOT_FITA.test(discTxt(x)) && wordHit(w, hay(x))
   : DISC_Q[w] && x.discipline ? DISC_Q[w].test(discTxt(x))
   : wordHit(w, hay(x)));
@@ -2842,6 +2847,10 @@ function iHay(x){
   return x._h;
 }
 function iMatch(x, q){
+  const g = gamesQuery(q);
+  if (g && !nameHasGames(x)) return false;
+  q = g ? g.rest : q;
+  if (g && !String(q).trim()) return true;
   let t = ' ' + snorm(q) + ' ';
   const st = [];
   for (const [c, n] of Object.entries(US_ST).sort((a, b) => b[1].length - a[1].length)) { const nn = ' ' + snorm(n) + ' '; if (t.includes(nn)) { st.push(c); t = t.replace(nn, ' '); } }

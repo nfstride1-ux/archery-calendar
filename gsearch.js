@@ -41,10 +41,12 @@
   const isFin = x => x._intl ? iPast(x) : isPast(x);
   const cName = x => (x.country_code === 'AUS' || (!x.country_code && !x._intl)) ? 'Australia' : (x.country_name || x.country || x.country_code || 'Other');
   function run(q){
-    let ws = words(q); const real = ws.filter(w => !STOP.has(w)); if (real.length) ws = real;
-    const qn = ws.join(' '); if (!qn) return null;
+    const g = typeof gamesQuery === 'function' ? gamesQuery(q) : null;
+    let ws = words(g ? g.rest : q); const real = ws.filter(w => !STOP.has(w)); if (real.length) ws = real;
+    const qn = ws.join(' ') || (g ? snorm(q) : ''); if (!qn) return null;
     const find = fuzzy => { const m = H => ws.every(w => hit(w, H, fuzzy));
-      return {ev: allEvents().filter(x => m(evHay(x))), clubs: (typeof CLUBS !== 'undefined' ? CLUBS : []).filter(c => m(clubHay(c))), orgs: orgList().filter(o => m(o.hay))}; };
+      const evOk = x => (!ws.length || m(evHay(x))) && (!g || (typeof nameHasGames === 'function' && nameHasGames(x)));
+      return {ev: allEvents().filter(evOk), clubs: ws.length ? (typeof CLUBS !== 'undefined' ? CLUBS : []).filter(c => m(clubHay(c))) : [], orgs: ws.length ? orgList().filter(o => m(o.hay)) : []}; };
     let r = find(false), fuzzy = false;
     if (!r.ev.length && !r.clubs.length && !r.orgs.length) { r = find(true); fuzzy = true; }
     const up = r.ev.filter(x => !isFin(x)), fin = r.ev.filter(isFin), showPast = !up.length && fin.length;
