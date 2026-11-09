@@ -118,6 +118,57 @@ def date_range(x):
     a, b = d8(s), d8(e)
     if a.year == b.year and a.month == b.month: return f'{WD[a.weekday()]} {a.day} to {WD[b.weekday()]} {b.day} {MONTHS[a.month-1][:3]} {a.year}'
     return f'{fmt_date(s)} to {fmt_date(e)}'
+SUN_WEEK = {'USA', 'CAN', 'MEX', 'JPN', 'KOR', 'BRA', 'PHI', 'TPE'}
+def seo_row(x):
+    s = x.get('start_date') or ''
+    d = d8(s) if len(s) == 10 else None
+    v = venue_text(x)
+    where = f'<span class="mc-rm">📍 {esc(v)}</span>' if v else ''
+    return f'<a class="mc-row{" past" if is_past(x) else ""}" href="{event_href(x)}"><span class="mc-rd" aria-hidden="true"><b>{d.day if d else "?"}</b><small>{MONTHS[d.month - 1][:3] if d else ""}</small></span><span class="mc-rb"><b class="mc-rn">{esc(x["name"])}</b><span class="mc-rm">📅 {esc(date_range(x))}{" · finished" if is_past(x) else ""}</span>{where}</span></a>'
+def seo_cal(evs):
+    """Month grids instead of a long list. Same phone layout as the app calendar (count on a small screen, names underneath)."""
+    dated = [x for x in evs if x.get('start_date') and len(x['start_date']) == 10]
+    if not dated: return ''
+    sun = all((x.get('country_code') or 'AUS') in SUN_WEEK for x in dated)
+    bym = collections.defaultdict(list)
+    for x in dated:
+        s, e = d8(x['start_date']), d8(end(x) or x['start_date'])
+        if (e - s).days > 7: e = s   # season-long events mark their first day only, as in the app
+        seen = set(); d = s
+        while d <= e and (d - s).days < 62:
+            mk = f'{d.year:04d}-{d.month:02d}'
+            if mk not in seen:
+                bym[mk].append(x); seen.add(mk)
+            d += datetime.timedelta(days=1)
+    heads = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] if sun else ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    chunks = []
+    for m in sorted(bym):
+        y, mo = int(m[:4]), int(m[5:7])
+        first = datetime.date(y, mo, 1)
+        nxt = datetime.date(y + (mo == 12), 1 if mo == 12 else mo + 1, 1)
+        dim = (nxt - datetime.timedelta(days=1)).day
+        lead = (first.weekday() + 1) % 7 if sun else first.weekday()
+        days = collections.defaultdict(list)
+        for x in bym[m]:
+            s, e = d8(x['start_date']), d8(end(x) or x['start_date'])
+            if (e - s).days > 7: e = s
+            d = max(s, first); last = min(e, datetime.date(y, mo, dim))
+            while d <= last:
+                days[d.day].append(x); d += datetime.timedelta(days=1)
+        cells = ''.join(f'<div class="mc-wd" aria-hidden="true">{w}</div>' for w in heads)
+        cells += '<div class="mc-c mc-o" aria-hidden="true"></div>' * lead
+        for day in range(1, dim + 1):
+            ev = days.get(day) or []
+            if not ev:
+                cells += f'<div class="mc-c"><span class="mc-n">{day}</span></div>'; continue
+            names = ''.join(f'<span>{esc(x["name"])}</span>' for x in ev[:3])
+            more = f'<span class="mc-more">+{len(ev) - 3} more</span>' if len(ev) > 3 else ''
+            cells += f'<div class="mc-c has{" done" if all(is_past(x) for x in ev) else ""}"><span class="mc-n">{day}</span><span class="mc-cnt" aria-hidden="true">{len(ev)}</span><span class="mc-evs" aria-hidden="true">{names}{more}</span></div>'
+        rows = ''.join(seo_row(x) for x in sorted(bym[m], key=lambda x: (x['start_date'], x['name'].lower())))
+        title = f'{MONTHS[mo - 1]} {y}'
+        n = len(bym[m])
+        chunks.append(f'<section class="mcal" aria-label="{esc(title)}"><h3 class="mc-title">{esc(title)}</h3><div class="mc-grid">{cells}</div><div class="mcl-list"><div class="mc-lh"><h3>{n} event{"" if n == 1 else "s"} in {esc(MONTHS[mo - 1])}</h3></div>{rows}</div></section>')
+    return ''.join(chunks)
 
 # ---------- events ----------
 EV = {}
@@ -314,9 +365,9 @@ def list_page(kind, key, title_core, h1, scope, evs, crumbs, links_html='', extr
     body += f'<section class="panel seo-intro"><p>{esc(intro)}</p>{extra_intro}<p class="seo-cta"><a class="btn gold" href="/#/browse">Search, save and get reminders in the app</a></p></section>'
     if links_html: body += links_html
     body += f'<h2 class="sec-h">Upcoming events ({len(up)})</h2>'
-    body += ('<ul class="seo-list">' + ''.join(ev_row(x, show_ctry=(kind == 'org')) for x in up) + '</ul>') if up else '<p class="note">No upcoming events listed yet. Run a club or tournament here? <a href="/#/submit">Send it in</a> and we will add it.</p>'
-    if tbc: body += f'<h2 class="sec-h">Dates to be confirmed ({len(tbc)})</h2><ul class="seo-list">' + ''.join(ev_row(x) for x in tbc) + '</ul>'
-    if past: body += f'<h2 class="sec-h">Past events ({len(past)})</h2><ul class="seo-list">' + ''.join(ev_row(x) for x in reversed(past)) + '</ul>'
+    body += (seo_cal(up) if up else '<p class="note">No upcoming events listed yet. Run a club or tournament here? <a href="/#/submit">Send it in</a> and we will add it.</p>')
+    if tbc: body += f'<h2 class="sec-h">Dates to be confirmed ({len(tbc)})</h2><div class="mcl-list">' + ''.join(seo_row(x) for x in tbc) + '</div>'
+    if past: body += f'<details class="mc-tba"><summary>Past events ({len(past)})</summary>{seo_cal(list(reversed(past)))}</details>'
     body += '<p class="seo-note">Dates come from organisers&rsquo; public calendars; always check with the organiser before you travel.</p>'
     ld = [crumbs_ld(crumbs), {'@context': 'https://schema.org', '@type': 'CollectionPage', 'name': h1, 'url': SITE + key, 'description': desc, 'isPartOf': {'@type': 'WebSite', 'name': BRAND, 'url': SITE + '/'}},
           {'@context': 'https://schema.org', '@type': 'ItemList', 'numberOfItems': len(up), 'itemListElement': [{'@type': 'ListItem', 'position': i + 1, 'url': SITE + event_href(x), 'name': x['name']} for i, x in enumerate(up[:50])]}]
@@ -366,7 +417,7 @@ def event_page(x, rel):
     body += f'<article class="panel seo-event"><p class="lead-d">{esc(describe(x))}</p>{dl}<p class="seo-actions">{links}</p>'
     body += '<p class="seo-note">Details come from the organiser&rsquo;s public calendar' + (f' (checked {fmt_date(x["last_checked"], False)})' if x.get('last_checked') else '') + '. Always confirm dates, entry and venue with the organiser. Save this event in the app to get reminders before entries close.</p></article>'
     if rel:
-        body += '<h2 class="sec-h">More archery events nearby in the calendar</h2><ul class="seo-list">' + ''.join(ev_row(r) for r in rel) + '</ul>'
+        body += '<h2 class="sec-h">More archery events nearby in the calendar</h2>' + seo_cal(rel)
     ld = [crumbs_ld(cs), event_jsonld(x)]
     robots = None if indexable(x) else 'noindex,follow'
     return shell(title, meta_desc(x), event_path(x), x['name'], body, ld, kicker=disc_noun(x), robots=robots, og_type='article')

@@ -75,11 +75,11 @@
     const ok = Object.keys(og).sort((a, b) => og[b].n - og[a].n).slice(0, 14);
     const orgChips = ok.length > 1 || (ok.length === 1 && R.evs.length > 1) ? `<h2 class="sec-h">Clubs and organisers in these results</h2><div class="chips">${ok.map(k => `<a class="chip" href="#/search?q=${esc(encodeURIComponent(k))}">${esc(k)} <small>${og[k].n}</small></a>`).join('')}</div>` : '';   // shown after the matching events (owner 30 Oct 2026)
     if (R.showPast) h += `<p class="note" id="pastNote">◷ Nothing upcoming matches. Showing ${R.fin} finished event${R.fin === 1 ? '' : 's'}.</p>`;
-    names.forEach(c => { const l = grp[c], lim = GS.more[c] || GS.limit;
-      h += `<h2 class="sec-h gs-ctry">${esc(c)} <small>${l.length} event${l.length === 1 ? '' : 's'}</small></h2><div class="results">${l.slice(0, lim).map(evCard).join('')}</div>${l.length > lim ? `<button class="btn alt more" data-gsmore="${esc(c)}">Show more (${l.length - lim} left)</button>` : ''}`; });
+    names.forEach(c => { const l = grp[c], cc = (l[0] && l[0].country_code) || 'AUS';
+      h += `<h2 class="sec-h gs-ctry">${esc(c)} <small>${l.length} event${l.length === 1 ? '' : 's'}</small></h2>` + monthCal('gs-' + c.replace(/[^A-Za-z0-9]+/g, '-'), l, x => mcRow(x, where(x), ''), {sig: R.qn + '|' + c, cc: cc, past: isFin, label: c + ' events'}); });
     h += orgChips;
     if (!R.showPast && R.fin) { if (GS.past) { const fg = {}; R.finList.forEach(x => (fg[cName(x)] = fg[cName(x)] || []).push(x));
-        h += `<h2 class="sec-h">Finished events <small class="note">${R.fin}</small></h2>` + Object.keys(fg).sort((a, b) => fg[b].length - fg[a].length).map(c => { const l = fg[c], lim = GS.more['p' + c] || 12; return `<h3 class="gs-ctry">${esc(c)} <small>${l.length}</small></h3><div class="results">${l.slice(0, lim).map(evCard).join('')}</div>${l.length > lim ? `<button class="btn alt more" data-gsmore="p${esc(c)}">Show more (${l.length - lim} left)</button>` : ''}`; }).join('') + '<button class="btn alt more" data-gspast="0">Hide finished events</button>'; }
+        h += `<h2 class="sec-h">Finished events <small class="note">${R.fin}</small></h2>` + Object.keys(fg).sort((a, b) => fg[b].length - fg[a].length).map(c => { const l = fg[c], cc = (l[0] && l[0].country_code) || 'AUS'; return `<h3 class="gs-ctry">${esc(c)} <small>${l.length}</small></h3>` + monthCal('gsp-' + c.replace(/[^A-Za-z0-9]+/g, '-'), l, x => mcRow(x, where(x), ''), {sig: 'past|' + R.qn + '|' + c, cc: cc, past: () => true, label: 'Finished events in ' + c}); }).join('') + '<button class="btn alt more" data-gspast="0">Hide finished events</button>'; }
       else h += `<button class="btn alt more" data-gspast="1">Show ${R.fin} finished event${R.fin === 1 ? '' : 's'}</button>`; }
     if (R.fuzzy) h += '<p class="note">Showing close spellings, as nothing matched exactly.</p>';
     return h;
@@ -102,7 +102,7 @@
     const paint = R => { if (!document.getElementById('gsRes')) return; res.innerHTML = resultsHtml(R); bindCards(res);
       res.querySelectorAll('[data-gso]').forEach(a => a.onclick = e => { e.preventDefault(); location.hash = R.orgs[+a.dataset.gso].go(); });
       res.querySelectorAll('[data-gspast]').forEach(b => b.onclick = () => { GS.past = b.dataset.gspast === '1'; paint(R); });
-      res.querySelectorAll('[data-gsmore]').forEach(b => b.onclick = () => { const c = b.dataset.gsmore; GS.more[c] = (GS.more[c] || GS.limit) + 60; paint(R); }); };
+      if (typeof bindMcal === 'function') bindMcal(() => paint(R)); };
     form.onsubmit = e => { e.preventDefault(); GS.more = {}; window.gsGo(box.value); };
     let t; box.oninput = () => { clearTimeout(t); t = setTimeout(() => { if (!stillHere()) return; GS.more = {}; const v = box.value; try { history.replaceState(null, '', '#/search' + (v.trim() ? '?q=' + encodeURIComponent(v.trim()) : '')); } catch {} paint(run(v)); if (typeof gcSearch === 'function') gcSearch(v); }, 250); };
     if (!String(q || '').trim()) { paint(null); box.focus(); return; }

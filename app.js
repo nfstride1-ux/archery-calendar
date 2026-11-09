@@ -772,7 +772,7 @@ function vHome(){
       ${rem.length ? rem.map(r => `<div class="panel rem" data-open="${esc(r.x.id)}" role="link" tabindex="0"><b><span aria-hidden="true">${REM_ICON[r.kind]}</span> ${esc(r.x.name)}</b><div>${esc(r.text)}</div><div class="badges">${r.kind === 'close' ? '<span class="b close">⏳ Enter now</span>' : r.kind === 'pay' ? '<span class="b ent">$ Pay now</span>' : REM_BADGE[r.st]}</div></div>`).join('')
         : `<p class="note">Nothing due. You'll get reminders ${S.remindDays.join(', ')} days before each event, and ${S.closeDays.join(' / ')} days before entries close (only if you haven't entered), plus a pay reminder if you've entered but not paid.</p>`}</section>
       <section><h2 class="sec-h">Coming up in my events</h2>
-      ${up.length ? `<div class="list">${up.slice(0, 4).map(evCard).join('')}</div>` : `<div class="empty">No events yet. Tap ☆ on any event in <a href="#/browse">Find events</a>.</div>`}</section>
+      ${up.length ? monthCal('home-mine', up, x => mcRow(x, [x.location, x.state].filter(Boolean).join(', '), ''), {sig: up.map(x => x.id).join(','), cc: homeCode(), past: x => x._intl ? iPast(x) : isPast(x), label: 'My events'}) : `<div class="empty">No events yet. Tap ☆ on any event in <a href="#/browse">Find events</a>.</div>`}</section>
     </div>
     ${seoAbout()}
     ${appVideoBox()}
@@ -1216,11 +1216,8 @@ function vCalendar(){
   ${CD && CD.slice(0, 7) === iso(first).slice(0, 7) ? dayPanel(CD, byDay[CD] || []) : ''}
   ${clashPairsHtml()}
   <div class="legend"><span class="b lg-day">■ event day</span><span class="b lg-day">✓ entered</span><span class="b lg-day">✓$ entered + paid</span><span class="b lg-today">□ today</span>${followed().length ? '<span class="b lg-day"><span class="fdot lg" aria-hidden="true"></span> your clubs</span>' : ''}</div><p class="note">Tap any day to see events from your clubs. Tap a finished day to see the results.</p>
-  ${inMonth.length ? `<h2>In ${MONL[m]}</h2>${mUp.map(evCard).join('')}${mPast.length ? `<h3 class="dp-sub">Completed (${mPast.length})</h3>${mPast.map(evCard).join('')}` : ''}` : ''}
-  <h2>All my upcoming events (${up.length})</h2>
-  ${up.length ? up.map(evCard).join('') : `<div class="empty">Nothing saved yet. Tap ☆ on events in <a href="#/browse">Browse</a>.</div>`}
-  ${up.length ? `<button class="btn block" id="icsAll">▦ Export all to phone calendar (.ics)</button>` : ''}
-  ${past.length ? `<h2>Completed (${past.length})</h2>${past.map(evCard).join('')}` : ''}</div>`;
+  ${inMonth.length ? `<h2>In ${MONL[m]}</h2><div class="mcl-list">${[...mUp, ...mPast].map(x => mcRow(x, [x.location, x.state || x.country_name].filter(Boolean).join(', '), (ST(x.id) === 'paid' ? '<span class="b paid">✓$ Paid</span>' : ST(x.id) === 'entered' ? '<span class="b ent">✓ Entered</span>' : '') + (mPast.includes(x) ? '<span class="b past">Finished</span>' : ''))).join('')}</div>` : `<p class="note">Nothing saved in ${MONL[m]}. Use the arrows to change month.</p>`}
+  ${up.length ? `<button class="btn block" id="icsAll">▦ Export all to phone calendar (.ics)</button>` : `<div class="empty">Nothing saved yet. Tap ☆ on events in <a href="#/browse">Find events</a>.</div>`}</div>`;
 }
 function bindCalendar(){
   document.querySelectorAll('.grid [data-day]').forEach(c => { c.onclick = () => { const k = c.dataset.day; if (k < iso(today()) && !(CSHOOT[k] || []).length) { const evs = [...(dayMine[k] || []), ...(followed().length ? folOnDay(k) : [])].filter((x, i, a) => a.findIndex(y => y.id === x.id) === i); if (evs.length === 1) { location.hash = '#/shoot/' + encodeURIComponent(evs[0].id) + '?r=1'; return; } } CD = CD === k ? '' : k; render(); const p = $('#dayPanel'); if (p) p.scrollIntoView({block: 'nearest', behavior: 'smooth'}); };
@@ -1241,9 +1238,7 @@ function vEntries(){
   const byDate = (a, b) => (a.entry_close_date || a.start_date || '9') < (b.entry_close_date || b.start_date || '9') ? -1 : 1;
   return `${pageHead('Entries &amp; payments', 'What you have entered, paid and still need to enter.', 'field')}<div class="wrap narrow"><div class="panel dark"><div class="kicker">Total entry fees recorded</div><div class="big">${Object.keys(tot).length ? Object.entries(tot).map(([c, v]) => `${c} ${v.toFixed(2)}`).join(' + ') : '—'}</div></div>
   ${clashPairsHtml()}
-  <h2>☐ Still to enter (${todo.length})</h2>${todo.length ? todo.sort(byDate).map(evCard).join('') : '<p class="note">Nothing waiting. 👍</p>'}
-  <h2>$ Entered – still to pay (${ent.length})</h2>${ent.length ? ent.sort(byDate).map(evCard).join('') : '<p class="note">Nothing to pay.</p>'}
-  <h2>✓$ Entered + paid (${paid.length})</h2>${paid.length ? paid.map(x => { const e = S.entries[x.id]; return evCard(x).replace('</h3>', `</h3><div class="badges"><span class="b paid">$ Paid${e.amount ? ' ' + esc(e.currency || 'AUD') + ' ' + esc(e.amount) : ''}${e.paid_date ? ' · ' + esc(pd(e.paid_date).toLocaleDateString(LOC(), {day:'numeric', month:'short'})) : ''}</span>${e.ref ? `<span class="b world"># ${esc(e.ref)}</span>` : ''}</div>`); }).join('') : '<p class="note">Tick “I’ve entered” and “I’ve paid” on any event to track it here.</p>'}</div>`;
+  ${[['☐ Still to enter', todo, 'ent-todo'], ['$ Entered – still to pay', ent, 'ent-pay'], ['✓$ Entered + paid', paid, 'ent-paid']].map(([h, L, k]) => `<h2>${h} (${L.length})</h2>${L.length ? monthCal(k, L.slice().sort(byDate), x => { const e = S.entries[x.id] || {}; const extra = k === 'ent-paid' ? `<span class="b paid">$ Paid${e.amount ? ' ' + esc(e.currency || 'AUD') + ' ' + esc(e.amount) : ''}</span>` : k === 'ent-pay' ? '<span class="b ent">✓ Entered</span>' : '<span class="b">☐ To enter</span>'; return mcRow(x, [x.location, x.state || x.country_name].filter(Boolean).join(', '), extra); }, {sig: L.map(x => x.id).join(','), cc: homeCode(), past: x => x._intl ? iPast(x) : isPast(x), label: h.replace(/<[^>]+>/g, '')}) : `<p class="note">${k === 'ent-todo' ? 'Nothing waiting. 👍' : k === 'ent-pay' ? 'Nothing to pay.' : 'Tick “I’ve entered” and “I’ve paid” on any event to track it here.'}</p>`}`).join('')}</div>`;
 }
 
 function vSettings(){
@@ -1853,10 +1848,10 @@ function bindClubNotice(){
 function homeClubs(){
   const f = followed();
   if (!f.length) return `<section class="panel your-clubs empty-clubs"><h2 class="sec-h">Your clubs</h2><p>Follow your club to see its next events here, and get a “New” badge when it adds an event or a flyer.</p><a class="btn alt" href="#/settings/clubs">🏠 Pick your clubs</a></section>`;
-  const next = EV.filter(x => f.includes(x.club_id) && !isPast(x) && x.start_date).sort((a, b) => a.start_date < b.start_date ? -1 : 1).slice(0, 4);
+  const next = EV.filter(x => f.includes(x.club_id) && !isPast(x) && x.start_date).sort((a, b) => a.start_date < b.start_date ? -1 : 1);
   return `<section class="your-clubs"><h2 class="sec-h">Your clubs</h2>${clubNotice()}
     <p class="club-links">${f.map(id => `<span class="chip-pair"><button type="button" class="chip" data-clubgo="${esc(id)}" aria-label="Show ${esc(CLUB[id].name)} events">${isMine(id) ? '🏠 ' : '👁 '}${esc(CLUB[id].name)}${S.homeClub === id ? ' · home' : ''}</button><button type="button" class="chip chip-info" data-clubpop="${esc(id)}" aria-haspopup="dialog" aria-label="About ${esc(CLUB[id].name)}" title="Club info">ⓘ</button></span>`).join('')}</p>
-    ${next.length ? `<div class="list">${next.map(evCard).join('')}</div>` : '<p class="note">No upcoming events listed for your clubs yet.</p>'}
+    ${next.length ? monthCal('home-clubs', next, x => mcRow(x, [x.location, x.state].filter(Boolean).join(', '), clubBadge(x)), {sig: next.map(x => x.id).join(','), cc: 'AUS', past: isPast, label: 'Your clubs'}) : '<p class="note">No upcoming events listed for your clubs yet.</p>'}
     <p><a href="${auFind()}" id="ycAll" class="linkbtn">All events from my clubs →</a></p></section>`;
 }
 // picker
@@ -3078,11 +3073,9 @@ function iHome(code, all){
   if (!up.length) return `<section class="panel ihome iempty">${cred}<h2 class="sec-h">No upcoming events in ${esc(nm)} yet</h2>
     <p>We haven't got any upcoming ${esc(nm)} events listed right now. Run a club or tournament there? Send it in and we'll add it.</p>
     <p class="iacts"><a class="btn gold" href="#/submit?country=OTHER">➕ Submit an event</a> <a class="btn alt" href="#/intl/WORLD">🌐 World events</a></p></section>`;
-  const maj = up.filter(isMajor), next = up.slice(0, 3);
+  const maj = up.filter(isMajor);
   return `<section class="panel ihome">${cred}
-    <p class="ihome-intro"><b>${up.length} upcoming event${up.length === 1 ? '' : 's'} in ${esc(nm)}</b>${orgs.length ? `, from ${esc(orgs.slice(0, 4).join(', '))}${orgs.length > 4 ? ` and ${orgs.length - 4} more` : ''}` : ''}. ${nReg ? `${nReg} with an online entry link.` : 'Entry details are on each event page.'}</p>
-    <div class="ihome-grid"><div><h2 class="sec-h">Coming up next</h2><ul class="imini-list">${next.map(iMini).join('')}</ul></div>
-    ${maj.length ? `<div><h2 class="sec-h">🏆 Major events &amp; championships</h2><ul class="imini-list">${maj.slice(0, 6).map(iMini).join('')}</ul>${maj.length > 6 ? `<p class="note">${maj.length - 6} more on the calendar below.</p>` : ''}</div>` : ''}</div>
+    <p class="ihome-intro"><b>${up.length} upcoming event${up.length === 1 ? '' : 's'} in ${esc(nm)}</b>${orgs.length ? `, from ${esc(orgs.slice(0, 4).join(', '))}${orgs.length > 4 ? ` and ${orgs.length - 4} more` : ''}` : ''}. ${nReg ? `${nReg} with an online entry link.` : 'Entry details are on each event page.'}${maj.length ? ` ${maj.length} ${maj.length === 1 ? 'is a major or a championship' : 'are majors or championships'}.` : ''} Every one of them is on the calendar below.</p>
 </section>`;
 }
 /* ---------- Home country (owner 22 Oct 2026): every country gets its own home page (#/home/USA), built like the Australian home.
@@ -3185,8 +3178,7 @@ function vCountryHome(code){
     ${spStrip(cc)}
     ${up.length ? '' : `<section class="panel iempty"><h2 class="sec-h">No upcoming events in ${the}${esc(nm)} yet</h2><p>Run a club or tournament there? Send it in and we'll add it.</p><p class="iacts"><a class="btn gold" href="#/submit?country=OTHER">➕ Submit an event</a> <a class="btn alt" href="#/intl/WORLD">🌐 World events</a></p></section>`}
     ${disc.length ? `<h2 class="sec-h">Pick your discipline</h2><div class="types">${disc.map(d => `<a class="type${d.ph ? '' : ' type-plain'}" href="#/intl/${esc(code)}" data-chd="${esc(d.lbl)}" style="${d.ph ? `--img:url('${esc(d.ph.sm)}');--pos:${esc(d.ph.pos || 'center')}` : ''}"><span class="type-name">${esc(d.lbl)}</span><span class="type-sub">${d.n} coming up${d.by.length ? ' · ' + esc(d.by.join(', ')) : ''}</span></a>`).join('')}</div>` : ''}
-    ${up.length ? `<div class="two"><section><h2 class="sec-h">Coming up</h2><div class="list">${up.slice(0, 4).map(iCard).join('')}</div></section>
-      <section id="chMaj"><h2 class="sec-h">🏆 Major events &amp; championships</h2>${maj.length ? `<div class="list">${maj.slice(0, 4).map(iCard).join('')}</div>` : '<p class="note">No major events listed yet.</p>'}</section></div>` : ''}
+    ${up.length ? `<section id="chMaj"><h2 class="sec-h">Calendar</h2><p class="note">${maj.length ? `${maj.length} of these are majors or championships. They are marked on the calendar.` : 'No major events listed yet.'}</p>${monthCal('ch-' + code, up, x => mcRow(x, [x.location, x.us_state && US_ST[x.us_state] && !String(x.location || '').includes(US_ST[x.us_state]) && US_ST[x.us_state]].filter(Boolean).join(', '), isMajor(x) ? '<span class="b world">🏆 Major</span>' : ''), {sig: String(up.length) + (up[0] ? up[0].id : ''), cc: code, past: iPast, label: nm + ' calendar'})}</section>` : ''}
     ${sts.length ? `<h2 class="sec-h">By state</h2><div class="chips" role="group" aria-label="Events by US state">${sts.map(([s, n]) => `<a class="chip" href="#/intl/USA" data-chst="${s}">${esc(US_ST[s] || s)} <small>${n}</small></a>`).join('')}</div>` : ''}
     ${iClubsPanel(code)}
     ${appVideoBox()}
@@ -3357,7 +3349,7 @@ function render(){
     v.querySelectorAll('[data-th]').forEach(a => a.onclick = () => { BF.cat = ''; BF.disc = {field:'Field','3d':'3D',target:'Target',indoor:'Indoor'}[a.dataset.th]; BF.scope = 'all'; });
     bindIntlMenu(); bindClubNotice(); const ya = $('#ycAll'); if (ya) ya.onclick = () => { Object.assign(BF, {club: S.myClubs.length ? 'mine' : 'watch', q: '', cat: '', disc: '', state: '', limit: 60}); };
     $('#heroSearch').onsubmit = e => { e.preventDefault(); gsGo($('#hq').value); }; }
-  bindNotFound(); bindCards(v); updateNav(); updateCardsNav();
+  bindNotFound(); bindCards(v); bindMcal(); updateNav(); updateCardsNav();
 }
 /* ---------- instant publishing (owner 14 Oct 2026) ----------
    Signed-in submissions are saved to Supabase (public.submitted_events). A database trigger sets status: 'live' straight away

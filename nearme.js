@@ -110,7 +110,8 @@
       else h += `<p class="nm-empty">We don’t have a club list for this area yet, so no clubs to show. Events close to you are below. Know a club near you? <a href="#/submit">Tell us</a> and we’ll add it.</p>`;
     }
     h += `<h3 class="nm-h">Upcoming events within ${esc(radTxt)} <span class="nm-n">${R.near.length}</span></h3>`;
-    if (R.near.length) h += `<ul class="nm-evs">${R.near.slice(0, NM.showEv).map(evRow).join('')}</ul>${R.near.length > NM.showEv ? `<p><button type="button" class="btn alt" id="nmMore">Show more events (${R.near.length - NM.showEv} more)</button></p>` : ''}`;
+    if (R.near.length) { const dist = {}; R.near.forEach(r => dist[r.x.id] = r);
+      h += monthCal('near-me', R.near.map(r => r.x), x => { const r = dist[x.id]; return mcRow(x, x._intl ? (x.country_name || x.country || '') : (x.state || ''), `<span class="b">${distTxt(r.km, r.k.p === 't')}</span>`); }, {sig: [NM.label, NM.radius, NM.unit, R.near.length].join('|'), cc: NM.country === 'US' ? 'USA' : NM.country === 'CA' ? 'CAN' : 'AUS', past: () => false, label: 'Events near you'}); }
     else h += `<p class="nm-empty">No dated events within ${esc(radTxt)} right now. Try a bigger radius, or see <a href="#/browse">all events</a>.</p>`;
     h += `<p class="note">${R.nClubs} clubs on the calendar have a known location. Clubs and events without a reliable location are left out rather than guessed.</p>`;
     return h;
@@ -152,7 +153,7 @@
     try { const R = await compute(); if ($('#nmOut') === out) { out.innerHTML = resultsHtml(R); if (first && out.scrollIntoView) out.scrollIntoView({block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'}); } bindResults(); }
     catch (e) { out.innerHTML = '<p class="nm-empty">Something went wrong working out the distances. Please try again.</p>'; }
   }
-  function bindResults(){ const m = $('#nmMore'); if (m) m.onclick = () => { NM.showEv += 30; showResults(); }; }
+  function bindResults(){ if (typeof bindMcal === 'function') bindMcal(() => showResults()); }
   function setMsg(t, kind){ NM.msg = t ? `<p class="nm-m ${kind || ''}">${t}</p>` : ''; const m = $('#nmMsg'); if (m) { m.innerHTML = NM.msg; if (kind === 'warn' && m.scrollIntoView) m.scrollIntoView({block: 'nearest'}); } }
   function usePoint(pt, label, approx){ NM.pt = {lat: pt.lat, lng: pt.lng}; NM.label = label; NM.approx = !!approx; NM.choices = null; NM.showEv = 15; const c = $('#nmChoices'); if (c) c.innerHTML = ''; showResults(true); }
   function geo(){
