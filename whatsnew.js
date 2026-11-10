@@ -2,7 +2,13 @@
 window.CAL_WHATSNEW = [
   {d: '2026-11-10', label: 'Tue 10 Nov 2026', items: [
     ['Peel Archers IFAA shoot fees', 'The IFAA Shoot at Peel Archers on 5–6 December now shows the entry fees (adults $40, concession $30, juniors and cubs free) and that nominations close 27 November.', ['this release']],
-    ['Centenary Archers December shoot', 'The Centenary Archers OzBow & Mid-month Competition on Saturday 12 December (1:00 pm to 4:30 pm) is now listed, from the club newsletter.', ['this release']]]},
+    ['Centenary Archers December shoot', 'The Centenary Archers OzBow & Mid-month Competition on Saturday 12 December (1:00 pm to 4:30 pm) is now listed, from the club newsletter.', ['this release']],
+    ['Find events matches the other pages', 'Find events now starts with the organisation, then the type buttons (Competitions, Club events, Coaching & judging and the rest), then the state, then a month calendar. Archery WA is the state body for Western Australia, so it is no longer an organisation button. Pick Western Australia to see those events. Search, status, discipline, finished events and hiding clashes are still there, on the calendar.', ['this release']],
+    ['Calendars instead of long lists', 'Events are shown on a month calendar everywhere they used to be a long list: Find events, the home pages, search, Near me, My events and the country pages, including on a phone. Tap a day to see just that day.', ['this release']],
+    ['Olympics search', 'Searching for Olympics or Olympic Games now finds the Olympic Games. Shoots at a venue called Olympic Park no longer come up instead.', ['this release']],
+    ['A countdown on every saved event', 'Saving an event (the star, or ticking entered or paid) turns its countdown on straight away. You no longer have to wait until it is one of the next few in that country.', ['this release']],
+    ['NASP in the United States', 'NASP (National Archery in the Schools Program) is now a United States organisation, with its 2027 nationals and championship, the St. Jude E-Championship months, and the state finals we could check. There is no NASP Australia. NASP is not part of ScoreTool.', ['this release']],
+    ['Club events have their own calendar', 'Club events are not mixed into the main calendars. The Club events button on Find events, the organisation calendars and the home page opens a Club events month calendar. Switch state on it the same way as the others. Club championships and members-only shoots stay hidden unless that club is one of yours.', ['this release']]]},
   {d: '2026-11-06', label: 'Fri 6 Nov 2026', items: [
     ['Coaching and judging', 'The button that used to say Coaching now says Coaching & judging. Judging courses, such as the Archery Australia Judges Course, were already in that list. Each one is tagged Coaching / judging course.', ['this release']]]},
   {d: '2026-11-04', label: 'Wed 4 Nov 2026', items: [
