@@ -1,5 +1,7 @@
 /* What's new: plain-English release notes for Archery Calendars, newest first. Every item comes from a real commit (hashes listed). */
 window.CAL_WHATSNEW = [
+  {d: '2026-11-10', label: 'Tue 10 Nov 2026', items: [
+    ['Centenary Archers December shoot', 'The Centenary Archers OzBow & Mid-month Competition on Saturday 12 December (1:00 pm to 4:30 pm) is now listed, from the club newsletter.', ['this release']]]},
   {d: '2026-11-06', label: 'Fri 6 Nov 2026', items: [
     ['Coaching and judging', 'The button that used to say Coaching now says Coaching & judging. Judging courses, such as the Archery Australia Judges Course, were already in that list. Each one is tagged Coaching / judging course.', ['this release']]]},
   {d: '2026-11-04', label: 'Wed 4 Nov 2026', items: [
