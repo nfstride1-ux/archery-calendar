@@ -96,6 +96,7 @@
     GS.q = q || ''; setTitle(q ? `Search: ${q}` : 'Search');
     return `${pageHead('Search everywhere', 'Every country, club, venue and event in one search. It is not limited to the country you have selected.')}<div class="wrap">
       <form class="hero-search gs-form" id="gsForm" role="search"><input type="search" id="gsq" value="${esc(GS.q)}" placeholder="Club, event, venue, town, state, country…" aria-label="Search every country" autocomplete="off" enterkeyhint="search"><button class="btn gold" type="submit">Search</button></form>
+      <p><a class="chip" href="#/calendars/club-events">👥 Club events</a></p>
       <div id="gsRes"><p class="loading">Searching…</p></div></div>`;
   };
   window.gsBind = function(q){
