@@ -1,6 +1,8 @@
 /* What's new: plain-English release notes for Archery Calendars, newest first. Every item comes from a real commit (hashes listed). */
 window.CAL_WHATSNEW = [
   {d: '2026-11-10', label: 'Tue 10 Nov 2026', items: [
+    ['Peel Archers IFAA shoot fees', 'The IFAA Shoot at Peel Archers on 5–6 December now shows the entry fees (adults $40, concession $30, juniors and cubs free) and that nominations close 27 November.', ['this release']],
+    ['Centenary Archers December shoot', 'The Centenary Archers OzBow & Mid-month Competition on Saturday 12 December (1:00 pm to 4:30 pm) is now listed, from the club newsletter.', ['this release']],
     ['Find events matches the other pages', 'Find events now starts with the organisation, then the type buttons (Competitions, Club events, Coaching & judging and the rest), then the state, then a month calendar. Archery WA is the state body for Western Australia, so it is no longer an organisation button. Pick Western Australia to see those events. Search, status, discipline, finished events and hiding clashes are still there, on the calendar.', ['this release']],
     ['Calendars instead of long lists', 'Events are shown on a month calendar everywhere they used to be a long list: Find events, the home pages, search, Near me, My events and the country pages, including on a phone. Tap a day to see just that day.', ['this release']],
     ['Olympics search', 'Searching for Olympics or Olympic Games now finds the Olympic Games. Shoots at a venue called Olympic Park no longer come up instead.', ['this release']],
