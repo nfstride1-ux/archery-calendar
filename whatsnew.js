@@ -1,6 +1,7 @@
 /* What's new: plain-English release notes for Archery Calendars, newest first. Every item comes from a real commit (hashes listed). */
 window.CAL_WHATSNEW = [
   {d: '2026-11-10', label: 'Tue 10 Nov 2026', items: [
+    ['Peel Archers IFAA WA State Titles', 'The Peel Archers shoot on 5–6 December is now listed as the IFAA WA State Titles. Saturday is a Field Round and Sunday a Hunter Round, each 2 × 14 targets on the same course (112 arrows a day), with all distances marked. Sign-in and start are earlier than usual (Saturday start 12 noon, Sunday start 9:00 am). Cash at registration. Nominations close 27 November; contact Peel Archers.', ['this release']],
     ['Peel Archers IFAA shoot fees', 'The IFAA Shoot at Peel Archers on 5–6 December now shows the entry fees (adults $40, concession $30, juniors and cubs free) and that nominations close 27 November.', ['this release']],
     ['Centenary Archers December shoot', 'The Centenary Archers OzBow & Mid-month Competition on Saturday 12 December (1:00 pm to 4:30 pm) is now listed, from the club newsletter.', ['this release']],
     ['Find events matches the other pages', 'Find events now starts with the organisation, then the type buttons (Competitions, Club events, Coaching & judging and the rest), then the state, then a month calendar. Archery WA is the state body for Western Australia, so it is no longer an organisation button. Pick Western Australia to see those events. Search, status, discipline, finished events and hiding clashes are still there, on the calendar.', ['this release']],
