@@ -664,6 +664,7 @@ function appVideoBox(){
 // Latest news: one-line cards linking to newsletter issues (static pages under /newsletter/), newest first. Update NEWS when a new issue goes up.
 // where: which home pages show the card (AUS = Australian home, otherwise the country's home page by code).
 const NEWS = [
+  {url: 'newsletter/dakar-2026-yog/', date: 'Tue 10 Nov 2026', title: 'Dakar 2026: Brock Penna sixth and Ellen Martini seventh for Australia', where: ['AUS']},
   {url: 'newsletter/au-us-weekly-2026-11-03/', date: 'Tue 3 Nov 2026', title: 'This week: Dakar 2026, WA QREs and the US indoor season', where: ['AUS', 'USA']},
   {url: 'newsletter/usa-indoor-season-2026/', date: 'Tue 3 Nov 2026', title: 'NAST shoots, Indoor Nationals and Rushmore Rumble: US indoor season starts', where: ['USA']},
   {url: 'newsletter/yankton-world-championships-2026/', date: 'Tue 27 Oct 2026', title: 'Yankton world championships wrap-up: who won in South Dakota, Aussie gold, and where to watch', where: ['AUS', 'USA', 'GER', 'FRA', 'DEN', 'GBR', 'ITA', 'SWE', 'SLO', 'AUT', 'ESP']}  /* the countries in the article; SWE has no country page yet, so it shows once one exists */,

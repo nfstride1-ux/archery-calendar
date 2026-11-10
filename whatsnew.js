@@ -1,6 +1,7 @@
 /* What's new: plain-English release notes for Archery Calendars, newest first. Every item comes from a real commit (hashes listed). */
 window.CAL_WHATSNEW = [
   {d: '2026-11-10', label: 'Tue 10 Nov 2026', items: [
+    ['Dakar 2026 newsletter', 'A new newsletter is on the News tab and the Newsletter page: Brock Penna finished 6th and Ellen Martini 7th in the under 18 recurve at the Dakar 2026 Youth Olympic Games. Their mixed team beat Switzerland and play the USA in the quarterfinal.', ['this release']],
     ['Peel IFAA State Titles nomination form', 'The nomination form for the IFAA WA State Titles at Peel Archers on 5–6 December is now on the event listing, with the sign-in and start times. Email nominations to ikgosper@gmail.com, or register on the day.', ['this release']],
     ['Peel Archers IFAA WA State Titles', 'The Peel Archers shoot on 5–6 December is now listed as the IFAA WA State Titles. Saturday is a Field Round and Sunday a Hunter Round, each 2 × 14 targets on the same course (112 arrows a day), with all distances marked. Sign-in and start are earlier than usual (Saturday start 12 noon, Sunday start 9:00 am). Cash at registration. Nominations close 27 November; contact Peel Archers.', ['this release']],
     ['Peel Archers IFAA shoot fees', 'The IFAA Shoot at Peel Archers on 5–6 December now shows the entry fees (adults $40, concession $30, juniors and cubs free) and that nominations close 27 November.', ['this release']],
