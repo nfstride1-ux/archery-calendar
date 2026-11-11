@@ -937,9 +937,9 @@ function vBrowse(){
     <div class="browse"><div class="filters"><input type="search" id="q" placeholder="Search event, club, town…" value="${esc(BF.q)}" aria-label="Search events" enterkeyhint="search">
       ${Q ? `<p class="qcount" id="qCount" aria-live="polite">${total ? `${total} event${total !== 1 ? 's' : ''} match “${esc(BF.q.trim())}”` : `No events match “${esc(BF.q.trim())}”.`} <a href="#/search?q=${esc(encodeURIComponent(BF.q.trim()))}" class="gs-all">Search every country, club and organisation →</a></p>` : ''}
       <label for="ost" class="sr">Organisation status</label><select id="ost" aria-label="Organisation status"><option value="">All – any status</option>${Object.entries(OST).map(([k, v]) => `<option value="${k}" ${BF.ost === k ? 'selected' : ''}>${v[0]} ${v[2]}</option>`).join('')}</select>
-      <div class="row"><select id="disc" aria-label="Discipline"><option value="">All disciplines</option>${discs.map(d => `<option ${BF.disc === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select>
-      <label style="display:flex;align-items:center;gap:8px;margin:0;flex:0 0 auto"><input type="checkbox" id="past" ${BF.past ? 'checked' : ''} style="width:22px;min-height:22px"> Show finished</label></div>
-      ${myD.length ? `<label class="chk hide-clash" style="display:flex;align-items:center;gap:8px;margin:6px 0 0"><input type="checkbox" id="hideClash" ${BF.hideClash ? 'checked' : ''} style="width:22px;min-height:22px"> ⚠️ Hide clashes with my events${BF.hideClash ? '' : ` (${nClash})`}</label>` : ''}
+      <label for="disc" class="sr">Discipline</label><select id="disc" aria-label="Discipline"><option value="">All disciplines</option>${discs.map(d => `<option ${BF.disc === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select>
+      <div class="filter-checks"><label class="chk"><input type="checkbox" id="past" ${BF.past ? 'checked' : ''}> Show finished</label>
+      ${myD.length ? `<label class="chk hide-clash"><input type="checkbox" id="hideClash" ${BF.hideClash ? 'checked' : ''}> ⚠️ Hide clashes with my events${BF.hideClash ? '' : ` (${nClash})`}</label>` : ''}</div>
       ${showPastNote ? `<p class="note" id="pastNote">◷ No upcoming events match – showing finished events.</p>` : ''}
       ${BF.clubId && CLUB[BF.clubId] ? `<p class="club-filter"><button type="button" class="chip" id="clubChipX" aria-pressed="true" aria-label="Remove club filter ${esc(CLUB[BF.clubId].name)}">Club: ${esc(CLUB[BF.clubId].name)} ✕</button></p>` : ''}
       ${active.length && total ? `<p class="note" id="activeF">Filtered by: ${active.join(' · ')}</p><button type="button" class="btn gold f-back" id="clearF2">← Back to all events</button>` : ''}
@@ -3311,8 +3311,7 @@ function vIntl(arg, find){
       ${world ? `<label for="ictr2" class="sr">Country</label><select id="ictr2" aria-label="Country"><option value="">All countries</option>${wctr.map(c => `<option value="${c}" ${IF.ctry === c ? 'selected' : ''}>${flag(iIso(c))} ${esc(iName(c))}</option>`).join('')}</select>` : ''}
       ${usa ? `<label for="ist" class="sr">State</label><select id="ist" aria-label="US state"><option value="">All states</option>${sts.map(c => `<option value="${c}" ${IF.st === c ? 'selected' : ''}>${esc(US_ST[c])} (${c})</option>`).join('')}</select>` : ''}
       <label for="idisc" class="sr">Discipline</label><select id="idisc" aria-label="Discipline"><option value="">All disciplines</option>${IDISC.map(([d]) => `<option ${IF.disc === d ? 'selected' : ''}>${d}</option>`).join('')}</select>
-      ${world ? `<label class="chk"><input type="checkbox" id="imajor" ${IF.major ? 'checked' : ''}> 🏆 World majors only</label>` : ''}
-      <label class="chk"><input type="checkbox" id="ipast" ${IF.past ? 'checked' : ''}> Include finished</label></div>
+      <div class="filter-checks">${world ? `<label class="chk"><input type="checkbox" id="imajor" ${IF.major ? 'checked' : ''}> 🏆 World majors only</label>` : ''}<label class="chk"><input type="checkbox" id="ipast" ${IF.past ? 'checked' : ''}> Include finished</label></div></div>
     ${nSem ? `<div class="chips" role="group" aria-label="Type of event"><button class="chip" data-icat="" aria-pressed="${!IF.cat}">All</button><button class="chip" data-icat="shoots" aria-pressed="${IF.cat === 'shoots'}">🏹 Events</button><button class="chip" data-icat="seminar" aria-pressed="${IF.cat === 'seminar'}">🎤 Seminars &amp; workshops <small>${nSem}</small></button></div>` : ''}
     ${first ? '' : cnt}</div>
     ${first ? '' : res}</section>

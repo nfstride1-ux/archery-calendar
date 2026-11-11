@@ -1547,7 +1547,14 @@ html.sp-lock{overflow:hidden}
 }
 .i-cal .browse{display:block}
 .i-cal .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;position:static;box-shadow:none;padding:0;border:0;background:transparent;margin-bottom:10px}
-.i-cal .filters input[type=search]{flex:2 1 260px}.i-cal .filters select{flex:1 1 160px;width:auto}
+.i-cal .filters input[type=search],.i-cal .filters select{flex:1 1 180px;width:auto;height:46px;min-height:46px;max-height:46px;margin:0;align-self:center;box-sizing:border-box}
+.i-cal .filters input[type=search]{flex:2 1 240px}
+.i-cal .filters .filter-checks{display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px;flex:1 1 100%;min-height:46px}
+@media (max-width:720px){.i-cal .filters input[type=search],.i-cal .filters select{flex:1 1 100%}}
+.i-cal .filters label.chk{display:inline-flex;align-items:center;gap:8px;margin:0;min-height:46px;width:auto;font-weight:600;white-space:nowrap}
+.i-cal .filters label.chk input{width:22px;height:22px;min-height:22px;padding:0;flex:none}
+.i-cal .filters .qcount,.i-cal .filters>.note,.i-cal .filters>.empty,.i-cal .filters>.f-back,.i-cal .filters>.club-filter{flex:1 1 100%}
+.cal-filters select{height:46px;min-height:46px;max-height:46px}
 .g-first{font-size:19px;padding:16px}
 
 /* Phone dropdowns for Organisations and States (owner 4 Nov 2026). Desktop keeps the chips and tabs. */
