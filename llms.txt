@@ -33,6 +33,7 @@ Each event shows its dates, venue, discipline and organiser, with a link to the 
 - [Archery events in Canada](https://archerycalendars.com/countries/canada/)
 - [Archery events in Great Britain](https://archerycalendars.com/countries/great-britain/)
 - [Newsletter](https://archerycalendars.com/newsletter/): event news and results round-ups
+- [Dakar 2026: Australia's results and the medal winners](https://archerycalendars.com/newsletter/dakar-2026-results/): final results from the Dakar 2026 Youth Olympic Games, including Australia and the medal winners
 - [Dakar 2026: Brock Penna sixth and Ellen Martini seventh for Australia](https://archerycalendars.com/newsletter/dakar-2026-yog/): Australia's results at the Dakar 2026 Youth Olympic Games
 - [Weekly round-up, Australia and USA, 3 November 2026](https://archerycalendars.com/newsletter/au-us-weekly-2026-11-03/): Archery WA QREs, Hobart nationals and Para Pan Am results, NAST shoots, USA Archery Indoor Nationals and Dakar 2026
 - [US indoor season starts](https://archerycalendars.com/newsletter/usa-indoor-season-2026/): NAST shoots, USA Archery Indoor Nationals and the Rushmore Rumble, November 2026

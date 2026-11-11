@@ -10,14 +10,21 @@
   </url>
   <url>
     <loc>https://archerycalendars.com/newsletter/</loc>
-    <lastmod>2026-11-10</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <image:image><image:loc>https://archerycalendars.com/img/newsletter-archery-range-galston-gorge-2022.jpg</image:loc></image:image>
   </url>
   <url>
+    <loc>https://archerycalendars.com/newsletter/dakar-2026-results/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <image:image><image:loc>https://archerycalendars.com/img/newsletter-archery-range-galston-gorge-2022.jpg</image:loc></image:image>
+  </url>
+  <url>
     <loc>https://archerycalendars.com/newsletter/dakar-2026-yog/</loc>
-    <lastmod>2026-11-10</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
     <image:image><image:loc>https://archerycalendars.com/img/newsletter-archery-range-galston-gorge-2022.jpg</image:loc></image:image>
