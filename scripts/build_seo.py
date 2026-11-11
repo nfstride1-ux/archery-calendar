@@ -538,6 +538,7 @@ def llms():
         for c in ('USA', 'DEN', 'NZL', 'CAN', 'GBR'):
             if c in COUNTRY_SET: L.append(f'- [Archery events in {("the " if CTRY[c]["name"] in ("United States", "United Arab Emirates", "Netherlands") else "") + CTRY[c]["name"]}]({SITE}/countries/{slug(CTRY[c]["name"])}/)')
     L += [f'- [Newsletter]({SITE}/newsletter/): event news and results round-ups',
+          f'- [Dakar 2026: Australia\'s results and the medal winners]({SITE}/newsletter/dakar-2026-results/): final results from the Dakar 2026 Youth Olympic Games, including Australia and the medal winners',
           f'- [Dakar 2026: Brock Penna sixth and Ellen Martini seventh for Australia]({SITE}/newsletter/dakar-2026-yog/): Australia\'s results at the Dakar 2026 Youth Olympic Games',
           f'- [Weekly round-up, Australia and USA, 3 November 2026]({SITE}/newsletter/au-us-weekly-2026-11-03/): Archery WA QREs, Hobart nationals and Para Pan Am results, NAST shoots, USA Archery Indoor Nationals and Dakar 2026',
           f'- [US indoor season starts]({SITE}/newsletter/usa-indoor-season-2026/): NAST shoots, USA Archery Indoor Nationals and the Rushmore Rumble, November 2026',
