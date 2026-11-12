@@ -1596,3 +1596,57 @@ a.st-b{text-decoration:none}
  .st-grid.has-mdrop{display:none}
  .club-sw .cs-sel{min-height:56px;font-size:19px}
 }
+
+/* Host club on a day square (owner 12 Nov 2026). Logo, ABA logo, or initials — same marks as the event card.
+   The mark fills the square. On a wide month cell the event names stay on a bar along the bottom. */
+.day-hosts{position:absolute;inset:0;display:flex;align-items:stretch;gap:2px;padding:2px;pointer-events:none;z-index:0;min-width:0;min-height:0}
+.day-hosts .hm{width:auto;height:100%;max-height:100%;flex:1 1 0;min-width:0;min-height:0;align-self:stretch;border-radius:6px;padding:2px;box-shadow:none}
+.day-hosts .hm img{width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain}
+.day-hosts .hm-ini{flex:0 1 auto;align-self:center;width:auto;height:68%;max-width:46%;aspect-ratio:1;border-radius:50%;border-width:2px;padding:0;box-shadow:inset 0 0 0 2px var(--night),inset 0 0 0 3px rgba(255,198,41,.45)}
+.day-hosts .hm-ini:only-child{height:74%;max-width:78%}
+.day-hosts .hm-ini b{font-size:12px}
+.day-hosts .hm-ini[data-n="3"] b{font-size:10px}
+.day-hosts .hm-ini[data-n="4"] b{font-size:9px}
+.day-hosts .hm-ini:only-child b{font-size:15px}
+.day-hosts .hm-ini:only-child[data-n="3"] b{font-size:13px}
+.day-hosts .hm-ini:only-child[data-n="4"] b{font-size:11px}
+.day-host-more{position:absolute;z-index:3;top:2px;right:2px;min-width:16px;height:15px;display:flex;align-items:center;justify-content:center;background:var(--gold);color:var(--night);font:800 10px/1 var(--body);border-radius:8px;padding:0 3px;box-shadow:0 0 0 1px var(--night)}
+.grid .c .day-host-more{top:auto;bottom:2px}
+.grid .c.has{background:#fff;color:var(--night);border-color:var(--night);overflow:hidden}
+.grid .c.has .dn{position:absolute;z-index:2;top:2px;left:3px;background:rgba(13,27,42,.92);color:#fff;border-radius:4px;padding:0 4px;line-height:1.25;font-size:12px;font-weight:800;box-shadow:0 0 0 1.5px var(--gold)}
+.grid .c.has.sel .dn{background:var(--gold);color:var(--night);box-shadow:0 0 0 1px var(--night)}
+.grid .c.has .mk{z-index:2;background:rgba(13,27,42,.92);border-radius:4px;padding:0 2px;line-height:1.35}
+.grid .c.has .fdot{position:absolute;z-index:2;left:50%;bottom:3px;margin:0;transform:translateX(-50%);box-shadow:0 0 0 1.5px #fff}
+.grid .c.has .dot{position:absolute;z-index:2;left:3px;bottom:2px;margin:0;min-width:14px;padding:0 3px;border-radius:7px;background:var(--gold);color:var(--night);font-size:10px;font-weight:800;line-height:14px;text-align:center}
+.grid .c.has.stl::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:#1d4ed8;z-index:3}
+.mc-c.has{position:relative;background:#fff;color:var(--night);border-color:var(--night);justify-content:flex-end}
+.mc-c.has .mc-n{position:absolute;z-index:2;top:3px;left:3px;background:rgba(13,27,42,.92);color:#fff;border-radius:4px;padding:0 4px;line-height:1.2;font-size:13px;box-shadow:0 0 0 1.5px var(--gold)}
+.mc-c.has.sel{background:var(--gold);box-shadow:0 0 0 3px var(--night)}
+.mc-c.has.sel .mc-n{background:var(--gold);color:var(--night);box-shadow:0 0 0 1px var(--night)}
+.mc-c.has.t{box-shadow:0 0 0 3px var(--gold)}
+.mc-c.has.t.sel{box-shadow:0 0 0 3px var(--gold),0 0 0 6px var(--night)}
+.mc-c.has .mc-evs{position:relative;z-index:1;align-self:stretch;background:rgba(13,27,42,.9);color:#fff;margin:0 -5px -4px;padding:3px 5px 4px;border-radius:0 0 6px 6px}
+.mc-c.has .mc-evs span{color:#fff}
+.mc-c.has.sel .mc-evs{background:var(--gold);color:var(--night)}
+.mc-c.has.sel .mc-evs span{color:var(--night)}
+.mc-c.has.done{background:#e8eaee;border-color:#94a3b8}
+.mc-c.has.done .day-hosts{filter:grayscale(.45);opacity:.82}
+.mc-c.has.done .mc-evs{background:rgba(71,85,105,.92)}
+.mc-c.has.done .mc-n{background:rgba(71,85,105,.92)}
+@media (max-width:640px){
+ .mc-c.has{min-height:54px;padding:2px}
+ .mc-c.has .mc-cnt{position:absolute;z-index:3;right:2px;bottom:2px;margin:0;min-width:16px;height:16px;line-height:16px;font-size:11px;border-radius:8px}
+ .mc-c.has .mc-n{font-size:12px}
+ .mc-c .day-hosts .hm-ini:only-child b{font-size:14px}
+ .mc-c .day-hosts .hm-ini:only-child[data-n="3"] b{font-size:12px}
+ .mc-c .day-hosts .hm-ini:only-child[data-n="4"] b{font-size:10px}
+}
+@media (min-width:641px){
+ .mc-c.has{min-height:112px}
+ .mc-c .day-hosts .hm-ini:only-child b{font-size:22px}
+ .mc-c .day-hosts .hm-ini:only-child[data-n="3"] b{font-size:18px}
+ .mc-c .day-hosts .hm-ini:only-child[data-n="4"] b{font-size:15px}
+ .mc-c .day-hosts .hm-ini b{font-size:14px}
+ .mc-c .day-hosts .hm-ini[data-n="3"] b{font-size:12px}
+ .mc-c .day-hosts .hm-ini[data-n="4"] b{font-size:10px}
+}
