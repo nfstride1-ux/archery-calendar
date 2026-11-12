@@ -2073,8 +2073,12 @@ async function admNav(){
   if (ADMNAV.uid === u.id && Date.now() - ADMNAV.t < 60000) return;
   ADMNAV.uid = u.id; ADMNAV.t = Date.now();
   try { const r = await AUTH.client.rpc('is_admin'); if (!r.error) ADMNAV.ok = !!r.data; } catch (e) {}
+  const em = String(u.email || '').toLowerCase();
+  if (!(em in SUBAPP)) { try { const p = await AUTH.client.rpc('email_preapproved', {em}); if (!p.error) SUBAPP[em] = p.data === true; } catch (e) {} }
   if (ADMNAV.ok || isAdmin()) try { const c = await AUTH.client.from('submitter_requests').select('email', {count: 'exact', head: true}).eq('status', 'pending'); if (!c.error) ADMNAV.n = c.count || 0; } catch (e) {}
   admNavPaint();
+  const btn = document.getElementById('fixBtn');
+  if (document.body.dataset.page === 'fix' && fixLive() && btn && btn.textContent.indexOf('Save live') !== 0) authRender();
 }
 /* Tables-ready check (no library needed): as a signed-out visitor, the tables and sync function must EXIST (answering
    "permission denied" is fine – that's RLS/grants working). Missing (PGRST205 / PGRST202 / 404) = schema.sql not run yet:
@@ -4271,7 +4275,9 @@ function bindSubmit(){
   upd();
 }
 
-/* ---------- Corrections: #/fix and #/fix/<event id> (also reachable as #/submit/fix). Emails nfshold via FormSubmit only; nothing on the site changes automatically. ---------- */
+/* ---------- Corrections: #/fix and #/fix/<event id> (also reachable as #/submit/fix).
+   People who can already publish (every admin in public.admins, and approved submitters / approved domains) save live.
+   Everyone else still emails the correction; nothing of theirs is written to the database. ---------- */
 const subTabs = on => `<nav class="sub-tabs" aria-label="What would you like to send?"><a href="#/submit" class="sub-tab" ${on === 'new' ? 'aria-current="page"' : ''}>➕ New event</a><a href="#/fix" class="sub-tab" ${on === 'fix' ? 'aria-current="page"' : ''}>✏️ Fix an existing event</a><a href="#/submit/bulk" class="sub-tab" ${on === 'bulk' ? 'aria-current="page"' : ''}>Send your calendar</a></nav>`;
 const fixLabel = x => `${x.name} – ${x.start_date ? pd(x.start_date).toLocaleDateString(LOC(), {day: 'numeric', month: 'short', year: 'numeric'}) : 'date TBC'}${x.state_code || x.state ? ' – ' + (x.state_code || x.state) : ''}`;
 const fixList = () => EV.filter(x => !x.start_date || daysTo(x.end_date || x.start_date) >= -90).sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
@@ -4367,6 +4373,20 @@ const listItems = (groups, prefer) => { const g = groups.slice(); if (prefer) g.
   return g.flatMap(([grp, arr]) => arr.map(v => ({label: v, value: v, group: grp}))); };
 const catDisc = x => { const d = ((x && x.discipline) || '') + ' ' + ((x && x.name) || ''); return /field/i.test(d) ? 'Field' : /indoor/i.test(d) ? 'Indoor' : /clout/i.test(d) ? 'Clout' : /3d/i.test(d) ? '3D' : 'Target'; };
 const fmtTime = t => { if (!t) return ''; const [h, m] = t.split(':').map(Number); return `${(h % 12) || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`; };
+function fixEditorEmail(){ return String(AUTH.user && AUTH.user.email || '').toLowerCase(); }
+function fixIsDbAdmin(){ return !!(AUTH.user && (isAdmin() || ADMNAV.ok)); }
+function fixApproved(){ const em = fixEditorEmail(); return !!em && SUBAPP[em] === true; }
+/* Save live is for every admin (public.admins) and every approved editor (approved_submitters / approved_domains). Not one email. */
+function fixLive(){ return fixIsDbAdmin() || fixApproved(); }
+/* New object each time, plain INSERT (upsert false). upsert:true makes Storage run INSERT ... RETURNING *,
+   which Postgres rejects with "new row violates row-level security policy" when no SELECT policy covers the row.
+   Replacing a flyer points the event at this new file. Admins use overrides/; other permitted editors use their own folder,
+   which is the insert they are already allowed. */
+function flyerLivePath(eventId, ext, userId, asAdmin){
+  const safeExt = String(ext || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+  const file = `${String(eventId || 'event').replace(/[^\w.-]/g, '_')}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExt}`;
+  return {path: `${asAdmin ? 'overrides' : userId}/${file}`, upsert: false};
+}
 function vFix(id){
   setTitle('Fix an event');
   const sent = /(?:^|[?&])fixed=1/.test(location.search);
@@ -4376,7 +4396,7 @@ function vFix(id){
     <span class="thanks-mark" aria-hidden="true">✓</span><h2 class="sec">Thanks, we'll review and update it shortly.</h2>
     <p>If we need anything else we'll reply to the email you gave us.</p>
     <div class="row"><a class="btn gold" href="#/fix">Fix another event</a><a class="btn alt" href="#/browse">Find events</a></div></section></div>`;
-  const x = BYID[id], ADM = isAdmin();
+  const x = BYID[id], LIVE = fixLive(), ADM = fixIsDbAdmin();
   const f = (fid, lab, inp, hint = '', req = false) => `<div class="fld" data-f="${fid}"><label for="${fid}">${lab}${req ? ' <span class="req" aria-hidden="true">*</span>' : ' <span class="opt">(optional)</span>'}</label>${inp}${hint ? `<p class="hint" id="${fid}_h">${hint}</p>` : ''}<p class="err" id="${fid}_e" role="alert"></p></div>`;
   return `${head}<div class="wrap narrow sub">${subTabs('fix')}
   <form id="fixForm" data-clarity-mask="true" class="panel sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate>
@@ -4400,18 +4420,18 @@ function vFix(id){
       <p class="err" id="fx_any_e" role="alert"></p>
       ${f('fx_notes', 'Other notes', `<textarea id="fx_notes" name="other_notes" rows="3" maxlength="2000" placeholder="Anything else we should know"></textarea>`)}
     </fieldset>
-    ${ADM ? `<p class="note verify" id="fxAdmin">🛡 You're signed in as an admin: changes save <b>live</b> to the site straight away.</p>` : ''}<fieldset${ADM ? ' hidden id="fxAbout"' : ''}><legend>3. About you</legend>
+    ${LIVE ? `<p class="note verify" id="fxAdmin">🛡 You're signed in as ${ADM ? 'an admin' : 'an approved editor'}: changes save <b>live</b> to the site straight away.</p>` : ''}<fieldset${LIVE ? ' hidden id="fxAbout"' : ''}><legend>3. About you</legend>
       <div class="grid2">${f('fx_who', 'Your name', `<input id="fx_who" name="contact_name" required maxlength="80" autocomplete="name">`, 'A real person, not just the club name.', true)}
       ${roleFld('fx', (a, b, c, d = '') => f(a, b, c, d, true))}</div>
       ${f('fx_club', 'Club', `<input id="fx_club" name="club" required maxlength="120" autocomplete="organization" value="${esc(x && x.host ? x.host : '')}">`, '', true)}
       ${f('fx_email', 'Email', `<input id="fx_email" name="email" type="email" required maxlength="120" autocomplete="email" inputmode="email">`, 'So we can check with you if anything is unclear.', true)}
       <p class="note verify">✅ ${esc(VERIFY_NOTE)}</p>
     </fieldset>
-    <p class="note priv"${ADM ? ' hidden' : ''}>🔒 Nothing on the site changes straight away: your correction is emailed to us (${esc(SITE.contact)}, NFS Strategic Holdings) via FormSubmit, we check it, then update the listing.</p>
+    <p class="note priv"${LIVE ? ' hidden' : ''}>🔒 Nothing on the site changes straight away: your correction is emailed to us (${esc(SITE.contact)}, NFS Strategic Holdings) via FormSubmit, we check it, then update the listing.</p>
     <p class="err sum" id="fixErr" role="alert"></p>
     <p class="note ok" id="fxLive" role="status" hidden></p>
-    <div class="sub-actions"><button class="btn gold" type="submit" id="fixBtn">${ADM ? 'Save live' : 'Send correction'}</button>
-      <a class="btn alt" id="fixMail"${ADM ? ' hidden' : ''} href="mailto:${esc(SITE.contact)}">Email it instead</a></div>
+    <div class="sub-actions"><button class="btn gold" type="submit" id="fixBtn">${LIVE ? 'Save live' : 'Send correction'}</button>
+      <a class="btn alt" id="fixMail"${LIVE ? ' hidden' : ''} href="mailto:${esc(SITE.contact)}">Email it instead</a></div>
   </form></div>`;
 }
 function bindFix(){
@@ -4475,7 +4495,7 @@ function bindFix(){
       if (!any) errs.push('fx_any');
       const rr = fm.querySelector('.fx-row.editing[data-k=register]') && regRead('fxr').err; if (rr) { errs.push('fx_any'); g('fx_any_e').textContent = rr; }
     }
-    if (isAdmin()) return errs;
+    if (fixLive()) return errs;
     add('fx_who', personErr(val('fx_who'), val('fx_club')));
     add('fx_club', val('fx_club') ? '' : 'Enter your club.');
     add('fx_role', roleErr('fx'));
@@ -4497,7 +4517,7 @@ function bindFix(){
     if (errs.length) { e.preventDefault(); $('#fixErr').textContent = `Please fix ${errs.length === 1 ? 'the highlighted part' : `the ${errs.length} highlighted parts`}.`;
       const first = errs[0] === 'fx_any' ? fm.querySelector('[data-pen]') : errs[0] === 'fx_start' ? g('fx_start') : errs[0] === 'fx_file' ? g('fx_file') : g(errs[0]); first && first.focus(); return; }
     $('#fixErr').textContent = '';
-    if (isAdmin() && AUTH.client && AUTH.user) { e.preventDefault(); adminSave(); return; }
+    if (fixLive() && AUTH.client && AUTH.user) { e.preventDefault(); adminSave(); return; }
     if (!SITE.formEndpoint || !navigator.onLine) { e.preventDefault(); g('fixMail').click(); location.href = g('fixMail').href; toast('Opening your email app…'); return; }
     g('fx_changes').value = changeText(); g('fx_role_val').value = roleVal('fx'); rememberMe({s_name: val('fx_who'), s_email: val('fx_email'), s_club: val('fx_club'), s_role: g('fx_role').value, s_role_other: (g('fx_role_other') || {}).value});
     g('fx_gen').innerHTML = changes().map(([l, o, n]) => `<input type="hidden" name="${esc(l)}" value="${esc(o + ' → ' + n)}">`).join('');
@@ -4527,23 +4547,52 @@ function bindFix(){
       if (g('fx_uncancel') && g('fx_uncancel').checked) p.cancelled = false;
       const fl = g('fx_file') && !g('fx_file').disabled && g('fx_file').files[0];
       if (fl) { const ext = (/\.([a-z0-9]+)$/i.exec(fl.name) || [, 'jpg'])[1].toLowerCase(), isPdf = ext === 'pdf' || fl.type === 'application/pdf';
-        const path = `overrides/${x.id.replace(/[^\w.-]/g, '_')}-${Date.now()}.${ext}`;
-        const up = await AUTH.client.storage.from(FLY_BUCKET).upload(path, fl, {contentType: fl.type || (isPdf ? 'application/pdf' : 'image/jpeg'), upsert: true});
+        const ctype = fl.type || (isPdf ? 'application/pdf' : 'image/jpeg');
+        const spec = flyerLivePath(x.id, ext, AUTH.user.id, fixIsDbAdmin());
+        let path = spec.path;
+        let up = await AUTH.client.storage.from(FLY_BUCKET).upload(path, fl, {contentType: ctype, upsert: spec.upsert});
+        const rls = up.error && /row-level security|unauthorized/i.test(up.error.message || '');
+        if (rls && path.indexOf('overrides/') === 0) { path = flyerLivePath(x.id, ext, AUTH.user.id, false).path; up = await AUTH.client.storage.from(FLY_BUCKET).upload(path, fl, {contentType: ctype, upsert: false}); }
         if (up.error) throw new Error('Flyer upload failed: ' + up.error.message);
         const url = AUTH.client.storage.from(FLY_BUCKET).getPublicUrl(path).data.publicUrl;
-        Object.assign(p, {flyer_url: isPdf ? url : null, flyer_web: isPdf ? null : url, flyer_web_sm: isPdf ? 'icons/icon-512.png' : url, flyer_is_pdf: isPdf, flyer_label: 'Flyer (updated)', flyer_year: +(p.start_date || x.start_date || '').slice(0, 4) || null, flyer_is_current: true, flyer_source_name: 'admin upload', org_status: 'flyer'}); }
+        Object.assign(p, {flyer_url: isPdf ? url : null, flyer_web: isPdf ? null : url, flyer_web_sm: isPdf ? 'icons/icon-512.png' : url, flyer_is_pdf: isPdf, flyer_label: 'Flyer (updated)', flyer_year: +(p.start_date || x.start_date || '').slice(0, 4) || null, flyer_is_current: true, flyer_source_name: fixIsDbAdmin() ? 'admin upload' : 'approved editor', org_status: 'flyer'}); }
       if (!Object.keys(p).length) throw new Error('Nothing changed: tap ✏️ and change something first.');
       p.last_checked = new Date().toISOString().slice(0, 10);
       const fields = Object.assign({}, OVR[x.id] || {}, p);
-      const r = await AUTH.client.from('event_overrides').upsert({event_id: x.id, fields, updated_by: AUTH.user.email}, {onConflict: 'event_id'});
-      if (r.error) throw new Error(/relation|does not exist|schema cache/i.test(r.error.message) ? 'The event_overrides table isn\'t set up yet (run supabase/event_overrides.sql).' : /row-level|permission/i.test(r.error.message) ? 'The database didn\'t accept you as an admin.' : r.error.message);
+      await publishLiveFields(x, fields);
       OVR[x.id] = fields; applyOvr(x, fields); EV.sort((a, c) => (a.start_date || '9') < (c.start_date || '9') ? -1 : 1);
       live.innerHTML = `✅ <b>Saved live.</b> ${Object.keys(p).filter(k => !['last_checked', 'registration_url', 'registration_url_kind', 'bank_account_name', 'bank_bsb', 'bank_account', 'bank_reference'].includes(k)).length} field(s) updated for ${esc(x.name)}. <a href="#/shoot/${esc(encodeURIComponent(x.id))}">View the event</a>`;
       live.hidden = false; toast('Saved live'); g('fx_body').innerHTML = fixRows(x); Object.keys(CB).forEach(k => delete CB[k]); bindRows();
     } catch (err) { $('#fixErr').textContent = String(err.message || err); }
     b.disabled = false; b.textContent = 'Save live';
   }
-  window.addEventListener('pageshow', () => { const b = $('#fixBtn'); if (b) { b.disabled = false; b.textContent = isAdmin() ? 'Save live' : 'Send correction'; } }, {once: true});
+  /* Admins write event_overrides directly. Approved editors already publish a listed-event update through
+     submitted_events (the merge trigger copies the same fields). Either way the flyer goes live. No one else reaches this. */
+  async function publishLiveFields(x, fields){
+    const denied = m => /row-level|permission/i.test(m || '');
+    const explain = m => /relation|does not exist|schema cache/i.test(m || '') ? 'The event_overrides table isn\'t set up yet (run supabase/event_overrides.sql).' : denied(m) ? 'The database didn\'t accept this account as allowed to edit events.' : m;
+    if (fixIsDbAdmin()) {
+      const r = await AUTH.client.from('event_overrides').upsert({event_id: x.id, fields, updated_by: AUTH.user.email}, {onConflict: 'event_id'});
+      if (!r.error) return;
+      if (!(fixApproved() && denied(r.error.message))) throw new Error(explain(r.error.message));
+    }
+    const start = fields.start_date || x.start_date;
+    if (!start) throw new Error('This event has no start date the database can store yet.');
+    const end = fields.end_date || x.end_date || start;
+    const regUrl = fields.registration_url || x.registration_url || '';
+    const row = {country: x.country_code === 'USA' ? 'US' : (x.country_code && x.country_code !== 'AUS' ? String(x.country || x.country_code).slice(0, 40) : 'AU'),
+      state: x.state_code || x.state || '', organisation_type: 'Club', club: String(x.club_name || x.host || x.org || 'Club').slice(0, 120),
+      name: String(fields.name || x.name || 'Event').slice(0, 140), start_date: start, end_date: end < start ? start : end,
+      venue: String(fields.location || x.location || 'See flyer').slice(0, 200), discipline: fields.discipline || x.discipline || '',
+      registration_url: /^https?:\/\//i.test(regUrl) ? regUrl : '', notes: 'notes' in fields && fields.notes != null ? String(fields.notes).slice(0, 2000) : (x.notes || ''),
+      updates_event_id: x.id, merge_fields: fields};
+    if (Array.isArray(fields.register) || Array.isArray(x.register)) row.register = Array.isArray(fields.register) ? fields.register : x.register;
+    let q = await AUTH.client.from('submitted_events').insert(row).select('id,status').single();
+    if (q.error && /register/i.test(q.error.message || '')) { delete row.register; q = await AUTH.client.from('submitted_events').insert(row).select('id,status').single(); }
+    if (q.error) throw new Error(explain(q.error.message));
+    if (!q.data || q.data.status !== 'live') throw new Error('This account can send a correction, but it is not approved to publish live.');
+  }
+  window.addEventListener('pageshow', () => { const b = $('#fixBtn'); if (b) { b.disabled = false; b.textContent = fixLive() ? 'Save live' : 'Send correction'; } }, {once: true});
 }
 
 /* ---------- start ---------- */
