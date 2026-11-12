@@ -89,7 +89,14 @@ insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 values ('event-flyers', 'event-flyers', true, 10485760, array['image/jpeg','image/png','image/webp','image/gif','image/heic','image/heif','application/pdf'])
 on conflict (id) do update set public = true, file_size_limit = 10485760, allowed_mime_types = excluded.allowed_mime_types;
 drop policy if exists "event flyers: owner upload" on storage.objects;
+drop policy if exists "event flyers: owner select" on storage.objects;
+drop policy if exists "event flyers: owner update" on storage.objects;
 drop policy if exists "event flyers: admin manage" on storage.objects;
 create policy "event flyers: owner upload" on storage.objects for insert to authenticated
+  with check (bucket_id = 'event-flyers' and (storage.foldername(name))[1] = (select auth.uid())::text);
+create policy "event flyers: owner select" on storage.objects for select to authenticated
+  using (bucket_id = 'event-flyers' and (storage.foldername(name))[1] = (select auth.uid())::text);
+create policy "event flyers: owner update" on storage.objects for update to authenticated
+  using (bucket_id = 'event-flyers' and (storage.foldername(name))[1] = (select auth.uid())::text)
   with check (bucket_id = 'event-flyers' and (storage.foldername(name))[1] = (select auth.uid())::text);
 create policy "event flyers: admin manage" on storage.objects for delete to authenticated using (bucket_id = 'event-flyers' and public.is_admin());

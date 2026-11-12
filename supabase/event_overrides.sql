@@ -39,10 +39,17 @@ create trigger event_overrides_stamp before insert or update on public.event_ove
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('event-flyers', 'event-flyers', true, 10485760, array['image/jpeg','image/png','image/webp','image/gif','image/heic','image/heif','application/pdf'])
 on conflict (id) do nothing;
+-- Save live uploads with upsert. Storage then does INSERT ... ON CONFLICT RETURNING *.
+-- With no SELECT policy, Postgres rejects that for every admin ("new row violates row-level security policy")
+-- even when this INSERT policy would have allowed the row. supabase/flyer_replace_rls.sql is the live script:
+-- it keeps this check and also covers approved editors, plus a replace (UPDATE) of an existing file.
 drop policy if exists "event flyers: admin overrides insert" on storage.objects;
 drop policy if exists "event flyers: admin overrides update" on storage.objects;
+drop policy if exists "event flyers: admin overrides select" on storage.objects;
 create policy "event flyers: admin overrides insert" on storage.objects for insert to authenticated
   with check (bucket_id = 'event-flyers' and (storage.foldername(name))[1] = 'overrides' and public.is_admin());
+create policy "event flyers: admin overrides select" on storage.objects for select to authenticated
+  using (bucket_id = 'event-flyers' and (storage.foldername(name))[1] = 'overrides' and public.is_admin());
 create policy "event flyers: admin overrides update" on storage.objects for update to authenticated
   using (bucket_id = 'event-flyers' and (storage.foldername(name))[1] = 'overrides' and public.is_admin())
   with check (bucket_id = 'event-flyers' and (storage.foldername(name))[1] = 'overrides' and public.is_admin());
