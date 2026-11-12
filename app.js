@@ -194,6 +194,29 @@ function hostMark(x, big){
   const i = initials(h.name);
   return `<span class="hm hm-ini${big ? ' big' : ''}" data-n="${i.length}" role="img" aria-label="${esc(h.name)}"><b aria-hidden="true">${esc(i)}</b></span>`;
 }
+/* Calendar day: the host club's real logo (or the same ABA logo / initials badge as the event card).
+   One host → one mark. Different hosts → two marks, then +N. Flyers are never used; nothing is drawn or invented. */
+function evHostKey(x){
+  if (x && x._intl) {
+    const g = typeof GAMES_LOGO === 'function' && GAMES_LOGO(x);
+    if (g) return 'games:' + g.file;
+    const h = iHost(x);
+    return 'i:' + (h.id || hslug(h.name) || h.name || x.id);
+  }
+  const h = hostOf(x);
+  return 'h:' + (h.id || h.name || '');
+}
+function evMark(x){ return x && x._intl ? iMark(x) : hostMark(x); }
+function dayHosts(evs){
+  const seen = new Set(), marks = [], names = [];
+  for (const x of evs) {
+    const k = evHostKey(x); if (seen.has(k)) continue; seen.add(k);
+    marks.push(evMark(x));
+    names.push(x._intl ? ((typeof GAMES_LOGO === 'function' && GAMES_LOGO(x) && GAMES_LOGO(x).alt) || iHost(x).name) : hostOf(x).name);
+  }
+  const show = marks.slice(0, 2), more = marks.length - show.length;
+  return {names, html: `<span class="day-hosts" aria-hidden="true">${show.join('')}${more ? `<span class="day-host-more">+${more}</span>` : ''}</span>`.replaceAll('loading="lazy"', 'loading="eager"')};
+}
 const credit = () => '';   // photo credits live on the Credits page only (linked from every footer), not on the photos
 function theme(x){
   const d = (x.discipline || '') + ' ' + (x.name || '') + ' ' + (x.rounds || '');
@@ -1215,7 +1238,9 @@ function vCalendar(){
     const fd = followed().length ? folOnDay(k).filter(x => !ev.some(y => y.id === x.id)).length : 0;
     const allPaid = ev.length && ev.every(x => ST(x.id) === 'paid'), allEnt = ev.length && ev.every(x => ST(x.id) !== 'none');
     const mk = allPaid ? '✓$' : allEnt ? '✓' : '';
-    g += `<div class="c ${ev.length ? 'has' : ''} ${t ? 't' : ''} ${CD === k ? 'sel' : ''}" data-day="${k}" role="button" tabindex="0" aria-label="${d} ${MONL[m]}${ev.length ? ': ' + esc(ev.map(x => x.name + ' – ' + ST_TXT[ST(x.id)].replace(/[☐✓$·]/g, '').replace(/\s+/g, ' ').trim()).join(', ')) : ''}${fd ? ` – ${fd} from your clubs` : ''}">${d}${fd ? '<span class="fdot" aria-hidden="true"></span>' : ''}${mk ? `<span class="mk" aria-hidden="true">${mk}</span>` : ''}${ev.length ? `<span class="dot">${ev.length > 1 ? ev.length + ' events' : '●'}</span>` : ''}</div>`; }
+    const hosts = ev.length ? dayHosts(ev) : null;
+    const hostBit = hosts && hosts.names.length ? ' – ' + (hosts.names.length > 1 ? 'hosts: ' : 'host: ') + hosts.names.join(', ') : '';
+    g += `<div class="c ${ev.length ? 'has' : ''} ${t ? 't' : ''} ${CD === k ? 'sel' : ''}" data-day="${k}" role="button" tabindex="0" aria-label="${d} ${MONL[m]}${ev.length ? ': ' + esc(ev.map(x => x.name + ' – ' + ST_TXT[ST(x.id)].replace(/[☐✓$·]/g, '').replace(/\s+/g, ' ').trim()).join(', ')) : ''}${esc(hostBit)}${fd ? ` – ${fd} from your clubs` : ''}">${hosts ? hosts.html : ''}<span class="dn">${d}</span>${fd ? '<span class="fdot" aria-hidden="true"></span>' : ''}${mk ? `<span class="mk" aria-hidden="true">${mk}</span>` : ''}${ev.length > 1 ? `<span class="dot" aria-hidden="true">${ev.length}</span>` : ''}</div>`; }
   dayMine = byDay;
   const inMonth = mine.filter(x => x.start_date && (x.start_date.slice(0, 7) === iso(first).slice(0, 7) || (x.end_date || '').slice(0, 7) === iso(first).slice(0, 7)));
   /* Upcoming / in progress first (soonest first); then Completed in the order they finished (venue/state end of last day). */
@@ -1227,7 +1252,7 @@ function vCalendar(){
   <div class="grid">${g}</div>
   ${CD && CD.slice(0, 7) === iso(first).slice(0, 7) ? dayPanel(CD, byDay[CD] || []) : ''}
   ${clashPairsHtml()}
-  <div class="legend"><span class="b lg-day">■ event day</span><span class="b lg-day">✓ entered</span><span class="b lg-day">✓$ entered + paid</span><span class="b lg-today">□ today</span>${followed().length ? '<span class="b lg-day"><span class="fdot lg" aria-hidden="true"></span> your clubs</span>' : ''}</div><p class="note">Tap any day to see events from your clubs. Tap a finished day to see the results.</p>
+  <div class="legend"><span class="b lg-day">club logo</span><span class="b lg-day">✓ entered</span><span class="b lg-day">✓$ entered + paid</span><span class="b lg-today">□ today</span>${followed().length ? '<span class="b lg-day"><span class="fdot lg" aria-hidden="true"></span> your clubs</span>' : ''}</div><p class="note">Tap any day to see events from your clubs. Tap a finished day to see the results.</p>
   ${inMonth.length ? `<h2>In ${MONL[m]}</h2><div class="mcl-list">${[...mUp, ...mPast].map(x => mcRow(x, [x.location, x.state || x.country_name].filter(Boolean).join(', '), (ST(x.id) === 'paid' ? '<span class="b paid">✓$ Paid</span>' : ST(x.id) === 'entered' ? '<span class="b ent">✓ Entered</span>' : '') + (mPast.includes(x) ? '<span class="b past">Finished</span>' : ''))).join('')}</div>` : `<p class="note">Nothing saved in ${MONL[m]}. Use the arrows to change month.</p>`}
   ${up.length ? `<button class="btn block" id="icsAll">▦ Export all to phone calendar (.ics)</button>` : `<div class="empty">Nothing saved yet. Tap ☆ on events in <a href="#/browse">Find events</a>.</div>`}</div>`;
 }
@@ -1423,8 +1448,9 @@ function monthCal(key, list, row, o = {}){
   for (let i = 0; i < lead; i++) g += '<div class="mc-c mc-o" aria-hidden="true"></div>';
   for (let d = 1; d <= dim; d++) {
     const k = iso(new Date(y, m - 1, d)), ev = byDay[k] || [], cls = `mc-c${ev.length ? ' has' : ''}${k === tk ? ' t' : ''}${st.d === k ? ' sel' : ''}${ev.length && ev.every(past) ? ' done' : ''}`;
-    const lbl = `${d} ${MONL[m - 1]}${ev.length ? `: ${ev.length} event${ev.length > 1 ? 's' : ''} – ${ev.slice(0, 4).map(x => x.name).join(', ')}${ev.length > 4 ? '…' : ''}` : ', no events'}`;
-    g += ev.length ? `<button type="button" class="${cls}" data-mcd="${k}" aria-pressed="${st.d === k}" aria-label="${esc(lbl)}"><span class="mc-n">${d}</span><span class="mc-cnt" aria-hidden="true">${ev.length}</span><span class="mc-evs" aria-hidden="true">${ev.slice(0, 3).map(x => `<span>${esc(x.name)}</span>`).join('')}${ev.length > 3 ? `<span class="mc-more">+${ev.length - 3} more</span>` : ''}</span></button>`
+    const hosts = ev.length ? dayHosts(ev) : null;
+    const lbl = `${d} ${MONL[m - 1]}${ev.length ? `: ${ev.length} event${ev.length > 1 ? 's' : ''} – ${ev.slice(0, 4).map(x => x.name).join(', ')}${ev.length > 4 ? '…' : ''}${hosts.names.length ? ` (host${hosts.names.length > 1 ? 's' : ''}: ${hosts.names.join(', ')})` : ''}` : ', no events'}`;
+    g += ev.length ? `<button type="button" class="${cls}" data-mcd="${k}" aria-pressed="${st.d === k}" aria-label="${esc(lbl)}">${hosts.html}<span class="mc-n">${d}</span>${ev.length > 1 ? `<span class="mc-cnt" aria-hidden="true">${ev.length}</span>` : ''}<span class="mc-evs" aria-hidden="true">${ev.slice(0, 3).map(x => `<span>${esc(x.name)}</span>`).join('')}${ev.length > 3 ? `<span class="mc-more">+${ev.length - 3} more</span>` : ''}</span></button>`
       : `<div class="${cls}"><span class="mc-n">${d}</span></div>`;
   }
   const inM = dated.filter(x => mcDays(x).some(k => k.slice(0, 7) === st.m)), dayL = st.d && st.d.slice(0, 7) === st.m ? (byDay[st.d] || []) : null;
