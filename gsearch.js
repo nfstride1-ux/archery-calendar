@@ -37,7 +37,7 @@
       out.push({id: 'us-' + k, name: label, names: [k, label], hay: mkHay([label, w]), where: 'United States', go: () => { Object.assign(IF, {code: 'USA', q: '', disc: '', org: k, st: '', ctry: '', major: false, cat: '', past: false, limit: 60}); return '#/intl/USA'; }}); });
     return out;
   }
-  const allEvents = () => { const seen = new Set(), out = []; [...(typeof EV !== 'undefined' ? EV : []), ...(typeof INTL !== 'undefined' && INTL ? INTL.events : [])].forEach(x => { if (x && x.id && !seen.has(x.id)) { seen.add(x.id); out.push(x); } }); return out; };
+  const allEvents = () => { const seen = new Set(), out = []; [...(typeof EV !== 'undefined' ? EV : []), ...(typeof INTL !== 'undefined' && INTL ? INTL.events : [])].forEach(x => { if (x && x.id && !x._ownerOnly && !seen.has(x.id)) { seen.add(x.id); out.push(x); } }); return out; };
   const isFin = x => x._intl ? iPast(x) : isPast(x);
   const cName = x => (x.country_code === 'AUS' || (!x.country_code && !x._intl)) ? 'Australia' : (x.country_name || x.country || x.country_code || 'Other');
   function run(q){

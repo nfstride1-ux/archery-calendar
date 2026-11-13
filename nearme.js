@@ -59,7 +59,7 @@
   const sortDate = (a, b) => (a.start_date < b.start_date ? -1 : a.start_date > b.start_date ? 1 : 0);
   function discOf(id){
     const set = [];
-    EV.filter(x => x.club_id === id && typeof isShoot === 'function' && isShoot(x)).forEach(x => { const t = theme(x); const n = THEMES[t] && t !== 'mixed' ? THEMES[t][1] : ''; if (n && !set.includes(n)) set.push(n); });
+    EV.filter(x => !x._ownerOnly && x.club_id === id && typeof isShoot === 'function' && isShoot(x)).forEach(x => { const t = theme(x); const n = THEMES[t] && t !== 'mixed' ? THEMES[t][1] : ''; if (n && !set.includes(n)) set.push(n); });
     return set;
   }
   const ORGN = {aa: 'Archery Australia', awa: 'Archery WA', aba: 'ABA', taa: 'TAA'};
@@ -70,15 +70,15 @@
     for (const c of (CLUBS || [])) { const k = K.clubs[c.id]; if (k) all.push({c, k, km: haversineKm(pt, k)}); }
     all.sort((a, b) => a.km - b.km);
     const clubs = all.filter(r => r.km <= rKm);
-    let evs = EV.filter(x => upcoming(x));
-    if (!inAus(pt)) { try { const j = await loadIntl(); evs = evs.concat(j.events.filter(x => upcoming(x))); } catch {} }
+    let evs = EV.filter(x => !x._ownerOnly && upcoming(x));
+    if (!inAus(pt)) { try { const j = await loadIntl(); evs = evs.concat(j.events.filter(x => !x._ownerOnly && upcoming(x))); } catch {} }
     const seen = new Set(), near = [];
     for (const x of evs) { if (seen.has(x.id)) continue; seen.add(x.id); const k = evCoord(x, K); if (!k) continue; const km = haversineKm(pt, k); if (km <= rKm) near.push({x, k, km}); }
     near.sort((a, b) => sortDate(a.x, b.x) || a.km - b.km);
     return {clubs, nearestAll: all[0] || null, near, nClubs: all.length};
   }
   /* ---- view ---- */
-  function nextOf(id){ return EV.filter(x => x.club_id === id && upcoming(x)).sort(sortDate); }
+  function nextOf(id){ return EV.filter(x => !x._ownerOnly && x.club_id === id && upcoming(x)).sort(sortDate); }
   function clubCard(r){
     const c = r.c, ups = nextOf(c.id), nx = ups.find(x => typeof catOf === 'function' ? catOf(x) !== 'come_try' : true) || ups[0], ct = ups.find(x => x.category === 'come_try');
     const disc = discOf(c.id), orgs = (c.orgs || []).map(o => ORGN[o]).filter(Boolean);
