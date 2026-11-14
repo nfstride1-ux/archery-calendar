@@ -829,7 +829,7 @@ function hay(x){
     /national/i.test((x.level || '') + ' ' + x.name) && !/registered/i.test(x.level || '') ? 'nationals national' : '', x.members_only ? 'club championship members' : ''];
   const cat = catOf(x), catTxt = {competition:'competition event shoot tournament', club:'club event clubshoot social local', coaching:'coaching course coach', youth:'youth junior kids training', come_try:'come and try beginners', seminar:'seminar workshop clinic coaching coach masterclass'}[cat] + (x.book_anytime ? ' corporate team building book anytime' : '');
   const stat = [x.org_status === 'flyer' ? 'flyer out details' : 'no entry details yet', x.entry_close_date ? (daysTo(x.entry_close_date) < 0 ? 'entries closed' : 'entries open') : x.registration_url ? 'entries open' : ''];
-  const cb = CLUB[x.club_id], words = snorm([x.name, x.host, cb && cb.name, ...(cb ? cb.aliases : []), x.location, x.org, sc, st && st[1], sc && CAPITAL[sc], x.discipline, catTxt, ...lvl, grpTxt, x.branch ? 'branch ' + x.branch : '', x.branch_name, ...months, ...stat, x.series_part, x.notes, x.country, x.country_name, x.country_code, x.us_state, x.us_org, x.org_id, acroTxt(x), ...Object.entries(x.flyer_extract || {}).filter(([k, v]) => typeof v === 'string' && !/url|source/.test(k)).map(([, v]) => v), roundTerms(x)].filter(Boolean).join(' '));
+  const cb = CLUB[x.club_id], words = snorm([x.name, x.host, cb && cb.name, ...(cb ? cb.aliases : []), x.location, x.org, sc, st && st[1], sc && CAPITAL[sc], x.discipline, x.level, aaChampWords(x), catTxt, ...lvl, grpTxt, x.branch ? 'branch ' + x.branch : '', x.branch_name, ...months, ...stat, x.series_part, x.notes, x.country, x.country_name, x.country_code, x.us_state, x.us_org, x.org_id, acroTxt(x), ...Object.entries(x.flyer_extract || {}).filter(([k, v]) => typeof v === 'string' && !/url|source/.test(k)).map(([, v]) => v), roundTerms(x)].filter(Boolean).join(' '));
   return x._hay = {s: ' ' + words + ' ', w: [...new Set(words.split(' '))]};
 }
 const ACRO = [[/total archery challenge/i, 'tac'], [/indoor world series/i, 'iws'], [/\bnfaa\b|national field archery association/i, 'nfaa national field archery association'], [/\bifaa\b|international field archery/i, 'ifaa international field archery association'],
@@ -876,8 +876,16 @@ function wordHit(w, H){
 function wordHit1(w, H){
   if (H.s.includes(' ' + w + ' ')) return true;
   if (w.length >= 3 && H.w.some(h => h.startsWith(w))) return true;
+  if (w.length >= 4 && H.w.some(h => tokenEq(w, h))) return true;   // championships ↔ championship, nationals ↔ national
   if (w.length >= 5 && H.w.some(h => h.length >= 4 && lev1(w, h.slice(0, Math.max(w.length, Math.min(h.length, w.length + 1)))))) return true;
   return false;
+}
+/* Archery Australia championships sit above the month calendar when the search is about nationals, Australian Opens or championships.
+   The calendar only shows one month, so a championship in a later month would otherwise be scrolled past. */
+function champStrip(list, row) {
+  const tops = list.filter(aaChamp).sort((a, b) => byChampThenDate(false, a, b));
+  if (!tops.length) return '';
+  return `<section class="champ-hits" aria-label="Archery Australia championships"><h2 class="sec-h">Archery Australia championships</h2><div class="mcl-list">${tops.map(row).join('')}</div></section>`;
 }
 const DISC_Q = {indoor: /indoor|18 ?m\b|vegas/i, field: /field|ifaa|arrowhead/i, target: /target|qre|1440|720|900|matchplay/i, clout: /clout/i, '3d': /\b3d\b|3-d|bowhunt/i};
 const discTxt = x => [x.discipline, x.name, x.rounds].filter(Boolean).join(' ');
@@ -942,7 +950,8 @@ function vBrowse(){
   let showPastNote = false;
   if (!BF.past) { const up = list.filter(x => !isPast(x)); if (!up.length && Q && list.length) showPastNote = true; else list = up; }
   const sk = x => x.book_anytime ? '9999-99' : x.start_date || '9999';
-  list.sort((a, b) => sk(a) < sk(b) ? -1 : 1);
+  const champQ = !!(Q && champQuery(Q.words));
+  list.sort((a, b) => byChampThenDate(champQ, a, b, sk));
   const total = list.length;
   const undated = list.filter(x => !/^\d{4}-\d\d-\d\d$/.test(x.start_date || ''));
   const stOpts = STATES.map(([c, n]) => [c, n, stCount[c] || 0]);
@@ -970,6 +979,7 @@ function vBrowse(){
       ${active.length && total ? `<p class="note" id="activeF">Filtered by: ${active.join(' · ')}</p><button type="button" class="btn gold f-back" id="clearF2">← Back to all events</button>` : ''}
       ${!total && active.length ? `<div class="empty">No events match: ${active.join(' · ')}. <button class="btn alt" id="clearF">✕ Clear filters</button></div>` : ''}
       <p class="note" id="countNote">${total} event${total !== 1 ? 's' : ''} on this calendar. Change ${AUS() ? 'states &amp; organisations' : 'countries &amp; bodies'} in <a href="#/settings">Settings</a>.${nHiddenClub ? ` <span id="clubOnlyNote">${nHiddenClub} club-only event${nHiddenClub !== 1 ? 's' : ''} (club championships, members only) hidden – add your club in <a href="#/clubs">My clubs</a> to see them.</span>` : ''}</p></div></div>
+    ${champQ ? champStrip(list, browseRow) : ''}
     ${monthCal('find-au', list, browseRow, {sig: [BF.q, BF.scope, BF.state, BF.disc, BF.cat, BF.ost, BF.club, BF.clubId, BF.mc, BF.past, BF.hideClash, BF.day].join('|'), cc: 'AUS', past: x => x._intl ? iPast(x) : isPast(x), label: 'Find events'})}
     ${undated.length ? `<details class="mc-tba"><summary>Dates not published yet (${undated.length})</summary>${undated.map(browseRow).join('')}</details>` : ''}
     ${adSlot('feed')}</section></div>`;
@@ -2933,7 +2943,7 @@ const ICW = {MAS: 'malaysia malaysian my naam memanah', KOR: 'korea south korea 
 const iClubEv = id => INTL ? INTL.events.filter(x => (x.intl_clubs || []).includes(id)) : [];
 function iHay(x){
   if (!x._h) { const st = x.us_state ? `${x.us_state} ${US_ST[x.us_state] || ''}` : '';
-    x._h = snorm([x.name, x.location, x.org, x.discipline, x.level, x.country_name, st, US_ORG_WORDS[x.us_org] || '', x.country_code === 'USA' ? 'usa us united states america' : x.country_code === 'DEN' ? 'denmark danmark danish dk bueskydning' : '', ICW[x.country_code] || '', x.world_level ? 'world international major' : '', x.coach || '', x.host || '', x.category === 'seminar' ? 'seminar seminars workshop workshops clinic coaching coach' : ''].join(' ')); }
+    x._h = snorm([x.name, x.location, x.org, x.discipline, x.level, aaChampWords(x), x.country_name, st, US_ORG_WORDS[x.us_org] || '', x.country_code === 'USA' ? 'usa us united states america' : x.country_code === 'DEN' ? 'denmark danmark danish dk bueskydning' : '', ICW[x.country_code] || '', x.world_level ? 'world international major' : '', x.coach || '', x.host || '', x.category === 'seminar' ? 'seminar seminars workshop workshops clinic coaching coach' : ''].join(' ')); }
   return x._h;
 }
 function iMatch(x, q){
@@ -2944,10 +2954,10 @@ function iMatch(x, q){
   let t = ' ' + snorm(q) + ' ';
   const st = [];
   for (const [c, n] of Object.entries(US_ST).sort((a, b) => b[1].length - a[1].length)) { const nn = ' ' + snorm(n) + ' '; if (t.includes(nn)) { st.push(c); t = t.replace(nn, ' '); } }
-  const words = t.split(/\s+/).filter(Boolean), H = ' ' + iHay(x) + ' ';
+  const words = t.split(/\s+/).filter(Boolean), raw = iHay(x), H = ' ' + raw + ' ', hw = raw.split(' ');
   for (const w of words) { const c = w.toUpperCase();
     if (w.length === 2 && US_ST[c] && x.country_code === 'USA') { if (x.us_state !== c && !H.includes(' ' + w + ' ')) return false; else continue; }
-    if (w.length <= 2 ? !H.includes(' ' + w + ' ') : !H.includes(' ' + w)) return false; }   // words match from the start of a word (asa ≠ Renasant)
+    if (w.length <= 2 ? !H.includes(' ' + w + ' ') : !(H.includes(' ' + w) || hw.some(h => tokenEq(w, h)))) return false; }   // words match from the start of a word (asa ≠ Renasant); simple plurals match both ways
   return !st.length || st.includes(x.us_state);
 }
 function iStatus(x){
@@ -3319,7 +3329,8 @@ function vIntl(arg, find){
   if (IF.q.trim()) list = list.filter(x => iMatch(x, IF.q));
   const nClub = !world ? all.filter(x => catOf(x) === 'club' && (IF.past || !iPast(x)) && x.status !== 'cancelled').length : 0;
   if (IF.viewClub && !world) list = list.filter(x => catOf(x) === 'club');
-  list.sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : (a.start_date || '9') > (b.start_date || '9') ? 1 : a.name < b.name ? -1 : 1);
+  const iIntent = !!(IF.q.trim() && champQuery(snorm(IF.q).split(' ').filter(w => w && !['the','a','an','in','of','at','and','near'].includes(w))));
+  list.sort((a, b) => byChampThenDate(iIntent, a, b) || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   const sts = usa ? [...new Set(all.map(x => x.us_state).filter(Boolean))].sort((a, b) => US_ST[a] < US_ST[b] ? -1 : 1) : [];
   const wctr = world ? [...new Set(all.filter(x => IF.past || !iPast(x)).map(x => x.country_code).filter(Boolean))].sort((a, b) => iName(a) < iName(b) ? -1 : 1) : [];
   const active = [IF.q && `search “${esc(IF.q)}”`, IF.org && esc(iOrgName(IF.org)), IF.st && US_ST[IF.st], world && IF.ctry && iName(IF.ctry), world && IF.major && 'World majors', IF.viewClub && 'Club events', IF.cat === 'seminar' ? 'Seminars & workshops' : IF.cat === 'shoots' && 'Events only', IF.disc].filter(Boolean);
@@ -3340,8 +3351,9 @@ function vIntl(arg, find){
   // Item 1 (owner 4 Nov 2026): picking an organisation on the USA page asks for the state first.
   const ask = usa && IF.org && !IF.st && IF.stAsked !== IF.org && stc.length > 1 && !IF.q.trim();
   const ist = x => { const h = iStatus(x); return /Scheduled/.test(h) ? '' : h; };
+  const iRow = x => mcRow(x, [x.location, x.us_state && US_ST[x.us_state] && !String(x.location || '').includes(US_ST[x.us_state]) && US_ST[x.us_state]].filter(Boolean).join(', '), (IF.viewClub ? catTag(x) : '') + (world ? `<span class="b">${flag(x.iso2)} ${esc(x.country_name || '')}</span>` : '') + ist(x) + (x.world_major ? '<span class="b world">🏆 World major</span>' : '') + (x.category === 'seminar' ? '<span class="b sem">🎤 Seminar</span>' : ''));
   const res = ask ? statePick(`${iOrgName(IF.org)}: which state?`, stc.map(([s, n]) => [s, US_ST[s] || s, n]), ['All states', stc.reduce((a, [, n]) => a + n, 0)])
-    : monthCal((IF.viewClub ? 'intl-club-' : 'intl-') + code, list, x => mcRow(x, [x.location, x.us_state && US_ST[x.us_state] && !String(x.location || '').includes(US_ST[x.us_state]) && US_ST[x.us_state]].filter(Boolean).join(', '), (IF.viewClub ? catTag(x) : '') + (world ? `<span class="b">${flag(x.iso2)} ${esc(x.country_name || '')}</span>` : '') + ist(x) + (x.world_major ? '<span class="b world">🏆 World major</span>' : '') + (x.category === 'seminar' ? '<span class="b sem">🎤 Seminar</span>' : '')),
+    : (iIntent ? champStrip(list, iRow) : '') + monthCal((IF.viewClub ? 'intl-club-' : 'intl-') + code, list, iRow,
       {sig: [IF.q, IF.org, IF.st, IF.ctry, IF.major, IF.cat, IF.disc, IF.past, IF.viewClub].join('|'), cc: code === 'WORLD' ? homeCode() : code, past: iPast, label: IF.viewClub ? 'Club events' : `${nm} calendar`,
        top: usa && stc.length > 1 ? stateChips('State', stc.map(([s, n]) => [s, US_ST[s] || s, n]), IF.st, 'All states') : ''})
       + (list.some(x => !/^\d{4}-\d\d-\d\d$/.test(x.start_date || '')) ? `<details class="mc-tba"><summary>Dates not published yet (${list.filter(x => !/^\d{4}-\d\d-\d\d$/.test(x.start_date || '')).length})</summary>${list.filter(x => !/^\d{4}-\d\d-\d\d$/.test(x.start_date || '')).map(x => mcRow(x, x.location || '', iStatus(x))).join('')}</details>` : '');
