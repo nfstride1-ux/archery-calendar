@@ -1,9 +1,11 @@
 /* Search everywhere (#/search?q=…): one free-text search over every country and every source at once.
    Searches data/events.json (Australia), data/intl.json (all other countries), live club submissions and club-API events (they are merged into
    those lists by app.js), the club directory (data/clubs.json) and the organisations (Archery Australia, ABA, Archery WA, TAA, USA Archery, NFAA, ASA, IBO, TAC…).
-   It matches event names, clubs, organisations, venues, towns, states (names and codes) and countries (names and 2-letter codes), and is never narrowed
-   by the country you have selected or by your Settings. Results are grouped by country; a term that fits more than one place (e.g. WA = Western Australia
-   and Washington) shows both groups. One clear match (an exact organisation, club or event name, or a single hit overall) opens its page directly. */
+   It matches event names, clubs, organisations, venues, towns, states (names and codes), countries (names and 2-letter codes), discipline and level.
+   Every word must match somewhere (not only as a phrase). Simple plurals match both ways. Archery Australia national championships and Australian Opens
+   also match national, nationals and australian, and those results are listed above the month calendars. It is never narrowed by the country you have
+   selected or by your Settings. Results are grouped by country; a term that fits more than one place (e.g. WA = Western Australia and Washington) shows
+   both groups. One clear match (an exact organisation, club or event name, or a single hit overall) opens its page directly. */
 (function(){
   const GS = {q: '', limit: 30, more: {}, past: false};
   const STOP = new Set(['the', 'a', 'an', 'in', 'of', 'at', 'and', 'near']);
@@ -13,7 +15,7 @@
   const hasUS = () => typeof US_ST !== 'undefined';
   const words = t => snorm(t).split(' ').filter(Boolean);
   const mkHay = parts => { const s = snorm(parts.filter(Boolean).join(' ')); return {s: ' ' + s + ' ', w: [...new Set(s.split(' '))]}; };
-  const strictHit = (w, H) => H.s.includes(' ' + w + ' ') || (w.length >= 3 && H.w.some(h => h.startsWith(w)));
+  const strictHit = (w, H) => wordsMatch([w], H.w);
   const hit = (w, H, fuzzy) => fuzzy ? wordHit1(w, H) : strictHit(w, H);
   function evHay(x){
     if (x._gs) return x._gs;
@@ -21,7 +23,7 @@
     const sc = us ? (x.us_state || x.state_code || x.state) : (x.state_code || x.state);
     const stName = us ? (hasUS() && US_ST[sc]) : au ? (STATES.find(z => z[0] === sc) || [])[1] : '';
     const cb = (typeof CLUB !== 'undefined' && CLUB[x.club_id]) || null;
-    return x._gs = mkHay([x.name, x.club_name, x.host, x.org, x.source_name, cb && cb.name, ...(cb ? cb.aliases || [] : []), x.location, x.discipline, sc, stName, au && sc && CAPITAL[sc],
+    return x._gs = mkHay([x.name, x.club_name, x.host, x.org, x.source_name, cb && cb.name, ...(cb ? cb.aliases || [] : []), x.location, x.discipline, x.level, aaChampWords(x), sc, stName, au && sc && CAPITAL[sc],
       x.country_name, x.country, x.iso2, cc, CTRY_ALIAS[cc], x.us_org, us && typeof US_ORG_WORDS !== 'undefined' ? US_ORG_WORDS[x.us_org] : '', typeof acroTxt === 'function' ? acroTxt(x) : '']);
   }
   function clubHay(c){
@@ -50,12 +52,13 @@
     let r = find(false), fuzzy = false;
     if (!r.ev.length && !r.clubs.length && !r.orgs.length) { r = find(true); fuzzy = true; }
     const up = r.ev.filter(x => !isFin(x)), fin = r.ev.filter(isFin), showPast = !up.length && fin.length;
-    const evs = (showPast ? fin : up).sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
+    const intent = champQuery(ws);
+    const evs = (showPast ? fin : up).sort((a, b) => byChampThenDate(intent, a, b));
     // clear single match: one exact organisation / club / event name, or one hit overall
     const exact = [...r.orgs.filter(o => o.names.some(n => snorm(n) === qn)).map(o => ({t: 'org', o})), ...r.clubs.filter(c => [c.name, ...(c.aliases || [])].some(n => snorm(n) === qn)).map(c => ({t: 'club', c})), ...evs.filter(x => snorm(x.name) === qn).map(x => ({t: 'ev', x}))];
     let one = exact.length === 1 ? exact[0] : null;
     if (!one && evs.length + r.clubs.length + r.orgs.length === 1) one = r.orgs[0] ? {t: 'org', o: r.orgs[0]} : r.clubs[0] ? {t: 'club', c: r.clubs[0]} : {t: 'ev', x: evs[0]};
-    return {q, qn, evs, finList: fin.sort((a, b) => (a.start_date || '') < (b.start_date || '') ? 1 : -1), clubs: r.clubs, orgs: r.orgs, one, showPast, fin: fin.length, fuzzy};
+    return {q, qn, evs, intent, finList: fin.sort((a, b) => (a.start_date || '') < (b.start_date || '') ? 1 : -1), clubs: r.clubs, orgs: r.orgs, one, showPast, fin: fin.length, fuzzy};
   }
   function target(one){
     if (one.t === 'org') return one.o.go();
@@ -71,6 +74,7 @@
     const home = typeof homeCode === 'function' && homeCode() !== 'AUS' ? ((ICTRY.countries.find(c => c.code === homeCode()) || {}).name || '') : 'Australia';
     const names = Object.keys(grp).sort((a, b) => (b === home) - (a === home) || grp[b].length - grp[a].length || (a < b ? -1 : 1));
     let h = `<p class="qcount" id="gsCount" aria-live="polite">${R.evs.length} event${R.evs.length === 1 ? '' : 's'}${R.clubs.length ? `, ${R.clubs.length} club${R.clubs.length === 1 ? '' : 's'}` : ''}${R.orgs.length ? `, ${R.orgs.length} organisation${R.orgs.length === 1 ? '' : 's'}` : ''} match “${esc(R.q.trim())}” in ${names.length > 1 ? 'every country' : 'all countries'}${names.length > 1 ? ` (${names.length} countries)` : ''}.</p>`;
+    if (R.intent) h += champStrip(R.evs, x => mcRow(x, where(x), ''));
     if (R.orgs.length) h += `<h2 class="sec-h">Organisations</h2><ul class="gs-list">${R.orgs.map((o, i) => `<li><a href="${auFind()}" data-gso="${i}"><b>${esc(o.name)}</b> <span class="note">${esc(o.where)}</span></a></li>`).join('')}</ul>`;
     if (R.clubs.length) h += `<h2 class="sec-h">Clubs</h2><ul class="gs-list">${R.clubs.slice(0, 40).map(c => `<li><a href="#/club/${esc(encodeURIComponent(c.id))}"><b>${esc(c.name)}</b> <span class="note">${esc([c.suburb, c.state, c.country_name || (c.country ? '' : 'Australia')].filter(Boolean).join(', '))}${c.n_events ? ` · ${c.n_events} event${c.n_events === 1 ? '' : 's'}` : ''}</span></a></li>`).join('')}</ul>${R.clubs.length > 40 ? `<p class="note">${R.clubs.length - 40} more clubs: add a word to narrow it down.</p>` : ''}`;
     const og = {}; R.evs.forEach(x => { const k = x.club_name || x.host || x.source_name || x.org; if (k && !R.orgs.some(o => snorm(o.name) === snorm(k)) && !R.clubs.some(c => snorm(c.name) === snorm(k))) { const o = og[k] = og[k] || {n: 0, c: cName(x)}; o.n++; } });

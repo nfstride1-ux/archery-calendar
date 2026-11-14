@@ -1,5 +1,7 @@
 /* What's new: plain-English release notes for Archery Calendars, newest first. Every item comes from a real commit (hashes listed). */
 window.CAL_WHATSNEW = [
+  {d: '2026-11-14', label: 'Sat 14 Nov 2026', items: [
+    ['National championships are easier to search', 'Searching national, nationals, national field, Australian field or field championships now lists the Archery Australia championships at the top, including the 2027 Australian Open Field Championships. The same search works from Home, Find events and Search everywhere. A word can match anywhere in the name, organiser, discipline, level or place, and championship and championships match each other.', ['this release']]]},
   {d: '2026-11-11', label: 'Wed 11 Nov 2026', items: [
     ['Dakar 2026: final results and medal winners', 'A new newsletter is on the News tab and the Newsletter page: Australia\'s results at the Dakar 2026 Youth Olympic Games, and the medal winners in the three recurve under 18 events.', ['this release']]]},
   {d: '2026-11-10', label: 'Tue 10 Nov 2026', items: [
