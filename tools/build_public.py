@@ -6,13 +6,14 @@
     python3 tools/build_public.py --source world-archery --if-in-season
     python3 tools/build_public.py --self-test
 
-Implemented sources: world-archery (public competitions API, no API key) and any
+Implemented sources: world-archery (public competitions API, no API key), any
 Australian state association whose WordPress site answers The Events Calendar JSON
-API or a real iCal feed. Archery GB and Archery NZ block automated clients. This
-script does not try to get around that. A site that returns 403 or a challenge
-page is skipped and reported. A source that is actually fetched fails the run
-(exit 1, files left untouched) when it returns 0 events or when that source's own
-upcoming count drops by more than 30%.
+API or a real iCal feed, and Archer's Diary (the public CalendarFeed used by its
+event calendar). Archery GB and Archery NZ block automated clients. This script
+does not try to get around that. A site that returns 403 or a challenge page is
+skipped and reported. A source that is actually fetched fails the run (exit 1,
+files left untouched) when it returns 0 events or when that source's own upcoming
+count drops by more than 30%.
 
 `generated` is a UTC timestamp. Each fetched source records `last_checked` on the
 file and, as a date, on the events that source confirmed.
@@ -25,6 +26,7 @@ import html
 import json
 import re
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -733,7 +735,536 @@ def _state_runner(spec):
     return run
 
 
-SOURCES = {'world-archery': world_archery}
+# Archer's Diary publishes the calendar the site itself renders, as JSON:
+# https://www.archersdiary.com/services/CalendarFeed.ashx?start=&end=&state=
+# FullCalendar's end date is exclusive. robots.txt is not published (404). The
+# disclaimer and privacy statement do not forbid automated reading. A 403 or a
+# challenge page stops this source; nothing is retried and no other client is tried.
+AD_SOURCE = 'archers-diary'
+AD_SOURCE_NAME = "Archer's Diary CalendarFeed"
+AD_FEED = 'https://www.archersdiary.com/services/CalendarFeed.ashx'
+AD_HOST = 'www.archersdiary.com'
+AD_PAGE = 'https://www.archersdiary.com/EventCalendar.aspx'
+# RGB values from the calendar's state dropdown. Queensland is two associations.
+AD_RGB = (
+    ('5', 'ACT', 'Archery ACT'),
+    ('2', 'NSW', 'Archery NSW'),
+    ('1', 'TAS', 'Archery Tasmania'),
+    ('3', 'SA', 'Archery SA'),
+    ('4', 'VIC', 'Archery Victoria'),
+    ('6', 'WA', 'Archery WA'),
+    ('9', 'QLD', 'North Queensland Archery Association'),
+    ('7', 'QLD', 'South Queensland Archery Society'),
+)
+AD_SHOOT = re.compile(
+    r'shoot|rounds?|tournaments?|qre|champs?|championships?|match(?:play)?|competitions?|\bcomp\b|'
+    r'clout|indoor|field|target|novelty|\bfun\b|league|medal|enduro|come\s*(?:and|&)\s*try|have a go|'
+    r'ozbow|arrows?|\b720\b|\b900\b|\b1440\b|canberra|binge|skins|break\s*up|breakup',
+    re.I)
+AD_NOT_SHOOT = re.compile(
+    r'\bno archery\b|range closed|\bcancell?ed\b|\bpostponed\b|^\s*\*+\s*no\b|\bno\s+(?:sat\b|sun\b|sunday|shoot)|'
+    r'\btest event\b',
+    re.I)
+AD_NON_EVENT = re.compile(
+    r'\b(agm|annual general meeting|committee meeting|general meeting|working bee|busy bee|meetings?)\b|'
+    r'\bcoaching\b|\b(practice|training|traing)\b|\bdevelopment day\b|\byouth development\b|\bparty\b',
+    re.I)
+AD_MEMBERS = re.compile(
+    r"members?\s*[-'’]?\s*only|member'?s\s+only|\bclub\s*champs?\b|\bclub\s+championships?\b",
+    re.I)
+AD_GENERIC = {
+    'target', 'indoor', 'field', 'sunday', 'saturday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday',
+    'night', 'round', 'rounds', 'arrow', 'arrows', 'open', 'day', 'christmas', 'fun', 'am', 'pm', 'sat', 'sun',
+    'thu', 'tue', 'wed', 'fri', 'mon', 'start', 'ranking', 'free', 'choice', 'short', 'long', 'morning',
+    'afternoon', 'evening', 'plus', 'annual',
+}
+AD_SYN = {'xmas': 'christmas', 'champs': 'championship', 'champ': 'championship', 'championships': 'championship'}
+AD_CLUB_STOP = {'inc', 'incorporated', 'club', 'the', 'of', 'and', 'ltd'}
+AD_HOME = re.compile(
+    r'\b\d{1,5}\s+[A-Za-z]+\s+(?:Street|St|Road|Rd|Avenue|Ave|Drive|Dr|Court|Ct|Crescent|Cres|'
+    r'Lane|Ln|Place|Pl|Terrace|Tce|Way|Parade|Pde|Close|Cl)\b',
+    re.I)
+AD_STREET_WORD = re.compile(
+    r'\b(?:street|road|rd|avenue|ave|drive|dr|court|crescent|cres|lane|terrace|parade|close)\b',
+    re.I)
+AD_HOLIDAY = re.compile(r'christmas|xmas|novelty|break\s*up|breakup|binge', re.I)
+AD_QRE_KIND = ('field', 'target', 'indoor', 'clout', '3d')
+
+
+def ad_tokens(value):
+    return {AD_SYN.get(w, w) for w in name_tokens(value)}
+
+
+def ad_club_tokens(value):
+    words = re.findall(r'[a-z0-9]+', plain_title(value).lower())
+    return [w for w in words if w not in AD_CLUB_STOP and len(w) > 1]
+
+
+def ad_phrase_in(short, long):
+    """True when the shorter club name sits in the longer one as a whole phrase."""
+    if not short or not long:
+        return False
+    if short == long:
+        return True
+    if len(short) < 2:
+        return False
+    for i in range(len(long) - len(short) + 1):
+        if long[i:i + len(short)] == short:
+            return True
+    return False
+
+
+def ad_same_label(a, b):
+    left, right = ad_club_tokens(a), ad_club_tokens(b)
+    return ad_phrase_in(left, right) or ad_phrase_in(right, left)
+
+
+def ad_home_address(value):
+    return AD_HOME.search(value or '') is not None
+
+
+def ad_public_place(value):
+    """Club name as printed. A street address is left blank."""
+    text = plain_title(value)
+    if not text or ad_home_address(text):
+        return ''
+    return text
+
+
+def ad_skip_reason(name):
+    text = plain_title(name)
+    if not text:
+        return 'missing name'
+    if AD_NOT_SHOOT.search(text):
+        return 'not a shoot'
+    if AD_SHOOT.search(text):
+        return ''
+    non = AD_NON_EVENT.search(text)
+    if not non:
+        return ''
+    label = non.group(0).lower()
+    if 'coach' in label and re.search(r'\bno coaching\b', text, re.I):
+        return ''
+    if 'party' in label:
+        return 'party'
+    if 'coach' in label or 'development' in label or 'youth' in label:
+        return 'coaching'
+    if 'practice' in label or 'training' in label or 'traing' in label:
+        return 'practice'
+    return 'meeting'
+
+
+def ad_members_only(name):
+    return AD_MEMBERS.search(plain_title(name)) is not None
+
+
+def ad_end_date(start, end):
+    """CalendarFeed end is exclusive, the same way FullCalendar sends it."""
+    try:
+        start_d = dt.date.fromisoformat(start)
+    except ValueError:
+        return start
+    try:
+        end_d = dt.date.fromisoformat(end)
+    except ValueError:
+        return start
+    if end_d <= start_d:
+        return start
+    return (end_d - dt.timedelta(days=1)).isoformat()
+
+
+def ad_reg_url(raw, guid):
+    text = (raw or '').strip()
+    if not text or not guid:
+        return ''
+    if text.startswith('http://') or text.startswith('https://'):
+        return text
+    return 'https://www.archersdiary.com/' + text.lstrip('/')
+
+
+def ad_event_url(guid):
+    if not guid:
+        return AD_PAGE
+    return 'https://www.archersdiary.com/ViewResults.aspx?id=' + guid
+
+
+def ad_display_name(name, club):
+    name, club = plain_title(name), ad_public_place(club)
+    if not club or club.lower() in name.lower() or ad_same_label(club, name):
+        return name
+    return f'{name} – {club}'
+
+
+def ad_feed_url(rgb, start, end):
+    query = {'start': start.isoformat(), 'end': end.isoformat()}
+    if rgb:
+        query['state'] = rgb
+    return AD_FEED + '?' + urllib.parse.urlencode(query)
+
+
+def ad_load_feed(url):
+    status, ctype, body = fetch_bytes(url)
+    if blocked(status, body):
+        snippet = body[:240].decode('utf-8', 'replace').replace('\n', ' ')
+        return 'blocked', status, str(ctype).split(';')[0], snippet, []
+    if status != 200 or not body.lstrip().startswith(b'['):
+        kind = str(ctype).split(';')[0]
+        snippet = body[:160].decode('utf-8', 'replace').replace('\n', ' ')
+        return 'bad', status, kind, snippet, []
+    try:
+        data = json.loads(body.decode('utf-8'))
+    except json.JSONDecodeError:
+        return 'bad', status, 'json', 'not json', []
+    if not isinstance(data, list):
+        return 'bad', status, 'json', 'not a list', []
+    return 'ok', status, 'json', '', data
+
+
+def ad_club_names():
+    path = ROOT / 'data' / 'clubs.json'
+    if not path.exists():
+        return {}, {}
+    clubs = json.loads(path.read_text(encoding='utf-8')).get('clubs') or []
+    by_id = {}
+    index, seen = {}, {}
+    for club in clubs:
+        by_id[club.get('id')] = club.get('name') or ''
+        labels = [club.get('name') or '']
+        aliases = club.get('aliases') or []
+        if isinstance(aliases, list):
+            labels.extend(a for a in aliases if isinstance(a, str))
+        for label in labels:
+            key = ' '.join(ad_club_tokens(label))
+            if not key:
+                continue
+            if key in seen and seen[key] != club.get('id'):
+                index.pop(key, None)
+                continue
+            seen[key] = club.get('id')
+            index[key] = club.get('id')
+    return by_id, index
+
+
+def ad_club_same(feed_club, ev, by_id):
+    fields = [ev.get('org') or '', ev.get('host') or '']
+    named = by_id.get(ev.get('club_id') or '')
+    if named:
+        fields.append(named)
+    # A street address shares words with unrelated clubs ("Pennant Hills", "Britannia Street").
+    location = ev.get('location') or ''
+    if location and not AD_STREET_WORD.search(location) and not ad_home_address(location):
+        fields.append(location)
+    return any(ad_same_label(feed_club, field) for field in fields if field)
+
+
+def ad_same_qre(feed_name, event_name):
+    if not re.search(r'\bqre\b', feed_name or '', re.I) or not re.search(r'\bqre\b', event_name or '', re.I):
+        return False
+    feed_l, event_l = (feed_name or '').lower(), (event_name or '').lower()
+    return any(kind in feed_l and kind in event_l for kind in AD_QRE_KIND)
+
+
+def ad_score(item, ev, by_id):
+    try:
+        start = dt.date.fromisoformat(ev.get('start_date') or '')
+        end = dt.date.fromisoformat(ev.get('end_date') or ev.get('start_date') or '')
+        mine = dt.date.fromisoformat(item['start'])
+    except ValueError:
+        return 0
+    if end < start:
+        end = start
+    if ev.get('country_code') not in (None, '', 'AUS'):
+        return 0
+    inside = start <= mine <= end
+    gap = 0 if inside else min(abs((mine - start).days), abs((mine - end).days))
+    if gap > 3:
+        return 0
+    same = ad_club_same(item.get('club') or '', ev, by_id)
+    ev_state = ev.get('state_code') or ev.get('state') or ''
+    my_state = item.get('state') or ''
+    if my_state and ev_state and my_state != ev_state and not same:
+        return 0
+    raw_name = item.get('raw_name') or item['title']
+    mine_t, their_t = ad_tokens(raw_name), ad_tokens(ev.get('name') or '')
+    overlap = jaccard(mine_t, their_t)
+    distinctive = (mine_t & their_t) - AD_GENERIC
+    # The club's own words don't count as agreement about which shoot it is.
+    distinctive -= set(ad_club_tokens(item.get('club') or ''))
+    long_shared = {w for w in distinctive if len(w) >= 5}
+    holiday = AD_HOLIDAY.search(raw_name or '') and AD_HOLIDAY.search(ev.get('name') or '')
+    states_ok = not (my_state and ev_state and my_state != ev_state)
+    if gap > 1 and overlap < 0.62:
+        return 0
+    if gap == 1 and overlap < 0.5 and not (same and long_shared):
+        return 0
+    if overlap >= 0.5 and (same or states_ok):
+        return overlap + (0.25 if same else 0) + (0.05 if gap == 0 else 0)
+    if same and gap == 0 and (long_shared or len(distinctive) >= 2):
+        return 0.55 + 0.05 * min(len(long_shared or distinctive), 4) + overlap
+    if same and gap == 0 and ad_same_qre(raw_name, ev.get('name') or ''):
+        return 0.62
+    if same and gap == 0 and holiday:
+        return 0.5 + overlap
+    if states_ok and gap == 0 and len(long_shared) >= 2:
+        return 0.55 + overlap
+    return 0
+
+
+def ad_match(item, events, by_id):
+    best, best_score, second = None, 0, 0
+    for ev in events:
+        score = ad_score(item, ev, by_id)
+        if score > best_score:
+            second = best_score
+            best, best_score = ev, score
+        elif score > second:
+            second = score
+    if best and best_score >= 0.5 and best_score > second + 0.02:
+        return best
+    return None
+
+
+def ad_apply(ev, item, day):
+    """Stamp last_checked. Fill an empty registration link or start time. Flag members-only.
+    Curated names, dates and locations stay as they are."""
+    changed = []
+    if (ev.get('last_checked') or '') != day:
+        ev['last_checked'] = day
+        changed.append('last_checked')
+    if item['registration_url'] and not ev.get('registration_url'):
+        ev['registration_url'] = item['registration_url']
+        ev['registration_url_verified'] = False
+        changed.append('registration_url')
+    if item['times'] and not (ev.get('start_times') or '').strip():
+        ev['start_times'] = item['times']
+        changed.append('start_times')
+    if item['members_only'] and not ev.get('members_only'):
+        ev['members_only'] = True
+        changed.append('members_only')
+    return changed
+
+
+def ad_new_id(item, taken):
+    stem = re.sub(r'[^a-z0-9]+', '-', f"{item.get('club') or ''} {item['raw_name']}".lower()).strip('-')
+    stem = stem[:52].strip('-') or 'shoot'
+    base = f"ad-{stem}-{item['start']}-{item['feed_id']}"
+    eid, n = base, 2
+    while eid in taken:
+        eid = f'{base}-{n}'
+        n += 1
+    return eid
+
+
+def ad_new_event(item, taken, day):
+    members = item['members_only']
+    title = item['title']
+    if members and re.search(r'club championship', title, re.I):
+        level = 'Club Championship (members only)'
+    elif members:
+        level = 'Club (members only)'
+    elif re.search(r'\bstate\b', title, re.I) and re.search(r'championship', title, re.I):
+        level = 'State Championship'
+    else:
+        level = 'Tournament'
+    return {
+        'id': ad_new_id(item, taken),
+        'name': title,
+        'org_id': 'wa-aus',
+        'org': item['org'] or "Archer's Diary",
+        'country_code': 'AUS',
+        'country': 'Australia',
+        'state': item['state'] or None,
+        'start_date': item['start'],
+        'end_date': item['end'],
+        'dates_confirmed': True,
+        'location': item['location'] or None,
+        'discipline': item['discipline'],
+        'level': level,
+        'rounds': None,
+        'registration_url': item['registration_url'] or None,
+        'registration_opens': None,
+        'entry_close_date': None,
+        'fee': None,
+        'notes': None,
+        'source_url': item['url'],
+        'source_name': AD_SOURCE_NAME,
+        'last_checked': day,
+        'host': item['club'] or None,
+        'category': 'club' if members else 'competition',
+        'world_level': False,
+        'registration_url_kind': None,
+        'registration_url_verified': False,
+        'org_status': 'no_details',
+        'state_code': item['state'] or None,
+        'org_group': 'aa',
+        'club_id': item.get('club_id'),
+        'members_only': True if members else None,
+        'start_times': item['times'] or None,
+    }
+
+
+def ad_blank_stats():
+    return {'read': 0, 'kept': 0, 'matched': 0, 'added': 0, 'updated': 0, 'skipped': {}}
+
+
+def ad_bump(stats, state, key, reason=None):
+    row = stats.setdefault(state or 'National', ad_blank_stats())
+    if key == 'skipped':
+        skipped = row['skipped']
+        skipped[reason] = skipped.get(reason, 0) + 1
+    else:
+        row[key] += 1
+
+
+def ad_parse_row(raw, state, today):
+    name = plain_title(raw.get('name') or raw.get('description') or '')
+    club = ad_public_place(raw.get('title') or '')
+    start = str(raw.get('start') or '')[:10]
+    if not re.fullmatch(r'\d{4}-\d\d-\d\d', start):
+        return None, 'bad date'
+    if start < today.isoformat():
+        return None, 'past'
+    reason = ad_skip_reason(name)
+    if reason:
+        return None, reason
+    if ad_home_address(name):
+        name = AD_HOME.sub('', name)
+        name = plain_title(name)
+        if not name:
+            return None, 'home address'
+    guid = str(raw.get('Guid') or '')
+    return {
+        'feed_id': raw.get('id'),
+        'raw_name': name,
+        'title': ad_display_name(name, club),
+        'club': club,
+        'org': club or "Archer's Diary",
+        'start': start,
+        'end': ad_end_date(start, str(raw.get('end') or '')[:10]),
+        'times': plain_title(raw.get('prettyTime') or ''),
+        'registration_url': ad_reg_url(raw.get('regURL') or '', guid),
+        'url': ad_event_url(guid),
+        'members_only': ad_members_only(name),
+        'discipline': discipline_of(name),
+        'state': state or '',
+        'location': club or None,
+    }, ''
+
+
+def refresh_archers_diary(docs, stamp, day, dry_run):
+    today = aus_today()
+    horizon = today + dt.timedelta(days=560)
+    by_id, club_index = ad_club_names()
+    print(f'archers-diary: calendar feed {today.isoformat()} to {horizon.isoformat()} (end exclusive)', flush=True)
+    mode, status, kind, snippet, rows = ad_load_feed(ad_feed_url('', today, horizon))
+    print(f'archers-diary: all states JSON {status} {kind} rows {len(rows)}. {AD_FEED}', flush=True)
+    if mode == 'blocked':
+        print(f'archers-diary: blocked ({status}). Not retrying. Body starts: {snippet}', flush=True)
+        return 0
+    if mode != 'ok':
+        print(f'archers-diary: feed unavailable ({status} {kind}). {snippet}', flush=True)
+        return 0
+    state_of, rgb_of = {}, {}
+    blocked_rgb = []
+    for rgb, state, assoc in AD_RGB:
+        time.sleep(1)
+        url = ad_feed_url(rgb, today, horizon)
+        smode, sstatus, skind, ssnip, srows = ad_load_feed(url)
+        print(f'archers-diary: {assoc} ({state}) JSON {sstatus} {skind} rows {len(srows)}', flush=True)
+        if smode == 'blocked':
+            blocked_rgb.append((assoc, sstatus, url, ssnip))
+            print(f'archers-diary: {assoc} blocked ({sstatus}). Not retrying. Body starts: {ssnip}', flush=True)
+            continue
+        if smode != 'ok':
+            print(f'archers-diary: {assoc} not used ({sstatus} {skind}). {ssnip}', flush=True)
+            continue
+        for raw in srows:
+            state_of[raw.get('id')] = state
+            rgb_of[raw.get('id')] = assoc
+    if blocked_rgb and not rows:
+        return 0
+    events = docs['events'][0].get('events') or []
+    previous = [ev for ev in events if ad_owns(ev) and (ev.get('end_date') or ev.get('start_date') or '') >= today.isoformat()]
+    stats = {}
+    kept = []
+    seen = set()
+    for raw in rows:
+        fid = raw.get('id')
+        if fid in seen:
+            continue
+        seen.add(fid)
+        state = state_of.get(fid) or ''
+        label = state or 'National'
+        item, reason = ad_parse_row(raw, state, today)
+        ad_bump(stats, label, 'read')
+        if reason:
+            ad_bump(stats, label, 'skipped', reason)
+            continue
+        key = ' '.join(ad_club_tokens(item['club']))
+        item['club_id'] = club_index.get(key)
+        kept.append(item)
+        ad_bump(stats, label, 'kept')
+    print(f'archers-diary: read {len(rows)}, kept {len(kept)}, skipped {len(rows) - len(kept)}, '
+          f'{len(previous)} upcoming already listed', flush=True)
+    for label in sorted(stats):
+        row = stats[label]
+        skipped = ', '.join(f'{k} {v}' for k, v in sorted(row['skipped'].items())) or 'none'
+        print(f'archers-diary: {label} read {row["read"]} kept {row["kept"]} skipped {skipped}', flush=True)
+    if not kept:
+        guard(len(previous), 0, 'archers-diary')
+    guard(len(previous), len(kept), 'archers-diary')
+    # Match the diary against events already on the calendar. Rows added in this
+    # run stay separate, so two sessions on the same day are not folded together.
+    original = list(events)
+    taken = {ev.get('id') for ev in events}
+    added = updated = matched = 0
+    fields = {}
+    updated_ids = set()
+    for item in kept:
+        match = ad_match(item, original, by_id)
+        label = item['state'] or 'National'
+        if match:
+            matched += 1
+            ad_bump(stats, label, 'matched')
+            changed = ad_apply(match, item, day)
+            if changed and match.get('id') not in updated_ids:
+                updated += 1
+                updated_ids.add(match.get('id'))
+                ad_bump(stats, label, 'updated')
+                for name in changed:
+                    fields[name] = fields.get(name, 0) + 1
+        else:
+            ev = ad_new_event(item, taken, day)
+            events.append(ev)
+            taken.add(ev['id'])
+            added += 1
+            ad_bump(stats, label, 'added')
+    print(f'archers-diary: matched {matched}, added {added}, updated {updated}, fields {fields or {"none": 0}}', flush=True)
+    for label in sorted(stats):
+        row = stats[label]
+        print(f'archers-diary: {label} matched {row["matched"]} added {row["added"]} updated {row["updated"]}', flush=True)
+    if not dry_run:
+        doc = docs['events'][0]
+        doc['events'] = events
+        if added:
+            doc['count'] = len(events)
+        summary = {}
+        for label, row in stats.items():
+            summary[label] = {k: row[k] for k in ('read', 'kept', 'matched', 'added', 'updated')}
+            summary[label]['skipped'] = row['skipped']
+        stamp_sources(doc, AD_SOURCE, stamp, len(kept), len(previous), {
+            'added': added, 'updated': updated, 'matched': matched, 'via': 'calendar-feed', 'states': summary,
+        })
+    return len(kept)
+
+
+def ad_owns(ev):
+    if ev.get('source_name') == AD_SOURCE_NAME:
+        return True
+    return 'archersdiary.com' in str(ev.get('source_url') or '')
+
+
+SOURCES = {'world-archery': world_archery, AD_SOURCE: refresh_archers_diary}
 for _spec in STATE_FEEDS:
     SOURCES[_spec['id']] = _state_runner(_spec)
 
@@ -816,6 +1347,81 @@ def self_test():
     assert moved['start_date'] == '2026-12-20'
     assert apply_item_dates({'start_date': '2026-12-19', 'end_date': '2026-12-19'}, {'start': '2025-01-01', 'end': '2025-01-01', 'modified': '2026-11-02'}, '2026-10-01') == []
     print('PASS state feed matches, keeps curated fields, flags club championships')
+    assert ad_end_date('2026-11-01', '2026-11-02') == '2026-11-01'
+    assert ad_end_date('2026-11-02', '2026-11-09') == '2026-11-08'
+    assert ad_skip_reason('Tuesday Practice') == 'practice'
+    assert ad_skip_reason('720 rounds, 8:30am practice - 9am start') == ''
+    assert ad_skip_reason('LA *No Archery* - Kapunda Rodeo Clean Up') == 'not a shoot'
+    assert ad_skip_reason('** NO SAT AM AJAD\'s - School Holidays') == 'not a shoot'
+    assert ad_skip_reason('SOPA Junior Coaching') == 'coaching'
+    assert ad_skip_reason('SOPA Christmas Party') == 'party'
+    assert ad_skip_reason('Youth Development Program') == 'coaching'
+    assert ad_skip_reason('Test Event') == 'not a shoot'
+    assert ad_skip_reason('Christmas Fun Shoot') == ''
+    assert ad_skip_reason('TTA Competition 900 - No Coaching') == ''
+    assert ad_members_only('Sunday 06 Club Championships') is True
+    assert ad_members_only("GAC Members ONLY Over 55's Afternoon Indoor") is True
+    assert ad_members_only('Tasmanian State Target Championships') is False
+    assert ad_skip_reason('HL Outdoors Tournament Diary open shoot') == ''
+    assert ad_public_place('12 Smith Street') == ''
+    assert ad_public_place('Penrith City Archers') == 'Penrith City Archers'
+    champs = {'id': 'ad-waverley-club-champs-6-2026-11-21', 'name': 'Waverley City Archers Club Championship #6 2026',
+              'start_date': '2026-11-21', 'end_date': '2026-11-21', 'state_code': 'VIC', 'country_code': 'AUS',
+              'org': 'Waverley City Archers', 'registration_url': None, 'start_times': 'Sign-in 8:00 am',
+              'last_checked': '2026-10-09', 'notes': 'Hand note', 'members_only': None}
+    feed_champs = {'title': 'Club Championship #6 (Grange, Melbourne etc)', 'raw_name': 'Club Championship #6 (Grange, Melbourne etc)',
+                   'club': 'Waverley City Archers', 'start': '2026-11-21', 'state': 'VIC',
+                   'registration_url': 'https://www.archersdiary.com/EventEnrol.aspx?id=abc', 'times': 'Practice starts at 8:00 AM',
+                   'members_only': True}
+    assert ad_match(feed_champs, [champs], {'x': 'Waverley City Archers'}) is champs
+    changed = ad_apply(champs, feed_champs, '2026-11-16')
+    assert champs['name'].endswith('2026') and champs['start_date'] == '2026-11-21' and champs['notes'] == 'Hand note'
+    assert champs['start_times'] == 'Sign-in 8:00 am' and champs['registration_url'].endswith('id=abc')
+    assert champs['members_only'] is True and 'members_only' in changed and 'start_times' not in changed
+    novelty = {'id': 'ad-aac', 'name': 'Adelaide Archery Club Annual Novelty Shoot 2026', 'start_date': '2026-12-05',
+               'end_date': '2026-12-05', 'state_code': 'SA', 'country_code': 'AUS', 'org': 'Adelaide Archery Club'}
+    club_shoot = {'title': 'AAC Club Shoot Sat PM', 'raw_name': 'AAC Club Shoot Sat PM', 'club': 'Adelaide Archery Club',
+                  'start': '2026-12-05', 'state': 'SA'}
+    assert ad_match(club_shoot, [novelty], {}) is None
+    xmas = {'id': 'ad-x', 'name': 'Warringah Archers Christmas Fun Shoot 2026', 'start_date': '2026-12-20',
+            'end_date': '2026-12-20', 'state_code': 'NSW', 'country_code': 'AUS', 'org': 'Warringah Archers'}
+    feed_xmas = {'title': 'XMAS Fun Shoot (AM)', 'raw_name': 'XMAS Fun Shoot (AM)', 'club': 'Warringah Archers Inc',
+                 'start': '2026-12-20', 'state': 'NSW'}
+    assert ad_match(feed_xmas, [xmas], {}) is xmas
+    other_round = {'title': 'Canberra Rounds (PM)', 'raw_name': 'Canberra Rounds (PM)', 'club': 'Warringah Archers Inc',
+                   'start': '2026-12-20', 'state': 'NSW'}
+    assert ad_match(other_round, [xmas], {}) is None
+    cressy = {'id': 'ad-cressy', 'name': 'Cressy Archers Club Championships 2026', 'start_date': '2026-12-06',
+              'end_date': '2026-12-06', 'state_code': 'SA', 'country_code': 'AUS', 'org': 'Cressy Archers'}
+    feed_cressy = {'title': 'Sunday 06 Club Championships', 'raw_name': 'Sunday 06 Club Championships',
+                   'club': 'Cressy Archers Inc.', 'start': '2026-12-06', 'state': 'TAS', 'members_only': True,
+                   'registration_url': '', 'times': ''}
+    assert ad_match(feed_cressy, [cressy], {}) is cressy
+    northern = {'id': 'funnel', 'name': 'The Northern Archers FunnelWeb Field & 3D Tournament', 'start_date': '2026-11-22',
+                'end_date': '2026-11-22', 'state_code': 'NSW', 'country_code': 'AUS', 'org': 'Northern Archers of Sydney',
+                'location': 'Northern Archers of Sydney, Britannia Street, Pennant Hills NSW 2120'}
+    hills = {'title': 'Hills Archers Club Shoot', 'raw_name': 'Hills Archers Club Shoot', 'club': 'Hills Archers',
+             'start': '2026-11-22', 'state': 'SA'}
+    assert ad_match(hills, [northern], {}) is None
+    qre = {'id': 'tcag-qre', 'name': 'TCAG Double 720 QRE – Twin City Archers Gippsland', 'start_date': '2026-11-21',
+           'end_date': '2026-11-21', 'state_code': 'VIC', 'country_code': 'AUS', 'org': 'Twin City Archers Gippsland'}
+    other = {'title': 'TCAG November Club Event 3', 'raw_name': 'TCAG November Club Event 3', 'club': 'Twin City Archers Gippsland',
+             'start': '2026-11-21', 'state': 'VIC'}
+    assert ad_match(other, [qre], {}) is None
+    awa = {'id': 'awa-qre', 'name': 'QRE Field – Archery Park Whiteman', 'start_date': '2026-11-21', 'end_date': '2026-11-21',
+           'state_code': 'WA', 'country_code': 'AUS', 'org': 'Archery WA',
+           'location': 'Archery Park Whiteman, 111A Jules Steiner Memorial Dr, Whiteman WA'}
+    awa_feed = {'title': 'AWA Field QRE - Nov', 'raw_name': 'AWA Field QRE - Nov', 'club': 'Archery WA',
+                'start': '2026-11-21', 'state': 'WA'}
+    assert ad_match(awa_feed, [awa], {}) is awa
+    made = ad_new_event({'feed_id': 9, 'raw_name': 'Safari Club Shoot', 'title': 'Safari Club Shoot – Penrith City Archers',
+                         'club': 'Penrith City Archers', 'org': 'Penrith City Archers', 'start': '2026-11-21', 'end': '2026-11-21',
+                         'times': 'Practice starts at 8:00 AM', 'registration_url': '', 'url': 'https://www.archersdiary.com/ViewResults.aspx?id=g',
+                         'members_only': False, 'discipline': 'Target', 'state': 'NSW', 'location': 'Penrith City Archers',
+                         'club_id': None}, set(), '2026-11-16')
+    assert made['id'].startswith('ad-') and made['members_only'] is None and made['state_code'] == 'NSW'
+    assert 'Smith Street' not in json.dumps(made)
+    print('PASS archers diary feed keeps public shoots, matches curated rows, flags club championships')
     if not ok:
         raise SystemExit(1)
     print('self-test ok')
