@@ -279,11 +279,23 @@ def jaccard(a, b):
     return len(a & b) / len(a | b)
 
 
+def overseas_listing(ev):
+    """A state calendar sometimes lists the Olympics or a games meet held overseas."""
+    venue = as_venue(ev.get('venue'))
+    country = plain_title(str(venue.get('country') or ''))
+    blob = plain_title(ev.get('title') or '') + ' ' + venue_text(venue) + ' ' + country
+    if country and country.lower() not in ('australia', 'au'):
+        return True
+    return bool(re.search(r'\b(japan|los angeles|united states|california|tottori)\b', blob, re.I))
+
+
 def keep_tribe(ev):
-    if ev.get('hide_from_listings'):
+    if ev.get('hide_from_listings') or overseas_listing(ev):
         return False
     cats = {c.get('name') for c in ev.get('categories') or []}
     title = plain_title(ev.get('title'))
+    if re.match(r'^QRE in SA\b', title, re.I):
+        return False
     if SKIP_TITLE.search(title):
         return False
     if 'Meeting' in cats and not (cats & {'Tournament', 'QRE', 'Club Tournament', 'Masters Games'}):
@@ -328,8 +340,15 @@ def http_url(value):
     return ''
 
 
+def as_venue(venue):
+    if isinstance(venue, list):
+        venue = venue[0] if venue else None
+    return venue if isinstance(venue, dict) else {}
+
+
 def venue_text(venue):
-    if not isinstance(venue, dict):
+    venue = as_venue(venue)
+    if not venue:
         return ''
     parts = []
     for key in ('venue', 'address', 'city', 'province', 'state', 'zip'):
@@ -702,7 +721,8 @@ def refresh_state(spec, docs, stamp, day, dry_run):
     if not dry_run:
         doc = docs['events'][0]
         doc['events'] = events
-        doc['count'] = len(events)
+        if added:
+            doc['count'] = len(events)
         stamp_sources(doc, spec['id'], stamp, len(kept), len(previous_rows), {'added': added, 'updated': updated, 'via': mode})
     return len(kept)
 
@@ -784,6 +804,8 @@ def self_test():
     assert made['members_only'] is True and made['category'] == 'club'
     assert keep_tribe({'title': 'Public Holiday 2027', 'categories': [{'name': 'Community'}, {'name': 'Home'}]}) is False
     assert keep_tribe({'title': 'State Field Championships', 'categories': [{'name': 'Tournament'}, {'name': 'Home'}]}) is True
+    assert keep_tribe({'title': 'QRE in SA (2025 & 2026)', 'categories': [{'name': 'QRE'}, {'name': 'Home'}]}) is False
+    assert keep_tribe({'title': '2028 Olympic Games, Los Angeles', 'categories': [{'name': 'Tournament'}], 'venue': {'country': 'United States', 'city': 'Los Angeles'}}) is False
     ical = ('BEGIN:VCALENDAR\nBEGIN:VEVENT\nSUMMARY:State Field\\, 2027\n'
             'DTSTART;VALUE=DATE:20270321\nDTEND;VALUE=DATE:20270322\nURL:https://archerysa.org.au/event/x/\n'
             'END:VEVENT\nEND:VCALENDAR\n').encode()
