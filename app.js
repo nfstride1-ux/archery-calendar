@@ -97,6 +97,7 @@ async function boot(){
   migrateSettings();
   EV = e.events.filter(x => !x.info_only || true); ORGS = o.organisations;
   EV.forEach(x => BYID[x.id] = x);
+  considerGenerated(e.generated);
   ORGS.filter(x => x.country_code).forEach(x => { CMAP[x.country_code] = CMAP[x.country_code] || x.country; });
   window.addEventListener('hashchange', route);
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
@@ -123,7 +124,7 @@ async function boot(){
   route(); setHomeLinks(); window.addEventListener('hashchange', () => { geoLand.moved = true; setHomeLinks(); }, {once: false});
   { const sw = $('#ctrySw'); if (sw) sw.onclick = ctryMenu; }
   if (!S.homeCountry) geoLand().catch(() => {});   // deep links too (e.g. #/fans), so country-aware pages follow the visitor's country
-  setTimeout(() => loadIntl().then(() => setHomeLinks()).catch(() => {}), 2500); window.LIVEP = Promise.all([loadLiveSubs(), loadClubApi()]).then(([n, k]) => loadOverrides().then(m => { if (n || k || m) softRender(); })); cardsLoad().catch(() => {});
+  setTimeout(() => loadIntl().then(j => { considerGenerated(j && j.generated); setHomeLinks(); }).catch(() => {}), 2500); window.LIVEP = Promise.all([loadLiveSubs(), loadClubApi()]).then(([n, k]) => loadOverrides().then(m => { if (n || k || m) softRender(); })); cardsLoad().catch(() => {});
   if (Object.keys(S.saved).concat(Object.keys(S.entries)).some(id => !BYID[id])) loadIntl().then(() => { const y = scrollY; render(); scrollTo(0, y); }).catch(() => {}); checkReminders(); setInterval(checkReminders, 60 * 60 * 1000);
   initAuth().catch(e => console.warn('auth', e));
 }
@@ -3007,14 +3008,62 @@ function iCtryStrip(cur){
 /* Major events: flagged from existing data only (world majors / world-level, titles, championships, nationals, national tours, world cups, games, QREs) or a 'major' field. */
 const MAJOR_RE = /champion|\bnationals\b|national tour|world cup|grand prix|olympic games|paralympic games|world masters|winter games|\bDM\b|\bqre\b|world record status/i;
 const isMajor = x => !!x && x.major !== false && (x.major === true || !!x.world_major || !!x.world_level || !!x.titles || (!/\bclub\b.{0,30}champ|club level/i.test([x.name, x.level].join(' ')) && (/champion|\bqre\b/i.test(x.level || '') || MAJOR_RE.test(x.name || ''))));
-/* Venue-local midnight of a date (no start times are invented: the count runs to the start of the first day, venue time if known). */
+/* Footer "Updated X hours ago" from the data file's generated stamp (date-only stamps count from 00:00 UTC that day). */
+let GEN_STAMP = '';
+function generatedMs(s){ if (!s) return NaN; if (/^\d{4}-\d\d-\d\d$/.test(s)) return Date.parse(s + 'T00:00:00Z'); const t = Date.parse(s); return Number.isNaN(t) ? NaN : t; }
+function footFresh(){
+  const el = document.getElementById('footUpdated'); if (!el) return;
+  const t = generatedMs(GEN_STAMP); if (!t) { el.textContent = ''; return; }
+  const h = Math.max(0, Math.floor((Date.now() - t) / 36e5));
+  const txt = 'Updated ' + h + (h === 1 ? ' hour ago' : ' hours ago');
+  if (el.textContent !== txt) el.textContent = txt;
+}
+function considerGenerated(s){
+  const t = generatedMs(s); if (!t) return;
+  if (!GEN_STAMP || t >= generatedMs(GEN_STAMP)) GEN_STAMP = s;
+  footFresh();
+  if (!considerGenerated.t) considerGenerated.t = setInterval(footFresh, 60 * 1000);
+}
+/* Venue-local midnight of a date (no start times are invented: the count runs to the start of the first day, venue time if known).
+   The zone comes from the event, never from the viewer's clock. state_code wins over a region label ("QLD (South)"), and a saved
+   event uses the same zone as its event page. */
 const AU_TZ = {WA: 'Australia/Perth', NT: 'Australia/Darwin', SA: 'Australia/Adelaide', QLD: 'Australia/Brisbane', NSW: 'Australia/Sydney', ACT: 'Australia/Sydney', VIC: 'Australia/Melbourne', TAS: 'Australia/Hobart'};
-const evTz = x => x.tz || (!x._intl && AU_TZ[x.state]) || '';
+const AU_NAME = {'western australia': 'WA', 'south australia': 'SA', 'new south wales': 'NSW', queensland: 'QLD', victoria: 'VIC', tasmania: 'TAS', 'northern territory': 'NT', 'australian capital territory': 'ACT'};
+const US_TZ = {CT: 'America/New_York', DE: 'America/New_York', DC: 'America/New_York', FL: 'America/New_York', GA: 'America/New_York', IN: 'America/New_York', KY: 'America/New_York', ME: 'America/New_York', MD: 'America/New_York', MA: 'America/New_York', MI: 'America/New_York', NH: 'America/New_York', NJ: 'America/New_York', NY: 'America/New_York', NC: 'America/New_York', OH: 'America/New_York', PA: 'America/New_York', RI: 'America/New_York', SC: 'America/New_York', VT: 'America/New_York', VA: 'America/New_York', WV: 'America/New_York', AL: 'America/Chicago', AR: 'America/Chicago', IL: 'America/Chicago', IA: 'America/Chicago', KS: 'America/Chicago', LA: 'America/Chicago', MN: 'America/Chicago', MS: 'America/Chicago', MO: 'America/Chicago', NE: 'America/Chicago', ND: 'America/Chicago', OK: 'America/Chicago', SD: 'America/Chicago', TN: 'America/Chicago', TX: 'America/Chicago', WI: 'America/Chicago', AZ: 'America/Phoenix', CO: 'America/Denver', ID: 'America/Boise', MT: 'America/Denver', NM: 'America/Denver', UT: 'America/Denver', WY: 'America/Denver', CA: 'America/Los_Angeles', NV: 'America/Los_Angeles', OR: 'America/Los_Angeles', WA: 'America/Los_Angeles', AK: 'America/Anchorage', HI: 'Pacific/Honolulu', PR: 'America/Puerto_Rico'};
+const CC_TZ = {GBR: 'Europe/London', NZL: 'Pacific/Auckland', JPN: 'Asia/Tokyo', KOR: 'Asia/Seoul', DEN: 'Europe/Copenhagen', GER: 'Europe/Berlin', FRA: 'Europe/Paris', NLD: 'Europe/Amsterdam', SUI: 'Europe/Zurich', AUT: 'Europe/Vienna', ITA: 'Europe/Rome', ESP: 'Europe/Madrid', BEL: 'Europe/Brussels', IRL: 'Europe/Dublin', NOR: 'Europe/Oslo', SWE: 'Europe/Stockholm', FIN: 'Europe/Helsinki', POL: 'Europe/Warsaw', CZE: 'Europe/Prague', SVK: 'Europe/Bratislava', HUN: 'Europe/Budapest', TUR: 'Europe/Istanbul', CHN: 'Asia/Shanghai', MAS: 'Asia/Kuala_Lumpur', TPE: 'Asia/Taipei', MEX: 'America/Mexico_City', BRA: 'America/Sao_Paulo', RSA: 'Africa/Johannesburg', UAE: 'Asia/Dubai', IND: 'Asia/Kolkata', LUX: 'Europe/Luxembourg', COL: 'America/Bogota'};
+const auCode = x => {
+  const sc = String(x && x.state_code || '').trim().toUpperCase(); if (AU_TZ[sc]) return sc;
+  const s = String(x && x.state || '').trim(), up = s.toUpperCase(); if (AU_TZ[up]) return up;
+  const pre = up.match(/^(WA|NT|SA|QLD|NSW|ACT|VIC|TAS)\b/); if (pre) return pre[1];
+  return AU_NAME[s.toLowerCase()] || '';
+};
+const isAus = x => { const c = String(x && (x.country_code || x.country) || '').toUpperCase(); return c === 'AUS' || c === 'AU' || c === 'AUSTRALIA' || !!(x && !x._intl && !x.country_code); };
+const knownTz = z => { try { Intl.DateTimeFormat('en', {timeZone: z}); return z; } catch (e) { return ''; } };
+function evTz(x){
+  if (!x) return '';
+  if (x.tz && knownTz(x.tz)) return x.tz;
+  if (isAus(x)) { const st = auCode(x); if (AU_TZ[st]) return AU_TZ[st]; }
+  const us = String(x.us_state || '').toUpperCase(); if (US_TZ[us]) return US_TZ[us];
+  return CC_TZ[x.country_code] || CC_TZ[String(x.country_code || '').toUpperCase()] || '';
+}
+// Wall-clock fields in `tz` → epoch ms. A 12-hour hour (Safari ignoring hourCycle) is read with its dayPeriod.
+// Hour 24 is passed through Date.UTC so it rolls to the next midnight instead of sticking on the day before.
+function zoneOff(g, tz){
+  const parts = new Intl.DateTimeFormat('en-US', {timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', dayPeriod: 'short'}).formatToParts(new Date(g));
+  const p = {}; for (const o of parts) if (o.type !== 'literal') p[o.type] = o.value;
+  let hh = +p.hour; const dp = String(p.dayPeriod || '').toLowerCase();
+  if (dp.startsWith('pm') && hh < 12) hh += 12;
+  if ((dp.startsWith('am') || dp === 'midnight') && hh === 12) hh = 0;
+  return Date.UTC(+p.year, p.month - 1, +p.day, hh, +p.minute) - g;
+}
+function zonedWall(y, m, dd, h, mi, tz){
+  const g = Date.UTC(y, m - 1, dd, h, mi);
+  if (!tz) return new Date(y, m - 1, dd, h, mi).getTime();
+  try { let t = g - zoneOff(g, tz); t = g - zoneOff(t, tz); return t; } catch (e) { return new Date(y, m - 1, dd, h, mi).getTime(); }
+}
 function tzMid(d, tz){
-  const [y, m, dd] = d.split('-').map(Number), g = Date.UTC(y, m - 1, dd);
-  if (!tz) return new Date(y, m - 1, dd).getTime();
-  try { const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', {timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric'}).formatToParts(new Date(g)).map(o => [o.type, o.value]));
-    const off = Date.UTC(+p.year, p.month - 1, +p.day, +p.hour % 24, +p.minute) - g; return g - off; } catch { return new Date(y, m - 1, dd).getTime(); }
+  const [y, m, dd] = d.split('-').map(Number);
+  return zonedWall(y, m, dd, 0, 0, tz);
 }
 const dayLbl = n => n === 1 ? '1 day' : n + ' days';
 const cdSE = x => { const tz = evTz(x); return [tzMid(x.start_date, tz), tzMid(x.end_date || x.start_date, tz) + 864e5]; };
@@ -3111,10 +3160,8 @@ function evTimes(x){
   return T;
 }
 function tzAt(d, h, mi, tz){   // venue-local wall time → epoch ms (generalises tzMid)
-  const [y, m, dd] = d.split('-').map(Number), g = Date.UTC(y, m - 1, dd, h, mi);
-  if (!tz) return new Date(y, m - 1, dd, h, mi).getTime();
-  try { const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', {timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric'}).formatToParts(new Date(g)).map(o => [o.type, o.value]));
-    const off = Date.UTC(+p.year, p.month - 1, +p.day, +p.hour % 24, +p.minute) - g; return g - off; } catch { return new Date(y, m - 1, dd, h, mi).getTime(); }
+  const [y, m, dd] = d.split('-').map(Number);
+  return zonedWall(y, m, dd, h, mi, tz);
 }
 const AUTZ_NM = {'Australia/Perth': 'Perth time', 'Australia/Darwin': 'Darwin time', 'Australia/Adelaide': 'Adelaide time', 'Australia/Brisbane': 'Brisbane time', 'Australia/Sydney': 'Sydney/Canberra time', 'Australia/Melbourne': 'Melbourne time', 'Australia/Hobart': 'Hobart time'};
 const tzNm = tz => AUTZ_NM[tz] || TZ_NAME[tz] || tz;

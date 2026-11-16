@@ -1,0 +1,65 @@
+# Refresh the public event JSON and commit it only when the file changed,
+# so GitHub Pages redeploys when there is new data and not on an empty run.
+# Daily: every implemented source. Every 6 hours: World Archery, and only during
+# its season (the script exits without writing outside that season).
+# No secrets. Archery GB and Archery NZ are not fetched.
+name: Refresh event data
+
+on:
+  schedule:
+    - cron: '15 16 * * *'
+    - cron: '20 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      source:
+        description: 'Source id to refresh (blank = every implemented source)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-event-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Refresh event JSON
+        env:
+          SOURCE: ${{ github.event.inputs.source }}
+          SCHEDULE: ${{ github.event.schedule }}
+        run: |
+          set -euo pipefail
+          python3 tools/build_public.py --self-test
+          args=()
+          if [ "${SCHEDULE}" = "20 */6 * * *" ]; then
+            args+=(--source world-archery --if-in-season)
+          elif [ -n "${SOURCE}" ]; then
+            args+=(--source "${SOURCE}")
+          fi
+          python3 tools/build_public.py "${args[@]}"
+
+      - name: Commit the JSON if it changed
+        run: |
+          set -euo pipefail
+          git add -- data/events.json data/intl.json
+          if git diff --cached --quiet; then
+            echo "No JSON change. Pages will not redeploy."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Refresh event data"
+          git push
