@@ -14,7 +14,6 @@
   const PC_OWNER_EMAILS = ['nfshold@gmail.com', 'nfstride1@gmail.com'];
   const PC_BASE = 'https://nfstride1-ux.github.io/scoretool-demo/';
   const PC_LEAGUE_URL = PC_BASE + '#lk-home';
-  const PC_INVITE = 'lk-onion26';
   const PC_HOURS = 'Induction 6:00 pm, shooting 6:30 pm to about 9:00 pm';
   const PC_WHERE = 'Lingkana Archery range, 107 Robinson Ave, Belmont';
   const PC_FEE = '$25 range fee + $10 into the pot. Pot split 60/30/10. The range fee is not in the pot.';
@@ -47,7 +46,7 @@
       round: shootup ? PC_SHOOTUP : PC_ROUND,
       start_times: PC_HOURS, fee: PC_FEE, org: 'Lingkana Archery',
       level: 'Invite only', category: 'competition', info_only: true, _ownerOnly: true,
-      tz: 'Australia/Perth', invite: PC_INVITE,
+      tz: 'Australia/Perth',
       results_url, source_url: results_url,
       results_note: shootup ? 'ScoreTool has no separate results page for the shoot-up. This opens the league home.' : 'Opens this night’s scores and the best-4 standings.'
     };
@@ -80,7 +79,6 @@
         <dt>Where</dt><dd>${e(x.location)}${x.state ? ', ' + e(x.state) : ''}</dd>
         <dt>Round</dt><dd>${e(x.round)}</dd>
         <dt>Cost</dt><dd>${e(x.fee)}</dd>
-        <dt>Invite code</dt><dd><code id="pcInvite">${e(x.invite)}</code></dd>
       </dl>
       <p class="row"><a class="btn gold" id="pcResults" href="${e(x.results_url)}" target="_blank" rel="noopener">${nightSpecific ? 'ScoreTool results · Night ' + x.night : 'ScoreTool league page'}</a>
         ${nightSpecific ? `<a class="btn alt" id="pcLeagueHome" href="${e(PC_LEAGUE_URL)}" target="_blank" rel="noopener">League home</a>` : ''}</p>

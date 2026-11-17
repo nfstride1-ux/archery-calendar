@@ -146,6 +146,7 @@ def main():
                       name: text.includes(x.name),
                       induction: text.includes('Induction 6:00 pm'),
                       shooting: text.includes('6:30 pm') && text.includes('9:00 pm'),
+                      invite: text.includes('lk-onion26') || text.includes('Invite code'),
                       href: res ? res.getAttribute('href') : ''
                     });
                   }
@@ -158,6 +159,7 @@ def main():
                         continue
                     want = f"#lk-results&n={d['night']}" if d['night'] <= 6 else '#lk-home'
                     t(f"{email} night {d['night']} day shows the night", d['name'] and d['induction'] and d['shooting'] and want in (d['href'] or ''), str(d))
+                    t(f"{email} night {d['night']} day has no invite code", not d['invite'], str(d))
                 label = page.locator('[data-day="2026-11-18"]').get_attribute('aria-label') or ''
                 t(email + ' 18 Nov is on the calendar', 'Lingkana' in label, label)
                 if email.startswith('nfshold'):
@@ -173,6 +175,7 @@ def main():
                     page.screenshot(path=str(ART / 'lingkana-day-390.png'))
                     panel = page.locator('#dayPanel').inner_text()
                     t('tapped 18 Nov shows induction and shooting', 'Induction 6:00 pm' in panel and '6:30 pm' in panel and '9:00 pm' in panel, panel)
+                    t('tapped 18 Nov has no invite code', 'lk-onion26' not in panel and 'Invite code' not in panel, panel)
                     res_day = page.locator('#dayPanel a.pc-res').get_attribute('href') or ''
                     t('tapped 18 Nov links to night 1 results', '#lk-results&n=1' in res_day, res_day)
                     page.locator('#dayPanel a[href*="lk-night-1"]').click()
@@ -180,8 +183,9 @@ def main():
                     res = page.locator('#pcResults').get_attribute('href') or ''
                     t('opened night links to night 1 results', '#lk-results&n=1' in res, res)
                     t('opened night shows the venue', '107 Robinson Ave' in view_text(page))
-                    t('opened night shows the invite code', page.locator('#pcInvite').inner_text() == 'lk-onion26')
-                    t('opened night has no scoring password', 'password' not in view_text(page).lower())
+                    night_text = view_text(page)
+                    t('opened night has no invite code', page.locator('#pcInvite').count() == 0 and 'lk-onion26' not in night_text and 'Invite code' not in night_text, night_text)
+                    t('opened night has no scoring password', 'password' not in night_text.lower())
                     page.screenshot(path=str(ART / 'lingkana-night-results-link.png'), full_page=True)
                     page.set_viewport_size({'width': 1100, 'height': 900})
 
