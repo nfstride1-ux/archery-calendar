@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Browser checks for the owner-only Lingkana nights.
 
-Signed in as a site-owner admin email, My events lists all seven nights and each one links to ScoreTool.
-Signed out, and a different signed-in account, do not see them. Find events, search, Near me, What's new,
-the sitemap and a direct event URL do not list them.
+Signed in as a site-owner admin email, the seven nights are on the My events calendar and there is
+no Lingkana League list above it. Tapping a night's day shows the induction and shooting hours and
+the ScoreTool results link. Signed out, and a different signed-in account, do not see them.
+Find events, search, Near me, What's new, the sitemap and a direct event URL do not list them.
 
   python3 scripts/privatecal_ui_test.py
 """
@@ -80,7 +81,7 @@ def main():
 
             page.evaluate("() => { location.hash = '#/search?q=Lingkana'; }")
             page.wait_for_function("() => document.body.dataset.page === 'search' && document.querySelector('#view')")
-            page.wait_for_timeout(300)
+            page.wait_for_function("() => { const t = document.querySelector('#gsRes')?.innerText || ''; return t && !/Searching/.test(t); }", timeout=15000)
             search_text = view_text(page)
             t('search echoes the query and lists no league night', 'Nothing matches' in search_text and 'Lingkana League' not in search_text and 'lk-night-' not in search_text and page.locator('#view a.mc-row, #view .ev, #view .gs-list a').count() == 0, search_text[:240])
             for s in ('lk-onion26', 'lk-night-', '107 Robinson', 'Robinson Ave'):
@@ -125,20 +126,56 @@ def main():
 
             for email in ('nfshold@gmail.com', 'nfstride1@gmail.com'):
                 as_user(page, email, '#/calendar')
-                page.wait_for_selector('#pcLeague')
-                nights = page.locator('[data-pc-night]')
-                t(email + ' sees seven nights', nights.count() == 7, str(nights.count()))
-                hrefs = page.eval_on_selector_all('[data-pc-res]', 'els => els.map(e => [e.getAttribute("data-pc-res"), e.getAttribute("href")])')
-                t(email + ' seven result links', len(hrefs) == 7, str(hrefs))
-                for n, href in hrefs:
-                    n = int(n)
-                    want = f'#lk-results&n={n}' if n <= 6 else '#lk-home'
-                    t(f'{email} night {n} results', want in (href or ''), href)
+                page.wait_for_selector('.grid [data-day="2026-11-18"]')
+                t(email + ' has no league list', page.locator('#pcLeague').count() == 0)
+                days = page.evaluate("""() => {
+                  const today = iso(new Date());
+                  const out = [];
+                  for (const x of pcEvents()) {
+                    const [y, m] = x.start_date.split('-').map(Number);
+                    CM = [y, m - 1]; CD = x.start_date; render();
+                    const cell = document.querySelector('[data-day="' + x.start_date + '"]');
+                    const label = cell ? (cell.getAttribute('aria-label') || '') : '';
+                    const panel = document.querySelector('#dayPanel');
+                    const res = panel && panel.querySelector('a.pc-res');
+                    const text = panel ? panel.innerText : '';
+                    out.push({
+                      night: x.night, date: x.start_date, past: x.start_date < today,
+                      onCal: label.includes('Lingkana'),
+                      league: !!document.querySelector('#pcLeague'),
+                      name: text.includes(x.name),
+                      induction: text.includes('Induction 6:00 pm'),
+                      shooting: text.includes('6:30 pm') && text.includes('9:00 pm'),
+                      href: res ? res.getAttribute('href') : ''
+                    });
+                  }
+                  CM = [2026, 10]; CD = ''; render();
+                  return out;
+                }""")
+                t(email + ' seven nights on the calendar', len(days) == 7 and all(d['onCal'] and not d['league'] for d in days), str(days))
+                for d in days:
+                    if d['past']:
+                        continue
+                    want = f"#lk-results&n={d['night']}" if d['night'] <= 6 else '#lk-home'
+                    t(f"{email} night {d['night']} day shows the night", d['name'] and d['induction'] and d['shooting'] and want in (d['href'] or ''), str(d))
                 label = page.locator('[data-day="2026-11-18"]').get_attribute('aria-label') or ''
                 t(email + ' 18 Nov is on the calendar', 'Lingkana' in label, label)
                 if email.startswith('nfshold'):
-                    page.screenshot(path=str(ART / 'lingkana-my-events-owner.png'), full_page=True)
-                    page.locator('a.pc-open').first.click()
+                    page.set_viewport_size({'width': 390, 'height': 844})
+                    page.evaluate("() => { CD = ''; CM = [2026, 10]; render(); window.scrollTo(0, 0); }")
+                    page.wait_for_selector('.grid [data-day="2026-11-18"]')
+                    page.wait_for_timeout(150)
+                    page.screenshot(path=str(ART / 'lingkana-my-events-390.png'))
+                    page.locator('[data-day="2026-11-18"]').click()
+                    page.wait_for_selector('#dayPanel')
+                    page.evaluate("() => document.querySelector('#dayPanel').scrollIntoView({block:'start'})")
+                    page.wait_for_timeout(200)
+                    page.screenshot(path=str(ART / 'lingkana-day-390.png'))
+                    panel = page.locator('#dayPanel').inner_text()
+                    t('tapped 18 Nov shows induction and shooting', 'Induction 6:00 pm' in panel and '6:30 pm' in panel and '9:00 pm' in panel, panel)
+                    res_day = page.locator('#dayPanel a.pc-res').get_attribute('href') or ''
+                    t('tapped 18 Nov links to night 1 results', '#lk-results&n=1' in res_day, res_day)
+                    page.locator('#dayPanel a[href*="lk-night-1"]').click()
                     page.wait_for_selector('#pcResults')
                     res = page.locator('#pcResults').get_attribute('href') or ''
                     t('opened night links to night 1 results', '#lk-results&n=1' in res, res)
@@ -146,6 +183,7 @@ def main():
                     t('opened night shows the invite code', page.locator('#pcInvite').inner_text() == 'lk-onion26')
                     t('opened night has no scoring password', 'password' not in view_text(page).lower())
                     page.screenshot(path=str(ART / 'lingkana-night-results-link.png'), full_page=True)
+                    page.set_viewport_size({'width': 1100, 'height': 900})
 
             as_user(page, 'archer@example.com', '#/calendar')
             page.wait_for_timeout(200)
