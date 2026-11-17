@@ -770,8 +770,9 @@ AD_NON_EVENT = re.compile(
     r'\bcoaching\b|\b(practice|training|traing)\b|\bdevelopment day\b|\byouth development\b|\bparty\b',
     re.I)
 AD_MEMBERS = re.compile(
-    r"members?\s*[-'’]?\s*only|member'?s\s+only|\bclub\s*champs?\b|\bclub\s+championships?\b",
+    r"members?\s*[-'’]?\s*only|member'?s\s+only|\bclub\s*champs?\b|\bclub\s+championships?\b|\bchamps\b",
     re.I)
+AD_WORKSHOP = re.compile(r'\bworkshops?\b', re.I)
 AD_GENERIC = {
     'target', 'indoor', 'field', 'sunday', 'saturday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday',
     'night', 'round', 'rounds', 'arrow', 'arrows', 'open', 'day', 'christmas', 'fun', 'am', 'pm', 'sat', 'sun',
@@ -835,6 +836,8 @@ def ad_skip_reason(name):
     text = plain_title(name)
     if not text:
         return 'missing name'
+    if AD_WORKSHOP.search(text):
+        return 'workshop'
     if AD_NOT_SHOOT.search(text):
         return 'not a shoot'
     if AD_SHOOT.search(text):
@@ -1058,7 +1061,7 @@ def ad_new_id(item, taken):
 def ad_new_event(item, taken, day):
     members = item['members_only']
     title = item['title']
-    if members and re.search(r'club championship', title, re.I):
+    if members and re.search(r'club championship|\bchamps\b', title, re.I):
         level = 'Club Championship (members only)'
     elif members:
         level = 'Club (members only)'
@@ -1101,6 +1104,52 @@ def ad_new_event(item, taken, day):
         'members_only': True if members else None,
         'start_times': item['times'] or None,
     }
+
+
+def ad_dup_stem(name, day):
+    """Name with a trailing Shoot and this date's day-number taken off.
+
+    'Saturday' and 'Saturday 28' on the 28th share a stem, as do
+    'Thursday 03 Twilight' and 'Thursday 03 Twilight Shoot' on the 3rd.
+    A group number that is not the day of the month stays put.
+    """
+    text = plain_title(name).lower()
+    text = re.sub(r'\s+shoots?$', '', text)
+    text = re.sub(rf'\b0?{int(day)}\b', ' ', text)
+    text = re.sub(r'[^a-z0-9]+', ' ', text)
+    return re.sub(r'\s+', ' ', text).strip()
+
+
+def ad_dup_rank(item):
+    name = item.get('raw_name') or ''
+    day = int(item['start'][8:10])
+    has_shoot = bool(re.search(r'\bshoots?\s*$', name, re.I))
+    has_day = bool(re.search(rf'\b0?{day}\b', name))
+    return (has_shoot, has_day, len(name), 1 if item.get('registration_url') else 0)
+
+
+def ad_dedupe(items):
+    """One row when the same club lists the same day twice under names that differ only by a day number or a Shoot suffix."""
+    buckets, order = {}, []
+    for item in items:
+        day = int(item['start'][8:10])
+        stem = ad_dup_stem(item.get('raw_name') or '', day)
+        club = ' '.join(ad_club_tokens(item.get('club') or ''))
+        key = (club, item['start'], stem) if stem else ('row', item.get('feed_id'), 'x')
+        if key not in buckets:
+            buckets[key] = []
+            order.append(key)
+        buckets[key].append(item)
+    kept, dropped = [], []
+    for key in order:
+        group = buckets[key]
+        if len(group) == 1:
+            kept.append(group[0])
+            continue
+        best = max(group, key=ad_dup_rank)
+        kept.append(best)
+        dropped.extend(other for other in group if other is not best)
+    return kept, dropped
 
 
 def ad_blank_stats():
@@ -1203,7 +1252,11 @@ def refresh_archers_diary(docs, stamp, day, dry_run):
         key = ' '.join(ad_club_tokens(item['club']))
         item['club_id'] = club_index.get(key)
         kept.append(item)
-        ad_bump(stats, label, 'kept')
+    kept, dupes = ad_dedupe(kept)
+    for item in dupes:
+        ad_bump(stats, item['state'] or 'National', 'skipped', 'duplicate')
+    for item in kept:
+        ad_bump(stats, item['state'] or 'National', 'kept')
     print(f'archers-diary: read {len(rows)}, kept {len(kept)}, skipped {len(rows) - len(kept)}, '
           f'{len(previous)} upcoming already listed', flush=True)
     for label in sorted(stats):
@@ -1359,9 +1412,21 @@ def self_test():
     assert ad_skip_reason('Test Event') == 'not a shoot'
     assert ad_skip_reason('Christmas Fun Shoot') == ''
     assert ad_skip_reason('TTA Competition 900 - No Coaching') == ''
+    assert ad_skip_reason('String Making Workshop - Peter Whitfield') == 'workshop'
     assert ad_members_only('Sunday 06 Club Championships') is True
+    assert ad_members_only('Club Shoot 43 - John Chaplin Target Champs') is True
     assert ad_members_only("GAC Members ONLY Over 55's Afternoon Indoor") is True
     assert ad_members_only('Tasmanian State Target Championships') is False
+    saturday = {'raw_name': 'Saturday', 'club': 'Cressy Archers Inc.', 'start': '2026-11-28', 'state': 'SA', 'registration_url': '', 'feed_id': 1}
+    saturday_28 = {'raw_name': 'Saturday 28', 'club': 'Cressy Archers Inc.', 'start': '2026-11-28', 'state': 'SA', 'registration_url': 'https://www.archersdiary.com/EventEnrol.aspx?id=a', 'feed_id': 2}
+    twilight = {'raw_name': 'Thursday 03 Twilight', 'club': 'Cressy Archers Inc.', 'start': '2026-12-03', 'state': 'SA', 'registration_url': '', 'feed_id': 3}
+    twilight_shoot = {'raw_name': 'Thursday 03 Twilight Shoot', 'club': 'Cressy Archers Inc.', 'start': '2026-12-03', 'state': 'SA', 'registration_url': '', 'feed_id': 4}
+    other_day = {'raw_name': 'Sunday 29', 'club': 'Cressy Archers Inc.', 'start': '2026-11-29', 'state': 'SA', 'registration_url': '', 'feed_id': 5}
+    group_two = {'raw_name': 'Outdoor Group 2', 'club': 'Burnie Archery Club', 'start': '2026-11-29', 'state': 'TAS', 'registration_url': '', 'feed_id': 6}
+    group_three = {'raw_name': 'Outdoor Group 3', 'club': 'Burnie Archery Club', 'start': '2026-11-29', 'state': 'TAS', 'registration_url': '', 'feed_id': 7}
+    deduped, dropped = ad_dedupe([saturday, saturday_28, twilight, twilight_shoot, other_day, group_two, group_three])
+    assert [i['raw_name'] for i in dropped] == ['Saturday', 'Thursday 03 Twilight']
+    assert [i['raw_name'] for i in deduped] == ['Saturday 28', 'Thursday 03 Twilight Shoot', 'Sunday 29', 'Outdoor Group 2', 'Outdoor Group 3']
     assert ad_skip_reason('HL Outdoors Tournament Diary open shoot') == ''
     assert ad_public_place('12 Smith Street') == ''
     assert ad_public_place('Penrith City Archers') == 'Penrith City Archers'
