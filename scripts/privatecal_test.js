@@ -40,6 +40,9 @@ pc.PC_OWNER_EMAILS.forEach(em => {
   });
 });
 t('league home', pc.PC_LEAGUE_URL === 'https://nfstride1-ux.github.io/scoretool-demo/#lk-home');
+global.AUTH = {user: {email: pc.PC_OWNER_EMAILS[0]}};
+t('owner season list is not rendered', pc.pcSeasonHtml() === '');
+delete global.AUTH;
 t('no scoring secret in the nights', !/0b2b4ba6|LK_PW|scoring password/i.test(JSON.stringify(pc.PC_NIGHTS)));
 
 const season = pc.pcShootHtml(pc.PC_NIGHTS[0]);

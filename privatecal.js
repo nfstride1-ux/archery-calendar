@@ -3,6 +3,8 @@
    Find events, international pages, sitemaps or static event pages.
    They render only when the signed-in account is a site-owner admin email, the same list as
    ADMIN_EMAILS / public.admins (app.js isAdmin). Anyone else, including signed-out visitors, gets nothing.
+   The nights sit on the My events calendar. There is no season list above that calendar:
+   tapping the day shows the hours and the ScoreTool results link.
    ScoreTool (a different site) already publishes the night results. Nights 1–6:
    https://nfstride1-ux.github.io/scoretool-demo/#lk-results&n=N
    Night 7 is the shoot-up. ScoreTool has no night-7 results hash (lkResNightFromHash only accepts 1–6);
@@ -63,11 +65,8 @@
   const pcById = id => pcByIdFor(typeof AUTH !== 'undefined' ? AUTH.user : null, id);
 
   function pcSeasonHtml(){
-    const L = pcEvents(); if (!L.length) return '';
-    const e = typeof esc === 'function' ? esc : pcEsc;
-    return `<section class="panel" id="pcLeague" aria-labelledby="pcLeagueH"><h2 class="sec" id="pcLeagueH">Lingkana League</h2>
-      <p class="note">Invite only. These nights are on your My events calendar and are hidden from everyone else.</p>
-      <ul class="dp-list">${L.map(x => `<li class="dp-row" data-pc-night="${x.night}"><div class="dp-main"><a class="pc-open" href="#/shoot/${encodeURIComponent(x.id)}"><b>${e(x.name)}</b></a> <a class="b res-lnk pc-res" data-pc-res="${x.night}" href="${e(x.results_url)}" target="_blank" rel="noopener">ScoreTool results</a><div class="meta">${e(x.label)} · ${e(x.start_times)}</div></div></li>`).join('')}</ul></section>`;
+    /* Kept so older callers stay safe. The list is not shown: the same nights are on the calendar. */
+    return '';
   }
   function pcShootHtml(x){
     if (!x) return '';
