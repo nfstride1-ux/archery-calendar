@@ -34,7 +34,7 @@ pc.PC_OWNER_EMAILS.forEach(em => {
     t('owner can open ' + x.id, pc.pcByIdFor({email: em}, x.id) && pc.pcByIdFor({email: em}, x.id).id === x.id);
     const page = pc.pcShootHtml(x);
     t('detail links results ' + x.night, page.includes(expect.replace(/&/g, '&amp;')) && page.includes('id="pcResults"'));
-    t('detail has invite code only as the poster code ' + x.night, page.includes('lk-onion26') && !/password/i.test(page));
+    t('detail omits the invite code ' + x.night, !page.includes('lk-onion26') && !/Invite code/i.test(page) && !page.includes('pcInvite') && !/password/i.test(page));
     if (i === 6) t('shoot-up copy', /warm-up/.test(x.round) && /top 12/.test(x.round) && /Shoot-up/.test(x.name));
     else t('lancaster copy ' + x.night, /Lancaster 660/.test(x.round) && /best 4 of 6/i.test(x.round) && /18 m/.test(x.round));
   });
@@ -44,6 +44,7 @@ global.AUTH = {user: {email: pc.PC_OWNER_EMAILS[0]}};
 t('owner season list is not rendered', pc.pcSeasonHtml() === '');
 delete global.AUTH;
 t('no scoring secret in the nights', !/0b2b4ba6|LK_PW|scoring password/i.test(JSON.stringify(pc.PC_NIGHTS)));
+t('script and night data omit the invite code', !/lk-onion26|Invite code|pcInvite/.test(fs.readFileSync(path.join(ROOT, 'privatecal.js'), 'utf8')) && !pc.PC_NIGHTS.some(x => x.invite));
 
 const season = pc.pcShootHtml(pc.PC_NIGHTS[0]);
 t('address only on the private detail', season.includes('107 Robinson Ave'));
