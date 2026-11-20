@@ -1286,7 +1286,8 @@ function vCalendar(){
   ${CD && CD.slice(0, 7) === iso(first).slice(0, 7) ? dayPanel(CD, byDay[CD] || []) : ''}
   ${clashPairsHtml()}
   <div class="legend"><span class="b lg-day">club logo</span><span class="b lg-day">✓ entered</span><span class="b lg-day">✓$ entered + paid</span><span class="b lg-today">□ today</span>${followed().length ? '<span class="b lg-day"><span class="fdot lg" aria-hidden="true"></span> your clubs</span>' : ''}</div><p class="note">Tap any day to see events from your clubs. Tap a finished day to see the results.</p>
-  ${inMonth.length ? `<h2>In ${MONL[m]}</h2><div class="mcl-list">${[...mUp, ...mPast].map(x => mcRow(x, [x.location, x.state || x.country_name].filter(Boolean).join(', '), (ST(x.id) === 'paid' ? '<span class="b paid">✓$ Paid</span>' : ST(x.id) === 'entered' ? '<span class="b ent">✓ Entered</span>' : '') + (mPast.includes(x) ? '<span class="b past">Finished</span>' : ''))).join('')}</div>` : `<p class="note">Nothing saved in ${MONL[m]}. Use the arrows to change month.</p>`}
+  ${inMonth.length ? `${mUp.length ? `<details class="past-shoots" open><summary><h2 class="sec-h">Next to come in ${MONL[m]} (${mUp.length})</h2></summary><div class="mcl-list">${mUp.map(x => mcRow(x, [x.location, x.state || x.country_name].filter(Boolean).join(', '), ST(x.id) === 'paid' ? '<span class="b paid">✓$ Paid</span>' : ST(x.id) === 'entered' ? '<span class="b ent">✓ Entered</span>' : '')).join('')}</div></details>` : ''}
+  ${mPast.length ? `<details class="past-shoots"><summary><h2 class="sec-h">Past in ${MONL[m]} (${mPast.length})</h2></summary><div class="mcl-list">${mPast.map(x => mcRow(x, [x.location, x.state || x.country_name].filter(Boolean).join(', '), (ST(x.id) === 'paid' ? '<span class="b paid">✓$ Paid</span>' : ST(x.id) === 'entered' ? '<span class="b ent">✓ Entered</span>' : '') + '<span class="b past">Finished</span>')).join('')}</div></details>` : ''}` : `<p class="note">Nothing saved in ${MONL[m]}. Use the arrows to change month.</p>`}
   ${up.length ? `<button class="btn block" id="icsAll">▦ Export all to phone calendar (.ics)</button>` : `<div class="empty">Nothing saved yet. Tap ☆ on events in <a href="#/browse">Find events</a>.</div>`}</div>`;
 }
 function bindCalendar(){
@@ -3329,14 +3330,18 @@ function vCountryHome(code){
   const all = INTL.events.filter(x => x.country_code === code), up = all.filter(x => !iPast(x) && x.status !== 'cancelled').sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
   const maj = up.filter(isMajor), nReg = up.filter(x => entryUrl(x)).length, orgs = [...new Set(up.map(x => x.source_name || x.org).filter(Boolean))];
   const mine = Object.keys(S.saved).map(id => BYID[id]).filter(x => x && x.country_code === code && !iPast(x)).sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
-  const nx = mine[0] || maj.find(x => x.start_date);
+  const majNext = maj.find(x => x.start_date);
+  const nx = mine[0] || majNext;
   const next = nx ? `<a class="next-card" href="#/shoot/${esc(encodeURIComponent(nx.id))}"><span class="kicker">${mine[0] ? 'Your next event' : 'Next major event'}</span>${bigCd(nx)}
       <span class="nm">${esc(nx.name)}</span><span>${esc(range(nx))}</span>${cdBadge(nx)}</a>` : '';
+  // Your own saved event always leads, but the next major event still shows too (owner 21 Nov 2026), as a smaller second card, unless they're the same event.
+  const next2 = (mine[0] && majNext && majNext.id !== mine[0].id) ? `<a class="next-card" href="#/shoot/${esc(encodeURIComponent(majNext.id))}"><span class="kicker">Next major event</span>${bigCd(majNext)}
+      <span class="nm">${esc(majNext.name)}</span><span>${esc(range(majNext))}</span>${cdBadge(majNext)}</a>` : '';
   const lead = up.length ? `${up.length} upcoming event${up.length === 1 ? '' : 's'}${orgs.length ? ` from ${esc(orgs.slice(0, 3).join(', '))}${orgs.length > 3 ? ` and ${orgs.length - 3} more` : ''}` : ''}. Save them, get reminders before entries close, and keep track of what you've paid.` : `No upcoming events listed in ${the}${esc(nm)} yet.`;
   const disc = CDISC.map(([k, lbl, re, gen]) => { const ev = up.filter(x => re.test(x.discipline || x.name || '')); return {k, lbl, n: ev.length, ph: discPhoto(code, k, gen), by: [...new Set(ev.map(x => x.org).filter(Boolean))].slice(0, 3)}; }).filter(d => d.n);
   const sts = code === 'USA' ? Object.entries(up.reduce((a, x) => (x.us_state && (a[x.us_state] = (a[x.us_state] || 0) + 1), a), {})).sort((a, b) => b[1] - a[1]) : [];
   const cc = String(iIso(code) || code).toLowerCase();
-  return hero.replace('NEXTCARD', next).replace('SPHERO', spHero(cc, 'home')).replace('<p class="lead" id="chLead"></p>', `<p class="lead" id="chLead">${lead}</p>`) + `
+  return hero.replace('NEXTCARD', (next || next2) ? `<div class="next-cards">${next}${next2}</div>` : '').replace('SPHERO', spHero(cc, 'home')).replace('<p class="lead" id="chLead"></p>', `<p class="lead" id="chLead">${lead}</p>`) + `
   <div class="wrap home-wrap">${spRails(cc)}${newsCols()}
     <div class="stats four"><a class="stat" href="#/intl/${esc(code)}"><b>${up.length}</b><span>Upcoming events</span></a><a class="stat" href="#chMaj"><b>${maj.length}</b><span>🏆 Major events</span></a><a class="stat" href="#/intl/${esc(code)}"><b>${nReg}</b><span>✍ Online entry</span></a><a class="stat" href="#/calendar"><b>${mine.length}</b><span>★ My events here</span></a></div>
     ${newsCard(code)}
