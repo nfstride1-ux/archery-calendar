@@ -110,6 +110,7 @@
   <url><loc>https://archerycalendars.com/countries/czechia/</loc><lastmod>2026-11-03</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/countries/denmark/</loc><lastmod>2026-11-10</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/countries/el-salvador/</loc><lastmod>2026-10-31</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/countries/estonia/</loc><lastmod>2026-11-21</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/countries/france/</loc><lastmod>2026-11-03</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/countries/germany/</loc><lastmod>2026-11-10</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/countries/great-britain/</loc><lastmod>2026-11-10</lastmod><changefreq>weekly</changefreq></url>
@@ -142,6 +143,7 @@
   <url><loc>https://archerycalendars.com/countries/switzerland/</loc><lastmod>2026-11-10</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/countries/thailand/</loc><lastmod>2026-10-16</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/countries/turkiye/</loc><lastmod>2026-11-10</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/countries/ukraine/</loc><lastmod>2026-11-21</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/countries/united-arab-emirates/</loc><lastmod>2026-10-31</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/countries/united-states/</loc><lastmod>2026-11-10</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/aa-2026-1/</loc><lastmod>2026-10-09</lastmod><changefreq>weekly</changefreq></url>
@@ -542,6 +544,12 @@
   <url><loc>https://archerycalendars.com/events/ecaa-2027-07-11-rayleigh-town-archery-club-ecaa-wa1440/</loc><lastmod>2026-11-04</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/ecaa-2027-09-19-cadac-wa1440/</loc><lastmod>2026-11-04</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/ecaa-2027-09-25-moonlight-shoot/</loc><lastmod>2026-11-04</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/eesti-1440-mv-2026/</loc><lastmod>2026-11-21</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/eesti-karikas-2026/</loc><lastmod>2026-11-21</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/eesti-noorte-mv-2026/</loc><lastmod>2026-11-21</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/eesti-or-mv-2026/</loc><lastmod>2026-11-21</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/eesti-sise-mv-2026/</loc><lastmod>2026-11-21</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/eesti-sisekarikas-2026-final/</loc><lastmod>2026-11-21</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/eurobodalla-club-shoot-2026-10-25/</loc><lastmod>2026-10-20</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/eurobodalla-club-shoot-2026-11-08/</loc><lastmod>2026-10-20</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/eurobodalla-club-shoot-2026-11-22/</loc><lastmod>2026-10-20</lastmod><changefreq>weekly</changefreq></url>
@@ -596,6 +604,7 @@
   <url><loc>https://archerycalendars.com/events/ifaa-wfac-2026/</loc><lastmod>2026-11-10</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/indiana-az-cup-warmup-2027/</loc><lastmod>2026-10-22</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/ipswich-field-archery-club-shoot-2026-11-15/</loc><lastmod>2026-10-20</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/jarvakandi-open-2026/</loc><lastmod>2026-11-21</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/jvd-open-2026/</loc><lastmod>2026-10-13</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/kaa-895/</loc><lastmod>2026-11-10</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/kaa-896/</loc><lastmod>2026-11-10</lastmod><changefreq>weekly</changefreq></url>
@@ -881,6 +890,13 @@
   <url><loc>https://archerycalendars.com/events/tuggeranong-cnt-2026-10-18/</loc><lastmod>2026-10-09</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/tuggeranong-cnt-2026-10-25/</loc><lastmod>2026-10-09</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/tuggeranong-cnt-2026-11-01/</loc><lastmod>2026-10-09</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/ukr-comp-2026-lutsk/</loc><lastmod>2026-11-21</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/ukr-comp-2026-lviv-mar/</loc><lastmod>2026-11-21</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/ukr-indoor-mv-2026-cherkasy/</loc><lastmod>2026-11-21</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/ukr-indoor-mv-2026-lviv/</loc><lastmod>2026-11-21</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/ukr-olympic-hopes-2026/</loc><lastmod>2026-11-21</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/ukr-proskuriv-cup-2026/</loc><lastmod>2026-11-21</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/ukr-team-mv-2026/</loc><lastmod>2026-11-21</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/usa-2027-3d-nats/</loc><lastmod>2026-11-10</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/usa-2027-az-cup/</loc><lastmod>2026-11-10</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/usa-2027-buckeye/</loc><lastmod>2026-11-10</lastmod><changefreq>weekly</changefreq></url>
