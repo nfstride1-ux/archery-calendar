@@ -3327,7 +3327,7 @@ function vCountryHome(code){
   const next = nx ? `<a class="next-card" href="#/shoot/${esc(encodeURIComponent(nx.id))}"><span class="kicker">${mine[0] ? 'Your next event' : 'Next major event'}</span>${bigCd(nx)}
       <span class="nm">${esc(nx.name)}</span><span>${esc(range(nx))}</span>${cdBadge(nx)}</a>` : '';
   // Your own saved event always leads, but the next major event still shows too (owner 21 Nov 2026), as a smaller second card, unless they're the same event.
-  const next2 = (mine[0] && majNext && majNext.id !== mine[0].id) ? `<a class="next-card sec" href="#/shoot/${esc(encodeURIComponent(majNext.id))}"><span class="kicker">Next major event</span>${bigCd(majNext)}
+  const next2 = (mine[0] && majNext && majNext.id !== mine[0].id) ? `<a class="next-card" href="#/shoot/${esc(encodeURIComponent(majNext.id))}"><span class="kicker">Next major event</span>${bigCd(majNext)}
       <span class="nm">${esc(majNext.name)}</span><span>${esc(range(majNext))}</span>${cdBadge(majNext)}</a>` : '';
   const lead = up.length ? `${up.length} upcoming event${up.length === 1 ? '' : 's'}${orgs.length ? ` from ${esc(orgs.slice(0, 3).join(', '))}${orgs.length > 3 ? ` and ${orgs.length - 3} more` : ''}` : ''}. Save them, get reminders before entries close, and keep track of what you've paid.` : `No upcoming events listed in ${the}${esc(nm)} yet.`;
   const disc = CDISC.map(([k, lbl, re, gen]) => { const ev = up.filter(x => re.test(x.discipline || x.name || '')); return {k, lbl, n: ev.length, ph: discPhoto(code, k, gen), by: [...new Set(ev.map(x => x.org).filter(Boolean))].slice(0, 3)}; }).filter(d => d.n);
