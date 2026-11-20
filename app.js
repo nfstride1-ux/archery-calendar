@@ -1086,6 +1086,12 @@ document.addEventListener('click', e => {
 window.addEventListener('popstate', () => { if (window.ACGlobe && ACGlobe.isOpen()) ACGlobe.close(true); });
 window.addEventListener('hashchange', () => { if (window.ACGlobe && ACGlobe.isOpen()) ACGlobe.close(true); });
 
+function rankingNote(x){
+  if (!x || !x.world_level) return '';
+  return `<section class="panel ranking-note" id="rankNote"><h2 class="sec">🌐 Official ranking event</h2>
+    <p>This one's run under ${esc(x.org || 'an international governing body')}, so it isn't simple online sign-up for everyone. Most events like this select or nominate archers through their own national federation, based on that federation's national rankings or selection trials – so the path in is to join your country's archery federation and compete in its own ranking and selection events. A few ranking series (for example World Archery's Indoor World Series stops) instead let any archer with current national federation membership register directly.</p>
+    <p class="note">Ask your national federation how archers get selected or entered for this one, or check the registration link below.</p></section>`;
+}
 function resultsBox(x){
   if (!x || !isPast(x)) return '';
   const r = RES[x.id];
@@ -1135,6 +1141,7 @@ function vShoot(id){
     ${x.date_note ? `<div class="warn date-note" id="dateNote">⚠ <b>Check the dates:</b> ${esc(x.date_note)}</div>` : ''}
     ${clashBox(x)}
     ${x.id === LS.id && lsState() === 'over' ? `<section class="panel" id="replayBox"><h2 class="sec">Finals replay</h2><p class="note">Watch the replay of the finals, streamed from Hobart on Sat 24 Oct 2026.</p><a class="btn gold block" href="${LS.watch}" data-gc="watch-replay/${esc(LS.id)}" data-gc-t="${esc(LS.replay)}" target="_blank" rel="noopener">▶ Watch the replay</a></section>` : ''}
+    ${rankingNote(x)}
     ${resultsBox(x)}
     ${typeof selfBox === 'function' ? selfBox(x) : ''}
     ${flyerCard(x)}
