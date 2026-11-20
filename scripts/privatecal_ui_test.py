@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Browser checks for the owner-only Lingkana nights.
+"""Browser checks for the members-only Lingkana nights.
 
-Signed in as a site-owner admin email, the seven nights are on the My events calendar and there is
+Signed in with any account, the seven nights are on the My events calendar and there is
 no Lingkana League list above it. Tapping a night's day shows the induction and shooting hours and
-the ScoreTool results link. Signed out, and a different signed-in account, do not see them.
-Find events, search, Near me, What's new, the sitemap and a direct event URL do not list them.
+the ScoreTool results link. Only signed-out visitors do not see them.
+Find events, search, Near me, What's new, the sitemap and a direct event URL never list them,
+even for a signed-in account.
 
   python3 scripts/privatecal_ui_test.py
 """
@@ -124,7 +125,7 @@ def main():
             sm = page.evaluate("async () => (await fetch('sitemap.xml')).text()")
             t('sitemap omits the nights', 'lk-night-' not in sm and 'Lingkana' not in sm)
 
-            for email in ('nfshold@gmail.com', 'nfstride1@gmail.com'):
+            for email in ('nfshold@gmail.com', 'nfstride1@gmail.com', 'archer@example.com'):
                 as_user(page, email, '#/calendar')
                 page.wait_for_selector('.grid [data-day="2026-11-18"]')
                 t(email + ' has no league list', page.locator('#pcLeague').count() == 0)
@@ -189,16 +190,7 @@ def main():
                     page.screenshot(path=str(ART / 'lingkana-night-results-link.png'), full_page=True)
                     page.set_viewport_size({'width': 1100, 'height': 900})
 
-            as_user(page, 'archer@example.com', '#/calendar')
-            page.wait_for_timeout(200)
-            clean(page, 'other account calendar')
-            t('other account has no league list', page.locator('#pcLeague').count() == 0)
-            page.evaluate("() => { location.hash = '#/shoot/lk-night-1-2026-11-18'; render(); }")
-            page.wait_for_timeout(200)
-            clean(page, 'other account event url')
-            t('other account event url is not found', 'find that event' in view_text(page).lower() or 'can’t find' in view_text(page).lower() or "can't find" in view_text(page).lower())
-
-            # Back to signed out after having been the owner: the nights must disappear without a reload of secrets into the public lists.
+            # Back to signed out after having been signed in: the nights must disappear without a reload of secrets into the public lists.
             as_user(page, None, '#/calendar')
             page.wait_for_timeout(200)
             clean(page, 'signed out again')

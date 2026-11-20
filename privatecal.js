@@ -1,8 +1,8 @@
-/* Owner-only nights on My events (Lingkana League, invite only).
+/* Members-only nights on My events (Lingkana League, invite only).
    These are not public events: they are never added to EV, data/events.json, search, Near me,
    Find events, international pages, sitemaps or static event pages.
-   They render only when the signed-in account is a site-owner admin email, the same list as
-   ADMIN_EMAILS / public.admins (app.js isAdmin). Anyone else, including signed-out visitors, gets nothing.
+   They render for any signed-in account (unhidden 20 Nov 2026, Nathe: previously owner-only).
+   Signed-out visitors get nothing.
    The nights sit on the My events calendar. There is no season list above that calendar:
    tapping the day shows the hours and the ScoreTool results link.
    ScoreTool (a different site) already publishes the night results. Nights 1–6:
@@ -57,7 +57,8 @@
     const em = String(user && user.email || '').trim().toLowerCase();
     return !!em && PC_OWNER_EMAILS.includes(em);
   };
-  const pcEventsFor = user => pcIsOwner(user) ? PC_NIGHTS.slice() : [];
+  const pcSignedIn = user => !!String(user && user.email || '').trim();
+  const pcEventsFor = user => pcSignedIn(user) ? PC_NIGHTS.slice() : [];
   const pcByIdFor = (user, id) => pcEventsFor(user).find(x => x.id === id) || null;
   const pcIsPrivateId = id => PC_IDS.has(id);
   const pcEvents = () => pcEventsFor(typeof AUTH !== 'undefined' ? AUTH.user : null);
@@ -73,7 +74,7 @@
     const nightSpecific = x.night >= 1 && x.night <= 6;
     return `<div class="wrap detail"><div class="main"><p class="note"><a href="#/calendar">← My events</a></p>
       <section class="panel" id="pcNight"><h2 class="sec">${e(x.name)}</h2>
-      <p class="note">Invite only. Only you can see this night.</p>
+      <p class="note">Invite only. Visible on My events to signed-in archers only.</p>
       <dl class="kv">
         <dt>When</dt><dd>${e(x.label)}<br><span class="note">${e(x.start_times)}. Perth time (Australia/Perth).</span></dd>
         <dt>Where</dt><dd>${e(x.location)}${x.state ? ', ' + e(x.state) : ''}</dd>
@@ -86,7 +87,7 @@
       </section></div></div>`;
   }
 
-  const api = {PC_OWNER_EMAILS, PC_BASE, PC_LEAGUE_URL, PC_NIGHTS, pcIsOwner, pcEventsFor, pcByIdFor, pcIsPrivateId, pcResultsUrl, pcEvents, pcById, pcSeasonHtml, pcShootHtml};
+  const api = {PC_OWNER_EMAILS, PC_BASE, PC_LEAGUE_URL, PC_NIGHTS, pcIsOwner, pcSignedIn, pcEventsFor, pcByIdFor, pcIsPrivateId, pcResultsUrl, pcEvents, pcById, pcSeasonHtml, pcShootHtml};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else Object.assign(root, api);
 })(typeof window !== 'undefined' ? window : globalThis);
