@@ -1481,7 +1481,9 @@ function monthCal(key, list, row, o = {}){
   const inM = dated.filter(x => mcDays(x).some(k => k.slice(0, 7) === st.m)), dayL = st.d && st.d.slice(0, 7) === st.m ? (byDay[st.d] || []) : null;
   const nextM = mons.find(k => k > st.m), prevM = [...mons].reverse().find(k => k < st.m);
   const dayTxt = st.d && pd(st.d).toLocaleDateString(LOC(), {weekday: 'long', day: 'numeric', month: 'long'});
-  const shown = dayL || inM, upN = shown.filter(x => !past(x)).length;
+  const base = dayL || inM, upN = base.filter(x => !past(x)).length;
+  // The next event to happen shows first; each one drops to the bottom, in the order it finishes, once it's done (owner 20 Nov 2026).
+  const shown = dayL ? base : [...base.filter(x => !past(x)), ...base.filter(past)];
   return `<section class="mcal" data-mck="${esc(key)}" aria-label="${esc(o.label || 'Calendar')}">${o.top || ''}
     <div class="mc-nav"><button type="button" class="mc-arrow" data-mcm="-1" aria-label="Previous month, ${mcLabel(mcAdd(st.m, -1))}">‹</button><h3 class="mc-title" aria-live="polite">${mcLabel(st.m)}</h3><button type="button" class="mc-arrow" data-mcm="1" aria-label="Next month, ${mcLabel(mcAdd(st.m, 1))}">›</button></div>
     ${st.m !== tm ? `<p class="mc-today"><button type="button" class="linkbtn" data-mcgo="${tm}">Back to this month</button></p>` : ''}
