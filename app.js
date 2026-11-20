@@ -689,6 +689,7 @@ function appVideoBox(){
 // Latest news: one-line cards linking to newsletter issues (static pages under /newsletter/), newest first. Update NEWS when a new issue goes up.
 // where: which home pages show the card (AUS = Australian home, otherwise the country's home page by code).
 const NEWS = [
+  {url: 'newsletter/jvd-open-2026/', date: 'Sat 21 Nov 2026', title: 'What is the JVD Open? Nicholas D\'Amour among the top qualifiers in Eindhoven', where: ['USA', 'NED']},
   {url: 'newsletter/asia-cup-stage-3-hangzhou-2026/', date: 'Fri 20 Nov 2026', title: 'What is the Archery Asia Cup? Stage 3 under way in Hangzhou, two bronzes for India so far', where: ['AUS', 'IND', 'CHN']},
   {url: 'newsletter/dakar-2026-results/', date: 'Wed 11 Nov 2026', title: 'Dakar 2026: Australia\'s results and the medal winners', where: ['AUS']},
   {url: 'newsletter/dakar-2026-yog/', date: 'Tue 10 Nov 2026', title: 'Dakar 2026: Brock Penna sixth and Ellen Martini seventh for Australia', where: ['AUS']},
