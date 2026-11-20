@@ -4,7 +4,7 @@ The two tall desktop columns on the home pages show the article text exactly as 
 Run after editing an article:  python3 scripts/build_news_cols.py"""
 import re, json, html, sys, os
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ISSUES = [('yankton-world-championships-2026', 'Yankton world championships'), ('hobart-nationals-2026', 'Hobart nationals')]
+ISSUES = [('yankton-world-championships-2026', 'Yankton world championships'), ('asia-cup-stage-3-hangzhou-2026', 'Asia Cup Stage 3')]
 out = []
 for slug, short in ISSUES:
     s = open(f'{root}/newsletter/{slug}/index.html', encoding='utf-8').read()

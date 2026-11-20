@@ -1,6 +1,6 @@
-/* Lingkana League nights stay on the site owner's My events only.
+/* Lingkana League nights are on any signed-in archer's My events (not the public catalogue).
    node scripts/privatecal_test.js
-   Checks the owner gate, the seven dates, the ScoreTool results URLs, and that public files do not list the nights. */
+   Checks the signed-in gate, the seven dates, the ScoreTool results URLs, and that public files do not list the nights. */
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -10,28 +10,24 @@ const ROOT = path.join(__dirname, '..');
 let fail = 0;
 const t = (name, cond, info) => { if (cond) return; fail++; console.log('FAIL', name, info || ''); };
 
-const app = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8');
-const emails = JSON.parse(app.match(/const ADMIN_EMAILS = (\[[^\]]+\])/)[1].replace(/'/g, '"'));
-t('owner emails match admin identity', JSON.stringify(emails) === JSON.stringify(pc.PC_OWNER_EMAILS), emails.join(','));
-
 t('signed out sees nothing', pc.pcEventsFor(null).length === 0 && pc.pcEventsFor(undefined).length === 0 && pc.pcEvents().length === 0);
-t('other account sees nothing', pc.pcEventsFor({email: 'archer@example.com'}).length === 0);
+t('other signed-in account sees it too', pc.pcEventsFor({email: 'archer@example.com'}).length === 7);
 t('blank email sees nothing', pc.pcEventsFor({email: '  '}).length === 0);
 
 const dates = ['2026-11-18','2026-12-02','2026-12-16','2026-12-30','2027-01-13','2027-01-27','2027-02-10'];
 t('seven nights', pc.PC_NIGHTS.length === 7);
-pc.PC_OWNER_EMAILS.forEach(em => {
-  const L = pc.pcEventsFor({id: 'owner', email: em});
-  t('owner ' + em + ' sees seven', L.length === 7);
+['archer@example.com'].concat(pc.PC_OWNER_EMAILS).forEach(em => {
+  const L = pc.pcEventsFor({id: 'signed-in', email: em});
+  t(em + ' sees seven', L.length === 7);
   L.forEach((x, i) => {
     const wd = new Intl.DateTimeFormat('en-AU', {weekday: 'long', timeZone: 'Australia/Perth'}).format(new Date(x.start_date + 'T12:00:00+08:00'));
     t('wednesday ' + x.start_date, wd === 'Wednesday' && x.start_date === dates[i] && x.night === i + 1);
     t('perth hours ' + x.night, x.tz === 'Australia/Perth' && /6:00 pm/.test(x.start_times) && /6:30 pm/.test(x.start_times));
-    t('owner only flag ' + x.night, x._ownerOnly === true && x.info_only === true);
+    t('not-public flag ' + x.night, x._ownerOnly === true && x.info_only === true);
     const expect = i < 6 ? pc.PC_BASE + '#lk-results&n=' + (i + 1) : pc.PC_LEAGUE_URL;
     t('results url ' + x.night, x.results_url === expect && pc.pcResultsUrl(x.night) === expect, x.results_url);
-    t('hidden from other user ' + x.id, pc.pcByIdFor({email: 'archer@example.com'}, x.id) === null);
-    t('owner can open ' + x.id, pc.pcByIdFor({email: em}, x.id) && pc.pcByIdFor({email: em}, x.id).id === x.id);
+    t('hidden from signed-out ' + x.id, pc.pcByIdFor(null, x.id) === null);
+    t(em + ' can open ' + x.id, pc.pcByIdFor({email: em}, x.id) && pc.pcByIdFor({email: em}, x.id).id === x.id);
     const page = pc.pcShootHtml(x);
     t('detail links results ' + x.night, page.includes(expect.replace(/&/g, '&amp;')) && page.includes('id="pcResults"'));
     t('detail omits the invite code ' + x.night, !page.includes('lk-onion26') && !/Invite code/i.test(page) && !page.includes('pcInvite') && !/password/i.test(page));
