@@ -1130,7 +1130,12 @@ function vShoot(id){
   const where = I ? [(x.location || '').replace(/[,\s]+$/, ''), x.us_state && US_ST[x.us_state], x.country_name || x.country].filter(Boolean).filter((v, i, a) => !(i && (a[0] || '').includes(v))).join(', ') : '';
   const mapSlot = `<span id="mapSlot" data-ev="${esc(x.id)}">${mapLinkHtml(x)}</span>`;   // Map link: 3D globe in place when we have the venue point (globe/globe.js, loaded on tap)
   const srcName = x.source_name || (() => { try { return new URL(x.source_url).hostname.replace(/^www\./, ''); } catch { return x.source_url; } })();
-  return `<section class="dhero host-hero"><div class="wrap host-row"><div class="host-txt">
+  /* Official ranking events (world_level) with no flyer/photo of their own get a generic file-photo banner
+     instead of a flat gradient, so these pages don't look bare (owner 22 Nov 2026). People-free image only. */
+  const needsBanner = x.world_level && !x.flyer_year;
+  const heroCls = needsBanner ? 'dhero host-hero host-hero-photo' : 'dhero host-hero';
+  const heroStyle = needsBanner ? ` style="--img:url('/img/newsletter-archery-range-galston-gorge-2022.jpg');--pos:center 35%"` : '';
+  return `<section class="${heroCls}"${heroStyle}><div class="wrap host-row"><div class="host-txt">
     <a class="crumb" href="${back}" id="backLink">← ${I ? esc(back === '#/intl/WORLD' ? 'World' : iName(back.split('/')[2])) + ' events' : 'All events'}</a>
     <div class="tags">${I ? `<span class="tag ctry">${flag(x.iso2)} ${esc(x.country_name || 'International')}</span>` : ''}${catTag(x)}${isShoot(x) ? tagHtml(t) : ''}${x.level ? `<span class="tag lvl">${esc(x.level)}</span>` : ''}</div>
     <h1>${esc(x.name)}</h1><p class="sub">${esc(range(x))}${tzTxt ? ` <small>(local: ${esc(tzTxt)})</small>` : ''}${I ? (where ? ' · ' + esc(where) : '') : x.location ? ' · ' + esc(x.location) : ''}</p>${I ? `<div class="badges">${cdBadge(x, true)}${iStatus(x)}${x.world_level ? '<span class="b world">🌐 World event</span>' : ''}</div>` : badges(x)}

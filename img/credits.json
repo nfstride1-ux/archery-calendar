@@ -383,19 +383,5 @@
   "date": "2022-08-13",
   "year": 2026,
   "used_for": "Newsletter pages (not a banner)"
- },
- "newsletter_asiacup_2018": {
-  "file": "img/asiacup-2018-manila.jpg",
-  "sm": "img/asiacup-2018-manila-sm.jpg",
-  "title": "Podium at the 2018 Archery Asia Cup Stage 2, Manila (file photo in the newsletter pages)",
-  "alt": "Archers from the Philippines, Chinese Taipei, India and other nations on the medal podium at the 2018 Archery Asia Cup Stage 2 in Manila, mixed compound team event",
-  "by": "Jess M. Escaros Jr. / Philippine News Agency",
-  "source": "Wikimedia Commons",
-  "url": "https://commons.wikimedia.org/wiki/File:2018_Asia_Cup-Stage_2_mixed_compound.jpg",
-  "license": "Public domain (PD-PhilippinesGov)",
-  "license_url": "https://commons.wikimedia.org/wiki/Template:PD-PhilippinesGov",
-  "date": "2018-04-11",
-  "year": 2026,
-  "used_for": "Asia Cup newsletter article (not from Stage 3 Hangzhou)"
  }
 }
