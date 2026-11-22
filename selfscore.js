@@ -21,7 +21,7 @@ const ssOfficial = x => { const r = RES[x.id]; return !!(r && r.kind === 'full')
 const ssWhen = (t, tz) => new Date(t - 1).toLocaleDateString('en-AU', {timeZone: tz, weekday: 'short', day: 'numeric', month: 'short'});
 
 function selfBox(x){
-  if (!x || !AUTH.on) return '';
+  if (!x || !AUTH.on || x.world_level) return '';   // official ranking events don't take crowd-sourced unofficial scores (owner 22 Nov 2026)
   const w = ssWindow(x); if (!w) return '';
   const uid = AUTH.user ? AUTH.user.id : null; if (SS.ev === x.id && SS.rows && SS.uid !== uid) SS.ev = null;
   const open = ssIsOpen(x), official = ssOfficial(x), loaded = SS.ev === x.id && SS.rows, rows = loaded ? SS.rows : [];
