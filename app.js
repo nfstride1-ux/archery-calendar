@@ -1118,6 +1118,26 @@ const VENUE_PHOTOS = {
   'la28-para-archery': 'venue_carson',  // LA28 Paralympic Games – Para Archery, Carson CA
   'wa-asia-cup-3-2026-hangzhou': 'venue_hangzhou', // Asia Cup 2026 – Stage 3, Hangzhou
 };
+/* Second-tier fallback (owner 22 Nov 2026): when no venue-specific photo exists, prefer a real, licensed
+   photo of the event's region/country over the fully generic Galston Gorge photo. Still falls back to
+   that generic photo for events with no confirmed venue at all (nothing to tie a region photo to with
+   confidence) or where no regional photo could be sourced either. */
+const REGION_PHOTOS = {
+  'ifaa-wfac-2026': 'region_sdakota', 'wa-29776': 'region_sdakota', 'wa-29775': 'region_sdakota', // Yankton, South Dakota
+  'wa-31993': 'region_switzerland',           // World Archery Excellence Centre, Lausanne
+  'wa-26303': 'region_turkiye',               // Gloria Sports Arena, Antalya
+  'wa-32061': 'region_turkiye',               // Antalya Archery Centre
+  'wa-31744': 'region_uae',                   // Dubai Club for People of Determination
+  'wa-31278': 'region_uae',                   // Khorfakkan Club for the Disabled, Sharjah
+  'wa-32072': 'region_elsalvador',            // Polideportivo Ciudad Merliot, El Salvador
+  'wa-31868': 'region_lithuania',             // LSC Sports Complex, Druskininkai
+  'wa-21983': 'region_senegal',               // Abdoulaye Wade Stadium, Diamniadio (Dakar)
+  'wa-31433': 'region_iraq',                  // Sulaymaniyah Sport Club, Iraq
+  'wa-31555': 'region_goldcoast',             // Gold Coast Performance Centre
+  'wa-31869': 'region_slovenia', 'wa-31870': 'region_slovenia', // Stadion prijateljstva Mekinje, Kamnik
+  'wa-22777': 'region_tottori',               // Tottori Prefectural Gymnasium (indoor)
+  'wa-27792': 'region_cheongju',              // Kim Soo-Nyung Archery Field, Cheongju
+};
 function vShoot(id){
   if (typeof pcIsPrivateId === 'function' && pcIsPrivateId(id)) {
     const p = typeof pcById === 'function' ? pcById(id) : null;
@@ -1149,9 +1169,9 @@ function vShoot(id){
   /* Official ranking events (world_level) with no flyer/photo of their own get a generic file-photo banner
      instead of a flat gradient, so these pages don't look bare (owner 22 Nov 2026). People-free image only. */
   const needsBanner = x.world_level && !x.flyer_year;
-  const venuePhoto = needsBanner && VENUE_PHOTOS[x.id] && PH[VENUE_PHOTOS[x.id]];
+  const bannerPhoto = needsBanner && ((VENUE_PHOTOS[x.id] && PH[VENUE_PHOTOS[x.id]]) || (REGION_PHOTOS[x.id] && PH[REGION_PHOTOS[x.id]]));
   const heroCls = needsBanner ? 'dhero host-hero host-hero-photo' : 'dhero host-hero';
-  const heroStyle = needsBanner ? ` style="--img:url('/${esc(venuePhoto ? venuePhoto.file : 'img/newsletter-archery-range-galston-gorge-2022.jpg')}');--pos:${esc(venuePhoto ? venuePhoto.pos || 'center 35%' : 'center 35%')}"` : '';
+  const heroStyle = needsBanner ? ` style="--img:url('/${esc(bannerPhoto ? bannerPhoto.file : 'img/newsletter-archery-range-galston-gorge-2022.jpg')}');--pos:${esc(bannerPhoto ? bannerPhoto.pos || 'center 35%' : 'center 35%')}"` : '';
   return `<section class="${heroCls}"${heroStyle}><div class="wrap host-row"><div class="host-txt">
     <a class="crumb" href="${back}" id="backLink">← ${I ? esc(back === '#/intl/WORLD' ? 'World' : iName(back.split('/')[2])) + ' events' : 'All events'}</a>
     <div class="tags">${I ? `<span class="tag ctry">${flag(x.iso2)} ${esc(x.country_name || 'International')}</span>` : ''}${catTag(x)}${isShoot(x) ? tagHtml(t) : ''}${x.level ? `<span class="tag lvl">${esc(x.level)}</span>` : ''}</div>
