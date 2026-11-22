@@ -1102,6 +1102,42 @@ function resultsBox(x){
   const n = r.groups ? r.groups.reduce((a, g) => a + g.rows.length, 0) : r.n, ng = r.groups ? r.groups.length : r.ng;
 return `<section class="panel results-box" id="results"><h2 class="sec">🏆 Results</h2><p class="note">${esc(r.title)} · ${n} archer${n === 1 ? '' : 's'} in ${ng} division${ng === 1 ? '' : 's'}.${r.note ? ' ' + esc(r.note) : ''} Source: <a href="${esc(r.source_url)}" target="_blank" rel="noopener">${esc(r.source_name)} ↗</a></p>${r.groups ? resTables(r, 2) : `<div id="resTables" data-id="${esc(x.id)}"><p class="loading">Loading scores…</p></div>`}${src}</section>`;
 }
+/* Per-event venue photos for the world_level banner (owner 22 Nov 2026): real photo of that event's own venue,
+   keyed by event id -> img/credits.json key, instead of the one shared Galston Gorge fallback photo.
+   Only added where a real, properly-licensed Wikimedia Commons photo of the specific venue could be sourced;
+   every other world_level event with no flyer still falls back to the generic range photo. */
+const VENUE_PHOTOS = {
+  'wa-29965': 'venue_vegas',            // The Vegas Shoot – Horseshoe/Paris/Planet Hollywood, Las Vegas
+  'nfaa-ifaa-wic-2027': 'venue_memphis', // IFAA World Indoor Archery Championships 2027, Memphis
+  'wa-26304': 'venue_madrid',           // Hyundai Archery World Cup 2027 – Stage 4, Madrid
+  'wa-31620': 'venue_abidjan',          // Abidjan 2027 International Archery Open
+  'wa-31863': 'venue_bangkok',          // Bangkok 2027 Hyundai World Archery Para Series
+  'wa-31864': 'venue_bangkok',          // Bangkok 2027 Asia Cup Leg I
+  'wa-22776': 'venue_tottori',          // World Masters Games 2027 Kansai – Archery (outdoor, Tottori)
+  'la28-archery': 'venue_carson',       // LA28 Olympic Games – Archery, Carson CA
+  'la28-para-archery': 'venue_carson',  // LA28 Paralympic Games – Para Archery, Carson CA
+  'wa-asia-cup-3-2026-hangzhou': 'venue_hangzhou', // Asia Cup 2026 – Stage 3, Hangzhou
+};
+/* Second-tier fallback (owner 22 Nov 2026): when no venue-specific photo exists, prefer a real, licensed
+   photo of the event's region/country over the fully generic Galston Gorge photo. Still falls back to
+   that generic photo for events with no confirmed venue at all (nothing to tie a region photo to with
+   confidence) or where no regional photo could be sourced either. */
+const REGION_PHOTOS = {
+  'ifaa-wfac-2026': 'region_sdakota', 'wa-29776': 'region_sdakota', 'wa-29775': 'region_sdakota', // Yankton, South Dakota
+  'wa-31993': 'region_switzerland',           // World Archery Excellence Centre, Lausanne
+  'wa-26303': 'region_turkiye',               // Gloria Sports Arena, Antalya
+  'wa-32061': 'region_turkiye',               // Antalya Archery Centre
+  'wa-31744': 'region_uae',                   // Dubai Club for People of Determination
+  'wa-31278': 'region_uae',                   // Khorfakkan Club for the Disabled, Sharjah
+  'wa-32072': 'region_elsalvador',            // Polideportivo Ciudad Merliot, El Salvador
+  'wa-31868': 'region_lithuania',             // LSC Sports Complex, Druskininkai
+  'wa-21983': 'region_senegal',               // Abdoulaye Wade Stadium, Diamniadio (Dakar)
+  'wa-31433': 'region_iraq',                  // Sulaymaniyah Sport Club, Iraq
+  'wa-31555': 'region_goldcoast',             // Gold Coast Performance Centre
+  'wa-31869': 'region_slovenia', 'wa-31870': 'region_slovenia', // Stadion prijateljstva Mekinje, Kamnik
+  'wa-22777': 'region_tottori',               // Tottori Prefectural Gymnasium (indoor)
+  'wa-27792': 'region_cheongju',              // Kim Soo-Nyung Archery Field, Cheongju
+};
 function vShoot(id){
   if (typeof pcIsPrivateId === 'function' && pcIsPrivateId(id)) {
     const p = typeof pcById === 'function' ? pcById(id) : null;
@@ -1133,8 +1169,9 @@ function vShoot(id){
   /* Official ranking events (world_level) with no flyer/photo of their own get a generic file-photo banner
      instead of a flat gradient, so these pages don't look bare (owner 22 Nov 2026). People-free image only. */
   const needsBanner = x.world_level && !x.flyer_year;
+  const bannerPhoto = needsBanner && ((VENUE_PHOTOS[x.id] && PH[VENUE_PHOTOS[x.id]]) || (REGION_PHOTOS[x.id] && PH[REGION_PHOTOS[x.id]]));
   const heroCls = needsBanner ? 'dhero host-hero host-hero-photo' : 'dhero host-hero';
-  const heroStyle = needsBanner ? ` style="--img:url('/img/newsletter-archery-range-galston-gorge-2022.jpg');--pos:center 35%"` : '';
+  const heroStyle = needsBanner ? ` style="--img:url('/${esc(bannerPhoto ? bannerPhoto.file : 'img/newsletter-archery-range-galston-gorge-2022.jpg')}');--pos:${esc(bannerPhoto ? bannerPhoto.pos || 'center 35%' : 'center 35%')}"` : '';
   return `<section class="${heroCls}"${heroStyle}><div class="wrap host-row"><div class="host-txt">
     <a class="crumb" href="${back}" id="backLink">← ${I ? esc(back === '#/intl/WORLD' ? 'World' : iName(back.split('/')[2])) + ' events' : 'All events'}</a>
     <div class="tags">${I ? `<span class="tag ctry">${flag(x.iso2)} ${esc(x.country_name || 'International')}</span>` : ''}${catTag(x)}${isShoot(x) ? tagHtml(t) : ''}${x.level ? `<span class="tag lvl">${esc(x.level)}</span>` : ''}</div>
