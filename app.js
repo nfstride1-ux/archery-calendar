@@ -2367,7 +2367,7 @@ function spClose(why){
 }
 async function spSubmit(e){
   e.preventDefault();
-  const em = $('#spEm').value.trim(), err = $('#spErr'), b = $('#spGo'), say = t => { err.textContent = t; err.hidden = !t; };
+  const em = $('#spEm').value.trim().toLowerCase(), err = $('#spErr'), b = $('#spGo'), say = t => { err.textContent = t; err.hidden = !t; };
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { say('Please enter a valid email address.'); $('#spEm').focus(); return; }
   if (!AUTH.client) { say('Sign-in is not available right now. Please try again in a moment.'); return; }
   say(''); b.disabled = true; const lbl = b.querySelector('span'); lbl.textContent = 'Sending…';
@@ -2451,7 +2451,7 @@ function cardsAcctPanel(){
 function bindAccount(){
   const busy = (b, t) => { if (b) { b.disabled = true; b.dataset.t = b.textContent; b.textContent = t; } };
   const f = $('#signin');
-  if (f) f.onsubmit = async e => { e.preventDefault(); const em = $('#em').value.trim(), b = f.querySelector('button');
+  if (f) f.onsubmit = async e => { e.preventDefault(); const em = $('#em').value.trim().toLowerCase(), b = f.querySelector('button');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { AUTH.msg = 'Please enter a valid email address.'; return softRenderForce(); }
     busy(b, 'Sending…'); AUTH.msg = '';
     const {error} = await AUTH.client.auth.signInWithOtp({email: em, options: {emailRedirectTo: redirectUrl(), shouldCreateUser: true}});
