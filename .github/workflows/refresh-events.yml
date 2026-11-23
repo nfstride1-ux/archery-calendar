@@ -1,8 +1,9 @@
 # Refresh the public event JSON and commit it only when the file changed,
 # so GitHub Pages redeploys when there is new data and not on an empty run.
-# Daily: every implemented source. Every 6 hours: World Archery, and only during
-# its season (the script exits without writing outside that season).
-# No secrets. Archery GB and Archery NZ are not fetched.
+# Daily: every implemented source, then official World Archery medal results for
+# wa-<CompId> events that are over (sources/fetch_wa_results.py). Every 6 hours:
+# World Archery, and only during its season (the script exits without writing
+# outside that season). No secrets. Archery GB and Archery NZ are not fetched.
 name: Refresh event data
 
 on:
@@ -51,10 +52,14 @@ jobs:
           fi
           python3 tools/build_public.py "${args[@]}"
 
+      - name: Fetch World Archery results
+        if: ${{ github.event.schedule != '20 */6 * * *' }}
+        run: python3 sources/fetch_wa_results.py
+
       - name: Commit the JSON if it changed
         run: |
           set -euo pipefail
-          git add -- data/events.json data/intl.json
+          git add -- data/events.json data/intl.json data/results.json data/results
           if git diff --cached --quiet; then
             echo "No JSON change. Pages will not redeploy."
             exit 0
