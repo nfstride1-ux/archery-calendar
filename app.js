@@ -1233,6 +1233,8 @@ function vShoot(id){
   </div>`;
 }
 function bindShoot(id){
+  const bl = $('#backLink');
+  if (bl && CALBACK) { bl.href = CALBACK; bl.addEventListener('click', e => { e.preventDefault(); history.back(); }); }
   const rt = $('#resTables'); if (rt) fetch('data/results/' + id.replace(/[^A-Za-z0-9_.-]/g, '_') + '.json').then(r => r.json()).then(j => { RES[id].groups = j.groups; rt.innerHTML = resTables(RES[id], 2); if (/[?&]r=1/.test(location.hash)) { const b = $('#results'); if (b) b.scrollIntoView({block: 'start'}); } }).catch(() => { rt.innerHTML = '<p class="note">Couldn\'t load the scores – use the link below.</p>'; });
   if (/[?&]r=1/.test(location.hash)) setTimeout(() => { const r = $('#results'); if (r) r.scrollIntoView({block: 'start'}); }, 30);
   const sb = $('#saveBtn'); if (sb) sb.onclick = () => toggleSave(id);
@@ -1340,7 +1342,7 @@ function vCalendar(){
   ${up.length ? `<button class="btn block" id="icsAll">▦ Export all to phone calendar (.ics)</button>` : `<div class="empty">Nothing saved yet. Tap ☆ on events in <a href="#/browse">Find events</a>.</div>`}</div>`;
 }
 function bindCalendar(){
-  document.querySelectorAll('.grid [data-day]').forEach(c => { c.onclick = () => { const k = c.dataset.day; if (k < iso(today()) && !(CSHOOT[k] || []).length) { const evs = [...(dayMine[k] || []), ...(followed().length ? folOnDay(k) : [])].filter((x, i, a) => a.findIndex(y => y.id === x.id) === i); if (evs.length === 1) { location.hash = '#/shoot/' + encodeURIComponent(evs[0].id) + '?r=1'; return; } } CD = CD === k ? '' : k; render(); const p = $('#dayPanel'); if (p) p.scrollIntoView({block: 'nearest', behavior: 'smooth'}); };
+  document.querySelectorAll('.grid [data-day]').forEach(c => { c.onclick = () => { const k = c.dataset.day; const evs = [...(dayMine[k] || []), ...(followed().length ? folOnDay(k) : [])].filter((x, i, a) => a.findIndex(y => y.id === x.id) === i); if (evs.length === 1 && !(CSHOOT[k] || []).length) { openShootFromCal(evs[0].id, k < iso(today()) || isPast(evs[0])); return; } CD = CD === k ? '' : k; render(); const p = $('#dayPanel'); if (p) p.scrollIntoView({block: 'nearest', behavior: 'smooth'}); };
     c.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); c.click(); } }; });
   const dx = $('#dpX'); if (dx) dx.onclick = () => { CD = ''; render(); };
   const df = $('#dpFind'); if (df) df.onclick = () => { Object.assign(BF, {day: df.dataset.day, state: df.dataset.st || '', q: '', disc: '', cat: '', ost: '', club: '', clubId: '', mc: false, scope: 'all', past: false, limit: 60}); };
@@ -1534,7 +1536,7 @@ function monthCal(key, list, row, o = {}){
     const k = iso(new Date(y, m - 1, d)), ev = byDay[k] || [], cls = `mc-c${ev.length ? ' has' : ''}${k === tk ? ' t' : ''}${st.d === k ? ' sel' : ''}${ev.length && ev.every(past) ? ' done' : ''}`;
     const hosts = ev.length ? dayHosts(ev) : null;
     const lbl = `${d} ${MONL[m - 1]}${ev.length ? `: ${ev.length} event${ev.length > 1 ? 's' : ''} – ${ev.slice(0, 4).map(x => x.name).join(', ')}${ev.length > 4 ? '…' : ''}${hosts.names.length ? ` (host${hosts.names.length > 1 ? 's' : ''}: ${hosts.names.join(', ')})` : ''}` : ', no events'}`;
-    g += ev.length ? `<button type="button" class="${cls}" data-mcd="${k}" aria-pressed="${st.d === k}" aria-label="${esc(lbl)}">${hosts.html}<span class="mc-n">${d}</span>${ev.length > 1 ? `<span class="mc-cnt" aria-hidden="true">${ev.length}</span>` : ''}<span class="mc-evs" aria-hidden="true">${ev.slice(0, 3).map(x => `<span>${esc(x.name)}</span>`).join('')}${ev.length > 3 ? `<span class="mc-more">+${ev.length - 3} more</span>` : ''}</span></button>`
+    g += ev.length ? `<button type="button" class="${cls}" data-mcd="${k}"${ev.length === 1 ? ` data-mcid="${esc(ev[0].id)}"` : ''} aria-pressed="${st.d === k}" aria-label="${esc(lbl)}">${hosts.html}<span class="mc-n">${d}</span>${ev.length > 1 ? `<span class="mc-cnt" aria-hidden="true">${ev.length}</span>` : ''}<span class="mc-evs" aria-hidden="true">${ev.slice(0, 3).map(x => `<span>${esc(x.name)}</span>`).join('')}${ev.length > 3 ? `<span class="mc-more">+${ev.length - 3} more</span>` : ''}</span></button>`
       : `<div class="${cls}"><span class="mc-n">${d}</span></div>`;
   }
   const inM = dated.filter(x => mcDays(x).some(k => k.slice(0, 7) === st.m)), dayL = st.d && st.d.slice(0, 7) === st.m ? (byDay[st.d] || []) : null;
@@ -1553,13 +1555,30 @@ function monthCal(key, list, row, o = {}){
       ${!inM.length ? `<p class="mc-jump">${nextM ? `<button type="button" class="btn gold" data-mcgo="${nextM}">Next events: ${mcLabel(nextM)} ›</button>` : ''}${prevM && !nextM ? `<button type="button" class="btn alt" data-mcgo="${prevM}">‹ Last events: ${mcLabel(prevM)}</button>` : ''}${!nextM && !prevM ? '<span class="note">No events match these filters.</span>' : ''}</p>`
         : nextM ? `<p class="mc-jump"><button type="button" class="btn alt" data-mcgo="${nextM}">Next: ${mcLabel(nextM)} ›</button></p>` : ''}</div></section>`;
 }
+/* Open a shoot from a calendar day (hash history so one Back press returns).
+   Save scroll before setting the hash: changing location.hash can jump the
+   window to the top before the hashchange handler runs. */
+let CALBACK = '';
+function rememberCalScroll(){
+  const h = location.hash || '#/home';
+  if (!h.startsWith('#/shoot/')) IBACK[h] = scrollY;
+}
+function openShootFromCal(id, past){
+  CALBACK = location.hash || '#/home';
+  rememberCalScroll();
+  location.hash = '#/shoot/' + encodeURIComponent(id) + (past ? '?r=1' : '');
+}
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('a[href^="#/shoot/"]');
+  if (a) rememberCalScroll();
+}, true);
 function bindMcal(re){
   re = re || (() => { const y = scrollY; render(); scrollTo(0, y); });
   document.querySelectorAll('.mcal').forEach(w => { const st = MCAL[w.dataset.mck]; if (!st) return;
     const go = m => { st.m = m; st.d = ''; re(); const t = $(`.mcal[data-mck="${CSS.escape(w.dataset.mck)}"] .mc-nav`); if (t && t.getBoundingClientRect().top < 0) t.scrollIntoView({block: 'start'}); };
     w.querySelectorAll('[data-mcm]').forEach(b => b.onclick = () => go(mcAdd(st.m, +b.dataset.mcm)));
     w.querySelectorAll('[data-mcgo]').forEach(b => b.onclick = () => go(b.dataset.mcgo));
-    w.querySelectorAll('[data-mcd]').forEach(b => b.onclick = () => { st.d = st.d === b.dataset.mcd ? '' : b.dataset.mcd; re(); const l = $(`.mcal[data-mck="${CSS.escape(w.dataset.mck)}"] .mcl-list`); if (l && st.d && l.getBoundingClientRect().top > innerHeight - 80) l.scrollIntoView({block: 'start', behavior: 'smooth'}); });
+    w.querySelectorAll('[data-mcd]').forEach(b => b.onclick = () => { if (b.dataset.mcid) { const ev = BYID[b.dataset.mcid]; openShootFromCal(b.dataset.mcid, ev && isPast(ev)); return; } st.d = st.d === b.dataset.mcd ? '' : b.dataset.mcd; re(); const l = $(`.mcal[data-mck="${CSS.escape(w.dataset.mck)}"] .mcl-list`); if (l && st.d && l.getBoundingClientRect().top > innerHeight - 80) l.scrollIntoView({block: 'start', behavior: 'smooth'}); });
   });
 }
 /* One event line under the grid: date, name, where, discipline, badges. Tap opens the event page. */
@@ -3533,11 +3552,13 @@ function bindNotFound(){ const f = $('#nfSearch'); if (!f) return; f.onsubmit = 
 /* Friendly aliases for links people type or share. */
 const ROUTE_ALIAS = {find: '#/browse', events: '#/browse', international: '#/intl', world: '#/intl/world', 'my-events': '#/calendar', myevents: '#/calendar', 'whats-new': '#/whatsnew', newsletter: '#/news', updates: '#/whatsnew', nearme: '#/near', 'near-me': '#/near', nearby: '#/near', 'clubs-near-me': '#/near'};
 const KNOWN_PAGES = ['home', 'browse', 'shoot', 'calendar', 'entries', 'settings', 'advertise', 'credits', 'privacy', 'fans', 'account', 'admin', 'cards', 'fix', 'submit', 'calendars', 'club', 'clubs', 'contact', 'intl', 'import', 'whatsnew', 'near', 'search', 'news'];
+try { history.scrollRestoration = 'manual'; } catch (e) {}
 function route(){
   const h = location.hash || '#/home', last = route.last; route.last = h;
-  if (last && last.startsWith('#/intl')) IBACK[last] = scrollY;
+  // Keep a pre-saved calendar scroll if the hash change already jumped to the top.
+  if (last && (scrollY > 0 || IBACK[last] == null || last.startsWith('#/shoot/'))) IBACK[last] = scrollY;
   render();
-  window.scrollTo(0, h.startsWith('#/intl') && last && last.startsWith('#/shoot/') && IBACK[h] ? IBACK[h] : 0); gcPage(); spNav(); }
+  window.scrollTo(0, last && last.startsWith('#/shoot/') && IBACK[h] != null ? IBACK[h] : 0); gcPage(); spNav(); }
 function render(){
   const h0 = location.hash || '#/home', h = h0.split('?')[0], HQ = new URLSearchParams(h0.split('?')[1] || ''), [, p, arg] = h.split('/'), v = $('#view');
   if (ROUTE_ALIAS[p]) { location.replace(ROUTE_ALIAS[p] + (h0.includes('?') ? '?' + h0.split('?')[1] : '')); return; }
