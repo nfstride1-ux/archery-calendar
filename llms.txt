@@ -2,7 +2,7 @@
 
 > Archery Calendars (archerycalendars.com) is a free calendar of archery events and competitions: field, 3D, target and indoor. It covers Australia (Archery Australia, the Australian Bowhunters Association (ABA), Archery WA, the state archery associations and club shoots in every state and territory) plus the USA, Denmark, New Zealand, Canada, Great Britain and many other countries, and world events such as the World Cup and World Championships. Made by an archer, for archers.
 
-Currently 1627 upcoming events are listed (1106 in Australia). Data updated 2026-11-24.
+Currently 1321 upcoming events are listed (800 in Australia). Data updated 2026-11-24.
 
 Each event shows its dates, venue, discipline and organiser, with a link to the organiser's entry page and flyer. Event details come from organisers' public calendars, flyers and club submissions. Always confirm dates and entry details with the organiser. The site does not publish archers' personal contact details or scores in these pages.
 
@@ -46,4 +46,3 @@ Each event shows its dates, venue, discipline and organiser, with a link to the 
 - The calendar itself is a JavaScript app; the pages listed above are plain HTML built from the same data every time it changes.
 - Event times are local to the venue. Where dates are not yet confirmed the page says so.
 - Clubs and organisers can add or correct an event with "Submit an event" in the app, or send their whole calendar in any format (PDF, photo, spreadsheet, Word file, link or text).
-- Clubs can send a message or their club logo at https://archerycalendars.com/contact/. Logos are added to that club's events after a short check.

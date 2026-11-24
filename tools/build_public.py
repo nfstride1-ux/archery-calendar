@@ -967,6 +967,161 @@ def ad_same_qre(feed_name, event_name):
     return any(kind in feed_l and kind in event_l for kind in AD_QRE_KIND)
 
 
+
+def ad_norm_title(name):
+    return re.sub(r'\s+', ' ', (name or '').strip().lower())
+
+
+def ad_place_key(ev):
+    if ev.get('club_id'):
+        return 'c:' + ev['club_id']
+    return 'l:' + ad_norm_title(ev.get('location') or ev.get('host') or ev.get('org') or '')
+
+
+def ad_listed_name(ev, by_id):
+    """Event title with the trailing club name taken off, for token comparison.
+
+    The calendar stores '72 Arrows - Night Shoot – Kalamunda Governor Stirling Archers'.
+    The feed's raw name is just '72 Arrows - Night Shoot'. Club words in the stored
+    title would otherwise dilute Jaccard overlap below the match threshold.
+    """
+    text = plain_title(ev.get('name') or '')
+    labels = [ev.get('org') or '', ev.get('host') or '', ev.get('location') or '']
+    named = (by_id or {}).get(ev.get('club_id') or '')
+    if named:
+        labels.append(named)
+    for lab in labels:
+        lab = plain_title(ad_public_place(lab) or lab)
+        if not lab or len(lab) < 2:
+            continue
+        text = re.sub(r'(?:\s+[-–—]\s*)' + re.escape(lab) + r'\s*$', '', text, flags=re.I)
+    return text.strip() or (ev.get('name') or '')
+
+
+def ad_copy_id(eid):
+    """True when the id is a later copy: ad-...-2026-11-26-90817-2."""
+    return bool(re.search(r'-\d{4}-\d{2}-\d{2}-\d+-\d{1,2}$', eid or ''))
+
+
+def ad_feed_id_of(ev):
+    m = re.search(r'-\d{4}-\d{2}-\d{2}-(\d+)(?:-\d{1,2})?$', ev.get('id') or '')
+    return m.group(1) if m else None
+
+
+def ad_richness(ev):
+    score = 0
+    for field, weight in (
+        ('flyer_url', 20), ('flyer_web', 16), ('flyer_web_sm', 8),
+        ('registration_url', 8), ('start_times', 4), ('notes', 2),
+        ('rounds', 2), ('fee', 1), ('source_url', 1),
+    ):
+        if ev.get(field):
+            score += weight
+    if ev.get('id') and not ad_copy_id(ev.get('id')):
+        score += 40
+    return score
+
+
+AD_FILL = (
+    'flyer_url', 'flyer_web', 'flyer_web_sm', 'flyer_source_url', 'flyer_source_name',
+    'flyer_kind', 'flyer_label', 'flyer_org', 'flyer_year', 'flyer_extract',
+    'flyer_priority', 'flyer_is_current', 'flyer_is_pdf', 'flyers_more',
+    'registration_url', 'registration_url_kind', 'registration_url_source',
+    'registration_url_verified', 'registration_opens', 'start_times', 'notes',
+    'fee', 'rounds', 'entry_close_date', 'contact', 'source_url',
+)
+
+
+def ad_merge_into(keeper, other):
+    for field in AD_FILL:
+        if not keeper.get(field) and other.get(field):
+            keeper[field] = other[field]
+
+
+def ad_same_record(a, b):
+    """True when a and b are copies of one shoot, not two sessions on the same day."""
+    if not a or not b:
+        return False
+    ua, ub = ad_event_url_key(a), ad_event_url_key(b)
+    da, db = a.get('start_date') or '', b.get('start_date') or ''
+    if ua and ub and ua == ub and da == db:
+        return True
+    if not (da and da == db and ad_norm_title(a.get('name')) == ad_norm_title(b.get('name')) and ad_place_key(a) == ad_place_key(b)):
+        return False
+    ta, tb = (a.get('start_times') or '').strip(), (b.get('start_times') or '').strip()
+    if ua and ub and ua != ub and ta and tb and ta != tb:
+        return False
+    return True
+
+
+def ad_event_url_key(ev):
+    """A source URL that identifies one shoot, not a shared calendar or club homepage."""
+    url = (ev.get('source_url') or '').strip().split('#')[0].rstrip('/').lower()
+    if not url:
+        return None
+    if 'archersdiary.com' in url and re.search(r'[?&]id=', url):
+        return url
+    if re.search(r'worldarchery\.sport/competition/\d+$', url):
+        return url
+    return None
+
+
+def collapse_duplicate_events(events):
+    """One record per identical Archer's Diary shoot. Keep the richest (flyer, link, times).
+
+    Same event-specific diary URL and date, or (for diary rows) the same title, date
+    and club. Two sessions that genuinely differ — morning vs afternoon, 12-target vs
+    24-target, or different start times with different diary URLs — stay separate.
+    A shared calendar or club homepage is not a unique event URL, so those are ignored.
+    """
+    parent = list(range(len(events)))
+
+    def find(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    def union(i, j):
+        a, b = find(i), find(j)
+        if a != b:
+            parent[b] = a
+
+    buckets = {}
+    for i, ev in enumerate(events):
+        url = ad_event_url_key(ev)
+        day = ev.get('start_date') or ''
+        if url and day:
+            buckets.setdefault(('src', url, day), []).append(i)
+        if ad_owns(ev) and day and ev.get('name'):
+            buckets.setdefault(('title', ad_norm_title(ev.get('name')), day, ad_place_key(ev)), []).append(i)
+    for key, idxs in buckets.items():
+        if len(idxs) < 2:
+            continue
+        if key[0] == 'title':
+            urls = {(events[i].get('source_url') or '').strip() for i in idxs if (events[i].get('source_url') or '').strip()}
+            times = {(events[i].get('start_times') or '').strip() for i in idxs if (events[i].get('start_times') or '').strip()}
+            if len(urls) > 1 and len(times) > 1:
+                continue
+        for j in idxs[1:]:
+            union(idxs[0], j)
+    groups = {}
+    for i in range(len(events)):
+        groups.setdefault(find(i), []).append(i)
+    keep, drop = set(), set()
+    for idxs in groups.values():
+        if len(idxs) == 1:
+            keep.add(idxs[0])
+            continue
+        best = max(idxs, key=lambda i: (ad_richness(events[i]), -i))
+        keep.add(best)
+        for i in idxs:
+            if i != best:
+                ad_merge_into(events[best], events[i])
+                drop.add(i)
+    return [ev for i, ev in enumerate(events) if i not in drop]
+
+
 def ad_score(item, ev, by_id):
     try:
         start = dt.date.fromisoformat(ev.get('start_date') or '')
@@ -988,7 +1143,7 @@ def ad_score(item, ev, by_id):
     if my_state and ev_state and my_state != ev_state and not same:
         return 0
     raw_name = item.get('raw_name') or item['title']
-    mine_t, their_t = ad_tokens(raw_name), ad_tokens(ev.get('name') or '')
+    mine_t, their_t = ad_tokens(raw_name), ad_tokens(ad_listed_name(ev, by_id))
     overlap = jaccard(mine_t, their_t)
     distinctive = (mine_t & their_t) - AD_GENERIC
     # The club's own words don't count as agreement about which shoot it is.
@@ -1014,15 +1169,33 @@ def ad_score(item, ev, by_id):
 
 
 def ad_match(item, events, by_id):
-    best, best_score, second = None, 0, 0
+    """Prefer an exact diary URL or feed id, then the fuzzy score.
+
+    Copies of the same shoot (same URL, or same title+date+club) do not compete
+    with each other, so a second listed copy cannot block a rematch.
+    """
+    url = ad_event_url_key({'source_url': item.get('url')})
+    start = item.get('start')
+    if url:
+        hits = [ev for ev in events if ad_event_url_key(ev) == url and ev.get('start_date') == start]
+        if hits:
+            return max(hits, key=ad_richness)
+    fid = item.get('feed_id')
+    if fid is not None and str(fid) not in ('', 'None'):
+        hits = [ev for ev in events if ad_feed_id_of(ev) == str(fid) and ev.get('start_date') == start]
+        if hits:
+            return max(hits, key=ad_richness)
+    best, best_score, second, second_ev = None, 0, 0, None
     for ev in events:
         score = ad_score(item, ev, by_id)
         if score > best_score:
-            second = best_score
+            if not (best and ad_same_record(best, ev)):
+                second, second_ev = best_score, best
             best, best_score = ev, score
         elif score > second:
-            second = score
-    if best and best_score >= 0.5 and best_score > second + 0.02:
+            if not (best and ad_same_record(best, ev)):
+                second, second_ev = score, ev
+    if best and best_score >= 0.5 and (best_score > second + 0.02 or (second_ev and ad_same_record(best, second_ev))):
         return best
     return None
 
@@ -1129,7 +1302,30 @@ def ad_dup_rank(item):
 
 
 def ad_dedupe(items):
-    """One row when the same club lists the same day twice under names that differ only by a day number or a Shoot suffix."""
+    """One row when the same club lists the same day twice under names that differ only by a day number or a Shoot suffix.
+
+    Exact copies (the same diary URL or feed id on the same day) are dropped first.
+    """
+    exact, exact_order, dropped = {}, [], []
+    slim = []
+    for item in items:
+        ekey = None
+        if item.get('url') and 'id=' in str(item.get('url')):
+            ekey = ('url', item['url'], item.get('start'))
+        elif item.get('feed_id') is not None:
+            ekey = ('fid', str(item['feed_id']), item.get('start'))
+        if not ekey:
+            slim.append(item)
+            continue
+        if ekey not in exact:
+            exact[ekey] = item
+            exact_order.append(ekey)
+        elif ad_dup_rank(item) > ad_dup_rank(exact[ekey]):
+            dropped.append(exact[ekey])
+            exact[ekey] = item
+        else:
+            dropped.append(item)
+    items = [exact[k] for k in exact_order] + slim
     buckets, order = {}, []
     for item in items:
         day = int(item['start'][8:10])
@@ -1140,7 +1336,7 @@ def ad_dedupe(items):
             buckets[key] = []
             order.append(key)
         buckets[key].append(item)
-    kept, dropped = [], []
+    kept, more = [], []
     for key in order:
         group = buckets[key]
         if len(group) == 1:
@@ -1148,8 +1344,8 @@ def ad_dedupe(items):
             continue
         best = max(group, key=ad_dup_rank)
         kept.append(best)
-        dropped.extend(other for other in group if other is not best)
-    return kept, dropped
+        more.extend(other for other in group if other is not best)
+    return kept, dropped + more
 
 
 def ad_blank_stats():
@@ -1275,6 +1471,11 @@ def refresh_archers_diary(docs, stamp, day, dry_run):
     updated_ids = set()
     for item in kept:
         match = ad_match(item, original, by_id)
+        if not match:
+            stem = re.sub(r'[^a-z0-9]+', '-', f"{item.get('club') or ''} {item['raw_name']}".lower()).strip('-')
+            stem = stem[:52].strip('-') or 'shoot'
+            base = f"ad-{stem}-{item['start']}-{item['feed_id']}"
+            match = next((ev for ev in original if ev.get('id') == base or str(ev.get('id') or '').startswith(base + '-')), None)
         label = item['state'] or 'National'
         if match:
             matched += 1
@@ -1297,10 +1498,14 @@ def refresh_archers_diary(docs, stamp, day, dry_run):
         row = stats[label]
         print(f'archers-diary: {label} matched {row["matched"]} added {row["added"]} updated {row["updated"]}', flush=True)
     if not dry_run:
+        before = len(events)
+        events = collapse_duplicate_events(events)
+        dropped = before - len(events)
+        if dropped:
+            print(f'archers-diary: collapsed {dropped} duplicate listed copies', flush=True)
         doc = docs['events'][0]
         doc['events'] = events
-        if added:
-            doc['count'] = len(events)
+        doc['count'] = len(events)
         summary = {}
         for label, row in stats.items():
             summary[label] = {k: row[k] for k in ('read', 'kept', 'matched', 'added', 'updated')}
@@ -1486,6 +1691,66 @@ def self_test():
                          'club_id': None}, set(), '2026-11-16')
     assert made['id'].startswith('ad-') and made['members_only'] is None and made['state_code'] == 'NSW'
     assert 'Smith Street' not in json.dumps(made)
+    night = {'id': 'ad-kalamunda-governor-stirling-archers-72-arrows-night-2026-11-26-90817',
+             'name': '72 Arrows - Night Shoot – Kalamunda Governor Stirling Archers',
+             'start_date': '2026-11-26', 'end_date': '2026-11-26', 'state_code': 'WA', 'country_code': 'AUS',
+             'org': 'Kalamunda Governor Stirling Archers', 'host': 'Kalamunda Governor Stirling Archers',
+             'location': 'Kalamunda Governor Stirling Archers', 'club_id': 'kgsa',
+             'source_url': 'https://www.archersdiary.com/ViewResults.aspx?id=429ea3c6-b2fe-420d-be64-6adaa55c7af6',
+             'source_name': "Archer's Diary CalendarFeed", 'registration_url': None, 'start_times': 'Practice starts at 6:30 PM'}
+    nearby = dict(night, id=night['id'].replace('11-26-90817', '11-24-90816'), start_date='2026-11-24', end_date='2026-11-24',
+                  source_url='https://www.archersdiary.com/ViewResults.aspx?id=aaaa')
+    feed_night = {'title': night['name'], 'raw_name': '72 Arrows - Night Shoot', 'club': 'Kalamunda Governor Stirling Archers',
+                  'start': '2026-11-26', 'state': 'WA', 'url': night['source_url'], 'feed_id': 90817,
+                  'registration_url': 'https://www.archersdiary.com/EventEnrol.aspx?id=429ea3c6-b2fe-420d-be64-6adaa55c7af6',
+                  'times': 'Practice starts at 6:30 PM'}
+    clubs = {'kgsa': 'Kalamunda Governor Stirling Archers'}
+    assert ad_match(feed_night, [night, nearby], clubs) is night
+    copy = dict(night, id=night['id'] + '-5', registration_url=None, start_times=None)
+    richer = dict(night, registration_url=feed_night['registration_url'])
+    assert ad_match(feed_night, [copy, richer, nearby], clubs) is richer
+    morning = {'id': 'ad-svac-morning-2026-11-21-93596', 'name': 'Club Morning 2026 11 21 – Southern Vales Archery Club',
+               'start_date': '2026-11-21', 'end_date': '2026-11-21', 'state_code': 'SA', 'country_code': 'AUS',
+               'org': 'Southern Vales Archery Club', 'host': 'Southern Vales Archery Club',
+               'location': 'Southern Vales Archery Club', 'club_id': 'southern-vales',
+               'source_url': 'https://www.archersdiary.com/ViewResults.aspx?id=morn',
+               'source_name': "Archer's Diary CalendarFeed"}
+    afternoon = dict(morning, id='ad-svac-afternoon-2026-11-21-93597',
+                     name='Club Afternoon 2026 11 21 – Southern Vales Archery Club',
+                     source_url='https://www.archersdiary.com/ViewResults.aspx?id=aftn')
+    feed_morn = {'title': morning['name'], 'raw_name': 'Club Morning 2026 11 21', 'club': 'Southern Vales Archery Club',
+                 'start': '2026-11-21', 'state': 'SA', 'url': morning['source_url'], 'feed_id': 93596}
+    feed_aftn = {'title': afternoon['name'], 'raw_name': 'Club Afternoon 2026 11 21', 'club': 'Southern Vales Archery Club',
+                 'start': '2026-11-21', 'state': 'SA', 'url': afternoon['source_url'], 'feed_id': 93597}
+    assert ad_match(feed_morn, [morning, afternoon], {}) is morning
+    assert ad_match(feed_aftn, [morning, afternoon], {}) is afternoon
+    kept = collapse_duplicate_events([copy, richer, nearby, morning, afternoon])
+    assert {e['id'] for e in kept} == {richer['id'], nearby['id'], morning['id'], afternoon['id']}
+    assert next(e for e in kept if e['id'] == richer['id']).get('registration_url') == feed_night['registration_url']
+    # A later copy with no link must not win over the unsuffixed record, and fields fill in.
+    bare = dict(night, registration_url=None)
+    later = dict(night, id=night['id'] + '-2', registration_url=feed_night['registration_url'])
+    collapsed = collapse_duplicate_events([bare, later])
+    assert len(collapsed) == 1 and collapsed[0]['id'] == night['id']
+    assert collapsed[0]['registration_url'] == feed_night['registration_url']
+    aba_a = {'id': 'aba-2026-013', 'name': 'ABA – Freds Pass Field Archers', 'start_date': '2026-05-02',
+             'source_url': 'https://www.bowhunters.org.au/aba-shoot-calendar/', 'org': 'Australian Bowhunters Association',
+             'location': 'Freds Pass'}
+    aba_b = {'id': 'aba-2026-014', 'name': 'ABA – Dead Centre Bowhunters', 'start_date': '2026-05-02',
+             'source_url': 'https://www.bowhunters.org.au/aba-shoot-calendar/', 'org': 'Australian Bowhunters Association',
+             'location': 'Alice Springs'}
+    left = collapse_duplicate_events([aba_a, aba_b])
+    assert {e['id'] for e in left} == {'aba-2026-013', 'aba-2026-014'}
+    official = {'id': 'ad-benara-official', 'name': 'Club shoot 72 Arrows – Benara Bowmen Archery Club Inc',
+                'start_date': '2026-11-28', 'club_id': 'benara-bowmen', 'location': 'Benara Bowmen Archery Club Inc',
+                'source_url': 'https://www.archersdiary.com/ViewResults.aspx?id=aaa', 'source_name': "Archer's Diary CalendarFeed",
+                'start_times': 'Practice starts at 8:00 AM'}
+    unofficial = {'id': 'ad-benara-unofficial', 'name': 'Unofficial Club shoot 72 Arrows – Benara Bowmen Archery Club Inc',
+                  'start_date': '2026-11-28', 'club_id': 'benara-bowmen', 'location': 'Benara Bowmen Archery Club Inc',
+                  'source_url': 'https://www.archersdiary.com/ViewResults.aspx?id=bbb', 'source_name': "Archer's Diary CalendarFeed",
+                  'start_times': 'Practice starts at 8:00 AM'}
+    left = collapse_duplicate_events([official, unofficial])
+    assert {e['id'] for e in left} == {'ad-benara-official', 'ad-benara-unofficial'}
     print('PASS archers diary feed keeps public shoots, matches curated rows, flags club championships')
     if not ok:
         raise SystemExit(1)

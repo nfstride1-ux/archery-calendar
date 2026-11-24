@@ -1311,7 +1311,7 @@ function mySavedEvents(){
 }
 function vCalendar(){
   setTitle('My events');
-  const mine = mySavedEvents().sort((a, b) => (a.start_date || '9999') < (b.start_date || '9999') ? -1 : 1);
+  const mine = uniqueEvents(mySavedEvents()).sort((a, b) => (a.start_date || '9999') < (b.start_date || '9999') ? -1 : 1);
   if (!CM) { const n = mine.find(x => x.start_date && !isPast(x)); const d = n ? pd(n.start_date) : today(); CM = [d.getFullYear(), d.getMonth()]; }
   const [y, m] = CM, sun = SUN_WEEK.includes(homeCode()), first = new Date(y, m, 1), start = sun ? first.getDay() : (first.getDay() + 6) % 7, dim = new Date(y, m + 1, 0).getDate();
   const byDay = {};
@@ -1520,10 +1520,32 @@ const mcLabel = m => `${MONL[+m.slice(5) - 1]} ${m.slice(0, 4)}`;
 function mcDays(x){ const out = []; if (!/^\d{4}-\d\d-\d\d$/.test(x.start_date || '')) return out; const e = pd(/^\d{4}-\d\d-\d\d$/.test(x.end_date || '') ? x.end_date : x.start_date);
   for (let d = pd(x.start_date), n = 0; d <= e && n < 62; d.setDate(d.getDate() + 1), n++) out.push(iso(d)); return out; }
 /* key: one per calendar; list: events (sorted by date); row(x): one event line; o: {sig (filters – a change jumps back to the first month with events), cc (week start), past(x), top (html above the grid, e.g. the state switcher), label} */
+/* Guard against identical diary copies in a list (same event-specific URL, or same title+date+club). Prefer the record with a flyer, entry link or start time, then the unsuffixed id. */
+function evNorm(s){ return String(s || '').trim().toLowerCase().replace(/\s+/g, ' '); }
+function evEventUrl(x){
+  const u = String(x && x.source_url || '').replace(/#.*$/, '').replace(/\/$/, '').toLowerCase();
+  return /archersdiary\.com/.test(u) && /[?&]id=/.test(u) ? u : '';
+}
+function evDupKey(x){
+  const day = x.start_date || '', src = evEventUrl(x);
+  if (src && day) return 'u|' + src + '|' + day;
+  return 't|' + evNorm(x.name) + '|' + day + '|' + (x.club_id || evNorm(x.location));
+}
+function evRicher(a, b){
+  const score = x => (x.flyer_url || x.flyer_web ? 8 : 0) + (x.registration_url ? 4 : 0) + (x.start_times ? 2 : 0) + (x.notes ? 1 : 0) + (/-\d{4}-\d{2}-\d{2}-\d+-\d{1,2}$/.test(x.id || '') ? 0 : 16);
+  return score(a) >= score(b) ? a : b;
+}
+function uniqueEvents(list){
+  const m = new Map();
+  for (const x of list) { const k = evDupKey(x), y = m.get(k); m.set(k, y ? evRicher(y, x) : x); }
+  const seen = new Set(), out = [];
+  for (const x of list) { const w = m.get(evDupKey(x)); if (!seen.has(w)) { seen.add(w); out.push(w); } }
+  return out;
+}
 function monthCal(key, list, row, o = {}){
   const st = MCAL[key] = MCAL[key] || {m: '', d: '', sig: ''};
   if (st.sig !== (o.sig || '')) Object.assign(st, {m: '', d: '', sig: o.sig || ''});
-  const dated = list.filter(x => /^\d{4}-\d\d-\d\d$/.test(x.start_date || '')), past = o.past || (x => daysTo(x.end_date || x.start_date) < 0);
+  const dated = uniqueEvents(list.filter(x => /^\d{4}-\d\d-\d\d$/.test(x.start_date || ''))), past = o.past || (x => daysTo(x.end_date || x.start_date) < 0);
   // Events longer than a week (season-long leagues, month-long postal shoots) only mark their first day, so they don't fill every square; they still appear in each month's list.
   const byDay = {}; dated.forEach(x => { const d = mcDays(x); (d.length > 7 ? d.slice(0, 1) : d).forEach(k => (byDay[k] = byDay[k] || []).push(x)); });
   const mons = [...new Set(Object.keys(byDay).map(k => k.slice(0, 7)))].sort(), tm = iso(today()).slice(0, 7);
