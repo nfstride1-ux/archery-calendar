@@ -178,9 +178,16 @@ const evPhoto = x => photo(evTheme(x));
 let LOGO = {};
 const ORG_HOST = {aba: 'Australian Bowhunters Association', 'archery-wa': 'Archery WA', 'archery-australia': 'Archery Australia', 'wa-aus': 'Archery Australia', 'world-archery': 'World Archery'};
 const hslug = n => (n || '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+function clubByName(n){
+  const raw = (n || '').replace(/\s*\(.*\)/, '').trim(); if (!raw) return null;
+  const id = hslug(raw), norm = snorm(raw);
+  return CLUBS.find(k => k.id === id || snorm(k.name) === norm || (k.aliases || []).some(a => snorm(a) === norm || hslug(a) === id)) || null;
+}
 function hostOf(x){
-  const c = CLUB[x.club_id]; if (c) return {id: c.id, name: c.name, club: true};
-  const h = (x.host || '').replace(/\s*\(.*\)/, '').trim(); if (h) return {id: hslug(h), name: h};
+  const c = CLUB[x.club_id] || clubByName(x.host) || clubByName(x.club_name) || (x.org_id === 'club-submission' ? clubByName(x.org) : null);
+  if (c) return {id: c.id, name: c.name, club: true};
+  const h = (x.host || x.club_name || (x.org_id === 'club-submission' ? x.org : '') || '').replace(/\s*\(.*\)/, '').trim();
+  if (h) return {id: hslug(h), name: h, club: true};
   return {id: x.org_id === 'wa-aus' ? 'archery-australia' : x.org_id, name: ORG_HOST[x.org_id] || x.org || 'Archery', org: true};
 }
 function initials(n){
@@ -1449,6 +1456,7 @@ function vPrivacy(){
     <li id="privClarity"><b>Microsoft Clarity:</b> we use Microsoft Clarity to see how visitors use the site (clicks and scrolling) so we can improve it; typed details are hidden. Clarity sets its own cookies (see <a href="https://privacy.microsoft.com/privacystatement" target="_blank" rel="noopener">Microsoft's privacy statement</a>).</li>
     <li>"Register / enter" and email links go straight to the organiser. Anything you send them is between you and the organiser.</li>
     <li><b>Submit an event form:</b> what a club sends us (contact name, email, phone, event details and flyer, plus the email and ID of the signed-in account that sent it) is emailed to us at ${esc(SITE.contact)} via the form service FormSubmit (formsubmit.co). When you’re signed in, the event, flyer and your details are also saved to your account on Supabase so we can review and publish it; only the event details and flyer are shown publicly once it’s live. We use it only to check and list the event. Contact details aren't published unless they're on your flyer. Ask us any time to correct or delete them.</li>
+    <li><b>Contact and club logo form:</b> a message you send on the <a href="contact/">contact page</a> (your name, email, club, the message and any logo file) is emailed to us at ${esc(SITE.contact)} via FormSubmit. We use it only to reply and, if you sent a logo, to put that logo on your club's events. We don't publish your email or the message. Ask us any time to correct or delete them.</li>
     <li><b>Send us your calendar:</b> when you send a calendar (a file, photo, link or pasted text), it is saved privately to your account on Supabase, not emailed. Only we can open it, and only to put your events on the calendar. We email ourselves a short note with a link and a count, never the contents. We publish event details only (name, date, place, club and entry link), never personal contact details or the names of anyone under 16. Your files are deleted once your events are published or turned down, and in any case after 30 days. The email address you are signed in with is kept with the upload so we can tell you when your events are live.</li>
     <li><b>Marketing emails:</b> when you sign up, there is an optional tick box to agree to marketing emails. It is never ticked for you. If you tick it, we record that you agreed, and when, with your account. You can unsubscribe at any time.</li>
     <li><b>Fans photos:</b> if you send us a photo, your name, email, the photo and its details are emailed to us via FormSubmit. We publish only approved photos with the caption and your name as credit – never your email. In a photo and want it removed? Email ${esc(SITE.contact)}.</li>
@@ -3524,7 +3532,7 @@ function vNotFound(kind, id){
 function bindNotFound(){ const f = $('#nfSearch'); if (!f) return; f.onsubmit = e => { e.preventDefault(); gsGo($('#nfq').value); }; }
 /* Friendly aliases for links people type or share. */
 const ROUTE_ALIAS = {find: '#/browse', events: '#/browse', international: '#/intl', world: '#/intl/world', 'my-events': '#/calendar', myevents: '#/calendar', 'whats-new': '#/whatsnew', newsletter: '#/news', updates: '#/whatsnew', nearme: '#/near', 'near-me': '#/near', nearby: '#/near', 'clubs-near-me': '#/near'};
-const KNOWN_PAGES = ['home', 'browse', 'shoot', 'calendar', 'entries', 'settings', 'advertise', 'credits', 'privacy', 'fans', 'account', 'admin', 'cards', 'fix', 'submit', 'calendars', 'club', 'clubs', 'intl', 'import', 'whatsnew', 'near', 'search', 'news'];
+const KNOWN_PAGES = ['home', 'browse', 'shoot', 'calendar', 'entries', 'settings', 'advertise', 'credits', 'privacy', 'fans', 'account', 'admin', 'cards', 'fix', 'submit', 'calendars', 'club', 'clubs', 'contact', 'intl', 'import', 'whatsnew', 'near', 'search', 'news'];
 function route(){
   const h = location.hash || '#/home', last = route.last; route.last = h;
   if (last && last.startsWith('#/intl')) IBACK[last] = scrollY;
@@ -3555,6 +3563,7 @@ function render(){
   else if (p === 'submit' && arg === 'bulk' && typeof bulkView === 'function') { v.innerHTML = bulkView(); bulkBind(); }
   else if (p === 'fix' || (p === 'submit' && arg === 'fix')) { v.innerHTML = vFix(decodeURIComponent(p === 'fix' ? (arg || '') : (h.split('/')[3] || ''))); bindFix(); }
   else if (p === 'submit') { v.innerHTML = vSubmit(HQ.get('country')); bindSubmit(); }
+  else if (p === 'contact') { location.replace((location.pathname.replace(/[^/]+$/, '') || '/') + 'contact/' + (location.search || '')); return; }
   else if (p === 'calendars' && arg === 'club-events') { v.innerHTML = vClubEvents(); bindClubEvents(); }
   else if (p === 'calendars' && arg === 'clubs') v.innerHTML = vClubCals();
   else if (p === 'calendars' && arg === 'club') { const id = decodeURIComponent(h.split('/')[3] || ''); v.innerHTML = vClubCal(id); bindClubCal(id); }
@@ -4023,7 +4032,7 @@ function vSubmit(country){
   const ap = subApproved();
   return `${head}<div class="wrap narrow sub">${subTabs('new')}
   <section class="panel sub-intro"><p class="sub-lead"><b>Just send your flyer.</b> That's all we need. We read it and build your event card for you.</p>
-    <p class="note sub-mode" id="s_mode">${ap ? '✓ You’re an approved submitter, so your events go live straight away.' : 'We check each flyer and put it on the calendar, usually within 48 hours. Approved clubs go live straight away.'}</p></section>
+    <p class="note sub-mode" id="s_mode">${ap ? '✓ You’re an approved submitter, so your events go live straight away.' : 'We check each flyer and put it on the calendar, usually within 48 hours. Approved clubs go live straight away.'}</p><p class="note">Want to write to us, or send your club logo so it shows on your events? Use <a href="contact/">Message us / club logo</a>.</p></section>
   <form id="subForm" data-clarity-mask="true" class="panel sub-form" method="POST" enctype="multipart/form-data" action="${esc(SITE.formEndpoint || '')}" novalidate>
     <input type="hidden" name="_subject" value="New flyer – Archery Calendar"><input type="hidden" name="known_club" value="">${acctHidden()}<input type="hidden" name="submission_id" value=""><input type="hidden" name="submission_status" value="email only (not saved to database)"><input type="hidden" name="flyer_stored" value="">
     <input type="hidden" name="_template" value="table">
@@ -4409,7 +4418,7 @@ function bindSubmit(){
 /* ---------- Corrections: #/fix and #/fix/<event id> (also reachable as #/submit/fix).
    People who can already publish (every admin in public.admins, and approved submitters / approved domains) save live.
    Everyone else still emails the correction; nothing of theirs is written to the database. ---------- */
-const subTabs = on => `<nav class="sub-tabs" aria-label="What would you like to send?"><a href="#/submit" class="sub-tab" ${on === 'new' ? 'aria-current="page"' : ''}>➕ New event</a><a href="#/fix" class="sub-tab" ${on === 'fix' ? 'aria-current="page"' : ''}>✏️ Fix an existing event</a><a href="#/submit/bulk" class="sub-tab" ${on === 'bulk' ? 'aria-current="page"' : ''}>Send your calendar</a></nav>`;
+const subTabs = on => `<nav class="sub-tabs" aria-label="What would you like to send?"><a href="#/submit" class="sub-tab" ${on === 'new' ? 'aria-current="page"' : ''}>➕ New event</a><a href="#/fix" class="sub-tab" ${on === 'fix' ? 'aria-current="page"' : ''}>✏️ Fix an existing event</a><a href="#/submit/bulk" class="sub-tab" ${on === 'bulk' ? 'aria-current="page"' : ''}>Send your calendar</a><a href="contact/" class="sub-tab" ${on === 'contact' ? 'aria-current="page"' : ''}>Message us / club logo</a></nav>`;
 const fixLabel = x => `${x.name} – ${x.start_date ? pd(x.start_date).toLocaleDateString(LOC(), {day: 'numeric', month: 'short', year: 'numeric'}) : 'date TBC'}${x.state_code || x.state ? ' – ' + (x.state_code || x.state) : ''}`;
 const fixList = () => EV.filter(x => !x.start_date || daysTo(x.end_date || x.start_date) >= -90).sort((a, b) => (a.start_date || '9') < (b.start_date || '9') ? -1 : 1);
 const fixDates = x => x ? [x.start_date, x.end_date && x.end_date !== x.start_date && x.end_date].filter(Boolean).join(' to ') : '';

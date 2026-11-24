@@ -9,6 +9,12 @@
     <image:image><image:loc>https://archerycalendars.com/img/hero-aus-archery-australia.jpg</image:loc></image:image>
   </url>
   <url>
+    <loc>https://archerycalendars.com/contact/</loc>
+    <lastmod>2026-11-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://archerycalendars.com/newsletter/</loc>
     <lastmod>2026-11-21</lastmod>
     <changefreq>weekly</changefreq>
