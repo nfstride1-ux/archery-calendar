@@ -392,6 +392,16 @@
    "source_type": "club-supplied logo (emailed by the club)",
    "kind": "club",
    "retrieved": "2026-10-26"
+  },
+  "york-and-districts-archery-club": {
+   "name": "York & Districts Archery Club",
+   "file": "img/clubs/york-and-districts-archery-club.webp",
+   "sm": "img/clubs/york-and-districts-archery-club-sm.webp",
+   "source_url": "Supplied by the club: 'YDAC Chosen Logo square.jpeg', emailed by the club on 24 Nov 2026",
+   "source_page": "Emailed to Archery Calendars on 24 Nov 2026",
+   "source_type": "club-supplied logo (emailed by the club)",
+   "kind": "club",
+   "retrieved": "2026-11-24"
   }
  }
 }
