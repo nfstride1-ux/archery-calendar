@@ -23,7 +23,7 @@ These already work. A change that breaks one of them is not done.
 - `privatecal.js` stays out of the repository.
 - Keep pull requests small.
 - Every change goes through a pull request, and the `smoke` check is green before merge.
-- **Nathe approves go-live.** Merging to `main` publishes the site. Do not merge your own pull request.
+- **Who can ship.** Jarvis is the lead and the default builder. Claude, OpenAI, and Grok Bot may also ship code. Add a signed entry to [HANDOFF.md](HANDOFF.md) using `[Jarvis]`, `[Claude]`, `[OpenAI]`, or `[Grok Bot]`. Nothing goes live without Nathe's own OK. Do not merge a pull request unless Nathe has approved that merge.
 
 Two jobs are allowed to push to `main` without a pull request, because the site already depends on them:
 
@@ -32,7 +32,7 @@ Two jobs are allowed to push to `main` without a pull request, because the site 
 
 Anything else is a pull request.
 
-When you commit, start the subject with the tag for who did the work: `[Claude]`, `[ChatGPT]`, `[Jarvis]`, `[Grok Bot]`, or `[Cursor]`.
+When you commit, start the subject with the tag for who did the work: `[Claude]`, `[ChatGPT]`, `[OpenAI]`, `[Jarvis]`, `[Grok Bot]`, or `[Cursor]`.
 
 ## Checks
 
