@@ -4,6 +4,14 @@ Read this file first. Before you stop, add a new entry at the top: who you are, 
 
 The rules for the site are in [PROJECT_RULES.md](PROJECT_RULES.md). Ideas wait in [IDEAS.md](IDEAS.md).
 
+## 25 Nov 2026, 14:25 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: branch `cursor/scoretool-delete-score`. Added `scoretool_delete_score(p_token, p_source_id)` in `supabase/scoretool_scores.sql`. The ScoreTool link secret can now remove that archer's own `score_entries` row (source `scoretool` only). Missing rows are ok. New contract test: `scripts/scoretool_delete_score_test.py`. `PROJECT_RULES.md` updated. No app JavaScript, HTML or CSS was changed, so this should not clash with the in-progress "Scores I shot" dropdown work (branch `cursor/stl-scores-dropdown`, JAC-20), except both will add a HANDOFF entry at the top.
+- Half-done: PR only; not merged. The new function does nothing for users until it is run in the live Supabase SQL Editor (project sllsqpfqwckwtljzjxli) and the matching ScoreTool PR (`cursor/cal-delete-sync`) is live. Nothing goes live until Nathe says so.
+- Next: Run the new statements from `supabase/scoretool_scores.sql` (the `scoretool_delete_score` function and its grant/revoke) in the SQL Editor, then merge only when Nathe says go.
+- Decision: The calendar keeps its own copy of each sent score in `score_entries`. There is no tombstone table; deletion is a real delete of that source_id, driven by ScoreTool on the next sync.
+
 ## 2026-11-25 11:26 AWST — Grok Bot
 
 - **Who:** Grok Bot.
