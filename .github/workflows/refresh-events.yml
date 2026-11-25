@@ -50,16 +50,17 @@ jobs:
             args+=(--source "${SOURCE}")
           fi
           python3 tools/build_public.py "${args[@]}"
+          python3 scripts/build_seo.py
 
       - name: Commit the JSON if it changed
         run: |
           set -euo pipefail
-          git add -- data/events.json data/intl.json
+          git add -- data/events.json data/intl.json events/ australia/ organisers/ countries/ llms.txt sitemap.xml
           if git diff --cached --quiet; then
             echo "No JSON change. Pages will not redeploy."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Refresh event data"
+          git commit -m "Refresh event data and pages"
           git push
