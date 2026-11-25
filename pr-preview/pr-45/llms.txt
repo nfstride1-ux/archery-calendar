@@ -1,0 +1,48 @@
+# Archery Calendars
+
+> Archery Calendars (archerycalendars.com) is a free calendar of archery events and competitions: field, 3D, target and indoor. It covers Australia (Archery Australia, the Australian Bowhunters Association (ABA), Archery WA, the state archery associations and club shoots in every state and territory) plus the USA, Denmark, New Zealand, Canada, Great Britain and many other countries, and world events such as the World Cup and World Championships. Made by an archer, for archers.
+
+Currently 1362 upcoming events are listed (840 in Australia). Data updated 2026-11-25.
+
+Each event shows its dates, venue, discipline and organiser, with a link to the organiser's entry page and flyer. Event details come from organisers' public calendars, flyers and club submissions. Always confirm dates and entry details with the organiser. The site does not publish archers' personal contact details or scores in these pages.
+
+## Main pages
+
+- [Archery Calendars](https://archerycalendars.com/): the calendar app. Search and filter events by country, state, discipline and organiser, save events, get reminders before entries close, find clubs near you, and score rounds with ScoreTool.
+- [Archery events in Australia](https://archerycalendars.com/australia/): all Australian events, by state, discipline and organiser
+- [Archery events in New South Wales](https://archerycalendars.com/australia/new-south-wales/)
+- [Archery events in Victoria](https://archerycalendars.com/australia/victoria/)
+- [Archery events in Queensland](https://archerycalendars.com/australia/queensland/)
+- [Archery events in Western Australia](https://archerycalendars.com/australia/western-australia/)
+- [Archery events in South Australia](https://archerycalendars.com/australia/south-australia/)
+- [Archery events in Tasmania](https://archerycalendars.com/australia/tasmania/)
+- [Archery events in Australian Capital Territory](https://archerycalendars.com/australia/australian-capital-territory/)
+- [Archery events in Northern Territory](https://archerycalendars.com/australia/northern-territory/)
+- [Field archery events in Australia](https://archerycalendars.com/australia/field/)
+- [3D archery events in Australia](https://archerycalendars.com/australia/3d/)
+- [Indoor archery events in Australia](https://archerycalendars.com/australia/indoor/)
+- [Target archery events in Australia](https://archerycalendars.com/australia/target/)
+- [Australian Bowhunters Association (ABA) events](https://archerycalendars.com/organisers/aba/)
+- [Archery Australia events](https://archerycalendars.com/organisers/archery-australia/)
+- [Archery WA (Archery Western Australia) events](https://archerycalendars.com/organisers/archery-wa/)
+- [Traditional Archery Australia events](https://archerycalendars.com/organisers/taa/)
+- [Archery events by country](https://archerycalendars.com/countries/): events outside Australia
+- [Archery events in the United States](https://archerycalendars.com/countries/united-states/)
+- [Archery events in Denmark](https://archerycalendars.com/countries/denmark/)
+- [Archery events in New Zealand](https://archerycalendars.com/countries/new-zealand/)
+- [Archery events in Canada](https://archerycalendars.com/countries/canada/)
+- [Archery events in Great Britain](https://archerycalendars.com/countries/great-britain/)
+- [Newsletter](https://archerycalendars.com/newsletter/): event news and results round-ups
+- [Dakar 2026: Australia's results and the medal winners](https://archerycalendars.com/newsletter/dakar-2026-results/): final results from the Dakar 2026 Youth Olympic Games, including Australia and the medal winners
+- [Dakar 2026: Brock Penna sixth and Ellen Martini seventh for Australia](https://archerycalendars.com/newsletter/dakar-2026-yog/): Australia's results at the Dakar 2026 Youth Olympic Games
+- [Weekly round-up, Australia and USA, 3 November 2026](https://archerycalendars.com/newsletter/au-us-weekly-2026-11-03/): Archery WA QREs, Hobart nationals and Para Pan Am results, NAST shoots, USA Archery Indoor Nationals and Dakar 2026
+- [US indoor season starts](https://archerycalendars.com/newsletter/usa-indoor-season-2026/): NAST shoots, USA Archery Indoor Nationals and the Rushmore Rumble, November 2026
+- [Hobart nationals wrap-up](https://archerycalendars.com/newsletter/hobart-nationals-2026/): the 2026 National Target and Para Championships in Hobart
+- [Yankton world championships wrap-up](https://archerycalendars.com/newsletter/yankton-world-championships-2026/): World Archery Field and 3D Championships 2026, Yankton, South Dakota
+
+## Notes for AI and search tools
+
+- Each event has its own page at https://archerycalendars.com/events/<id>/ with dates, venue town, discipline, organiser, entry and flyer links, and schema.org Event data where the dates and venue are confirmed.
+- The calendar itself is a JavaScript app; the pages listed above are plain HTML built from the same data every time it changes.
+- Event times are local to the venue. Where dates are not yet confirmed the page says so.
+- Clubs and organisers can add or correct an event with "Submit an event" in the app, or send their whole calendar in any format (PDF, photo, spreadsheet, Word file, link or text).
