@@ -1,0 +1,21 @@
+const C='archcal-lkgo1715';
+const CORE=['./','./index.html','./styles.css','./config.js','./sync.js','./searchbox.js','./app.js','./scoretool.js','./nearme.js','./gsearch.js','./bulk.js','./help.js','./weather.js','./whatsnew.js','./manifest.webmanifest','./data/events.json','./data/submission_overrides.json','./data/organisations.json','./data/fans.json','./data/clubs.json','./data/club_logos.json','./data/club_coords.json','./data/intl_countries.json','./data/rounds.json','./img/logos/olympic-rings.svg','./img/logos/paralympic-agitos.svg','./data/results.json','./img/logos/aba-logo-32.png','./img/logos/aba-logo-64.png','./img/logos/aba-logo-32.webp','./img/logos/aba-logo-64.webp','./icons/icon-192.png','./icons/icon-512.png','./icons/icon-512-maskable.png','./icons/apple-touch-icon.png','./icons/icon.svg','./favicon-32.png','./favicon-16.png','./favicon.ico',
+ './img/credits.json','./fonts/Inter-var.woff2','./fonts/BarlowCondensed-SemiBold.woff2','./fonts/BarlowCondensed-Bold.woff2','./fonts/BarlowCondensed-ExtraBold.woff2',
+ './img/hero-aus-archery-australia.jpg','./img/hero-aus-archery-australia-sm.jpg','./img/field-aus-team-yankton-2026.jpg','./img/field-aus-team-yankton-2026-sm.jpg','./img/3d-longbow-2026.jpg','./img/3d-longbow-2026-sm.jpg','./img/aba-field-owl-2026.jpg','./img/aba-field-owl-2026-sm.jpg','./img/indoor-hall.jpg','./img/indoor-hall-sm.jpg','./img/target-face.jpg','./img/target-face-sm.jpg','./img/come-and-try-poster.jpg','./img/come-and-try-poster-sm.jpg'];
+// All paths are relative to the service worker, so it works at / and under a project subpath like /archery-calendar/.
+// cache:'reload' so install never copies a stale file out of the 10-minute HTTP cache.
+self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(CORE.map(u=>new Request(u,{cache:'reload'})))));self.skipWaiting();});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))));self.clients.claim();});
+// Network-first for pages, code and data (the site keeps evolving); cache-first for photos, fonts and flyers.
+self.addEventListener('fetch',e=>{
+  const u=new URL(e.request.url); if(u.origin!==location.origin||e.request.method!=='GET') return;
+  if(/\.(mp4|webm)$/i.test(u.pathname)) return;   // video streams from the network with range requests; never cached or precached
+  const media=/\/(img|fonts|icons|flyers)\//.test(u.pathname)&&!/\.json$/.test(u.pathname);   // img/credits.json is data: network-first
+  if(!media){
+    // cache:'no-cache' makes the browser revalidate with GitHub Pages, so a new app.js is never hidden behind the 10-min HTTP cache.
+    e.respondWith(fetch(u.href,{cache:'no-cache',credentials:'same-origin'}).then(r=>{if(r.ok){const cp=r.clone();caches.open(C).then(c=>c.put(e.request,cp));}return r;})
+      .catch(()=>caches.match(e.request,{ignoreSearch:true}).then(r=>r||caches.match('./index.html'))));
+  } else e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(n=>{if(n.ok){const cp=n.clone();caches.open(C).then(c=>c.put(e.request,cp));}return n;})));
+});
+self.addEventListener('notificationclick',e=>{e.notification.close();const id=e.notification.data&&e.notification.data.id;
+  e.waitUntil(clients.matchAll({type:'window'}).then(ws=>{const url='./index.html#/shoot/'+(id||'');if(ws[0]){ws[0].navigate(url);return ws[0].focus();}return clients.openWindow(url);}));});
