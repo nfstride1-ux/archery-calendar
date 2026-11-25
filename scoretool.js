@@ -57,6 +57,20 @@ function stlBlock(L, id, title){   // the day's own scores (with photos), shown 
 function stlRow(r){ const ev = stlEventFor(r.shot_date, r);
   return `<li class="dp-row stl-row">${stlThumb(r) ? stlPhotoBtn(r) : ''}<div class="dp-main"><b>${stlThumb(r) ? '' : STL_ICO + ' '}${esc(r.round_name || 'ScoreTool round')}</b> <span class="b stl-sc">${esc(stlScore(r))}</span>
     <div class="meta">${esc([stlDate(r.shot_date), r.location].filter(Boolean).join(' · '))}${ev ? ` · at <a href="#/shoot/${encodeURIComponent(ev.id)}?r=1">${esc(ev.name)}</a>` : ''}</div></div></li>`; }
+const STL_BOX_LS = 'ac-stl-box-open';
+function stlBoxIsOpen(){ try { return localStorage.getItem(STL_BOX_LS) === '1'; } catch { return false; } }
+function stlBoxSetOpen(on){ try { localStorage.setItem(STL_BOX_LS, on ? '1' : '0'); } catch {} }
+function stlBindBox(){
+  const btn = document.getElementById('stlBoxBtn'), body = document.getElementById('stlBoxBody');
+  if (!btn || !body || btn._stlToggle) return;
+  btn._stlToggle = 1;
+  btn.addEventListener('click', () => {
+    const open = btn.getAttribute('aria-expanded') !== 'true';
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    body.hidden = !open;
+    stlBoxSetOpen(open);
+  });
+}
 function stlDecorateCalendar(){
   if (!AUTH.user || !STL.rows || STL.missing) return;
   const by = stlByDay(), [y, m] = CM || [new Date().getFullYear(), new Date().getMonth()], ym = `${y}-${String(m + 1).padStart(2, '0')}`;
@@ -73,10 +87,12 @@ function stlDecorateCalendar(){
   const month = (STL.rows || []).filter(r => r.shot_date.slice(0, 7) === ym);
   if (!STL.rows.length || document.getElementById('stlBox')) return;
   let at = lg; if (at && at.nextElementSibling && at.nextElementSibling.tagName === 'P') at = at.nextElementSibling;
-  const html = `<section class="panel stl-box" id="stlBox" aria-labelledby="stlH"><h2 class="sec" id="stlH">${STL_ICO} Scores I shot in ${MONL[m]} ${y}</h2>
-    ${month.length ? `<ul class="dp-list">${month.slice().reverse().map(stlRow).join('')}</ul>` : `<p class="note">No ScoreTool scores this month. ${STL.rows.length} in total.</p>`}
-    <p class="note">From ScoreTool, when you finish a round. Only you can see these.</p></section>`;
+  const open = stlBoxIsOpen(), n = month.length, count = n === 1 ? '1 score' : n + ' scores';
+  const html = `<section class="panel stl-box" id="stlBox" aria-labelledby="stlH"><h2 class="sec" id="stlH"><button type="button" class="stl-box-btn" id="stlBoxBtn" aria-expanded="${open ? 'true' : 'false'}" aria-controls="stlBoxBody"><span class="stl-box-label">${STL_ICO} Scores I shot in ${MONL[m]} ${y}</span><span class="stl-box-count">${count}</span><span class="stl-box-chev" aria-hidden="true"></span></button></h2>
+    <div id="stlBoxBody"${open ? '' : ' hidden'}>${month.length ? `<ul class="dp-list">${month.slice().reverse().map(stlRow).join('')}</ul>` : `<p class="note">No ScoreTool scores this month. ${STL.rows.length} in total.</p>`}
+    <p class="note">From ScoreTool, when you finish a round. Only you can see these.</p></div></section>`;
   at ? at.insertAdjacentHTML('afterend', html) : document.querySelector('#view .wrap.narrow')?.insertAdjacentHTML('beforeend', html);
+  stlBindBox();
   stlBindPhotos();
 }
 /* Event page: the archer's own ScoreTool score(s) for this event, under Results. Only they see it (signed in, RLS). */

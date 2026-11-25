@@ -1,5 +1,7 @@
 /* What's new: plain-English release notes for Archery Calendars, newest first. Every item comes from a real commit (hashes listed). */
 window.CAL_WHATSNEW = [
+  {d: '2026-11-25', label: 'Wed 25 Nov 2026', items: [
+    ['Scores I shot is a drop-down on My events', 'On My events, the Scores I shot in [month] list under the calendar starts closed, so it does not fill the screen. Tap the heading to open or close it. The heading shows how many scores that month, and it stays open or closed the next time you open the page.', ['this release']]]},
   {d: '2026-11-24', label: 'Tue 24 Nov 2026', items: [
     ['A contact page, and a place to send your club logo', 'Clubs can now send us a message, or their club logo, from a simple contact page. You do not need to be signed in. Open archerycalendars.com/contact/, or use Message us / club logo on the Submit an event page. If you send a logo we put it on your club\'s events, usually within a day. The York & Districts Archery Club (WA) green logo is now on that club\'s events.', ['this release']]]},
   {d: '2026-11-14', label: 'Sat 14 Nov 2026', items: [
