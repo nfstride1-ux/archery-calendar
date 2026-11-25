@@ -96,7 +96,7 @@ async function boot(){
   PH = ph; SCOPE = e.scope || 'WORLD';
   migrateSettings();
   EV = e.events.filter(x => !x.info_only || true); ORGS = o.organisations;
-  EV.forEach(x => BYID[x.id] = x);
+  EV.forEach(x => { BYID[x.id] = x; (x.alias_ids || []).forEach(id => { if (id && !BYID[id]) BYID[id] = x; }); });
   considerGenerated(e.generated);
   ORGS.filter(x => x.country_code).forEach(x => { CMAP[x.country_code] = CMAP[x.country_code] || x.country; });
   window.addEventListener('hashchange', route);
@@ -1303,7 +1303,7 @@ function dayPanel(k, mineDay){
   return h + clubShootsHtml(k) + '</section>';
 }
 let dayMine = {};
-/* Saved public events, plus owner-only nights (privatecal.js) when this account is the site owner. */
+/* Saved public events, plus any extra nights a private helper may attach when present. */
 function mySavedEvents(){
   const saved = Object.keys(S.saved).map(id => BYID[id]).filter(x => x && !x._ownerOnly);
   const extra = (typeof pcEvents === 'function' ? pcEvents() : []).filter(x => !saved.some(s => s.id === x.id));
@@ -1387,7 +1387,7 @@ function vSettings(){
   ${S.notify ? `<button class="btn alt block" id="notifOff">🔕 Turn notifications off</button>` : ''}
   <h2>Backup</h2><p class="note">${AUTH.on && AUTH.user && AUTH.sync && AUTH.sync.linked() ? 'Your events and entries are saved on this device and synced to your <a href="#/account">account</a>.' : 'Your events and entries are stored only on this device.'}${AUTH.on && !AUTH.user ? ' <a href="#/account">Sign in</a> to keep them on all your devices.' : ''}</p>
   <div class="row"><button class="btn alt" id="exp">⇩ Export backup</button><label class="btn alt" style="margin:0">⇧ Import<input type="file" id="imp" accept="application/json" hidden></label></div>
-  <p class="note">Data: ${EV.length} events from ${ORGS.length} organisations. Sources: ${AUS() ? 'World Archery calendar (Australian events),' : 'World Archery calendar,'} ABA 2026 National Calendar, Archery Australia, Archery WA, organiser sites. Checked 9 Oct 2026.</p></div>`;
+  <p class="note">Data: ${EV.length} events from ${ORGS.length} organisations. Sources: ${AUS() ? 'World Archery calendar (Australian events),' : 'World Archery calendar,'} ABA 2026 National Calendar, Archery Australia, Archery WA, organiser sites. ${dataCheckedLabel()}</p></div>`;
 }
 function bindSettings(){
   bindClubPicker();
@@ -1426,7 +1426,7 @@ function vAdvertise(){
     <p>Put your shop in front of archers while they plan their next event and the gear they need for it.</p><a class="btn gold" href="${AD_MAIL}">Email us about advertising</a></div></section>
   <div class="wrap narrow adv">
     <section class="panel"><h2 class="sec">Who sees your ad</h2>
-      <ul class="ticks"><li>Archers looking for Field, 3D, Target and Indoor events. Australia-wide: Archery Australia, ABA and Archery WA events in every state and territory.</li>
+      <ul class="ticks"><li>Archers looking for Field, 3D, Target and Indoor events worldwide: Archery Australia, ABA and Archery WA events in every Australian state and territory, plus calendars in the USA, Great Britain and other countries.</li>
       <li>People about to travel, enter and buy. They're checking dates, entry closing times and what to bring.</li>
       <li>Ads can match the discipline: 3D gear on 3D events, indoor gear on indoor events.</li></ul>
       <p class="note">We'll share visitor numbers once the site is live. We won't quote figures before we have them.</p></section>
@@ -2957,7 +2957,7 @@ const loadIntl = () => INTL ? Promise.resolve(INTL) : (INTLP = INTLP || fetch('d
   API_INTL.forEach(x => { if (!j.events.some(e => e.id === x.id)) j.events.push(x); });
   { const m = {}; j.events.forEach(x => { const c = x.country_code; if (!c || c === 'AUS') return; const o = m[c] = m[c] || {code: c, name: x.country_name || c, iso2: x.iso2, count: 0, upcoming: 0}; o.count++; if (!iPast(x) && x.status !== 'cancelled') o.upcoming++; if (!o.iso2 && x.iso2) o.iso2 = x.iso2; });
     const prev = ICTRY.countries.map(c => c.code); ICTRY.countries = Object.values(m).sort((a, b) => (prev.indexOf(a.code) + 1 || 999) - (prev.indexOf(b.code) + 1 || 999)); }   // country list from intl.json itself (intl_countries.json is only a first-paint summary)
-  j.events.forEach(x => { x._intl = true; if (OVR[x.id]) applyOvr(x, OVR[x.id]); if (!BYID[x.id]) BYID[x.id] = x; }); return (INTL = j); }));
+  j.events.forEach(x => { x._intl = true; if (OVR[x.id]) applyOvr(x, OVR[x.id]); if (!BYID[x.id]) BYID[x.id] = x; (x.alias_ids || []).forEach(id => { if (id && !BYID[id]) BYID[id] = x; }); }); return (INTL = j); }));
 /* Back from an international event page returns to the same country page, filters (IF) and scroll position. */
 const IBACK = {};
 const iBackHash = x => IF.find && IF.code === x.country_code ? '#/browse' : '#/intl/' + (IF.code && (IF.code === 'WORLD' ? x.country_code !== 'USA' || x.world_major : IF.code === x.country_code) ? IF.code : x.country_code === 'USA' ? 'USA' : x.world_page === false ? x.country_code : 'WORLD');
@@ -3125,6 +3125,17 @@ function considerGenerated(s){
   if (!GEN_STAMP || t >= generatedMs(GEN_STAMP)) GEN_STAMP = s;
   footFresh();
   if (!considerGenerated.t) considerGenerated.t = setInterval(footFresh, 60 * 1000);
+}
+function dataCheckedLabel(){
+  const t = generatedMs(GEN_STAMP);
+  if (!t) return 'Checked date is taken from the latest event data file.';
+  const d = new Date(t);
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const parts = new Intl.DateTimeFormat('en-AU', {timeZone: 'Australia/Perth', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true}).formatToParts(d);
+  const get = t => (parts.find(p => p.type === t) || {}).value || '';
+  const day = get('day'), mon = get('month'), year = get('year'), hour = get('hour'), minute = get('minute'), dayPeriod = (get('dayPeriod') || '').toLowerCase();
+  const monShort = months[['January','February','March','April','May','June','July','August','September','October','November','December'].indexOf(mon)] || mon;
+  return 'Checked ' + day + ' ' + monShort + ' ' + year + ', ' + hour + ':' + minute + ' ' + dayPeriod + ' Perth time.';
 }
 /* Venue-local midnight of a date (no start times are invented: the count runs to the start of the first day, venue time if known).
    The zone comes from the event, never from the viewer's clock. state_code wins over a region label ("QLD (South)"), and a saved
@@ -3635,8 +3646,8 @@ function render(){
    Needs supabase/instant_publishing.sql. If the table isn't there yet, submissions are email-only exactly as before. */
 const SUBDONE = {sid: '', html: '', upd: null};
 document.addEventListener('click', e => { const a = e.target.closest && e.target.closest('#subThanks a[href="#/submit"]'); if (a) { SUBDONE.sid = SUBDONE.html = ''; SUBDONE.upd = null; e.preventDefault(); location.hash === '#/submit' ? render() : (location.hash = '#/submit'); } });
-const ADMIN_EMAILS = ['nfshold@gmail.com', 'nfstride1@gmail.com'];   // UI only – the database checks public.admins
-const isAdmin = () => !!(AUTH.user && ADMIN_EMAILS.includes(String(AUTH.user.email || '').toLowerCase()));
+const ADMIN_EMAILS = ['nfshold@gmail.com'];   // public contact only; other admins come from the database (ADMNAV.ok / is_admin)
+const isAdmin = () => !!(AUTH.user && (ADMIN_EMAILS.includes(String(AUTH.user.email || '').toLowerCase()) || ADMNAV.ok));
 const FLY_BUCKET = 'event-flyers', FLY_MAX = 10 * 1048576;
 const CC3 = {AU: 'AUS', US: 'USA'};
 const pendCard = r => { const u = r.flyer_url || r.flyer_link || '', pdf = /\.pdf($|\?)/i.test(u), img = r.flyer_url && !pdf;

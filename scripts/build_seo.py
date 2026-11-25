@@ -242,7 +242,7 @@ def event_jsonld(x):
     c = country_of(x); iso = CTRY[c]['iso2'] if c else x.get('iso2')
     if iso: addr['addressCountry'] = iso
     d = {'@context': 'https://schema.org', '@type': 'Event', 'name': x['name'], 'startDate': x['start_date'],
-         'endDate': end(x), 'eventStatus': 'https://schema.org/EventCancelled' if x.get('cancelled') else 'https://schema.org/EventScheduled',
+         'endDate': end(x), 'eventStatus': 'https://schema.org/EventCancelled' if x.get('cancelled') else ('https://schema.org/EventCompleted' if is_past(x) else 'https://schema.org/EventScheduled'),
          'eventAttendanceMode': 'https://schema.org/OfflineEventAttendanceMode',
          'location': {'@type': 'Place', 'name': n or loc, 'address': addr},
          'description': describe(x), 'url': SITE + event_path(x), 'inLanguage': 'en'}
@@ -268,7 +268,7 @@ def foot_links():
     st = ''.join(f'<a href="/australia/{slug(n)}/">{esc(n)}</a>' for c, n in STATES if c in STATE_SET)
     return f'''<footer class="site-foot"><div class="wrap foot-grid">
 <div><a class="logo" href="/"><span class="logo-mark" aria-hidden="true"></span><span>Archery<b>Calendars</b></span></a>
-<p>Every archery event &ndash; Field, 3D, Target and Indoor &ndash; in one calendar. Australia-wide, plus the USA, Denmark, New Zealand, Canada and more.</p>
+<p>Every archery event &ndash; Field, 3D, Target and Indoor &ndash; in one calendar, worldwide. Australia, the USA, Great Britain, Denmark, New Zealand, Canada, Germany and more.</p>
 <p class="foot-tag"><i>Created by an archer, for archers.</i></p></div>
 <div><h3>Australia</h3><a href="/australia/">All Australian events</a>{st}</div>
 <div><h3>Explore</h3><a href="{CTRY_INDEX()}">Events by country</a><a href="/organisers/aba/">ABA shoots</a><a href="/organisers/archery-wa/">Archery WA calendar</a><a href="/#/browse">Find events (app)</a><a href="/newsletter/">Newsletter</a><a href="/#/submit">Submit an event</a><a href="/#/privacy">Privacy &amp; disclaimer</a></div>
@@ -553,6 +553,27 @@ def llms():
     return '\n'.join(L)
 pages['/llms.txt'] = (llms(), DATA_DATE)
 
+
+def alias_redirect(dest_id, name):
+    dest = f'/events/{dest_id}/'
+    return (
+        '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
+        f'<meta http-equiv="refresh" content="0;url={dest}">'
+        f'<link rel="canonical" href="{SITE}{dest}">'
+        '<meta name="robots" content="noindex,follow">'
+        f'<title>{html.escape(name)} | {BRAND}</title>'
+        f'<script>location.replace({dest!r});</script>'
+        f'</head><body><h1>{html.escape(name)}</h1>'
+        f'<p>This event is listed at <a href="{dest}">{html.escape(name)}</a>.</p></body></html>\n'
+    )
+
+if not args.sample and 'events' in GROUPS:
+    for x in EVS:
+        for aid in x.get('alias_ids') or []:
+            if not aid or aid == x['id']:
+                continue
+            pages[f'/events/{aid}/'] = (alias_redirect(x['id'], x['name']), lastmod(x))
+
 # ---------- sitemap (keep hand-made entries, add generated pages) ----------
 kept = []
 sm_path = os.path.join(ROOT, 'sitemap.xml')
@@ -587,4 +608,5 @@ for d in GEN_DIRS:
     if not args.sample and os.path.isdir(os.path.join(OUT, d)): shutil.rmtree(os.path.join(OUT, d))
 for p, (h, _) in pages.items(): write(p, h)
 open(os.path.join(OUT, 'sitemap.xml' if not args.sample else 'sitemap.sample.xml'), 'w', encoding='utf-8').write(sitemap)
+
 print('pages', len(pages), dict(counts), 'sitemap urls', len(entries) + len(kept))

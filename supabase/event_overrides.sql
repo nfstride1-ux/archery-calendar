@@ -2,8 +2,8 @@
 -- Run once in the Supabase SQL editor. Needs public.admins + public.is_admin() from instant_publishing.sql.
 -- Safe to run again.
 
--- 1. Admins (UI already treats both as admin; this makes the database agree)
-insert into public.admins (email) values ('nfshold@gmail.com'), ('nfstride1@gmail.com') on conflict do nothing;
+-- 1. Admins. Only the public contact address is listed here. Any other admin is added in the Supabase dashboard, not in this public file.
+insert into public.admins (email) values ('nfshold@gmail.com') on conflict do nothing;
 
 -- 2. Overrides table: one row per event, only the changed fields as jsonb
 create table if not exists public.event_overrides (
