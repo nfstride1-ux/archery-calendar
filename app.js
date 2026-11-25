@@ -3107,7 +3107,7 @@ function iCard(x){
 }
 function iClubsPanel(cc){
   const cs = CLUBS.filter(c => c.country === cc); if (!cs.length) return '';
-  return `<section class="panel iclubs" id="iclubs"><h2 class="sec">Clubs &amp; associations behind these events</h2><p class="note">Watch a club to get a 👁 badge on its events. It's saved on this device with your other clubs.</p><ul class="club-list">${cs.map(clubRow).join('')}</ul></section>`;
+  return `<section class="panel iclubs" id="iclubs"><h2 class="sec">Clubs &amp; associations in this country</h2><p class="note">Watch a club to get a 👁 badge on its events. It's saved on this device with your other clubs.</p><ul class="club-list">${cs.map(clubRow).join('')}</ul></section>`;
 }
 /* ---------- Country home pages, major-event countdowns, organiser API page (preview, 22 Oct 2026) ----------
    Upcoming counts come from data/intl.json itself once loaded (intl_countries.json is only a fallback summary).
