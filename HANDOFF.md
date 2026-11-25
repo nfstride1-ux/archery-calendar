@@ -4,6 +4,16 @@ Read this file first. Before you stop, add a new entry at the top: who you are, 
 
 The rules for the site are in [PROJECT_RULES.md](PROJECT_RULES.md). Ideas wait in [IDEAS.md](IDEAS.md).
 
+## 2026-11-25 14:15 AWST — Jarvis
+
+- **Who:** Jarvis.
+- **Done:** Pull request only, not merged. On My events, the Scores I shot in [month] card under the calendar is now a drop-down. It starts closed, with the heading, a score count, and a chevron. Tap the heading to open or close it. The choice is remembered in localStorage (`ac-stl-box-open`). The button uses `aria-expanded`. Score data, the day marks, the day panel, and the event-page My score panel are unchanged. Cache `archcal-stlbox1125` (`styles.css`, `scoretool.js`, `whatsnew.js`, and `help.js` query tags too). What's new and the ScoreTool help line mention the drop-down. Phone screenshots (collapsed and expanded, 390×844, fictional fixture scores) are in `/workspace/ac-scores-dropdown/` on the box, not in the repo.
+- **Half done:** Nothing in the change itself. It does not go live until Nathe says so.
+- **Next:** Nathe reviews the pull request and the screenshots. Merge only on his explicit OK.
+- **Decisions:** Viewing is unchanged. Only the month list is collapsed, so the long list no longer fills the screen. No personal scores or names were committed. `scripts/score_photos_test.py` has one pre-existing failure on main (it still looks for a 🎯 emoji in the month grid; the mark has been an SVG for a while). I did not edit that test.
+
+— [Jarvis]
+
 ## 2026-11-25 11:26 AWST — Grok Bot
 
 - **Who:** Grok Bot.
