@@ -1,6 +1,7 @@
 /* What's new: plain-English release notes for Archery Calendars, newest first. Every item comes from a real commit (hashes listed). */
 window.CAL_WHATSNEW = [
   {d: '2026-11-25', label: 'Wed 25 Nov 2026', items: [
+    ['RamRods on every event page', 'Every shoot page now has a small Supported by RamRods Archery card under the event details, with a link to ramrods.com. It is the same founding sponsor already shown on the home page.', ['this release']],
     ['Archery Australia 2027 calendar', 'The 2027 Archery Australia calendar is now on the site. The National Youth Championships are at Werribee (target) and Geelong, Waurn Ponds (field). There are eight AA Matchplay Weekends at various clubs. Also added: the Pacific Games in Tahiti (23 Jul to 8 Aug) and the Asian Para Championships in Beijing (17 to 25 Sep). The Australian Masters Games location now includes the Central Coast as well as Newcastle. 2027 QRE listings now remind archers to register on both Assemble and Archer\'s Diary.', ['this release']],
     ['Scores I shot is a drop-down on My events', 'On My events, the Scores I shot in [month] list under the calendar starts closed, so it does not fill the screen. Tap the heading to open or close it. The heading shows how many scores that month, and it stays open or closed the next time you open the page.', ['this release']]]},
   {d: '2026-11-24', label: 'Tue 24 Nov 2026', items: [

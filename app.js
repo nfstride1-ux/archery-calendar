@@ -367,6 +367,18 @@ function spStrip(cc, where = 'home'){
   return `<section class="sp-strip${n === 1 ? ' one' : ''}" aria-label="Sponsors"><div class="sp-strip-h"><span>Supported by</span>${n > 1 ? '<span aria-hidden="true">Swipe →</span>' : ''}</div>
     <div class="sp-strip-row">${cards}</div></section>`;
 }
+/* Compact RamRods card under Event details on every shoot page. Same destination as the home strip (s.url), without UTM. Clicks use the existing data-gc handler with placement event_page. */
+function spEventCard(){
+  if (!SPONSORS.length) return '';
+  return `<aside class="sp-event" aria-label="Sponsor">${SPONSORS.map(s => {
+    const line = s.founding ? `<span class="sp-event-line">Founding Sponsor of Archery Calendar</span>` : '';
+    const host = s.url.replace(/^https?:\/\/|\/$/g, '');
+    return `<a class="sp-event-link" href="${esc(s.url)}" target="_blank" rel="sponsored noopener" data-sp="${esc(s.id)}" data-gc="sponsor/${esc(s.id)}/event_page" data-gc-t="${esc(s.name)} sponsor click (event page)" aria-label="Supported by ${esc(s.name)}${s.founding ? '. Founding Sponsor of Archery Calendar' : ''} (opens ${esc(host)})">
+      <img class="sp-event-logo" src="${esc(s.logo)}" alt="${esc(s.name)}" width="${s.w}" height="${s.h}" loading="lazy" decoding="async">
+      <span class="sp-event-copy"><span class="sp-event-by">Supported by ${esc(s.name)}</span>${line}</span>
+    </a>`;
+  }).join('')}</aside>`;
+}
 function bindCards(root = document){
   bindToggles(root);
   root.querySelectorAll('[data-star]').forEach(b => b.onclick = ev => { ev.stopPropagation(); toggleSave(b.dataset.star); });
@@ -1235,6 +1247,7 @@ function vShoot(id){
       ${closeTxt ? `<dt>Entries close</dt><dd>${esc(closeTxt)}${x.field_sources?.entry_close_date ? ` <span class="src">from ${esc(x.field_sources.entry_close_date)}</span>` : ''}</dd>` : ''}
       ${x.fee ? `<dt>Fee</dt><dd>${esc(x.fee)}${x.field_sources?.fee ? ` <span class="src">from ${esc(x.field_sources.fee)}</span>` : ''}</dd>` : ''}
     </dl>${x.notes ? `<p class="note">${esc(x.notes)}</p>` : ''}</section>
+    ${spEventCard()}
     ${CALS[x.org_group] ? `<p class="note"><a href="#/calendars/${x.org_group}">📅 See it in the full ${esc(CALS[x.org_group].name)} calendar</a></p>` : ''}
     <p class="note" id="srcLine">${I ? 'Official source' : 'Source'}: ${x.source_url ? `<a href="${esc(x.source_url)}" target="_blank" rel="noopener">${esc(srcName)}</a>` : esc(srcName || 'organiser')}${x.source_extra ? ` · <a href="${esc(x.source_extra)}" target="_blank" rel="noopener">host club's event page</a>` : ''}${x.also_listed ? ` · also <a href="${esc(x.also_listed)}" target="_blank" rel="noopener">${/worldarchery/.test(x.also_listed) ? 'World Archery listing' : 'listed here'}</a>` : ''}${x.source_note ? `<br>${esc(x.source_note)}` : ''}${x.branch_source ? `<br>Branch source: <a href="${esc(x.branch_source.url)}" target="_blank" rel="noopener" id="branchSrc">${esc(x.branch_source.name)}</a>` : ''}<br>${x.last_checked ? `Checked ${esc(x.last_checked)}. ` : ''}Always confirm details with the organiser.</p>
     <p class="note fix-link">${isAdmin() ? `<a class="btn gold" href="#/fix/${esc(encodeURIComponent(x.id))}" id="adminEdit">✏️ Edit (admin)</a> ` : ''}<a href="#/fix/${esc(encodeURIComponent(x.id))}" id="fixLink">✏️ Something wrong? Suggest a fix</a></p>

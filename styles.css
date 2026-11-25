@@ -988,6 +988,22 @@ body[data-page=submit] .site-head .add-btn{outline:2px solid #fff;outline-offset
 .sp-strip.one .sp-strip-row{overflow:visible;justify-content:center;scroll-snap-type:none}
 .sp-strip.one .sp{flex:0 1 380px;max-width:100%}
 .sp-strip.one .sp-strip-h{justify-content:center}
+/* Compact founding-sponsor card under Event details on shoot pages. Royal blue accent, not purple. */
+.sp-event{margin:14px 0 4px}
+.sp-event-link{display:flex;align-items:center;gap:12px;max-width:420px;padding:8px 12px;background:#fff;border:1.5px solid var(--blue);border-radius:12px;text-decoration:none;color:var(--ink);box-shadow:0 1px 2px rgba(15,23,42,.06)}
+.sp-event-link:hover{background:var(--blue-bg)}
+.sp-event-link:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.sp-event-logo{width:auto;height:28px;max-width:110px;object-fit:contain;flex:none}
+.sp-event-copy{display:flex;flex-direction:column;gap:1px;min-width:0}
+.sp-event-by{font:700 13px/1.3 var(--disp);color:var(--night)}
+.sp-event-line{font:600 13px/1.35 var(--body);color:#1e3a8a}
+@media (max-width:720px){
+  .sp-event{margin:10px 0 2px}
+  .sp-event-link{padding:6px 10px;gap:10px;max-width:none}
+  .sp-event-logo{height:24px;max-width:96px}
+  .sp-event-by,.sp-event-line{font-size:12px}
+}
+@media print{.sp-event{display:none!important}}
 
 /* One-tap entry button on event cards, international cards and the calendar day panel (owner 22 Oct 2026) */
 .ev-reg{min-height:44px;padding:8px 14px;font-size:15px;margin:10px 0 2px;white-space:normal;text-align:center;max-width:100%}

@@ -4,6 +4,16 @@ Read this file first. Before you stop, add a new entry at the top: who you are, 
 
 The rules for the site are in [PROJECT_RULES.md](PROJECT_RULES.md). Ideas wait in [IDEAS.md](IDEAS.md).
 
+## 2026-11-25 17:43 AWST — Grok Bot
+
+- **Who:** Grok Bot.
+- **Done:** Pull request only, not merged. Every shoot page (`/#/shoot/<id>`) now has a compact "Supported by RamRods Archery" card under Event details, with the existing RamRods logo and the line "Founding Sponsor of Archery Calendar". The link is the same destination as the home strip (`https://ramrods.com/`) with no UTM parameters. Clicks use the existing GoatCounter handler with placement `event_page` (`sponsor/ramrods/event_page`). Royal blue accent, real alt text, visible focus ring. Cache `archcal-rrcard1125`. Static SEO event pages use a different template and were left unchanged so the diff stays small. Screenshots (390×844, desktop, and click-tracking proof) go in `/workspace/ac-ramrods-card/` on the box, not in the repo.
+- **Half done:** Nothing in the change itself. It does not go live until Nathe says so. Smoke and preview must go green on this commit.
+- **Next:** Nathe reviews the pull request and the screenshots. Merge only on his explicit OK.
+- **Decisions:** No utm, discount, offer text, or mention of what RamRods paid. Lingkana data was not touched. ScoreTool files were not touched, to avoid clashing with a possible ScoreTool-pricing link pull request.
+
+— [Grok Bot]
+
 ## 2026-11-25 17:15 AWST — Grok Bot
 
 - **Who:** Grok Bot.
