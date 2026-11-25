@@ -102,6 +102,7 @@
   <url><loc>https://archerycalendars.com/australia/tasmania/indoor/</loc><lastmod>2026-11-25</lastmod><changefreq>monthly</changefreq></url>
   <url><loc>https://archerycalendars.com/australia/tasmania/target/</loc><lastmod>2026-11-25</lastmod><changefreq>monthly</changefreq></url>
   <url><loc>https://archerycalendars.com/australia/victoria/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/australia/victoria/field/</loc><lastmod>2026-11-25</lastmod><changefreq>monthly</changefreq></url>
   <url><loc>https://archerycalendars.com/australia/victoria/indoor/</loc><lastmod>2026-11-25</lastmod><changefreq>monthly</changefreq></url>
   <url><loc>https://archerycalendars.com/australia/victoria/target/</loc><lastmod>2026-11-25</lastmod><changefreq>monthly</changefreq></url>
   <url><loc>https://archerycalendars.com/australia/western-australia/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
@@ -122,6 +123,7 @@
   <url><loc>https://archerycalendars.com/countries/el-salvador/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/countries/estonia/</loc><lastmod>2026-11-21</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/countries/france/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/countries/french-polynesia/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/countries/germany/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/countries/great-britain/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/countries/guatemala/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
@@ -167,8 +169,18 @@
   <url><loc>https://archerycalendars.com/events/aa-2026-mp5/</loc><lastmod>2026-10-09</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/aa-2026-mp6/</loc><lastmod>2026-10-09</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/aa-2026-mp7/</loc><lastmod>2026-10-09</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/aa-2027-asian-para/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/aa-2027-indoor/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/aa-2027-mp1/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/aa-2027-mp2/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/aa-2027-mp3/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/aa-2027-mp4/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/aa-2027-mp5/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/aa-2027-mp6/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/aa-2027-mp7/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/aa-2027-mp8/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/aa-2027-open-field/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/aa-2027-pacific-games/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/aa-2027-target-para/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/aa-2027-youth/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/aa-aac-qre-2026-11-22/</loc><lastmod>2026-10-17</lastmod><changefreq>weekly</changefreq></url>
@@ -1183,9 +1195,9 @@
   <url><loc>https://archerycalendars.com/events/amb-cwg-trial-2026-1106/</loc><lastmod>2026-10-13</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/amb-cwg-trial-2026-1107/</loc><lastmod>2026-10-13</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/amg-2027-newcastle-archery/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
-  <url><loc>https://archerycalendars.com/events/answ-24-marked-field-qre-illawarra-archers-2027-02-20/</loc><lastmod>2026-10-17</lastmod><changefreq>weekly</changefreq></url>
-  <url><loc>https://archerycalendars.com/events/answ-24-marked-field-qre-illawarra-archers-2027-03-20/</loc><lastmod>2026-10-17</lastmod><changefreq>weekly</changefreq></url>
-  <url><loc>https://archerycalendars.com/events/answ-24-marked-field-qre-illawarra-archers-2027-11-20/</loc><lastmod>2026-10-17</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/answ-24-marked-field-qre-illawarra-archers-2027-02-20/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/answ-24-marked-field-qre-illawarra-archers-2027-03-20/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/answ-24-marked-field-qre-illawarra-archers-2027-11-20/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/answ-all-bow-challenge-illawarra-archers-2027-10-03/</loc><lastmod>2026-10-17</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/answ-archery-nsw-metropolitan-championships-2027-2027-03-13/</loc><lastmod>2026-10-17</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/answ-archery-nsw-state-clout-championships-2027-2027-06-19/</loc><lastmod>2026-10-17</lastmod><changefreq>weekly</changefreq></url>
@@ -1297,8 +1309,8 @@
   <url><loc>https://archerycalendars.com/events/awa-2026-level2-coaching/</loc><lastmod>2026-10-09</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/awa-2026-youth-workshop-1/</loc><lastmod>2026-10-09</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/awa-2026-youth-workshop-2/</loc><lastmod>2026-10-09</lastmod><changefreq>weekly</changefreq></url>
-  <url><loc>https://archerycalendars.com/events/awa-2027-01-10-qre-target/</loc><lastmod>2026-10-22</lastmod><changefreq>weekly</changefreq></url>
-  <url><loc>https://archerycalendars.com/events/awa-2027-02-14-qre-target/</loc><lastmod>2026-10-22</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/awa-2027-01-10-qre-target/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
+  <url><loc>https://archerycalendars.com/events/awa-2027-02-14-qre-target/</loc><lastmod>2026-11-25</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/awa-baldivis-breakfast-2026/</loc><lastmod>2026-10-09</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/awa-benara-matchplay-2026/</loc><lastmod>2026-10-09</lastmod><changefreq>weekly</changefreq></url>
   <url><loc>https://archerycalendars.com/events/awa-clout-2026/</loc><lastmod>2026-10-09</lastmod><changefreq>weekly</changefreq></url>

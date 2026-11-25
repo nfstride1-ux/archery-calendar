@@ -4,6 +4,17 @@ Read this file first. Before you stop, add a new entry at the top: who you are, 
 
 The rules for the site are in [PROJECT_RULES.md](PROJECT_RULES.md). Ideas wait in [IDEAS.md](IDEAS.md).
 
+## 2026-11-25 16:38 AWST — Jarvis
+
+- **Who:** Jarvis.
+- **Done:** Pull request only, not merged. Archery Australia 2027 Event Calendar (version 3.3, https://archery.org.au/wp-content/uploads/2026/11/AA-2027-EVENT-CALENDAR.pdf) updates: added Pacific Games (Tahiti, 23 Jul–8 Aug 2027) and Asian Para Championships (Beijing, 17–25 Sep 2027); set National Youth Championships venue to target at Werribee Archery Club (VU Werribee Campus) and field at Geelong Archers, Waurn Ponds; added the eight 2027 AA Matchplay Weekend listings (various clubs, same style as 2026); added Central Coast to the XXI Australian Masters Games location. Open Field and World Para Championship dates were left as they were. All 31 listed 2027 QREs now include the note to register on both Assemble and Archer's Diary. Cache `archcal-aa20271125`. SEO pages rebuilt. Phone screenshots (390×844) are in `/workspace/ac-aa2027/` on the box, not in the repo.
+- **Half done:** Nothing in the change itself. It does not go live until Nathe says so.
+- **Next:** Nathe reviews the pull request and the screenshots. Merge only on his explicit OK.
+- **Decisions:** Open Field stays 21–26 Apr and World Para stays 30 Aug–6 Sep, matching AA's event page and earlier announcement rather than the PDF start days. No events were removed. Lingkana league listings were not part of this change.
+
+— [Jarvis]
+
+
 ## 2026-11-25 14:15 AWST — Jarvis
 
 - **Who:** Jarvis.
