@@ -1233,7 +1233,7 @@ def ad_new_id(item, taken):
 
 def ad_new_event(item, taken, day):
     members = item['members_only']
-    title = item['title']
+    title = ad_fix_title(item['title'], item['start'])
     if members and re.search(r'club championship|\bchamps\b', title, re.I):
         level = 'Club Championship (members only)'
     elif members:
@@ -1527,6 +1527,156 @@ for _spec in STATE_FEEDS:
     SOURCES[_spec['id']] = _state_runner(_spec)
 
 
+
+TEXT_FIXES = (
+    ('Southamlton', 'Southampton'),
+    ('Soociety', 'Society'),
+)
+MULTI_SPACE = re.compile(r' {2,}')
+AD_EMBEDDED_DATE = re.compile(r'(?<!\d)(\d{1,2})[-/](\d{1,2})[-/](\d{2}|\d{4})(?!\d)')
+SV_LEAGUE_2026 = re.compile(
+    r'^(Indoor League)\s*[-–]\s*2026\s+\d{2}\s*[-–]\s*(Round\s+\d+)\b(.*)$',
+    re.I,
+)
+
+
+def apply_text_fixes(value):
+    if not isinstance(value, str) or not value:
+        return value
+    out = value
+    for bad, good in TEXT_FIXES:
+        out = out.replace(bad, good)
+    out = MULTI_SPACE.sub(' ', out)
+    return out
+
+
+def _parse_embedded_date(day, month, year):
+    yy = int(year)
+    if yy < 100:
+        yy += 2000
+    try:
+        return dt.date(yy, int(month), int(day))
+    except ValueError:
+        try:
+            return dt.date(yy, int(day), int(month))
+        except ValueError:
+            return None
+
+
+def ad_fix_title(name, start):
+    """Drop a label date that disagrees with start_date, and clarify 2026/27 season labels.
+
+    Dates after words like 'till' or 'until' are left alone. Hyphens in titles are not rewritten.
+    """
+    name = apply_text_fixes(name or '')
+    start_d = None
+    if re.match(r'^\d{4}-\d{2}-\d{2}$', str(start or '')):
+        start_d = dt.date.fromisoformat(start)
+    if start_d:
+        def repl(mo):
+            parsed = _parse_embedded_date(mo.group(1), mo.group(2), mo.group(3))
+            if not parsed or parsed == start_d:
+                return mo.group(0)
+            # Leave "recess till 16/01/2027" and similar notes in place.
+            lead = name[:mo.start()].rstrip()
+            if re.search(r'(?i)\b(till|until|to|from|before|after|through|upto|up to)$', lead):
+                return mo.group(0)
+            return ''
+        name = AD_EMBEDDED_DATE.sub(repl, name)
+        if start_d.year == 2027:
+            m = SV_LEAGUE_2026.match(name)
+            if m:
+                name = f'{m.group(1)} 2026/27 – {m.group(2)}{m.group(3)}'
+    name = MULTI_SPACE.sub(' ', name)
+    name = re.sub(r'[ \t,;:/-]+$', '', name)
+    return name.strip()
+
+
+def fix_event_text(ev):
+    changed = []
+    for key in ('name', 'location'):
+        cur = ev.get(key)
+        if not isinstance(cur, str):
+            continue
+        new = apply_text_fixes(cur)
+        if key == 'name':
+            new = ad_fix_title(new, ev.get('start_date'))
+        if new != cur:
+            ev[key] = new
+            changed.append(key)
+    return changed
+
+
+def wa_twin_key(ev):
+    if not is_wa(ev):
+        return None
+    name = apply_text_fixes((ev.get('name') or '')).casefold()
+    loc = apply_text_fixes((ev.get('location') or '')).casefold()
+    start = ev.get('start_date') or ''
+    end = ev.get('end_date') or start
+    if not (name and start):
+        return None
+    return (name, start, end, loc)
+
+
+def collapse_wa_twins(events):
+    """Merge World Archery rows that are the same event under two competition ids."""
+    groups = {}
+    for ev in events:
+        k = wa_twin_key(ev)
+        if k:
+            groups.setdefault(k, []).append(ev)
+    drop_ids = set()
+    for evs in groups.values():
+        if len(evs) < 2:
+            continue
+        evs.sort(key=lambda e: int(wa_cid(e) or 10 ** 9))
+        keeper = evs[0]
+        aliases = [a for a in (keeper.get('alias_ids') or []) if a]
+        for other in evs[1:]:
+            oid = other.get('id')
+            if oid and oid not in aliases and oid != keeper.get('id'):
+                aliases.append(oid)
+            for aid in other.get('alias_ids') or []:
+                if aid and aid not in aliases and aid != keeper.get('id'):
+                    aliases.append(aid)
+            url = other.get('source_url')
+            if url and url != keeper.get('source_url'):
+                extra = list(keeper.get('source_urls') or [])
+                if keeper.get('source_url') and keeper['source_url'] not in extra:
+                    extra.insert(0, keeper['source_url'])
+                if url not in extra:
+                    extra.append(url)
+                keeper['source_urls'] = extra
+            drop_ids.add(oid)
+        if aliases:
+            keeper['alias_ids'] = aliases
+    if not drop_ids:
+        return events, []
+    kept = [e for e in events if e.get('id') not in drop_ids]
+    return kept, sorted(i for i in drop_ids if i)
+
+
+def normalize_listed_events(docs):
+    """Apply typo and title fixes, and merge identical World Archery twins. Safe on every refresh."""
+    summary = {}
+    for key, pack in docs.items():
+        doc = pack[0]
+        events = list(doc.get('events') or [])
+        text_n = 0
+        for ev in events:
+            if fix_event_text(ev):
+                text_n += 1
+        events, dropped = collapse_wa_twins(events)
+        doc['events'] = events
+        if 'count' in doc:
+            doc['count'] = len(events)
+        summary[key] = {'text': text_n, 'dropped': dropped}
+        if text_n or dropped:
+            print(f'{key}: text fixes {text_n}, merged wa twins {dropped or "none"}', flush=True)
+    return summary
+
+
 def self_test():
     ok = True
 
@@ -1752,6 +1902,24 @@ def self_test():
     left = collapse_duplicate_events([official, unofficial])
     assert {e['id'] for e in left} == {'ad-benara-official', 'ad-benara-unofficial'}
     print('PASS archers diary feed keeps public shoots, matches curated rows, flags club championships')
+    assert apply_text_fixes('GANG WARILY RECREATION CENTRE, Southamlton') == 'GANG WARILY RECREATION CENTRE, Southampton'
+    assert 'Soociety' not in apply_text_fixes('East Midlands Archery Soociety 2026 Regional & Open  Indoor Championships')
+    assert apply_text_fixes('Open  Indoor') == 'Open Indoor'
+    assert ad_fix_title('Club Event 28-01-2026 – Coast Archers', '2026-11-28') == 'Club Event – Coast Archers'
+    assert ad_fix_title('Unofficial shoot 72 arrows - recess till 16/01/2027 – Benara Bowmen Archery Club Inc', '2026-12-19') == 'Unofficial shoot 72 arrows - recess till 16/01/2027 – Benara Bowmen Archery Club Inc'
+    assert ad_fix_title('BOM - Junior Tournament', '2026-06-01') == 'BOM - Junior Tournament'
+    assert ad_fix_title('Club Event 28-01-2026 – Coast Archers', '2026-01-28') == 'Club Event 28-01-2026 – Coast Archers'
+    assert ad_fix_title('Indoor League - 2026 01 - Round 1 – Southern Vales Archery Club', '2027-01-04') == 'Indoor League 2026/27 – Round 1 – Southern Vales Archery Club'
+    a = {'id': 'wa-31513', 'name': 'WAIT26', 'start_date': '2026-11-08', 'end_date': '2026-11-08',
+         'location': 'GANG WARILY RECREATION CENTRE, Southamlton', 'source_url': 'https://www.worldarchery.sport/competition/31513'}
+    b = {'id': 'wa-31514', 'name': 'WAIT26', 'start_date': '2026-11-08', 'end_date': '2026-11-08',
+         'location': 'GANG WARILY RECREATION CENTRE, Southamlton', 'source_url': 'https://www.worldarchery.sport/competition/31514'}
+    other = {'id': 'wa-31600', 'name': 'Different', 'start_date': '2026-11-08', 'end_date': '2026-11-08',
+             'location': 'GANG WARILY RECREATION CENTRE, Southamlton', 'source_url': 'https://www.worldarchery.sport/competition/31600'}
+    merged, dropped = collapse_wa_twins([a, b, other])
+    assert dropped == ['wa-31514'] and [e['id'] for e in merged] == ['wa-31513', 'wa-31600']
+    assert merged[0]['alias_ids'] == ['wa-31514']
+    print('PASS typo map, title date fix, southern vales season label, wa twin merge')
     if not ok:
         raise SystemExit(1)
     print('self-test ok')
@@ -1797,6 +1965,7 @@ def main(argv=None):
     if args.dry_run:
         print('dry-run: no files written', flush=True)
         return 0
+    normalize_listed_events(docs)
     for key, path in DATA.items():
         doc, sep, nl = docs[key]
         dump_file(path, doc, sep, nl)
