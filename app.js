@@ -1100,7 +1100,28 @@ function rankingNote(x){
     <p>This one's run under ${esc(x.org || 'an international governing body')}, so it isn't simple online sign-up for everyone. Most events like this select or nominate archers through their own national federation, based on that federation's national rankings or selection trials – so the path in is to join your country's archery federation and compete in its own ranking and selection events. A few ranking series (for example World Archery's Indoor World Series stops) instead let any archer with current national federation membership register directly.</p>
     <p class="note">Ask your national federation how archers get selected or entered for this one, or check the registration link below.</p></section>`;
 }
+function lkScoresBox(x){
+  if (!x || !x.results_url) return '';
+  const nightSpecific = x.night >= 1 && x.night <= 6;
+  const home = x.source_url || 'https://nfstride1-ux.github.io/scoretool-demo/#lk-home';
+  const label = nightSpecific ? ('ScoreTool results · Night ' + x.night) : 'ScoreTool league page';
+  const note = x.results_note || (nightSpecific
+    ? 'Opens this night’s scores and the best-4 standings. Anyone can view the registered list, scoresheets, ladder and pot. Scoring is only for registered archers in ScoreTool.'
+    : 'Opens the league home, where the shoot-up is described. Anyone can view the registered list, scoresheets, ladder and pot. Scoring is only for registered archers in ScoreTool.');
+  const nights = EV.filter(e => e.series && e.series === x.series).sort((a, b) => (a.start_date || '').localeCompare(b.start_date || ''));
+  const list = nights.length > 1 ? `<ul class="lk-nights">${nights.map(e => {
+    const when = e.start_date ? pd(e.start_date).toLocaleDateString(LOC(), {weekday:'short', day:'numeric', month:'short', year:'numeric'}) : '';
+    const here = e.id === x.id;
+    return `<li>${here ? '<b>' : ''}<a href="#/shoot/${encodeURIComponent(e.id)}${isPast(e) ? '?r=1' : ''}">${esc(e.name)}</a>${here ? '</b>' : ''}${when ? ' · ' + esc(when) : ''}${e.results_url ? ` · <a href="${esc(e.results_url)}" target="_blank" rel="noopener">Scores</a>` : ''}</li>`;
+  }).join('')}</ul>` : '';
+  return `<section class="panel results-box" id="results"><h2 class="sec">🏆 Scores and ladder</h2>
+      <p class="row"><a class="btn gold" id="lkResults" href="${esc(x.results_url)}" target="_blank" rel="noopener">${esc(label)}</a>
+      ${nightSpecific ? `<a class="btn alt" id="lkLeagueHome" href="${esc(home)}" target="_blank" rel="noopener">League home</a>` : ''}</p>
+      <p class="note">${esc(note)}</p>${list}</section>`;
+}
 function resultsBox(x){
+  const live = lkScoresBox(x);
+  if (live) return live;
   if (!x || !isPast(x)) return '';
   const r = RES[x.id];
   if (!r) return `<section class="panel results-box" id="results"><h2 class="sec">🏆 Results</h2><p class="note">We haven't found published results for this event yet. Clubs often post them on Archer's Diary or their own page${x.source_url ? ` – try the <a href="${esc(x.source_url)}" target="_blank" rel="noopener">event source ↗</a>` : ''}.</p></section>`;
@@ -1164,7 +1185,7 @@ function vShoot(id){
       ${x.registration_email ? `<p class="note">Opens your email app addressed to <b>${esc(x.registration_email.to)}</b>${x.registration_email.cc ? `, cc ${esc(x.registration_email.cc)}` : ''}, with ${esc(x.registration_email.fields.join(', '))} ready to fill in.</p>` : ''}
       ${x.registration_note ? `<p class="note reg-note">ℹ ${esc(x.registration_note)}</p>` : ''}
       ${x.registration_url_source ? `<p class="note">Entry details from ${esc(x.registration_url_source)}.</p>` : ''}`
-      : regOf(x).length ? `<p class="note">✍ See How to register below</p>` : `<div class="warn">⚠ No online entry link found yet. ${x.org_id === 'aba' ? 'ABA events are entered through the host club.' : 'Check the source page below.'}</div>`;
+      : regOf(x).length ? `<p class="note">✍ See How to register below</p>` : (x.results_url ? `<p class="note">Scores, the ladder, the registered list and the pot are on ScoreTool. Scoring is only for registered archers there.</p>` : `<div class="warn">⚠ No online entry link found yet. ${x.org_id === 'aba' ? 'ABA events are entered through the host club.' : 'Check the source page below.'}</div>`);
   const closed = !!x.entry_close_date && daysTo(x.entry_close_date) < 0 && !isPast(x) && !x.info_only;
   const closeTxt = x.entry_close_date ? pd(x.entry_close_date).toLocaleDateString(LOC(),{weekday:'short',day:'numeric',month:'long',year:'numeric'}) + (x.entry_close_time ? ', ' + x.entry_close_time : '') : '';
   /* International events (data/intl.json): same page, plus country, venue time zone and a map link; back goes to the country page. */

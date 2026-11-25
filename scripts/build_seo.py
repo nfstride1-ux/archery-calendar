@@ -401,17 +401,27 @@ def event_page(x, rel):
     if x.get('level'): facts.append(('Level', x['level']))
     if x.get('org'):
         op = org_page(x); facts.append(('Organiser', f'<a href="{op}">{esc(x["org"])}</a>' if op else esc(x['org'])))
-    for lab, k in (('Rounds', 'rounds'), ('Entry fee', 'fee')):
+    for lab, k in (('Rounds', 'rounds'), ('Entry fee', 'fee'), ('Times', 'start_times')):
         t = safe_text(x.get(k) if isinstance(x.get(k), str) else '')
         if t: facts.append((lab, t))
     if x.get('entry_close_date'): facts.append(('Entries close', fmt_date(x['entry_close_date']) + (' (closed)' if x['entry_close_date'] < TODAY else '')))
     if x.get('registration_opens'): facts.append(('Entries open', fmt_date(x['registration_opens'])))
     dl = '<dl class="seo-facts">' + ''.join(f'<dt>{esc(a)}</dt><dd>{b if a == "Organiser" else esc(b)}</dd>' for a, b in facts) + '</dl>'
     links = ''
+    results = x.get('results_url') or ''
+    if results and re.match(r'https?://', results):
+        night = x.get('night')
+        lab = f'Scores and ladder · Night {night}' if isinstance(night, int) and 1 <= night <= 6 else 'Scores and ladder'
+        links += f'<a class="btn gold" href="{esc(results)}" rel="noopener" target="_blank">{esc(lab)}</a> '
+        home = x.get('source_url') or ''
+        if home and home != results and re.match(r'https?://', home):
+            links += f'<a class="btn alt" href="{esc(home)}" rel="noopener" target="_blank">League home</a> '
     if reg_url(x): links += f'<a class="btn gold" href="{esc(reg_url(x))}" rel="noopener" target="_blank">{esc(entry_label(x))}</a> '
     fl = flyer_link(x)
     if fl: links += f'<a class="btn alt" href="{esc(fl)}" rel="noopener" target="_blank">Flyer{"" if x.get("flyer_is_current", True) else " (older)"}</a> '
-    if x.get('source_url'): links += f'<a class="btn alt" href="{esc(x["source_url"])}" rel="noopener" target="_blank">Organiser calendar</a> '
+    src = x.get('source_url') or ''
+    if src and src != results and 'scoretool' not in src.lower():
+        links += f'<a class="btn alt" href="{esc(src)}" rel="noopener" target="_blank">Organiser calendar</a> '
     links += f'<a class="btn" href="{home_of(x)}">Open in the Archery Calendars app</a>'
     body = crumbs_html(cs)
     body += f'<article class="panel seo-event"><p class="lead-d">{esc(describe(x))}</p>{dl}<p class="seo-actions">{links}</p>'

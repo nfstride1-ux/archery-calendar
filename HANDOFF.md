@@ -4,6 +4,25 @@ Read this file first. Before you stop, add a new entry at the top: who you are, 
 
 The rules for the site are in [PROJECT_RULES.md](PROJECT_RULES.md). Ideas wait in [IDEAS.md](IDEAS.md).
 
+## 2026-11-25 17:15 AWST — Grok Bot
+
+- **Who:** Grok Bot.
+- **Done:** Nathe said "go" on pull request 43. Merged latest `main` (including the live 2027 Archery Australia calendar from PR #42) into this branch with no force-push. The seven Lingkana League nights stay as public listings with live ScoreTool score and ladder links. Cache bumped to `archcal-lkgo1715` so it is unique after the main merge. `privatecal.js` stays out. League relay data was not written.
+- **Half done:** Smoke and preview must go green on this commit, then the pull request can be merged and checked on the live site.
+- **Next:** Wait for checks, merge, then verify archerycalendars.com at 390×844.
+- **Decisions:** No scores, names, passcode or invite code were committed. The 18 Nov night stays listed as a past event.
+
+— [Grok Bot]
+
+## 2026-11-25 16:42 AWST — Grok Bot
+
+- **Who:** Grok Bot.
+- **Done:** Pull request only, not merged. The seven Lingkana League nights are public calendar listings again, with live ScoreTool links for scores, the ladder, the registered list and the pot. They were missing because the 25 Nov site audit (PR #37) removed `privatecal.js`, which was the only place the nights lived. They had never been in the public `events.json` catalogue (they started owner-only on My events in PR #12, then any signed-in account in PR #19). This change does not restore `privatecal.js`. Cache `archcal-lkpub1125`. Screenshots (390×844) go in `/workspace/ac-lingkana-cal/` on the box, not in the repo.
+- **Half done:** Nothing in the change itself. It does not go live until Nathe says so.
+- **Next:** Nathe reviews the pull request and the screenshots. Merge only on his explicit OK.
+- **Decisions:** Viewing the registered list, scoresheets, ladder and pot is open to anyone, by linking to the live ScoreTool league pages (`#lk-results&n=N` and `#lk-home`). No scores, names, passcode or invite code were committed. Scoring stays on ScoreTool for registered archers. League relay data was not written. The 18 Nov night is listed as a past event.
+
+— [Grok Bot]
 ## 2026-11-25 16:46 AWST — Jarvis
 
 - **Who:** Jarvis.
