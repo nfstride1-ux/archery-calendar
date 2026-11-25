@@ -1,0 +1,60 @@
+# Puts a copy of this pull request on main under pr-preview/pr-<number>/ so
+# GitHub Pages (which already serves main) can host it for free. The copy is
+# removed when the pull request is closed. The live site at the root is not
+# edited. Forks are skipped: a fork's code must not be given a write token.
+name: Preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: preview-${{ github.event.number }}
+  cancel-in-progress: false
+
+jobs:
+  preview:
+    name: preview
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the pull request
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Install Chrome
+        if: github.event.action != 'closed'
+        run: |
+          set -euo pipefail
+          if ! command -v google-chrome >/dev/null 2>&1; then
+            wget -q -O /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+            sudo apt-get update
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y /tmp/chrome.deb
+          fi
+
+      - name: Smoke test before publishing
+        if: github.event.action != 'closed'
+        run: python3 scripts/smoke_test.py
+
+      - name: Publish or remove the preview
+        env:
+          PR: ${{ github.event.number }}
+          ACTION: ${{ github.event.action }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          cp scripts/preview_comment.py /tmp/preview_comment.py
+          if [ "$ACTION" = "closed" ]; then
+            bash scripts/remove_preview.sh
+          else
+            bash scripts/publish_preview.sh
+          fi
+          python3 /tmp/preview_comment.py
