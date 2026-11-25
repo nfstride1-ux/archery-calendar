@@ -1,8 +1,18 @@
 # Handoff
 
-Read this file first. Before you stop, add a new entry at the top: who you are, the date and time in Perth (AWST), what is done, what is only half done, what is next, and any decision you made. Sign it. Tag the commit with `[Claude]`, `[ChatGPT]`, `[Jarvis]`, `[Grok Bot]`, or `[Cursor]`.
+Read this file first. Before you stop, add a new entry at the top: who you are, the date and time in Perth (AWST), what is done, what is only half done, what is next, and any decision you made. Sign it. Tag the commit with `[Claude]`, `[ChatGPT]`, `[OpenAI]`, `[Jarvis]`, `[Grok Bot]`, or `[Cursor]`.
 
 The rules for the site are in [PROJECT_RULES.md](PROJECT_RULES.md). Ideas wait in [IDEAS.md](IDEAS.md).
+
+## 2026-11-25 11:26 AWST — Grok Bot
+
+- **Who:** Grok Bot.
+- **Done:** Updated the shipping rule. Jarvis stays the lead and default builder. Claude, OpenAI, and Grok Bot may also ship code, as long as the change goes through a pull request, the `smoke` check is green, and a signed entry is added to this file. Nothing goes live without Nathe's own OK. No app code was changed.
+- **Half done:** Branch protection is still not on. Nathe has to add the ruleset in `PROJECT_RULES.md`.
+- **Next:** Other AIs can pick up work after a credit drop, using this rule.
+- **Decisions:** Nathe approved this on 25 Nov 2026 at 11:20 Perth: any of these AIs may ship under the checks above. He also approved merging this pull request.
+
+— [Grok Bot]
 
 ## 2026-11-25 10:56 AWST — Cursor
 
