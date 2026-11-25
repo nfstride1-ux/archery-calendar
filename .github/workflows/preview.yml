@@ -33,14 +33,15 @@ jobs:
         if: github.event.action != 'closed'
         run: |
           set -euo pipefail
-          if ! command -v google-chrome >/dev/null 2>&1; then
-            wget -q -O /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-            sudo apt-get update
-            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y /tmp/chrome.deb
-          fi
+          wget -q -O /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y /tmp/chrome.deb
+          /opt/google/chrome/chrome --version
 
       - name: Smoke test before publishing
         if: github.event.action != 'closed'
+        env:
+          CHROME_PATH: /opt/google/chrome/chrome
         run: python3 scripts/smoke_test.py
 
       - name: Publish or remove the preview

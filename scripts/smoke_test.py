@@ -7,6 +7,7 @@ private calendar file and the owner's personal contact details are absent.
 """
 import json
 import os
+import signal
 import socket
 import struct
 import subprocess
@@ -132,9 +133,9 @@ def ws_send_raw_pong(sock, data):
 
 
 def chrome_path():
-    for cand in (os.environ.get('CHROME_PATH'), '/usr/bin/google-chrome', '/usr/bin/google-chrome-stable',
-                 '/usr/bin/chromium', '/usr/bin/chromium-browser'):
-        if cand and os.path.exists(cand):
+    for cand in (os.environ.get('CHROME_PATH'), '/opt/google/chrome/chrome', '/usr/bin/google-chrome-stable',
+                 '/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser'):
+        if cand and os.path.exists(cand) and os.access(cand, os.X_OK):
             return cand
     return None
 
@@ -261,26 +262,37 @@ def check_home(port):
         return
     debug = free_port()
     profile = os.path.join('/tmp', 'archery-smoke-' + str(os.getpid()))
+    log_path = profile + '.log'
+    os.makedirs(profile, exist_ok=True)
+    log = open(log_path, 'w', encoding='utf-8')
     proc = subprocess.Popen(
         [chrome, '--headless=new', '--disable-gpu', '--no-sandbox', '--disable-dev-shm-usage',
+         '--disable-software-rasterizer', '--remote-allow-origins=*',
          '--remote-debugging-address=127.0.0.1', f'--remote-debugging-port={debug}',
-         f'--user-data-dir={profile}', '--no-first-run', '--disable-extensions', 'about:blank'],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+         f'--user-data-dir={profile}', '--no-first-run', '--no-default-browser-check',
+         '--disable-extensions', 'about:blank'],
+        stdout=log, stderr=subprocess.STDOUT, start_new_session=True,
     )
     try:
         version = None
-        for _ in range(50):
-            if proc.poll() is not None:
-                break
+        deadline = time.time() + 25
+        while time.time() < deadline:
             try:
                 with urllib.request.urlopen(f'http://127.0.0.1:{debug}/json/version', timeout=1) as resp:
                     version = json.load(resp)
                 break
             except Exception:
-                time.sleep(0.1)
-        chk('Chrome debugger is up', bool(version))
+                # The launcher can exit after it starts the browser. Keep waiting for the port.
+                time.sleep(0.25)
         if not version:
+            log.flush()
+            try:
+                tail = open(log_path, encoding='utf-8', errors='replace').read()[-800:]
+            except Exception as exc:
+                tail = str(exc)
+            chk('Chrome debugger is up', False, f'exit={proc.poll()} {tail}')
             return
+        chk('Chrome debugger is up', True)
         req = urllib.request.Request(f'http://127.0.0.1:{debug}/json/new?about:blank', method='PUT')
         try:
             with urllib.request.urlopen(req, timeout=5) as resp:
@@ -355,7 +367,11 @@ def check_home(port):
         chk('home page has no JavaScript errors', not real, ' | '.join(real[:4]))
         sock.close()
     finally:
-        proc.terminate()
+        log.close()
+        try:
+            os.killpg(proc.pid, signal.SIGTERM)
+        except (ProcessLookupError, PermissionError):
+            proc.terminate()
         try:
             proc.wait(timeout=3)
         except subprocess.TimeoutExpired:

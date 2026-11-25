@@ -4,6 +4,16 @@ Read this file first. Before you stop, add a new entry at the top: who you are, 
 
 The rules for the site are in [PROJECT_RULES.md](PROJECT_RULES.md). Ideas wait in [IDEAS.md](IDEAS.md).
 
+## 2026-11-25 10:53 AWST — Cursor
+
+- **Who:** Cursor (cloud agent).
+- **Done:** The first GitHub run of `smoke` and `preview` failed because the runner's Chrome never opened its debugger. The workflows now install Google's Chrome package and the smoke test waits longer and records Chrome's log if it still does not start. Local smoke still passes, 21 checks.
+- **Half done:** The new run is not green yet. Branch protection is still not on. The preview URL is not live until the preview job passes.
+- **Next:** Confirm `smoke` and `preview` are green on pull request 38. Nathe then reviews https://archerycalendars.com/pr-preview/pr-38/ and merges only if he wants it live. The ruleset steps in `PROJECT_RULES.md` are unchanged.
+- **Decisions:** Use `/opt/google/chrome/chrome` from the official package instead of whatever `google-chrome` is already on the runner.
+
+— Cursor
+
 ## 2026-11-25 10:50 AWST — Cursor
 
 - **Who:** Cursor (cloud agent).
