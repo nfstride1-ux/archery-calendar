@@ -4,6 +4,19 @@ Read this file first. Before you stop, add a new entry at the top: who you are, 
 
 The rules for the site are in [PROJECT_RULES.md](PROJECT_RULES.md). Ideas wait in [IDEAS.md](IDEAS.md).
 
+## 25 Nov 2026, 18:30 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/scoretool-plans-link`. Nathe t1193u: the ScoreTool panel line is now just the "ScoreTool Plus & Pro" link (no description). Footer link unchanged. scoretool.js query `stplans1125b`.
+- Half-done: PR only, not merged; goes with or after ScoreTool PR #88.
+
+## 25 Nov 2026, 17:40 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/scoretool-plans-link`. Nathe t1191u: a link to ScoreTool's Plans from Archery Calendar. Footer > Explore gets "ScoreTool Plus & Pro", and the signed-in ScoreTool panel gets one line ("The ScoreTool score card is free. ScoreTool Plus & Pro add analysis, diary, gear and tuning."). Both open https://nfstride1-ux.github.io/scoretool-demo/#plans in a new tab. scoretool.js cache query bumped. Generated SEO pages and the sitemap are unchanged.
+- Half-done: PR only, not merged. Goes live only together with or after ScoreTool PR #88, because before that `#plans` just opens the normal app.
+- Decision: no announcement, no prices on this site.
+
 ## 2026-11-25 17:15 AWST — Grok Bot
 
 - **Who:** Grok Bot.

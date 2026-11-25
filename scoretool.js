@@ -117,7 +117,8 @@ function stlAccountPanel(){
   const n = STL.links.length;
   w.insertAdjacentHTML('beforeend', `<section class="panel" id="stlAcct"><h2 class="sec">${STL_ICO} ScoreTool</h2>
     <p>${n ? `Linked on ${n} phone${n === 1 ? '' : 's'}. Finished rounds show in <a href="#/calendar">My events</a>.` : 'Not linked. Link it and finished ScoreTool rounds show in <a href="#/calendar">My events</a>.'}</p>
-    <div class="row">${n ? '<button class="btn" id="stlUnlink">Unlink ScoreTool</button>' : ''}<a class="btn alt" href="#/scoretool">Link ScoreTool</a></div></section>`);
+    <div class="row">${n ? '<button class="btn" id="stlUnlink">Unlink ScoreTool</button>' : ''}<a class="btn alt" href="#/scoretool">Link ScoreTool</a></div>
+    <p class="note" id="stlPlans"><a href="${STL_TARGETS.demo}#plans" target="_blank" rel="noopener">ScoreTool Plus &amp; Pro</a></p></section>`);
   const u = $('#stlUnlink'); if (u) u.onclick = async () => { if (!confirm('Unlink ScoreTool? Scores already added stay in My events.')) return;
     const {error} = await AUTH.client.from('scoretool_links').delete().eq('user_id', AUTH.user.id); toast(error ? 'Could not unlink: ' + error.message : 'ScoreTool unlinked'); STL.uid = null; stlLoad(); };
 }
