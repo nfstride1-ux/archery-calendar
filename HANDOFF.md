@@ -4,6 +4,12 @@ Read this file first. Before you stop, add a new entry at the top: who you are, 
 
 The rules for the site are in [PROJECT_RULES.md](PROJECT_RULES.md). Ideas wait in [IDEAS.md](IDEAS.md).
 
+## 25 Nov 2026, 18:30 AWST — [Jarvis]
+
+- Who: Jarvis.
+- Done: Branch `cursor/scoretool-plans-link`. Nathe t1193u: the ScoreTool panel line is now just the "ScoreTool Plus & Pro" link (no description). Footer link unchanged. scoretool.js query `stplans1125b`.
+- Half-done: PR only, not merged; goes with or after ScoreTool PR #88.
+
 ## 25 Nov 2026, 17:40 AWST — [Jarvis]
 
 - Who: Jarvis.
