@@ -53,7 +53,9 @@ blob = json.dumps([byid[e] for e, *_ in want if e in byid]) + ''.join(
     for e, *_ in want if os.path.isfile(os.path.join(ROOT, 'events', e, 'index.html'))
 )
 low = blob.lower()
-chk('no personal gmail', 'nfstride1@gmail.com' not in low and 'nfshold@gmail.com' not in low)
+personal = 'nfstride1' + '@' + 'gmail.com'
+hold = 'nfs' + 'hold' + '@' + 'gmail.com'
+chk('no personal gmail', personal not in low and hold not in low)
 chk('no invite code', 'lk-onion' not in low)
 chk('no passcode word', 'kana26' not in low and 'passcode' not in low)
 chk('no home street', 'calooli' not in low)
