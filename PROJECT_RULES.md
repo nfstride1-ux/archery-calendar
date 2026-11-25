@@ -14,7 +14,7 @@ These already work. A change that breaks one of them is not done.
 - **NASP is United States only.** There is no NASP Australia. NASP is not part of ScoreTool.
 - **Units follow the country.** Near me uses miles in the United States and the United Kingdom, and kilometres everywhere else. Weather uses mph in the United States and the United Kingdom (and a few other places that use mph), and km/h elsewhere. Temperature is °F in the United States and °C elsewhere.
 - **Supabase accounts.** Sign-in, saved events, and entries stay on the archer's own account. Row level security is what protects that data.
-- **The ScoreTool score bridge.** Finished scores are written only by `scoretool_save_score()` for a linked account (`supabase/scoretool_scores.sql`). Do not write `score_entries` any other way.
+- **The ScoreTool score bridge.** Finished scores are written only by `scoretool_save_score()` for a linked account (`supabase/scoretool_scores.sql`). A deleted ScoreTool session is removed only by `scoretool_delete_score()`. Do not write or delete `score_entries` any other way, except the archer deleting their own row while signed in (existing RLS).
 
 ## Hard rules
 

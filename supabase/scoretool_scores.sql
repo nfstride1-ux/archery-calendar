@@ -6,6 +6,7 @@
 --   1. Signed in on archerycalendars.com, the archer taps "Link ScoreTool". create_scoretool_link() makes a random secret
 --      (48 hex chars), stores only its SHA-256 hash, and the page hands the secret to ScoreTool on a fixed address.
 --   2. ScoreTool keeps the secret on that phone and, when a round is finished, calls scoretool_save_score(secret, ...).
+--      When a session is deleted on the phone, ScoreTool calls scoretool_delete_score(secret, source_id).
 --      The secret can ONLY add/update/remove that archer's own ScoreTool score entries. It can't read anything,
 --      can't touch events, entries, settings or anyone else's data.
 --   3. The archer can see and revoke links on the Account page (select/delete own rows only).
@@ -98,3 +99,26 @@ grant execute on function public.scoretool_save_score(text, text, date, text, in
 grant execute on function public.scoretool_unlink(text) to anon, authenticated;
 grant select, delete on public.score_entries to authenticated;
 grant select, delete on public.scoretool_links to authenticated;
+
+-- 4) ScoreTool removes one of this archer's own scores (25 Nov 2026).
+--    Same secret as scoretool_save_score. Only that linked account's scoretool row for p_source_id is deleted.
+--    Missing row is still ok (already gone). Does not touch events, photos, or anyone else's scores.
+--    Additive: safe to run more than once. Must be run in the live Supabase SQL Editor before ScoreTool can
+--    actually drop already-synced scores from My events.
+create or replace function public.scoretool_delete_score(p_token text, p_source_id text)
+returns jsonb language plpgsql security definer set search_path = public, extensions as $$
+declare uid uuid;
+begin
+  if p_token is null or p_token !~ '^[0-9a-f]{48}$' then raise exception 'not linked' using errcode = '28000'; end if;
+  if p_source_id is null or char_length(p_source_id) < 1 or char_length(p_source_id) > 80 then
+    raise exception 'bad request';
+  end if;
+  select user_id into uid from public.scoretool_links where token_hash = extensions.digest(p_token, 'sha256');
+  if uid is null then raise exception 'not linked' using errcode = '28000'; end if;
+  delete from public.score_entries where user_id = uid and source = 'scoretool' and source_id = p_source_id;
+  update public.scoretool_links set last_used_at = now() where token_hash = extensions.digest(p_token, 'sha256');
+  return jsonb_build_object('ok', true);
+end $$;
+
+revoke all on function public.scoretool_delete_score(text, text) from public;
+grant execute on function public.scoretool_delete_score(text, text) to anon, authenticated;
