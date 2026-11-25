@@ -4,6 +4,17 @@ Read this file first. Before you stop, add a new entry at the top: who you are, 
 
 The rules for the site are in [PROJECT_RULES.md](PROJECT_RULES.md). Ideas wait in [IDEAS.md](IDEAS.md).
 
+## 2026-11-25 16:46 AWST — Jarvis
+
+- **Who:** Jarvis.
+- **Done:** Pull request only until merged on Nathe's "go". Merged latest `main` (event data refresh) into this branch with no force-push, keeping the 2027 calendar additions. Fixed the Asian Para Championships venue so the SEO page says Beijing, China, not "Beijing, China, China". Cache bumped to `archcal-aa20271125b`. Lingkana data was not touched.
+- **Half done:** After checks are green, merge pull request 42 and verify the live site.
+- **Next:** Merge on this "go", then confirm the live cache and screenshots.
+- **Decisions:** Location for Asian Para is now "Beijing" (country still China). Open Field and World Para dates stay as they were.
+
+— [Jarvis]
+
+
 ## 2026-11-25 16:38 AWST — Jarvis
 
 - **Who:** Jarvis.
