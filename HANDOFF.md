@@ -4,6 +4,16 @@ Read this file first. Before you stop, add a new entry at the top: who you are, 
 
 The rules for the site are in [PROJECT_RULES.md](PROJECT_RULES.md). Ideas wait in [IDEAS.md](IDEAS.md).
 
+## 2026-11-25 17:15 AWST — Grok Bot
+
+- **Who:** Grok Bot.
+- **Done:** Nathe said "go" on pull request 43. Merged latest `main` (including the live 2027 Archery Australia calendar from PR #42) into this branch with no force-push. The seven Lingkana League nights stay as public listings with live ScoreTool score and ladder links. Cache bumped to `archcal-lkgo1715` so it is unique after the main merge. `privatecal.js` stays out. League relay data was not written.
+- **Half done:** Smoke and preview must go green on this commit, then the pull request can be merged and checked on the live site.
+- **Next:** Wait for checks, merge, then verify archerycalendars.com at 390×844.
+- **Decisions:** No scores, names, passcode or invite code were committed. The 18 Nov night stays listed as a past event.
+
+— [Grok Bot]
+
 ## 2026-11-25 16:42 AWST — Grok Bot
 
 - **Who:** Grok Bot.
@@ -13,6 +23,27 @@ The rules for the site are in [PROJECT_RULES.md](PROJECT_RULES.md). Ideas wait i
 - **Decisions:** Viewing the registered list, scoresheets, ladder and pot is open to anyone, by linking to the live ScoreTool league pages (`#lk-results&n=N` and `#lk-home`). No scores, names, passcode or invite code were committed. Scoring stays on ScoreTool for registered archers. League relay data was not written. The 18 Nov night is listed as a past event.
 
 — [Grok Bot]
+## 2026-11-25 16:46 AWST — Jarvis
+
+- **Who:** Jarvis.
+- **Done:** Pull request only until merged on Nathe's "go". Merged latest `main` (event data refresh) into this branch with no force-push, keeping the 2027 calendar additions. Fixed the Asian Para Championships venue so the SEO page says Beijing, China, not "Beijing, China, China". Cache bumped to `archcal-aa20271125b`. Lingkana data was not touched.
+- **Half done:** After checks are green, merge pull request 42 and verify the live site.
+- **Next:** Merge on this "go", then confirm the live cache and screenshots.
+- **Decisions:** Location for Asian Para is now "Beijing" (country still China). Open Field and World Para dates stay as they were.
+
+— [Jarvis]
+
+
+## 2026-11-25 16:38 AWST — Jarvis
+
+- **Who:** Jarvis.
+- **Done:** Pull request only, not merged. Archery Australia 2027 Event Calendar (version 3.3, https://archery.org.au/wp-content/uploads/2026/11/AA-2027-EVENT-CALENDAR.pdf) updates: added Pacific Games (Tahiti, 23 Jul–8 Aug 2027) and Asian Para Championships (Beijing, 17–25 Sep 2027); set National Youth Championships venue to target at Werribee Archery Club (VU Werribee Campus) and field at Geelong Archers, Waurn Ponds; added the eight 2027 AA Matchplay Weekend listings (various clubs, same style as 2026); added Central Coast to the XXI Australian Masters Games location. Open Field and World Para Championship dates were left as they were. All 31 listed 2027 QREs now include the note to register on both Assemble and Archer's Diary. Cache `archcal-aa20271125`. SEO pages rebuilt. Phone screenshots (390×844) are in `/workspace/ac-aa2027/` on the box, not in the repo.
+- **Half done:** Nothing in the change itself. It does not go live until Nathe says so.
+- **Next:** Nathe reviews the pull request and the screenshots. Merge only on his explicit OK.
+- **Decisions:** Open Field stays 21–26 Apr and World Para stays 30 Aug–6 Sep, matching AA's event page and earlier announcement rather than the PDF start days. No events were removed. Lingkana league listings were not part of this change.
+
+— [Jarvis]
+
 
 ## 2026-11-25 14:15 AWST — Jarvis
 
