@@ -4,6 +4,16 @@ Read this file first. Before you stop, add a new entry at the top: who you are, 
 
 The rules for the site are in [PROJECT_RULES.md](PROJECT_RULES.md). Ideas wait in [IDEAS.md](IDEAS.md).
 
+## 2026-11-25 10:56 AWST — Cursor
+
+- **Who:** Cursor (cloud agent).
+- **Done:** Pull request 38 is open and not merged. `smoke` passed in 34 seconds and `preview` passed in 38 seconds on commit `a7ba55ba`. The preview is live at https://archerycalendars.com/pr-preview/pr-38/ (banner present, live home page has no banner). The preview commit on `main` only adds `pr-preview/pr-38/`.
+- **Half done:** Branch protection is still not on. Nathe has to add the ruleset in `PROJECT_RULES.md`.
+- **Next:** Nathe opens the preview, and merges pull request 38 only if he wants it live. Then he turns on the ruleset, with a bypass for GitHub Actions, and leaves GitHub Pages on `main`.
+- **Decisions:** None new. Adapter memory could not be saved because that connection is not signed in.
+
+— Cursor
+
 ## 2026-11-25 10:53 AWST — Cursor
 
 - **Who:** Cursor (cloud agent).
