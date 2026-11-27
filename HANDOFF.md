@@ -4,6 +4,16 @@ Read this file first. Before you stop, add a new entry at the top: who you are, 
 
 The rules for the site are in [PROJECT_RULES.md](PROJECT_RULES.md). Ideas wait in [IDEAS.md](IDEAS.md).
 
+## 2026-11-28 07:30 AWST — Grok Bot
+
+- **Who:** Grok Bot.
+- **Done:** Pull request only, not merged. On phones (768px and under), the stacked Latest news cards on the Home page (Australian and country homes) are now one collapsed drop-down: "Latest news (N)", the newest headline on one line, and a chevron. Tap the row to open compact one- to two-line links to the same articles. It uses a `details`/`summary` element and starts closed. The desktop layout is unchanged (stacked cards below 1280px, side newsletter columns at 1280px and up). Cache `archcal-newsdrop1128`. Screenshots (collapsed and expanded at 390, plus desktop at 1280) go in `/workspace/ac-news-dropdown-shots/` on the box, not in the repo.
+- **Half done:** Nothing in the change itself. It does not go live until Nathe says so.
+- **Next:** Nathe reviews the pull request, the preview, and the screenshots. Merge only on his explicit OK.
+- **Decisions:** The open/closed state is not remembered, so it always starts collapsed. Generated SEO pages and the sitemap were left unchanged. Lingkana data was not touched. `privatecal.js` stays out.
+
+— [Grok Bot]
+
 ## 2026-11-25 17:15 AWST — Grok Bot
 
 - **Who:** Grok Bot.
