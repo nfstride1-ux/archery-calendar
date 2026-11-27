@@ -4,6 +4,16 @@ Read this file first. Before you stop, add a new entry at the top: who you are, 
 
 The rules for the site are in [PROJECT_RULES.md](PROJECT_RULES.md). Ideas wait in [IDEAS.md](IDEAS.md).
 
+## 2026-11-28 07:37 AWST — Grok Bot
+
+- **Who:** Grok Bot.
+- **Done:** Fix on pull request 46, not merged. The expanded Latest news headlines were clipping their second lines because a height cap shrank the flex items, and long titles also leaked a half-hidden third line. Each headline is now a full two-line clamp (`line-clamp: 2` on an inner span, with 1.4 line-height and 12px padding), so the text is not cut and an ellipsis shows if the title is longer. The height cap was removed; all six Australian items fit at that size, and there is extra space under the open list so the last headline can scroll above the + and ? buttons. Cache `archcal-newsdrop1128b`. New screenshots are in `/workspace/ac-news-dropdown-shots/` on the box, not in the repo.
+- **Half done:** Nothing in the change itself. It does not go live until Nathe says so.
+- **Next:** Preview job republishes `pr-preview/pr-46/`. Nathe reviews the preview and screenshots. Merge only on his explicit OK.
+- **Decisions:** No inner scroll and no shrinking. Desktop layout is still unchanged.
+
+— [Grok Bot]
+
 ## 2026-11-28 07:30 AWST — Grok Bot
 
 - **Who:** Grok Bot.
