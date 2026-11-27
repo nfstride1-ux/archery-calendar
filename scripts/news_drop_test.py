@@ -22,7 +22,7 @@ idx = open(os.path.join(ROOT, 'index.html'), encoding='utf-8').read()
 chk('newsCard still builds desktop cards', 'class="news-card nc-main"' in app and 'nc-tag">Latest news' in app)
 chk('newsCard builds details drop-down', '<details class="news-drop">' in app and '<summary class="news-drop-sum">' in app)
 chk('drop-down shows count and peek headline', 'Latest news (${items.length})' in app and 'news-drop-peek' in app)
-chk('drop-down links keep same article URLs and tracking', 'class="news-drop-link"' in app and 'data-gc="home-card/newsletter"' in app)
+chk('drop-down links keep same article URLs and tracking', 'class="news-drop-link"' in app and 'class="news-drop-t"' in app and 'data-gc="home-card/newsletter"' in app)
 chk('empty news returns nothing', 'if (!items.length) return' in app)
 
 chk('drop-down hidden by default', '.news-drop{display:none}' in css)
@@ -34,8 +34,10 @@ chk('gold / yellow accent kept', 'border-left:6px solid var(--gold)' in css and 
 chunk = css[css.find('28 Nov 2026'):css.find('28 Nov 2026')+2500] if '28 Nov 2026' in css else ''
 chk('no purple in new drop-down CSS', not re.search(r'(?<!-)purple|#7c3aed|#6d28d9|#8b5cf6|#a855f7|#7e22ce', chunk, re.I))
 
-chk('cache bumped in sw', "const C='archcal-newsdrop1128'" in sw)
-chk('index cache tags', 'app.js?v=newsdrop1128' in idx and 'styles.css?v=newsdrop1128' in idx)
+chk('cache bumped in sw', "const C='archcal-newsdrop1128b'" in sw)
+chk('index cache tags', 'app.js?v=newsdrop1128b' in idx and 'styles.css?v=newsdrop1128b' in idx)
+chk('links do not use a tight max-height', 'news-drop-link' in css and 'max-height' not in css[css.find('.news-drop-link{'):css.find('.news-drop-link{')+400])
+chk('links do not shrink in a capped flex list', 'flex:none' in css[css.find('.news-drop-link{'):css.find('.news-drop-link{')+400] and 'list.style.maxHeight' not in app)
 chk('privatecal stays out', not os.path.isfile(os.path.join(ROOT, 'privatecal.js')))
 
 print('news_drop_test:', 'all passed' if not fail else f'{fail} failed')
