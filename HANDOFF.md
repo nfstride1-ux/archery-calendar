@@ -4,6 +4,26 @@ Read this file first. Before you stop, add a new entry at the top: who you are, 
 
 The rules for the site are in [PROJECT_RULES.md](PROJECT_RULES.md). Ideas wait in [IDEAS.md](IDEAS.md).
 
+## 2026-11-28 07:37 AWST — Grok Bot
+
+- **Who:** Grok Bot.
+- **Done:** Fix on pull request 46, not merged. The expanded Latest news headlines were clipping their second lines because a height cap shrank the flex items, and long titles also leaked a half-hidden third line. Each headline is now a full two-line clamp (`line-clamp: 2` on an inner span, with 1.4 line-height and 12px padding), so the text is not cut and an ellipsis shows if the title is longer. The height cap was removed; all six Australian items fit at that size, and there is extra space under the open list so the last headline can scroll above the + and ? buttons. Cache `archcal-newsdrop1128b`. New screenshots are in `/workspace/ac-news-dropdown-shots/` on the box, not in the repo.
+- **Half done:** Nothing in the change itself. It does not go live until Nathe says so.
+- **Next:** Preview job republishes `pr-preview/pr-46/`. Nathe reviews the preview and screenshots. Merge only on his explicit OK.
+- **Decisions:** No inner scroll and no shrinking. Desktop layout is still unchanged.
+
+— [Grok Bot]
+
+## 2026-11-28 07:30 AWST — Grok Bot
+
+- **Who:** Grok Bot.
+- **Done:** Pull request only, not merged. On phones (768px and under), the stacked Latest news cards on the Home page (Australian and country homes) are now one collapsed drop-down: "Latest news (N)", the newest headline on one line, and a chevron. Tap the row to open compact one- to two-line links to the same articles. It uses a `details`/`summary` element and starts closed. The desktop layout is unchanged (stacked cards below 1280px, side newsletter columns at 1280px and up). Cache `archcal-newsdrop1128`. Screenshots (collapsed and expanded at 390, plus desktop at 1280) go in `/workspace/ac-news-dropdown-shots/` on the box, not in the repo.
+- **Half done:** Nothing in the change itself. It does not go live until Nathe says so.
+- **Next:** Nathe reviews the pull request, the preview, and the screenshots. Merge only on his explicit OK.
+- **Decisions:** The open/closed state is not remembered, so it always starts collapsed. Generated SEO pages and the sitemap were left unchanged. Lingkana data was not touched. `privatecal.js` stays out.
+
+— [Grok Bot]
+
 ## 2026-11-25 17:15 AWST — Grok Bot
 
 - **Who:** Grok Bot.

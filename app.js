@@ -754,7 +754,13 @@ function bindNews(arg){
   const a = arg && (arg.toUpperCase() === 'WORLD' ? 'WORLD' : iso3of(arg)), b = $('#ctrySw'); if (!a || !b) return;   // flag button shows the country the news is for
   setTimeout(() => { if (document.body.dataset.page === 'news') b.innerHTML = `<span aria-hidden="true">${a === 'AUS' ? flag('AU') : a === 'WORLD' ? '🌐' : flag(iIso(a))}</span><span class="pl"> ${esc(a === 'AUS' ? 'Australia' : iName(a))}</span> ▾`; }, 0);   // after setHomeLinks (hashchange)
 }
-const newsCard = code => newsItems(code).map(n => `<a class="news-card nc-main" href="${esc(n.url)}" data-gc="home-card/newsletter" data-gc-t="Latest news card (home)"><span class="nc-tag">Latest news</span><span class="nc-t">${esc(n.title)}</span><span class="nc-go" aria-hidden="true">&rarr;</span></a>`).join('');
+function newsCard(code){
+  const items = newsItems(code);
+  if (!items.length) return '';
+  const cards = items.map(n => `<a class="news-card nc-main" href="${esc(n.url)}" data-gc="home-card/newsletter" data-gc-t="Latest news card (home)"><span class="nc-tag">Latest news</span><span class="nc-t">${esc(n.title)}</span><span class="nc-go" aria-hidden="true">&rarr;</span></a>`).join('');
+  const links = items.map(n => `<a class="news-drop-link" href="${esc(n.url)}" data-gc="home-card/newsletter" data-gc-t="Latest news card (home)"><span class="news-drop-t">${esc(n.title)}</span></a>`).join('');
+  return `${cards}<details class="news-drop"><summary class="news-drop-sum"><span class="news-drop-label">Latest news (${items.length})</span><span class="news-drop-peek">${esc(items[0].title)}</span><span class="news-drop-chev" aria-hidden="true"></span></summary><div class="news-drop-list">${links}</div></details>`;
+}
 /* Help panel "What is Archery Calendars?" text: names the country the visitor is viewing (country home / international page), else their home country.
    Organisations are only ones the site really lists for that country (from data/intl.json sources); countries with none listed get the plain country line. Australia keeps its own text (in help.js). */
 const HELP_ORGS = {USA: 'USA Archery, NASP, NFAA, IBO and the Archery Shooters Association', DEN: 'Bueskydning Danmark', NZL: 'Archery New Zealand, NZ Field Archery Association, the NZ Bowhunters Society and ArcheryOSA',
