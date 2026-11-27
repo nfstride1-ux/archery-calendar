@@ -1,0 +1,16 @@
+{
+ "_source": "Archery Australia Shooting Rules v7.2 (July 2026): Schedule 9A Official Target Archery Rounds, Schedule 10A Indoor Target Archery Rounds, Ch.11 / Schedule 4B.3 Field Archery Rounds, Schedule 12A Clout Archery Distances; World Archery Rules Book 4 (Field & 3D). Divisions: AA Shooting Rules 7.9; ABA National Rules of Shoot (consolidated 1 Jan 2026) and ABA records pages. Downloaded 2026-10-09: research/rules/aa_rules_2026-07.pdf",
+ "rounds": [
+  ["Target (outdoor)", ["WA90/1440", "WA70/1440", "WA60/1440 (Fremantle)", "AA50/1440", "AA40/1440", "Long Sydney", "Sydney", "Long Brisbane", "Brisbane", "Adelaide", "Short Adelaide", "Hobart", "Perth", "Canberra", "WA60/900", "Short Canberra", "Junior Canberra", "Mini Canberra", "Grange", "Melbourne", "Darwin", "Geelong", "Newcastle", "Holt", "Samford", "Drake", "Wollongong", "Townsville", "Launceston", "WA70/720", "WA60/720", "WA50/720", "AA50/720", "WABB50/720 (Barebow)", "AA40/720", "AA30/720", "AA20/720", "VI Outdoor", "VI 30m Round", "OzBow 10", "OzBow 15", "OzBow 20", "OzBow 25", "OzBow 30", "OzBow 35", "OzBow 40", "OzBow 45"]],
+  ["Indoor", ["WA 18m Indoor", "WA 25m Indoor", "WA Combined Indoor", "Australian Indoor 1", "Australian Indoor 2", "Australian Combined Indoor 1 & 2", "VI Indoor"]],
+  ["Field", ["WA Field (24T Marked)", "WA Field (24T Unmarked)", "WA Field (2 x 24T Marked)", "National Field Round (red pegs)", "National Field Round (blue pegs)", "National Field Round (yellow pegs)", "Hunters Round", "AA Special 1 Arrow Field Round"]],
+  ["Clout", ["Clout 36 arrows @ 180 m", "Clout 36 arrows @ 165 m", "Clout 36 arrows @ 145 m", "Clout 36 arrows @ 125 m", "Clout 36 arrows @ 100 m", "Double Clout 72 arrows"]],
+  ["3D", ["World Archery 3D Round (24 targets)"]]
+ ],
+ "divisions": [
+  ["Bow divisions (Archery Australia)", ["Recurve", "Compound", "Barebow Recurve", "Barebow Compound", "Longbow", "Crossbow"]],
+  ["Age classes (Archery Australia)", ["Open", "50+", "60+", "70+", "Under 21", "Under 18", "Under 16", "Under 14", "Para / VI"]],
+  ["ABA divisions", ["Freestyle Limited Recurve", "Freestyle Limited Compound", "Freestyle Unlimited", "Bowhunter Recurve", "Bowhunter Compound", "Bowhunter Limited", "Bowhunter Unlimited", "Longbow Traditional", "Longbow Modern", "Historical Bow", "Traditional Recurve", "Sighted (Veteran)", "Unsighted (Veteran)"]],
+  ["ABA age groups", ["Professional", "Adult", "Veteran", "Junior", "Cub", "Traditional Peg"]]
+ ]
+}
