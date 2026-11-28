@@ -4,6 +4,16 @@ Read this file first. Before you stop, add a new entry at the top: who you are, 
 
 The rules for the site are in [PROJECT_RULES.md](PROJECT_RULES.md). Ideas wait in [IDEAS.md](IDEAS.md).
 
+## 2026-11-28 19:50 AWST — Grok Bot
+
+- **Who:** Grok Bot.
+- **Done:** Pull request only, not merged. The event-page countdown no longer treats a missing shooting time as midnight. It now prefers a published start or shooting time, falls back to practice, muster, or another clock time if that is all there is, and uses the event's own timezone. If no time is known, the badge says "Starts tomorrow" or "Starts in N days" (or "On today" on the day) instead of ticking hours and minutes down to midnight. The Archery WA Non-Elimination Teams Matchplay + AGM (29 Nov 2026) times were wrong in the data: the TIMES card said "Practice starts at 8:00 AM" and the countdown ran to midnight. The official flyer (`flyers/awa-teams-matchplay-2026.jpg`) says "Shooting commences at 8:30 AM" (already in `notes` and `flyer_extract`). `start_times` is now that flyer wording, and the SEO page Times line matches. Cache `archcal-cdfix1128`. `scripts/countdown_tz_test.js` covers this event, the no-time case, and an eastern-states event viewed from Perth. Lingkana data was not touched. `privatecal.js` stays out. PR #46 was not changed.
+- **Half done:** Nothing in the change itself. It does not go live until Nathe says so.
+- **Next:** Nathe reviews the pull request and the preview. Merge only on his explicit OK.
+- **Decisions:** The flyer does not list an 8:00 am practice; the 30-minute team practice is after the ranking round. I did not invent an 8:00 practice time. Events that only publish a practice time now count down to that practice time rather than midnight. Daily refresh will keep the curated 8:30 start because it does not overwrite a filled `start_times` field.
+
+— [Grok Bot]
+
 ## 2026-11-25 17:15 AWST — Grok Bot
 
 - **Who:** Grok Bot.

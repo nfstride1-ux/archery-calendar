@@ -7,6 +7,20 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
+// Node 24's `new Date()` does not read a patched Date.now, so today()/iPast would
+// use the real clock and treat the November 17 fixtures as already finished.
+const RealDate = Date;
+function TestDate(...args){
+  if (new.target) return args.length ? new RealDate(...args) : new RealDate(TestDate.now());
+  return args.length ? RealDate(...args) : RealDate(TestDate.now());
+}
+TestDate.now = RealDate.now.bind(RealDate);
+TestDate.parse = RealDate.parse.bind(RealDate);
+TestDate.UTC = RealDate.UTC.bind(RealDate);
+TestDate.prototype = RealDate.prototype;
+Object.setPrototypeOf(TestDate, RealDate);
+Date = TestDate;
+
 function el(){
   return {textContent: '', innerHTML: '', hidden: false, value: '', style: {}, dataset: {}, className: '',
     classList: {add(){}, remove(){}, toggle(){}, contains(){ return false; }},
@@ -41,7 +55,9 @@ vm.createContext(sandbox);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8'), sandbox, {filename: 'app.js'});
 
 const cdTargets = sandbox.cdTargets, evTz = sandbox.evTz, cdText = sandbox.cdText, cdBadge = sandbox.cdBadge;
+const cdSE = vm.runInContext('cdSE', sandbox);
 if (typeof cdTargets !== 'function') { console.error('cdTargets was not loaded'); process.exit(1); }
+if (typeof cdSE !== 'function') { console.error('cdSE was not loaded'); process.exit(1); }
 
 const bad = [];
 function chk(name, cond, detail){ if (cond) console.log('PASS ' + name); else { bad.push(name); console.error('FAIL ' + name + (detail ? ' — ' + detail : '')); } }
@@ -91,6 +107,49 @@ chk('8:00am Auckland in November is 19:00Z the day before', cdTargets(nz)[0][0] 
 
 const kept = {_intl: true, country_code: 'USA', tz: 'America/New_York', us_state: 'CA', start_date: '2026-11-17', start_times: '8:00 am start', name: 'Test'};
 chk('an event tz already on the record is kept', evTz(kept) === 'America/New_York');
+
+const evs = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data/events.json'), 'utf8')).events;
+const awa = evs.find(e => e.id === 'awa-2026-11-29-awa-matchplay-agm');
+chk('AWA matchplay data has the flyer shooting time, not 8:00 practice', !!(awa && awa.start_times === 'Shooting commences at 8:30 AM' && !/8:00/.test(awa.start_times)));
+const awaT = cdTargets(awa);
+chk('AWA matchplay counts down to 8:30am Perth (00:30Z 29 Nov), not midnight', awaT && awaT[0][0] === Date.parse('2026-11-29T00:30:00Z') && awaT[0][1] === 'Starts', awaT && iso(awaT[0][0]) + ' ' + (awaT && awaT[0][1]));
+
+const both = {id: 'tz-both', name: 'Test Championships', start_date: '2026-11-29', end_date: '2026-11-29', state: 'WA', state_code: 'WA', start_times: 'Practice starts at 8:00 AM. Shooting commences at 8:30 AM'};
+chk('when practice and shooting are both listed, countdown uses shooting', cdTargets(both)[0][0] === Date.parse('2026-11-29T00:30:00Z'), iso(cdTargets(both)[0][0]));
+
+const pract = {id: 'tz-pract', name: 'Test Championships', start_date: '2026-11-29', end_date: '2026-11-29', state: 'WA', state_code: 'WA', start_times: 'Practice starts at 8:00 AM'};
+chk('practice-only time is used, not midnight', cdTargets(pract)[0][0] === Date.parse('2026-11-29T00:00:00Z') && cdTargets(pract)[0][1] === 'Starts', iso(cdTargets(pract)[0][0]));
+
+const bare = {id: 'tz-bare', name: 'Test Championships', start_date: '2026-11-29', state: 'SA', start_times: '1:30 pm'};
+chk('a bare clock time with no start/practice word still counts down', cdTargets(bare)[0][0] === Date.parse('2026-11-29T03:00:00Z'), iso(cdTargets(bare)[0][0]));
+
+const noTime = {id: 'tz-none', name: 'Test Championships', start_date: '2026-11-29', end_date: '2026-11-29', state: 'WA', state_code: 'WA'};
+chk('no published time: cdTargets is null (no fake midnight instant)', cdTargets(noTime) === null);
+
+const nswShoot = {id: 'tz-nsw-830', name: 'Test Championships', start_date: '2026-11-29', end_date: '2026-11-29', country_code: 'AUS', state: 'NSW', state_code: 'NSW', start_times: 'Shooting commences at 8:30 AM'};
+chk('NSW 8:30am in November is 21:30Z the day before', evTz(nswShoot) === 'Australia/Sydney' && cdTargets(nswShoot)[0][0] === Date.parse('2026-11-28T21:30:00Z'), evTz(nswShoot) + ' ' + iso(cdTargets(nswShoot)[0][0]));
+
+const flyerOnly = {id: 'tz-flyer', name: 'Test Championships', start_date: '2026-11-29', end_date: '2026-11-29', state: 'WA', state_code: 'WA', flyer_extract: {start_times: 'Shooting commences 8:30am'}};
+chk('empty start_times falls back to flyer_extract shooting time', cdTargets(flyerOnly) && cdTargets(flyerOnly)[0][0] === Date.parse('2026-11-29T00:30:00Z'), cdTargets(flyerOnly) && iso(cdTargets(flyerOnly)[0][0]));
+
+const was2 = Date.now;
+Date.now = () => Date.parse('2026-11-28T11:30:00Z'); // 7:30pm Perth, the evening before
+try {
+  const textAwa = cdText(...cdSE(awa), cdTargets(awa));
+  chk('from 7:30pm Perth the night before, 8:30am WA is 13h, not 4h 30m to midnight', textAwa === '⏱ Starts in 13h 0m 0s', textAwa);
+  const [sNone, eNone] = cdSE(noTime);
+  const textNone = cdText(sNone, eNone, cdTargets(noTime));
+  chk('no time from 7:30pm Perth says Starts tomorrow, not hours to midnight', textNone === '⏱ Starts tomorrow' && !/\d+h /.test(textNone), textNone);
+  const textNsw = cdText(...cdSE(nswShoot), cdTargets(nswShoot));
+  chk('eastern 8:30am viewed at 7:30pm Perth is 10h (Sydney time), not Perth midnight', textNsw === '⏱ Starts in 10h 0m 0s', textNsw);
+  const nswNone = {id: 'tz-nsw-none', name: 'Test Championships', start_date: '2026-11-29', end_date: '2026-11-29', state: 'NSW', state_code: 'NSW'};
+  const textNswNone = cdText(...cdSE(nswNone), cdTargets(nswNone));
+  chk('eastern no-time event at 7:30pm Perth says Starts tomorrow, not 1h 30m to Sydney midnight', textNswNone === '⏱ Starts tomorrow' && !/\d+h /.test(textNswNone), textNswNone);
+  const later = Date.parse('2026-11-28T14:00:00Z'); // 10:00pm Perth, already 1:00am 29 Nov in Sydney
+  Date.now = () => later;
+  const textNswLate = cdText(...cdSE(nswNone), cdTargets(nswNone));
+  chk('eastern no-time event already on its venue date says On today, not Live now at midnight', textNswLate === '● On today', textNswLate);
+} finally { Date.now = was2; }
 
 console.log(bad.length ? bad.length + ' failed' : 'all passed');
 process.exit(bad.length ? 1 : 0);

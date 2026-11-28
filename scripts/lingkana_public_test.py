@@ -63,7 +63,7 @@ chk('privatecal stays out', not os.path.isfile(os.path.join(ROOT, 'privatecal.js
 app = open(os.path.join(ROOT, 'app.js'), encoding='utf-8').read()
 chk('app shows live scores box', 'function lkScoresBox' in app and 'Scores and ladder' in app)
 sw = open(os.path.join(ROOT, 'sw.js'), encoding='utf-8').read()
-chk('unique cache', "const C='archcal-lkgo1715'" in sw)
+chk('unique cache', "const C='archcal-cdfix1128'" in sw)
 idx = open(os.path.join(ROOT, 'index.html'), encoding='utf-8').read()
 chk('index cache tags', 'app.js?v=lkgo1715' in idx and 'styles.css?v=lkgo1715' in idx)
 site = open(os.path.join(ROOT, 'sitemap.xml'), encoding='utf-8').read()

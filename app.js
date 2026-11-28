@@ -3224,15 +3224,24 @@ function cdBadge(x, big){
   if (iPast(x)) return '';
   const [s, e] = cdSE(x), L = cdTargets(x), tz = evTz(x);
   const when = L && new Date(L[0][0]).toLocaleString(LOC(), {timeZone: tz || undefined, weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit'});
-  const ttl = L ? `Counts down to ${L[0][1] === 'Sign-in' ? 'sign-in' : 'the start'}: ${when}${tz ? ' ' + tzNm(tz) : ''}, from the organiser's published times.` : "Counts down to the start of the first day (midnight, venue time). Start times aren't shown unless the organiser publishes them.";
+  const ttl = L ? `Counts down to ${L[0][1] === 'Sign-in' ? 'sign-in' : 'the start'}: ${when}${tz ? ' ' + tzNm(tz) : ''}, from the organiser's published times.` : "The organiser hasn't published a start time, so this counts down to the day, not a clock time.";
   return `<span class="b cd${big ? ' cd-big' : ''}" data-cd="${s}" data-cde="${e}"${L ? ` data-cdt="${cdEnc(L)}"` : ''} title="${esc(ttl)}">${cdText(s, e, L)}</span>`;
 }
 function cdText(s, e, L){
-  const n = Date.now(), live = L ? L[L.length - 1][0] : s, nx = L ? L.find(t => t[0] > n) : null;
+  const n = Date.now();
   if (n >= e) return '◷ Finished';
-  if (n >= live) { const tot = Math.max(1, Math.round((e - s) / 864e5)), d = Math.min(tot, Math.floor((n - s) / 864e5) + 1); return `● Live now · day ${d} of ${tot}`; }
-  const t = Math.floor(((nx ? nx[0] : s) - n) / 1000), d = Math.floor(t / 86400), h = Math.floor(t % 86400 / 3600), m = Math.floor(t % 3600 / 60), sec = t % 60;
-  return `⏱ ${nx ? nx[1] : 'Starts'} in ${d ? d + 'd ' : ''}${d || h ? h + 'h ' : ''}${m}m ${sec}s`;
+  if (L) {
+    const live = L[L.length - 1][0], nx = L.find(t => t[0] > n);
+    if (n >= live) { const tot = Math.max(1, Math.round((e - s) / 864e5)), d = Math.min(tot, Math.floor((n - s) / 864e5) + 1); return `● Live now · day ${d} of ${tot}`; }
+    const t = Math.floor((nx[0] - n) / 1000), d = Math.floor(t / 86400), h = Math.floor(t % 86400 / 3600), m = Math.floor(t % 3600 / 60), sec = t % 60;
+    return `⏱ ${nx[1]} in ${d ? d + 'd ' : ''}${d || h ? h + 'h ' : ''}${m}m ${sec}s`;
+  }
+  if (n >= s) {
+    const tot = Math.max(1, Math.round((e - s) / 864e5)), d = Math.min(tot, Math.floor((n - s) / 864e5) + 1);
+    return tot > 1 ? `● On now · day ${d} of ${tot}` : '● On today';
+  }
+  const days = Math.max(1, Math.ceil((s - n) / 864e5));
+  return days === 1 ? '⏱ Starts tomorrow' : `⏱ Starts in ${days} days`;
 }
 /* ---------- Event times (Nathe 23 Oct 2026: "Show register time and other times noted") ----------
    The organiser's start_times text, laid out per day: sign-in/registration first (bold), then the rest in the
@@ -3273,7 +3282,9 @@ function tmDate(x, wd){   // a weekday label → the event date with that weekda
   return '';
 }
 function evTimes(x){
-  const raw = String(x && x.start_times || '').replace(/\s+/g, ' ').trim(); if (!raw) return null;
+  let raw = String(x && x.start_times || '').replace(/\s+/g, ' ').trim();
+  if (!raw) raw = String(x && x.flyer_extract && x.flyer_extract.start_times || '').replace(/\s+/g, ' ').trim();
+  if (!raw) return null;
   if (x._tmc && x._tmc.raw === raw) return x._tmc;
   const T = {raw, days: [], ok: false}; Object.defineProperty(x, '_tmc', {value: T, writable: true, configurable: true, enumerable: false});
   if (/\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/.test(raw) || !TM_TOK.test(raw)) return T;
@@ -3303,12 +3314,15 @@ const tzNm = tz => AUTZ_NM[tz] || TZ_NAME[tz] || tz;
 const tzDiff = (tz, d) => { if (!tz || !VTZ || tz === VTZ) return false; const k = d || iso(new Date()); return tzMid(k, tz) !== tzMid(k, VTZ); };
 const fmt12 = ([h, m]) => `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`;
 const capF = s => s ? s[0].toUpperCase() + s.slice(1) : s;
-// Countdown targets: the first sign-in of each day up to day 1 (else day 1's first start time). Last entry = when it goes live.
+// Countdown targets: the first sign-in of each day up to day 1, else day 1's shooting/start time, else practice, muster, or another published time. Last entry = when it goes live. No published time: cdTargets is null and cdText counts whole days, not midnight.
 function cdTargets(x){
   const T = evTimes(x); if (!T || !T.ok) return null; const tz = evTz(x), s = x.start_date;
-  const pick = k => T.days.filter(d => d.date && d.date <= s).map(d => { const it = d.items.find(i => i.kind === k && i.t); return it ? [tzAt(d.date, it.t[0], it.t[1], tz), k === 'signin' ? 'Sign-in' : 'Starts', d.date] : null; }).filter(Boolean).sort((a, b) => a[0] - b[0]);
+  const first = (d, pred) => d.items.find(i => pred(i) && i.t);
+  const pick = (pred, lbl) => T.days.filter(d => d.date && d.date <= s).map(d => { const it = first(d, pred); return it ? [tzAt(d.date, it.t[0], it.t[1], tz), lbl, d.date] : null; }).filter(Boolean).sort((a, b) => a[0] - b[0]);
+  const kind = k => i => i.kind === k;
+  const fallback = i => i.kind === 'practice' || i.kind === 'muster' || i.kind !== 'finish';
   const one = A => A.filter((t, i) => !A.slice(0, i).some(u => u[2] === t[2]));   // AM/PM sessions: only a day's first time counts
-  let L = one(pick('signin')); if (!L.length) L = one(pick('start')); if (!L.length) return null;
+  let L = one(pick(kind('signin'), 'Sign-in')); if (!L.length) L = one(pick(kind('start'), 'Starts')); if (!L.length) L = one(pick(fallback, 'Starts')); if (!L.length) return null;
   if (L[L.length - 1][2] !== s) L.push([tzMid(s, tz), 'Starts', s]);
   return L;
 }
